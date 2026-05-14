@@ -5,17 +5,23 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Sequence
-from dataclasses import replace
 from pathlib import Path
 
 from desktop_agent.actuation import DryRunActuator, UnavailableActuator
-from desktop_agent.config import ConfigError, RuntimeConfig, YamlConfigLoader
+from desktop_agent.config import (
+    ConfigError,
+    ConfigOverrides,
+    StaticConfigLoader,
+    YamlConfigLoader,
+    resolve_runtime_config,
+)
 from desktop_agent.perception import ConfidenceTargetSelector, EmptyPerceptionEngine
 from desktop_agent.planner import ExecutionEngine
 from desktop_agent.safety import LocalSafetyPolicy
 from desktop_agent.screen import StaticScreenObserver
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
+    StaticTaskLoader,
     TaskValidationError,
     YamlTaskLoader,
 )
@@ -78,11 +84,17 @@ def _add_task_options(parser: argparse.ArgumentParser) -> None:
 
 
 def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
-    config = _load_config_with_cli_overrides(args)
+    task = YamlTaskLoader().load(args.task_yaml)
+    file_config = YamlConfigLoader().load(args.config)
+    config = resolve_runtime_config(
+        file_config,
+        task_overrides=task.config_overrides,
+        cli_overrides=_cli_overrides_from_args(args),
+    )
     trace_sink = MemoryTraceSink()
     engine = ExecutionEngine(
-        config_loader=_LoadedConfig(config),
-        task_loader=YamlTaskLoader(),
+        config_loader=StaticConfigLoader(config),
+        task_loader=StaticTaskLoader(task),
         task_validator=BasicTaskValidator(),
         trace_sink=trace_sink,
         safety_policy=LocalSafetyPolicy(),
@@ -96,15 +108,12 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
     return 0 if report.status == "passed" else 1
 
 
-def _load_config_with_cli_overrides(args: argparse.Namespace) -> RuntimeConfig:
-    config = YamlConfigLoader().load(args.config)
-    allowed_windows = tuple(args.allowed_window) or config.allowed_windows
-    return replace(
-        config,
-        save_screenshots=False if args.no_screenshots else config.save_screenshots,
-        max_runtime_seconds=args.max_runtime_seconds or config.max_runtime_seconds,
-        confidence_threshold=args.confidence_threshold or config.confidence_threshold,
-        allowed_windows=allowed_windows,
+def _cli_overrides_from_args(args: argparse.Namespace) -> ConfigOverrides:
+    return ConfigOverrides(
+        save_screenshots=False if args.no_screenshots else None,
+        max_runtime_seconds=args.max_runtime_seconds,
+        confidence_threshold=args.confidence_threshold,
+        allowed_windows=tuple(args.allowed_window) if args.allowed_window else None,
     )
 
 
@@ -151,12 +160,3 @@ def _print_report(report: RunReport, *, verbose: bool) -> None:
     if verbose:
         for event in report.events:
             print(f"event {event.phase}: {event.message}")
-
-
-class _LoadedConfig:
-    def __init__(self, config: RuntimeConfig) -> None:
-        self._config = config
-
-    def load(self, config_path: Path | None) -> RuntimeConfig:
-        _ = config_path
-        return self._config

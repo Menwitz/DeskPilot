@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol, cast
 
 import yaml
 
-from desktop_agent.config import RuntimeConfig
+from desktop_agent.config import (
+    ConfigOverrides,
+    RuntimeConfig,
+    config_overrides_from_mapping,
+)
 
 
 class TaskValidationError(ValueError):
@@ -45,6 +49,7 @@ class TaskDefinition:
     allowed_windows: tuple[str, ...]
     timeout_seconds: float
     steps: tuple[TaskStep, ...]
+    config_overrides: ConfigOverrides = field(default_factory=ConfigOverrides)
 
 
 class TaskLoader(Protocol):
@@ -76,12 +81,18 @@ class YamlTaskLoader(TaskLoader):
         steps_value = data.get("steps", ())
         if not isinstance(steps_value, list):
             raise TaskValidationError("steps must be a list")
+        config_value = data.get("config")
+        config_overrides = ConfigOverrides()
+        if config_value is not None:
+            config_data = _mapping(config_value, "config must be a mapping")
+            config_overrides = config_overrides_from_mapping(dict(config_data))
 
         return TaskDefinition(
             name=str(data.get("name", "")),
             allowed_windows=_string_tuple(data.get("allowed_windows", ())),
             timeout_seconds=_float_value(data.get("timeout_seconds", 0)),
             steps=tuple(_step_from_mapping(item) for item in steps_value),
+            config_overrides=config_overrides,
         )
 
 

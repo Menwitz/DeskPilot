@@ -76,24 +76,24 @@
 
 ## 4. Configuration
 
-- [ ] Support project-level config file.
-- [ ] Support task-level config overrides.
-- [ ] Support CLI overrides.
-- [ ] Define precedence: CLI > task YAML > config file > defaults.
-- [ ] Add config fields:
-  - [ ] `default_timeout_seconds`
-  - [ ] `confidence_threshold`
-  - [ ] `max_steps`
-  - [ ] `max_retries_per_step`
-  - [ ] `max_runtime_seconds`
-  - [ ] `trace_root`
-  - [ ] `save_screenshots`
-  - [ ] `save_ocr_text`
-  - [ ] `allowed_windows`
-  - [ ] `emergency_stop_hotkey`
-  - [ ] `primary_monitor_only`
-- [ ] Validate config at startup.
-- [ ] Reject unsafe config values such as zero timeouts, negative retries, or missing safety limits.
+- [x] Support project-level config file.
+- [x] Support task-level config overrides.
+- [x] Support CLI overrides.
+- [x] Define precedence: CLI > task YAML > config file > defaults.
+- [x] Add config fields:
+  - [x] `default_timeout_seconds`
+  - [x] `confidence_threshold`
+  - [x] `max_steps`
+  - [x] `max_retries_per_step`
+  - [x] `max_runtime_seconds`
+  - [x] `trace_root`
+  - [x] `save_screenshots`
+  - [x] `save_ocr_text`
+  - [x] `allowed_windows`
+  - [x] `emergency_stop_hotkey`
+  - [x] `primary_monitor_only`
+- [x] Validate config at startup.
+- [x] Reject unsafe config values such as zero timeouts, negative retries, or missing safety limits.
 
 ## 5. YAML Task DSL
 

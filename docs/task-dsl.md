@@ -36,6 +36,12 @@ steps:
 
 Complete examples will be added as the task DSL implementation lands.
 
+## Task-Level Configuration
+
+Task YAML can include a `config` block for task-level runtime overrides. The
+final precedence is CLI overrides, then task `config`, then project config, then
+defaults.
+
 ## CLI Support
 
 The current CLI accepts this basic YAML shape for `dry-run` planning. Later DSL

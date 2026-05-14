@@ -60,6 +60,7 @@ until real actuation adapters are implemented.
 
 - [Project definition](docs/project-definition.md)
 - [Architecture](docs/architecture.md)
+- [Configuration](docs/configuration.md)
 - [Task DSL](docs/task-dsl.md)
 - [Safety](docs/safety.md)
 - [Roadmap](docs/roadmap.md)
