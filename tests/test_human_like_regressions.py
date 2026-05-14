@@ -245,6 +245,73 @@ def test_regression_operator_approval_stops_sensitive_step_before_observation() 
     assert "execute_action" not in event_phases(report)
 
 
+def test_acceptance_required_stop_conditions_prevent_actuation() -> None:
+    disallowed_window_actuator = CountingActuator()
+    disallowed_window = run_fixture(
+        actuator=disallowed_window_actuator,
+        observation=ScreenObservation(active_window_title="Unexpected Window"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=enabled_profile(),
+        ),
+    )
+    ambiguous_target_actuator = CountingActuator()
+    ambiguous_target = run_fixture(
+        actuator=ambiguous_target_actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=AmbiguousCandidatePerceptionEngine(),
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=enabled_profile(),
+        ),
+    )
+    unconfirmed_sensitive_actuator = CountingActuator()
+    unconfirmed_sensitive = run_fixture(
+        task=fixture_task(
+            TaskStep(
+                id="submit-payment",
+                action="click_text",
+                target="Submit",
+                requires_confirmation=True,
+            ),
+        ),
+        actuator=unconfirmed_sensitive_actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=enabled_profile(),
+        ),
+    )
+    unsafe_profile_actuator = CountingActuator()
+
+    with pytest.raises(ConfigError, match=r"execution_profile\.action_delay_seconds"):
+        run_fixture(
+            actuator=unsafe_profile_actuator,
+            observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+            perception_engine=SingleCandidatePerceptionEngine(),
+            config=RuntimeConfig(
+                confidence_threshold=0.8,
+                execution_profile=ExecutionProfile(
+                    enabled=True,
+                    action_delay_seconds=(0.3, 0.1),
+                ),
+            ),
+        )
+
+    stopped_reports = (
+        (disallowed_window, disallowed_window_actuator),
+        (ambiguous_target, ambiguous_target_actuator),
+        (unconfirmed_sensitive, unconfirmed_sensitive_actuator),
+    )
+    assert unsafe_profile_actuator.calls == 0
+    for report, actuator in stopped_reports:
+        assert report.status == "failed"
+        assert actuator.calls == 0
+        assert "execute_action" not in event_phases(report)
+
+
 def test_regression_seeded_timing_decisions_are_reproducible() -> None:
     profile = ExecutionProfile(
         enabled=True,
