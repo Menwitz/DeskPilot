@@ -259,6 +259,45 @@ def test_smooth_movement_planner_uses_eased_multi_point_path() -> None:
     assert plan.path_model == "minimum_jerk_quadratic_bezier"
 
 
+def test_movement_planner_replays_all_random_choices_with_seed() -> None:
+    profile = ActuationProfile(
+        movement_duration_seconds=(0.2, 0.2),
+        timing_variation_seconds=(0.01, 0.02),
+        movement_steps=6,
+        movement_smoothness=0.7,
+        overshoot_probability=1.0,
+        overshoot_pixels=(3.0, 7.0),
+        settle_duration_seconds=(0.01, 0.02),
+        random_seed=17,
+    )
+
+    first = SmoothMovementPlanner(profile).plan(
+        (0, 0),
+        (120, 20),
+        target_size_pixels=(30, 20),
+    )
+    second = SmoothMovementPlanner(profile).plan(
+        (0, 0),
+        (120, 20),
+        target_size_pixels=(30, 20),
+    )
+    different_seed = SmoothMovementPlanner(
+        ActuationProfile(
+            movement_duration_seconds=(0.2, 0.2),
+            timing_variation_seconds=(0.01, 0.02),
+            movement_steps=6,
+            movement_smoothness=0.7,
+            overshoot_probability=1.0,
+            overshoot_pixels=(3.0, 7.0),
+            settle_duration_seconds=(0.01, 0.02),
+            random_seed=18,
+        ),
+    ).plan((0, 0), (120, 20), target_size_pixels=(30, 20))
+
+    assert first == second
+    assert first != different_seed
+
+
 def test_movement_planner_uses_minimum_jerk_progression() -> None:
     planner = SmoothMovementPlanner(
         ActuationProfile(

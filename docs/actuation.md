@@ -32,7 +32,9 @@ Mouse movement uses a bounded minimum-jerk path over a small optional curved
 Bezier trajectory. The `ActuationProfile` controls movement duration, timing
 variation, path step count, smoothness, and deterministic random seed. The tiny
 variation is for local reliability around UI latency, not for stealth or
-bot-evasion behavior.
+bot-evasion behavior. All actuation randomness goes through the shared seeded
+sampler, so the same profile seed replays the same timing variation, curve
+direction, overshoot, and settle decisions in tests and diagnostics.
 
 Movement duration is estimated behind a local `PointerTimingModel` interface.
 The default `FittsLawPointerTimingModel` uses pointer distance and effective

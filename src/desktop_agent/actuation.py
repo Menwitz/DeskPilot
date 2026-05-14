@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import ctypes
 import math
-import random
 import sys
 import time
 from ctypes import wintypes
@@ -13,6 +12,7 @@ from typing import Any, Literal, Protocol
 
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.perception import ElementCandidate
+from desktop_agent.sampling import SeededSampler
 from desktop_agent.screen import (
     Bounds,
     ScreenObservation,
@@ -268,7 +268,7 @@ class SmoothMovementPlanner:
     ) -> None:
         self._profile = profile or ActuationProfile()
         self._timing_model = timing_model or FittsLawPointerTimingModel()
-        self._random = random.Random(self._profile.random_seed)
+        self._sampler = SeededSampler(self._profile.random_seed)
 
     def plan(
         self,
@@ -293,10 +293,16 @@ class SmoothMovementPlanner:
             self._profile.movement_duration_seconds,
         )
         estimate = replace(estimate, duration_seconds=bounded_duration)
-        settle_duration = self._sample_seconds(self._profile.settle_duration_seconds)
+        settle_duration = self._sample_seconds(
+            "actuation.settle_duration",
+            self._profile.settle_duration_seconds,
+        )
         duration = (
             bounded_duration
-            + self._sample_seconds(self._profile.timing_variation_seconds)
+            + self._sample_seconds(
+                "actuation.timing_variation",
+                self._profile.timing_variation_seconds,
+            )
             + settle_duration
         )
         if start == end:
@@ -324,11 +330,11 @@ class SmoothMovementPlanner:
             settle_duration_seconds=settle_duration,
         )
 
-    def _sample_seconds(self, bounds: tuple[float, float]) -> float:
+    def _sample_seconds(self, label: str, bounds: tuple[float, float]) -> float:
         lower, upper = bounds
         if lower == upper:
             return lower
-        return self._random.uniform(lower, upper)
+        return self._sampler.uniform(label, bounds)
 
     def _control_point(
         self,
@@ -346,7 +352,11 @@ class SmoothMovementPlanner:
             return (mid_x, mid_y)
 
         bend = distance * 0.18 * self._profile.movement_smoothness
-        direction = -1 if self._random.random() < 0.5 else 1
+        direction = (
+            -1
+            if self._sampler.probability("actuation.control_direction", 0.5)
+            else 1
+        )
         normal_x = -delta_y / distance
         normal_y = delta_x / distance
         return (
@@ -381,7 +391,10 @@ class SmoothMovementPlanner:
         if (
             target_size_pixels is None
             or self._profile.overshoot_probability <= 0
-            or self._random.random() >= self._profile.overshoot_probability
+            or not self._sampler.probability(
+                "actuation.overshoot",
+                self._profile.overshoot_probability,
+            )
         ):
             return None
 
@@ -391,7 +404,10 @@ class SmoothMovementPlanner:
 
         safe_limit = max(0.0, (min(target_size_pixels) / 2) - 1)
         overshoot_pixels = min(
-            self._sample_seconds(self._profile.overshoot_pixels),
+            self._sample_seconds(
+                "actuation.overshoot_pixels",
+                self._profile.overshoot_pixels,
+            ),
             safe_limit,
         )
         if overshoot_pixels <= 0:

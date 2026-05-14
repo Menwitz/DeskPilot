@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import math
-import random
 from dataclasses import dataclass
 
 from desktop_agent.config import ExecutionProfile
 from desktop_agent.perception import ElementCandidate
+from desktop_agent.sampling import SeededSampler
 from desktop_agent.screen import Bounds, ScreenObservation
 from desktop_agent.task_dsl import TaskStep, step_category
 
@@ -209,7 +209,7 @@ class ExecutionTimingController:
 
     def __init__(self, profile: ExecutionProfile) -> None:
         self._profile = profile
-        self._rng = random.Random(profile.random_seed)
+        self._sampler = SeededSampler(profile.random_seed)
         self._last_input_mode: str | None = None
 
     def before_action(
@@ -250,8 +250,9 @@ class ExecutionTimingController:
                 klm_operators=klm_operators,
             )
 
-        hesitation_applied = phase == "action" and (
-            self._rng.random() < self._profile.hesitation_probability
+        hesitation_applied = phase == "action" and self._sampler.probability(
+            "timing.hesitation",
+            self._profile.hesitation_probability,
         )
         sample_lower = lower
         if hesitation_applied:
@@ -259,7 +260,7 @@ class ExecutionTimingController:
             # range, so the decision never exceeds configured bounds.
             sample_lower = lower + ((upper - lower) / 2)
 
-        random_fraction = self._rng.random()
+        random_fraction = self._sampler.random(f"timing.{phase}.fraction")
         timing_fraction = random_fraction
         if phase == "action" and context is not None:
             timing_fraction = _clamp(

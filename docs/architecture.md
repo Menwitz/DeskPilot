@@ -56,4 +56,5 @@ include the bounded operator breakdown used for cognitive timing so reports can
 explain mental pauses, system waits, keying, pointing, and homing without
 changing the task's selected actions. Entropy budget events record task-level
 and step-level randomness allocations before later sampling logic can consume
-them.
+them. Bounded random decisions flow through a shared seeded sampler so timing
+and actuation choices can be replayed deterministically when a seed is set.

@@ -91,7 +91,8 @@ text, allowed windows, maximum steps, timeouts, or retry budgets.
   sampled delay lands inside the configured bounds, but they never expand those
   bounds or change the selected action.
 - `movement_smoothness` is reserved for future real pointer actuation adapters.
-- `random_seed` makes timing decisions reproducible for tests and diagnostics.
+- `random_seed` makes timing decisions reproducible through the shared seeded
+  sampler used by bounded runtime randomness.
 
 ## Sensitive Step Confirmation
 
