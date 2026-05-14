@@ -103,6 +103,21 @@ def test_rank_candidates_uses_target_match_quality() -> None:
     assert ranked[0].target_match_score == 1.0
 
 
+def test_candidate_fusion_prefers_target_match_for_conflicting_sources() -> None:
+    ranked = rank_candidates(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        (
+            candidate("uia-cancel", "uia", 0.96, label="Cancel"),
+            candidate("ocr-submit", "ocr", 0.90, x=200, label="Submit"),
+        ),
+        RuntimeConfig(confidence_threshold=0.8),
+    )
+
+    assert ranked[0].candidate.id == "ocr-submit"
+    assert ranked[0].target_match_score == 1.0
+    assert ranked[1].candidate.source == "uia"
+
+
 def test_confidence_selector_rejects_ambiguous_same_priority_candidates() -> None:
     selected = ConfidenceTargetSelector().select(
         TaskStep(id="click-submit", action="click_text", target="Submit"),
@@ -114,6 +129,33 @@ def test_confidence_selector_rejects_ambiguous_same_priority_candidates() -> Non
     )
 
     assert selected is None
+
+
+def test_confidence_selector_rejects_low_confidence_candidate_sets() -> None:
+    step = TaskStep(id="click-submit", action="click_text", target="Submit")
+    candidates = (
+        candidate("low-uia", "uia", 0.40),
+        candidate("low-ocr", "ocr", 0.55, x=200),
+    )
+
+    selected = ConfidenceTargetSelector().select(
+        step,
+        candidates,
+        RuntimeConfig(confidence_threshold=0.8),
+    )
+    snapshot = ui_state_snapshot_metadata(
+        step,
+        candidates,
+        selected,
+        RuntimeConfig(confidence_threshold=0.8),
+    )
+
+    blocked = snapshot["blocked_candidates"]
+    assert selected is None
+    assert isinstance(blocked, list)
+    assert {item["blocked_reason"] for item in blocked} == {
+        "below_confidence_threshold",
+    }
 
 
 def test_confidence_selector_prefers_higher_priority_source_when_unambiguous() -> None:
