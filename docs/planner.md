@@ -26,6 +26,13 @@ failed checkpoint records `verification_checkpoint` and fails the step without
 sending input, which lets submissions verify the expected UI state immediately
 before the irreversible action.
 
+The planner also keeps a local task-state tracker. Before each step, it checks
+that authored `depends_on` steps have actually completed and that the believed
+state is compatible with `expected_state.before`. After a passed step, it marks
+the step complete and updates the believed state from `expected_state.after`.
+These checks emit `task_state` trace events and catch branch paths that skip
+required setup.
+
 ## Runtime Controls
 
 - Task timeout is the lower of `task.timeout_seconds` and

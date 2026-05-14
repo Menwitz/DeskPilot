@@ -37,6 +37,8 @@ standard actions from fast-path high-confidence segments and careful-path risky
 segments.
 Built-in submission fixture tasks declare pre-action checkpoints, so benchmark
 reports also cover `verification_checkpoint` evidence before final actions.
+The `task_state` phase is part of the same monitoring contract, covering local
+dependency completion and believed UI-state transitions during each run.
 
 ## Repeated Dry-Run Harness
 

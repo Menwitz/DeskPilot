@@ -47,6 +47,11 @@ For steps with `checkpoint`, traces include `observe_checkpoint`,
 or actuation event. Failed checkpoints are categorized as
 `verification_checkpoint` failures in the final report.
 
+`task_state` events record completed dependency checks and the planner's local
+believed UI state before and after steps. State failures are categorized as
+`task_state` failures, which makes skipped setup or invalid branch paths visible
+in reports.
+
 Each executed step also emits `step_timeout_budget` metadata with the planned
 action wait, retry wait, total planned wait, remaining timeout, and whether the
 budget fits before any desktop action is attempted.

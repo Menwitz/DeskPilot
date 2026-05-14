@@ -41,6 +41,7 @@ from desktop_agent.task_dsl import (
     TaskValidator,
     step_category,
 )
+from desktop_agent.task_state import TaskStateTracker
 from desktop_agent.timing import (
     ExecutionTimingController,
     TimingDecision,
@@ -267,6 +268,7 @@ class ExecutionEngine:
             step_index = 0
             executed_steps = 0
             action_count = 0
+            task_state = TaskStateTracker()
 
             while step_index < len(task.steps):
                 if self.emergency_stop_monitor.is_triggered(config):
@@ -288,6 +290,26 @@ class ExecutionEngine:
                     return self.trace_sink.write_final_report("aborted", reason)
 
                 step = task.steps[step_index]
+                state_check = task_state.check_before_step(step)
+                self._record(
+                    "task_state",
+                    state_check.message,
+                    _step_metadata(step, **state_check.metadata()),
+                )
+                if not state_check.passed:
+                    self.trace_sink.record_step(
+                        self._step_failed(
+                            step,
+                            0,
+                            state_check.message,
+                            None,
+                            failure_category="task_state",
+                        )
+                    )
+                    return self.trace_sink.write_final_report(
+                        "failed",
+                        state_check.message,
+                    )
                 outcome = self._execute_step(
                     task,
                     step,
@@ -318,6 +340,12 @@ class ExecutionEngine:
                         "failed",
                         step_report.message,
                     )
+                state_update = task_state.mark_step_completed(step)
+                self._record(
+                    "task_state",
+                    "task state updated",
+                    _step_metadata(step, **state_update.metadata()),
+                )
                 if outcome.next_step_id is not None:
                     if outcome.next_step_id not in step_by_id:
                         reason = f"branch target not found: {outcome.next_step_id}"

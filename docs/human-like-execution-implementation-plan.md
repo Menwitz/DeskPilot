@@ -130,7 +130,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Add careful-path execution for risky, sensitive, or low-confidence
   segments.
 - [x] Add explicit verification checkpoints before irreversible actions.
-- [ ] Add local task-state tracking so the planner knows what it believes has
+- [x] Add local task-state tracking so the planner knows what it believes has
   already happened.
 - [ ] Add tests proving sharp execution reduces unnecessary waits without
   reducing safety checks.

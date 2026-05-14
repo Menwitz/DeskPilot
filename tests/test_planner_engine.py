@@ -18,6 +18,7 @@ from desktop_agent.screen import (
 )
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
+    ExpectedStateTransition,
     StaticTaskLoader,
     TaskDefinition,
     TaskRegion,
@@ -844,6 +845,44 @@ def test_execution_engine_branch_if_visible_jumps_to_failure_target() -> None:
 
     assert report.status == "passed"
     assert [step.step_id for step in report.steps] == ["branch", "fallback"]
+
+
+def test_execution_engine_blocks_branch_target_with_missing_dependency() -> None:
+    task = TaskDefinition(
+        name="branch-state",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="branch",
+                action="branch_if_visible",
+                target="Optional",
+                on_failure="submit",
+            ),
+            TaskStep(
+                id="prepare",
+                action="press_key",
+                text="enter",
+                expected_state=ExpectedStateTransition(after="ready"),
+            ),
+            TaskStep(
+                id="submit",
+                action="click_text",
+                target="Submit",
+                depends_on=("prepare",),
+                expected_state=ExpectedStateTransition(before="ready"),
+            ),
+        ),
+    )
+    engine = _engine(task, perception=SequencePerceptionEngine(((),)))
+
+    report = engine.run(Path("task.yaml"))
+
+    state_failure = next(event for event in report.events if event.phase == "failure")
+    assert report.status == "failed"
+    assert report.steps[-1].step_id == "submit"
+    assert report.steps[-1].metadata["failure_category"] == "task_state"
+    assert state_failure.metadata["failure_category"] == "task_state"
 
 
 def test_execution_engine_aborts_when_action_count_exceeds_limit() -> None:
