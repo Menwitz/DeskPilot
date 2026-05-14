@@ -25,6 +25,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
                 "max_retries_per_step: 1",
                 "allowed_windows:",
                 "  - Config Window",
+                "policy_preset: strict_qa",
                 "confirmed_steps:",
                 "  - submit-payment",
                 "execution_profile:",
@@ -63,6 +64,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
     assert resolved.max_retries_per_step == 3
     assert resolved.max_steps == 5
     assert resolved.allowed_windows == ("CLI Window",)
+    assert resolved.policy_preset == "strict_qa"
     assert resolved.confirmed_steps == ("submit-payment",)
     assert resolved.execution_profile.persona == "careful"
     assert resolved.execution_profile.enabled is True
@@ -90,6 +92,7 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
                 "config:",
                 "  save_screenshots: false",
                 "  confidence_threshold: 0.95",
+                "  policy_preset: exploratory_testing",
                 "  confirmed_steps:",
                 "    - submit",
                 "  execution_profile:",
@@ -111,6 +114,7 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
 
     assert task.config_overrides.save_screenshots is False
     assert task.config_overrides.confidence_threshold == 0.95
+    assert task.config_overrides.policy_preset == "exploratory_testing"
     assert task.config_overrides.confirmed_steps == ("submit",)
     assert task.config_overrides.execution_profile is not None
     assert task.config_overrides.execution_profile.persona == "fast"
@@ -134,6 +138,7 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
         (ConfigOverrides(max_runtime_seconds=0), "max_runtime_seconds"),
         (ConfigOverrides(confidence_threshold=1.5), "confidence_threshold"),
         (ConfigOverrides(confirmed_steps=("",)), "confirmed_steps"),
+        (ConfigOverrides(policy_preset="anything_goes"), "policy_preset"),
         (
             ConfigOverrides(
                 execution_profile=ExecutionProfile(

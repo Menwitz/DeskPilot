@@ -9,7 +9,10 @@ from typing import Any, Protocol, cast
 
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.screen import ScreenObservation
-from desktop_agent.task_dsl import TaskDefinition, TaskStep
+from desktop_agent.task_dsl import TaskDefinition, TaskStep, step_category
+
+STRICT_QA_CONFIRMATION_CATEGORIES: frozenset[str] = frozenset({"submission"})
+EXPLORATORY_BLOCKED_CATEGORIES: frozenset[str] = frozenset({"submission"})
 
 
 @dataclass(frozen=True)
@@ -110,6 +113,24 @@ class LocalSafetyPolicy(SafetyPolicy):
             return SafetyDecision(
                 False,
                 f"step {step.id} requires explicit confirmation",
+            )
+        category = step_category(step)
+        if (
+            config.policy_preset == "strict_qa"
+            and category in STRICT_QA_CONFIRMATION_CATEGORIES
+            and step.id not in config.confirmed_steps
+        ):
+            return SafetyDecision(
+                False,
+                f"step {step.id} requires confirmation under strict_qa policy",
+            )
+        if (
+            config.policy_preset == "exploratory_testing"
+            and category in EXPLORATORY_BLOCKED_CATEGORIES
+        ):
+            return SafetyDecision(
+                False,
+                f"step {step.id} is blocked by exploratory_testing policy",
             )
         if (
             observation

@@ -10,6 +10,9 @@ import yaml
 
 EXECUTION_PERSONAS: frozenset[str] = frozenset({"careful", "normal", "fast"})
 SAMPLING_DISTRIBUTIONS: frozenset[str] = frozenset({"uniform", "center_weighted"})
+POLICY_PRESETS: frozenset[str] = frozenset(
+    {"strict_qa", "personal_automation", "exploratory_testing"},
+)
 
 
 @dataclass(frozen=True)
@@ -45,6 +48,7 @@ class RuntimeConfig:
     allowed_windows: tuple[str, ...] = field(default_factory=tuple)
     emergency_stop_hotkey: str = "ctrl+alt+esc"
     primary_monitor_only: bool = True
+    policy_preset: str = "personal_automation"
     execution_profile: ExecutionProfile = field(default_factory=ExecutionProfile)
     confirmed_steps: tuple[str, ...] = field(default_factory=tuple)
 
@@ -64,6 +68,7 @@ class ConfigOverrides:
     allowed_windows: tuple[str, ...] | None = None
     emergency_stop_hotkey: str | None = None
     primary_monitor_only: bool | None = None
+    policy_preset: str | None = None
     execution_profile: ExecutionProfile | None = None
     confirmed_steps: tuple[str, ...] | None = None
 
@@ -169,6 +174,7 @@ def apply_config_overrides(
             overrides.primary_monitor_only,
             config.primary_monitor_only,
         ),
+        policy_preset=_coalesce(overrides.policy_preset, config.policy_preset),
         execution_profile=_coalesce(
             overrides.execution_profile,
             config.execution_profile,
@@ -190,6 +196,7 @@ def config_overrides_from_mapping(data: dict[str, object]) -> ConfigOverrides:
         allowed_windows=_optional_string_tuple(data, "allowed_windows"),
         emergency_stop_hotkey=_optional_str(data, "emergency_stop_hotkey"),
         primary_monitor_only=_optional_bool(data, "primary_monitor_only"),
+        policy_preset=_optional_str(data, "policy_preset"),
         execution_profile=_optional_execution_profile(data, "execution_profile"),
         confirmed_steps=_optional_string_tuple(data, "confirmed_steps"),
     )
@@ -215,6 +222,11 @@ def validate_config(config: RuntimeConfig) -> None:
         errors.append("allowed_windows entries must not be blank")
     if any(not step_id.strip() for step_id in config.confirmed_steps):
         errors.append("confirmed_steps entries must not be blank")
+    if config.policy_preset not in POLICY_PRESETS:
+        errors.append(
+            "policy_preset must be strict_qa, personal_automation, "
+            "or exploratory_testing",
+        )
     errors.extend(_validate_execution_profile(config.execution_profile))
 
     if errors:

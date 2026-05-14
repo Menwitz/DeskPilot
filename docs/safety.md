@@ -27,6 +27,8 @@ evasion, credential abuse, or abusive third-party automation.
   actuator boundary.
 - Final step-region blocking for targeted click and scroll actions before real
   input is sent.
+- Runtime policy presets for strict QA, personal automation, and exploratory
+  testing.
 - Maximum runtime, maximum steps, and per-step retry limits.
 - Confidence thresholds for OCR, image, and UIA candidate selection.
 - Failure reports that explain why a task stopped.
@@ -72,3 +74,11 @@ stops before the action unless the operator confirms the step ID through runtime
 configuration or `--confirm-step`.
 Sensitive or irreversible steps can also declare `checkpoint`; the planner must
 pass that read-only verification before timing or action execution.
+
+## Policy Presets
+
+`policy_preset` defaults to `personal_automation`, which keeps only explicit
+`requires_confirmation` gates. `strict_qa` adds a confirmation gate for
+`submission` category steps. `exploratory_testing` blocks `submission` category
+steps entirely so exploratory runs can inspect and navigate without crossing
+into final actions.

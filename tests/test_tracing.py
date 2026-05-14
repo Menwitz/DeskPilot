@@ -81,6 +81,8 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
             RuntimeConfig(
                 trace_root=tmp_path / "traces",
                 confidence_threshold=0.8,
+                policy_preset="strict_qa",
+                confirmed_steps=("click-submit",),
                 execution_profile=ExecutionProfile(
                     keyboard_interval_seconds=(0.01, 0.03),
                     scroll_interval_seconds=(0.02, 0.04),
@@ -119,6 +121,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert final_report["steps"][0]["candidate_id"] == "candidate-Submit"
     assert final_report["steps"][0]["metadata"]["step_category"] == "submission"
     assert final_report["steps"][0]["metadata"]["step_entropy_budget"] == 1.0
+    assert config_payload["policy_preset"] == "strict_qa"
     assert config_payload["execution_profile"]["persona"] == "normal"
     assert config_payload["execution_profile"]["keyboard_interval_seconds"] == [
         0.01,
@@ -133,6 +136,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert task_payload["steps"][0]["entropy_budget"] == 1.0
     assert task_payload["steps"][0]["resolved_category"] == "submission"
     assert any("candidate_rankings" in line for line in action_log)
+    assert any('"policy_preset": "strict_qa"' in line for line in action_log)
     assert any('"step_category": "submission"' in line for line in action_log)
     assert any("entropy_budget" in line for line in action_log)
     assert any("step_timeout_budget" in line for line in action_log)

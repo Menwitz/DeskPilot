@@ -147,7 +147,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 ## Phase 10: Operator Control And Safety
 
-- [ ] Add policy presets for strict QA, personal automation, and exploratory
+- [x] Add policy presets for strict QA, personal automation, and exploratory
   testing.
 - [ ] Add a dry-run preview that shows planned timing bounds and recovery paths.
 - [ ] Add an operator approval prompt for irreversible or externally visible

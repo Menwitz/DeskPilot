@@ -28,6 +28,9 @@ also include `execution_persona`, `persona_timing_bias`, `klm_operators`,
 `klm_operator_counts`, `klm_total_seconds`, and input-mode metadata for the
 bounded cognitive timing model. Timing events include `random_seed` and
 `sample_records` entries for every sampled value used in the decision.
+The active `policy_preset` is stored in `config.json` and the `load_config`
+event so report review can tell whether the run used strict QA, personal
+automation, or exploratory-testing safety behavior.
 Text-entry `execute_action` events include `keyboard_cadence_applied`,
 `keyboard_interval_count`, and `keyboard_interval_seconds` when a cadence
 profile inserts bounded waits between typed characters. The Markdown report

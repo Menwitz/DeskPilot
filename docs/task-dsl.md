@@ -141,6 +141,9 @@ entropy_budget: 4.0
 config:
   confidence_threshold: 0.85
   max_retries_per_step: 2
+  policy_preset: strict_qa
+  confirmed_steps:
+    - click-submit
   execution_profile:
     persona: careful
     enabled: true

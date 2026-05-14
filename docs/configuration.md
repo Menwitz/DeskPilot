@@ -25,6 +25,7 @@ allowed_windows:
   - DeskPilot Fixture
 emergency_stop_hotkey: ctrl+alt+esc
 primary_monitor_only: true
+policy_preset: personal_automation
 confirmed_steps: []
 execution_profile:
   persona: normal
@@ -53,6 +54,7 @@ timeout_seconds: 30
 config:
   confidence_threshold: 0.9
   max_retries_per_step: 2
+  policy_preset: strict_qa
   confirmed_steps:
     - submit-payment
   execution_profile:
@@ -123,6 +125,20 @@ text, allowed windows, maximum steps, timeouts, or retry budgets.
 - `random_seed` makes timing decisions reproducible through the shared seeded
   sampler used by bounded runtime randomness.
 
+## Policy Presets
+
+`policy_preset` chooses the operator-control boundary used by the safety policy:
+
+- `personal_automation` is the default and preserves existing task behavior.
+  Steps only require confirmation when `requires_confirmation: true`.
+- `strict_qa` requires explicit confirmation for `submission` category steps,
+  even when the task did not mark the step with `requires_confirmation`.
+- `exploratory_testing` blocks `submission` category steps. Use it for
+  read-only navigation, recognition, and discovery runs that must stop before
+  final actions.
+
+The active preset is written to `config.json` and the `load_config` trace event.
+
 ## Sensitive Step Confirmation
 
 Tasks can mark a step with `requires_confirmation: true`. Those steps are
@@ -141,6 +157,8 @@ Startup rejects unsafe values before any desktop action can run:
   to upper.
 - Execution profile probability and smoothness values must be between `0` and
   `1`.
+- Policy preset must be `strict_qa`, `personal_automation`, or
+  `exploratory_testing`.
 - Confirmed step IDs must not be blank.
 - Emergency stop hotkey and trace root must be present.
 - Window names must not be blank.

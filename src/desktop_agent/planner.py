@@ -222,7 +222,11 @@ class ExecutionEngine:
         config = self.trace_sink.prepare_run(task, config)
 
         try:
-            self._record("load_config", "configuration loaded")
+            self._record(
+                "load_config",
+                "configuration loaded",
+                {"policy_preset": config.policy_preset},
+            )
             self._record(
                 "load_task",
                 "task loaded",

@@ -115,6 +115,92 @@ def test_safety_policy_allows_confirmed_sensitive_steps() -> None:
     assert report.status == "passed"
 
 
+def test_strict_qa_policy_requires_confirmation_for_submission_steps() -> None:
+    task = TaskDefinition(
+        name="strict qa",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="submit-payment",
+                action="click_text",
+                target="Submit",
+                category="submission",
+            ),
+        ),
+    )
+    engine = _engine(
+        task,
+        config=RuntimeConfig(confidence_threshold=0.8, policy_preset="strict_qa"),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    assert report.status == "failed"
+    assert report.steps[0].message == (
+        "step submit-payment requires confirmation under strict_qa policy"
+    )
+
+
+def test_strict_qa_policy_allows_confirmed_submission_steps() -> None:
+    task = TaskDefinition(
+        name="strict qa",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="submit-payment",
+                action="click_text",
+                target="Submit",
+                category="submission",
+            ),
+        ),
+    )
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            policy_preset="strict_qa",
+            confirmed_steps=("submit-payment",),
+        ),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    assert report.status == "passed"
+
+
+def test_exploratory_policy_blocks_submission_steps() -> None:
+    task = TaskDefinition(
+        name="exploratory",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="submit-payment",
+                action="click_text",
+                target="Submit",
+                category="submission",
+            ),
+        ),
+    )
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            policy_preset="exploratory_testing",
+            confirmed_steps=("submit-payment",),
+        ),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    assert report.status == "failed"
+    assert report.steps[0].message == (
+        "step submit-payment is blocked by exploratory_testing policy"
+    )
+
+
 def test_hotkey_parser_rejects_unsupported_keys() -> None:
     with pytest.raises(ValueError, match="unsupported emergency stop key"):
         _hotkey_virtual_keys("ctrl+nope")
