@@ -178,7 +178,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 ## Acceptance Criteria
 
-- [ ] The benchmark harness proves improved reliability or speed against the
+- [x] The benchmark harness proves improved reliability or speed against the
   deterministic baseline without reducing safety.
 - [ ] All randomness is bounded, traceable, and reproducible when seeded.
 - [ ] Real pointer and keyboard actuation consume the execution profile safely.

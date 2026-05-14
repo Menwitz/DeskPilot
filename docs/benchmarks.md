@@ -64,7 +64,13 @@ The harness writes:
 - `runs.jsonl` with one per-run metrics record per line.
 - `benchmark-report.json` with the task path, output paths, iteration count,
   aggregate summary metrics, acceptance status, and per-run metrics.
+- `baseline-runs.jsonl` with one deterministic baseline metrics record per
+  iteration. The baseline preserves safety settings and disables execution
+  profile timing.
 - `variance-report.json` with run-to-run distribution values.
+- `baseline-comparison.json` comparing candidate runs against the deterministic
+  baseline for success rate, median task time, grounding accuracy, ambiguity
+  rate, recovery rate, and operator intervention rate.
 - `pointer-timing-comparison.json` with deterministic baseline-vs-Fitts pointer
   timing comparisons for representative movement scenarios.
 - Per-iteration trace directories under `<output>/traces/`.
@@ -107,3 +113,13 @@ The CLI prints `acceptance: passed`, `acceptance: failed`, or
 before a behavior change should be treated as an improvement. Ad hoc task files
 can still use the harness, but their report is marked `not_configured` until a
 task spec adds thresholds.
+
+## Baseline Comparison
+
+Every benchmark run also executes the same task with execution-profile timing
+disabled and writes `baseline-comparison.json`. A change is marked
+`improved` only when the candidate run improves success rate or median task time
+and does not reduce grounding accuracy or increase ambiguity, recovery, or
+operator intervention rates. If safety is preserved but reliability and speed
+are unchanged, the comparison is `neutral`. If safety or reliability regresses,
+the comparison is `regressed`.

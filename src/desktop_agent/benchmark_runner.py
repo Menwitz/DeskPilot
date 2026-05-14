@@ -6,7 +6,7 @@ import json
 import statistics
 import time
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal
 
@@ -25,6 +25,7 @@ from desktop_agent.benchmarks import (
 )
 from desktop_agent.config import (
     ConfigOverrides,
+    ExecutionProfile,
     RuntimeConfig,
     StaticConfigLoader,
     YamlConfigLoader,
@@ -47,6 +48,7 @@ from desktop_agent.task_dsl import (
 from desktop_agent.tracing import FileTraceSink, RunReport, RunStatus
 
 BenchmarkAcceptanceStatus = Literal["passed", "failed", "not_configured"]
+BenchmarkComparisonStatus = Literal["improved", "neutral", "regressed"]
 
 DEFAULT_POINTER_TIMING_PROFILE = ActuationProfile(
     movement_duration_seconds=(0.05, 0.5),
@@ -141,6 +143,25 @@ class BenchmarkAcceptanceResult:
 
 
 @dataclass(frozen=True)
+class BenchmarkBaselineComparison:
+    """Candidate run comparison against a deterministic timing baseline."""
+
+    baseline_summary: BenchmarkSummaryMetrics
+    candidate_summary: BenchmarkSummaryMetrics
+    success_rate_delta: float
+    median_task_time_improvement_seconds: float
+    grounding_accuracy_delta: float
+    ambiguity_rate_delta: float
+    recovery_rate_delta: float
+    operator_intervention_rate_delta: float
+    improved_reliability: bool
+    improved_speed: bool
+    safety_not_reduced: bool
+    improvement_proven: bool
+    status: BenchmarkComparisonStatus
+
+
+@dataclass(frozen=True)
 class PointerTimingScenario:
     """Representative pointer movement used by benchmark model comparison."""
 
@@ -179,13 +200,17 @@ class BenchmarkRunReport:
     task_path: Path
     output_dir: Path
     metrics_path: Path
+    baseline_metrics_path: Path
     report_path: Path
     variance_report_path: Path
+    baseline_comparison_path: Path
     pointer_timing_comparison_path: Path
     runs: tuple[BenchmarkRunMetrics, ...]
+    baseline_runs: tuple[BenchmarkRunMetrics, ...]
     summary: BenchmarkSummaryMetrics
     variance: BenchmarkVarianceReport
     acceptance: BenchmarkAcceptanceResult
+    baseline_comparison: BenchmarkBaselineComparison
     pointer_timing_comparison: PointerTimingComparisonReport
 
 
@@ -243,18 +268,35 @@ class BenchmarkRunHarness:
             self._run_once(task_path, task, config, iteration)
             for iteration in range(1, iterations + 1)
         )
+        baseline_config = _deterministic_baseline_config(config, output_dir)
+        baseline_runs = tuple(
+            self._run_once(task_path, task, baseline_config, iteration)
+            for iteration in range(1, iterations + 1)
+        )
         summary = _summary_from_runs(runs)
+        baseline_summary = _summary_from_runs(baseline_runs)
         variance = _variance_from_runs(runs)
         task_spec = benchmark_task_by_path(task_path)
         thresholds = task_spec.acceptance_thresholds if task_spec else None
         acceptance = evaluate_benchmark_acceptance(runs, summary, thresholds)
         metrics_path = output_dir / "runs.jsonl"
+        baseline_metrics_path = output_dir / "baseline-runs.jsonl"
         report_path = output_dir / "benchmark-report.json"
         variance_report_path = output_dir / "variance-report.json"
+        baseline_comparison_path = output_dir / "baseline-comparison.json"
         pointer_timing_comparison_path = output_dir / "pointer-timing-comparison.json"
+        baseline_comparison = compare_benchmark_to_baseline(
+            baseline_summary,
+            summary,
+        )
         pointer_timing_comparison = compare_pointer_timing_models()
         _write_metrics(metrics_path, runs)
+        _write_metrics(baseline_metrics_path, baseline_runs)
         _write_variance_report(variance_report_path, variance)
+        _write_baseline_comparison(
+            baseline_comparison_path,
+            baseline_comparison,
+        )
         _write_pointer_timing_comparison(
             pointer_timing_comparison_path,
             pointer_timing_comparison,
@@ -264,24 +306,33 @@ class BenchmarkRunHarness:
             task_path,
             output_dir,
             metrics_path,
+            baseline_metrics_path,
             variance_report_path,
+            baseline_comparison_path,
             pointer_timing_comparison_path,
             runs,
+            baseline_runs,
             summary,
+            baseline_summary,
             acceptance,
+            baseline_comparison,
             pointer_timing_comparison,
         )
         return BenchmarkRunReport(
             task_path=task_path,
             output_dir=output_dir,
             metrics_path=metrics_path,
+            baseline_metrics_path=baseline_metrics_path,
             report_path=report_path,
             variance_report_path=variance_report_path,
+            baseline_comparison_path=baseline_comparison_path,
             pointer_timing_comparison_path=pointer_timing_comparison_path,
             runs=runs,
+            baseline_runs=baseline_runs,
             summary=summary,
             variance=variance,
             acceptance=acceptance,
+            baseline_comparison=baseline_comparison,
             pointer_timing_comparison=pointer_timing_comparison,
         )
 
@@ -310,6 +361,19 @@ class BenchmarkRunHarness:
         report = engine.run(task_path)
         elapsed = time.perf_counter() - started
         return _metrics_from_report(iteration, report, elapsed)
+
+
+def _deterministic_baseline_config(
+    config: RuntimeConfig,
+    output_dir: Path,
+) -> RuntimeConfig:
+    """Disable execution-profile timing while preserving safety settings."""
+
+    return replace(
+        config,
+        trace_root=output_dir / "baseline-traces",
+        execution_profile=ExecutionProfile(enabled=False),
+    )
 
 
 def _metrics_from_report(
@@ -447,6 +511,60 @@ def evaluate_benchmark_acceptance(
     )
 
 
+def compare_benchmark_to_baseline(
+    baseline: BenchmarkSummaryMetrics,
+    candidate: BenchmarkSummaryMetrics,
+) -> BenchmarkBaselineComparison:
+    """Compare candidate benchmark behavior against deterministic timing."""
+
+    success_rate_delta = candidate.success_rate - baseline.success_rate
+    median_task_time_improvement_seconds = (
+        baseline.median_task_time_seconds - candidate.median_task_time_seconds
+    )
+    grounding_accuracy_delta = (
+        candidate.grounding_accuracy - baseline.grounding_accuracy
+    )
+    ambiguity_rate_delta = candidate.ambiguity_rate - baseline.ambiguity_rate
+    recovery_rate_delta = candidate.recovery_rate - baseline.recovery_rate
+    operator_intervention_rate_delta = (
+        candidate.operator_intervention_rate - baseline.operator_intervention_rate
+    )
+    improved_reliability = success_rate_delta > 0
+    improved_speed = median_task_time_improvement_seconds > 0
+    safety_not_reduced = (
+        grounding_accuracy_delta >= 0
+        and ambiguity_rate_delta <= 0
+        and recovery_rate_delta <= 0
+        and operator_intervention_rate_delta <= 0
+    )
+    improvement_proven = safety_not_reduced and (
+        improved_reliability or improved_speed
+    )
+    reliability_regressed = success_rate_delta < 0
+    status: BenchmarkComparisonStatus
+    if improvement_proven:
+        status = "improved"
+    elif safety_not_reduced and not reliability_regressed:
+        status = "neutral"
+    else:
+        status = "regressed"
+    return BenchmarkBaselineComparison(
+        baseline_summary=baseline,
+        candidate_summary=candidate,
+        success_rate_delta=success_rate_delta,
+        median_task_time_improvement_seconds=median_task_time_improvement_seconds,
+        grounding_accuracy_delta=grounding_accuracy_delta,
+        ambiguity_rate_delta=ambiguity_rate_delta,
+        recovery_rate_delta=recovery_rate_delta,
+        operator_intervention_rate_delta=operator_intervention_rate_delta,
+        improved_reliability=improved_reliability,
+        improved_speed=improved_speed,
+        safety_not_reduced=safety_not_reduced,
+        improvement_proven=improvement_proven,
+        status=status,
+    )
+
+
 def compare_pointer_timing_models(
     scenarios: tuple[PointerTimingScenario, ...] = DEFAULT_POINTER_TIMING_SCENARIOS,
 ) -> PointerTimingComparisonReport:
@@ -488,26 +606,36 @@ def _write_report(
     task_path: Path,
     output_dir: Path,
     metrics_path: Path,
+    baseline_metrics_path: Path,
     variance_report_path: Path,
+    baseline_comparison_path: Path,
     pointer_timing_comparison_path: Path,
     runs: tuple[BenchmarkRunMetrics, ...],
+    baseline_runs: tuple[BenchmarkRunMetrics, ...],
     summary: BenchmarkSummaryMetrics,
+    baseline_summary: BenchmarkSummaryMetrics,
     acceptance: BenchmarkAcceptanceResult,
+    baseline_comparison: BenchmarkBaselineComparison,
     pointer_timing_comparison: PointerTimingComparisonReport,
 ) -> None:
     payload = {
         "task_path": str(task_path),
         "output_dir": str(output_dir),
         "metrics_path": str(metrics_path),
+        "baseline_metrics_path": str(baseline_metrics_path),
         "variance_report_path": str(variance_report_path),
+        "baseline_comparison_path": str(baseline_comparison_path),
         "pointer_timing_comparison_path": str(pointer_timing_comparison_path),
         "iterations": len(runs),
         "summary": _summary_to_dict(summary),
+        "baseline_summary": _summary_to_dict(baseline_summary),
         "acceptance": _acceptance_to_dict(acceptance),
+        "baseline_comparison": _baseline_comparison_to_dict(baseline_comparison),
         "pointer_timing_comparison": _pointer_timing_comparison_to_dict(
             pointer_timing_comparison,
         ),
         "runs": [_metrics_to_dict(run) for run in runs],
+        "baseline_runs": [_metrics_to_dict(run) for run in baseline_runs],
     }
     path.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
@@ -521,6 +649,21 @@ def _write_variance_report(
 ) -> None:
     path.write_text(
         json.dumps(_variance_report_to_dict(variance), indent=2, sort_keys=True)
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_baseline_comparison(
+    path: Path,
+    comparison: BenchmarkBaselineComparison,
+) -> None:
+    path.write_text(
+        json.dumps(
+            _baseline_comparison_to_dict(comparison),
+            indent=2,
+            sort_keys=True,
+        )
         + "\n",
         encoding="utf-8",
     )
@@ -651,6 +794,30 @@ def _acceptance_to_dict(acceptance: BenchmarkAcceptanceResult) -> dict[str, obje
         "thresholds": _thresholds_to_dict(acceptance.thresholds)
         if acceptance.thresholds
         else None,
+    }
+
+
+def _baseline_comparison_to_dict(
+    comparison: BenchmarkBaselineComparison,
+) -> dict[str, object]:
+    return {
+        "baseline_summary": _summary_to_dict(comparison.baseline_summary),
+        "candidate_summary": _summary_to_dict(comparison.candidate_summary),
+        "success_rate_delta": comparison.success_rate_delta,
+        "median_task_time_improvement_seconds": (
+            comparison.median_task_time_improvement_seconds
+        ),
+        "grounding_accuracy_delta": comparison.grounding_accuracy_delta,
+        "ambiguity_rate_delta": comparison.ambiguity_rate_delta,
+        "recovery_rate_delta": comparison.recovery_rate_delta,
+        "operator_intervention_rate_delta": (
+            comparison.operator_intervention_rate_delta
+        ),
+        "improved_reliability": comparison.improved_reliability,
+        "improved_speed": comparison.improved_speed,
+        "safety_not_reduced": comparison.safety_not_reduced,
+        "improvement_proven": comparison.improvement_proven,
+        "status": comparison.status,
     }
 
 

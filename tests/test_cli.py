@@ -455,11 +455,17 @@ def test_cli_benchmark_run_writes_metrics_and_report(
     assert report["summary"]["action_count"] > 0
     assert report["acceptance"]["configured"] is False
     assert report["acceptance"]["status"] == "not_configured"
+    assert report["baseline_comparison"]["safety_not_reduced"] is True
     assert (output_dir / "variance-report.json").exists()
+    assert (output_dir / "baseline-runs.jsonl").exists()
+    assert (output_dir / "baseline-comparison.json").exists()
     assert (output_dir / "pointer-timing-comparison.json").exists()
     assert len(metrics) == 2
     assert "metrics:" in output
+    assert "baseline metrics:" in output
     assert "variance:" in output
+    assert "baseline comparison:" in output
+    assert "baseline status:" in output
     assert "pointer timing:" in output
     assert "acceptance: not_configured" in output
     assert "report:" in output

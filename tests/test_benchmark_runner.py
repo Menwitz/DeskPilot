@@ -9,6 +9,7 @@ from desktop_agent.benchmark_runner import (
     _summary_to_dict,
     _variance_from_runs,
     _write_variance_report,
+    compare_benchmark_to_baseline,
     compare_pointer_timing_models,
     evaluate_benchmark_acceptance,
 )
@@ -32,8 +33,13 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     pointer_timing_payload = json.loads(
         report.pointer_timing_comparison_path.read_text(encoding="utf-8")
     )
+    baseline_metrics_lines = report.baseline_metrics_path.read_text(
+        encoding="utf-8"
+    ).splitlines()
     assert len(report.runs) == 2
+    assert len(report.baseline_runs) == 2
     assert report.summary.run_count == 2
+    assert report.baseline_comparison.safety_not_reduced
     assert report.summary.success_rate == 1.0
     assert report.summary.step_count > 0
     assert report.summary.action_count > 0
@@ -45,7 +51,13 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert len(report.pointer_timing_comparison.samples) == 3
     assert len(metrics_lines) == 2
     assert report_payload["iterations"] == 2
+    assert report_payload["baseline_metrics_path"] == str(
+        report.baseline_metrics_path
+    )
     assert report_payload["variance_report_path"] == str(report.variance_report_path)
+    assert report_payload["baseline_comparison_path"] == str(
+        report.baseline_comparison_path
+    )
     assert report_payload["pointer_timing_comparison_path"] == str(
         report.pointer_timing_comparison_path
     )
@@ -62,13 +74,22 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert report_payload["acceptance"]["passed"] is True
     assert report_payload["acceptance"]["status"] == "passed"
     assert report_payload["acceptance"]["thresholds"]["min_success_rate"] == 1.0
+    assert report_payload["baseline_summary"]["success_rate"] == 1.0
+    assert report_payload["baseline_comparison"]["safety_not_reduced"] is True
+    assert report_payload["baseline_comparison"]["status"] in {
+        "improved",
+        "neutral",
+        "regressed",
+    }
     assert report_payload["runs"][0]["status"] == "passed"
+    assert report_payload["baseline_runs"][0]["status"] == "passed"
     assert report_payload["runs"][0]["step_count"] > 0
     assert report_payload["runs"][0]["action_count"] > 0
     assert report_payload["runs"][0]["grounding_attempt_count"] > 0
     assert report_payload["runs"][0]["grounded_selection_count"] > 0
     assert report_payload["runs"][0]["grounding_accuracy"] == 1.0
     assert Path(report_payload["runs"][0]["trace_dir"]).exists()
+    assert Path(report_payload["baseline_runs"][0]["trace_dir"]).exists()
     assert variance_payload["task_time_seconds"]["minimum"] >= 0
     assert variance_payload["step_count"]["maximum"] > 0
     assert variance_payload["grounding_accuracy"]["minimum"] == 1.0
@@ -79,6 +100,7 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
         report_payload["pointer_timing_comparison"]["samples"][1]["scenario"]
         == "far-small-target"
     )
+    assert len(baseline_metrics_lines) == 2
 
 
 def test_benchmark_run_harness_rejects_empty_iterations(tmp_path: Path) -> None:
@@ -195,6 +217,57 @@ def test_pointer_timing_comparison_contrasts_model_with_baseline() -> None:
     assert far.baseline_duration_seconds == 0.2
     assert far.model_duration_seconds > near.model_duration_seconds
     assert far.model_index_of_difficulty > near.model_index_of_difficulty
+
+
+def test_baseline_comparison_requires_improvement_without_safety_loss() -> None:
+    baseline = BenchmarkSummaryMetrics(
+        run_count=3,
+        success_rate=0.8,
+        median_task_time_seconds=5.0,
+        step_count=12,
+        action_count=12,
+        retry_count=2,
+        grounding_accuracy=0.95,
+        ambiguity_rate=0.1,
+        recovery_rate=0.2,
+        operator_intervention_rate=0.0,
+    )
+    faster_candidate = BenchmarkSummaryMetrics(
+        run_count=3,
+        success_rate=0.8,
+        median_task_time_seconds=4.0,
+        step_count=12,
+        action_count=12,
+        retry_count=1,
+        grounding_accuracy=0.95,
+        ambiguity_rate=0.1,
+        recovery_rate=0.1,
+        operator_intervention_rate=0.0,
+    )
+    unsafe_candidate = BenchmarkSummaryMetrics(
+        run_count=3,
+        success_rate=0.9,
+        median_task_time_seconds=4.0,
+        step_count=12,
+        action_count=12,
+        retry_count=1,
+        grounding_accuracy=0.90,
+        ambiguity_rate=0.2,
+        recovery_rate=0.1,
+        operator_intervention_rate=0.0,
+    )
+
+    faster = compare_benchmark_to_baseline(baseline, faster_candidate)
+    unsafe = compare_benchmark_to_baseline(baseline, unsafe_candidate)
+
+    assert faster.improved_speed
+    assert faster.safety_not_reduced
+    assert faster.improvement_proven
+    assert faster.status == "improved"
+    assert unsafe.improved_reliability
+    assert not unsafe.safety_not_reduced
+    assert not unsafe.improvement_proven
+    assert unsafe.status == "regressed"
 
 
 def test_benchmark_acceptance_records_threshold_failures() -> None:
