@@ -61,6 +61,7 @@ until real actuation adapters are implemented.
 - [Project definition](docs/project-definition.md)
 - [Architecture](docs/architecture.md)
 - [Configuration](docs/configuration.md)
+- [OCR](docs/ocr.md)
 - [Screen layer](docs/screen.md)
 - [Task DSL](docs/task-dsl.md)
 - [Safety](docs/safety.md)

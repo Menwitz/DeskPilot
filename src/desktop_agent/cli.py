@@ -16,7 +16,11 @@ from desktop_agent.config import (
     YamlConfigLoader,
     resolve_runtime_config,
 )
-from desktop_agent.perception import ConfidenceTargetSelector, EmptyPerceptionEngine
+from desktop_agent.ocr import OcrPerceptionEngine
+from desktop_agent.perception import (
+    CompositePerceptionEngine,
+    ConfidenceTargetSelector,
+)
 from desktop_agent.planner import ExecutionEngine
 from desktop_agent.safety import LocalSafetyPolicy
 from desktop_agent.screen import (
@@ -104,7 +108,7 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
         trace_sink=trace_sink,
         safety_policy=LocalSafetyPolicy(),
         screen_observer=StaticScreenObserver(),
-        perception_engine=EmptyPerceptionEngine(),
+        perception_engine=CompositePerceptionEngine((OcrPerceptionEngine(),)),
         target_selector=ConfidenceTargetSelector(),
         actuator=DryRunActuator() if dry_run else UnavailableActuator(),
     )

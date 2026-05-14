@@ -167,16 +167,16 @@
 
 ## 8. OCR Layer
 
-- [ ] Add offline OCR adapter.
-- [ ] Normalize OCR output into text candidates with bounds and confidence.
-- [ ] Support case-insensitive matching.
-- [ ] Support exact text matching.
-- [ ] Support contains matching.
-- [ ] Support simple fuzzy matching.
-- [ ] Filter OCR candidates below confidence threshold.
-- [ ] Save OCR text output to trace directory when enabled.
-- [ ] Add OCR tests using saved fixture screenshots.
-- [ ] Document OCR limitations around fonts, scaling, themes, and partial visibility.
+- [x] Add offline OCR adapter.
+- [x] Normalize OCR output into text candidates with bounds and confidence.
+- [x] Support case-insensitive matching.
+- [x] Support exact text matching.
+- [x] Support contains matching.
+- [x] Support simple fuzzy matching.
+- [x] Filter OCR candidates below confidence threshold.
+- [x] Save OCR text output to trace directory when enabled.
+- [x] Add OCR tests using saved fixture screenshots.
+- [x] Document OCR limitations around fonts, scaling, themes, and partial visibility.
 
 ## 9. Computer Vision Layer
 

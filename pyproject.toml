@@ -27,6 +27,10 @@ dev = [
 windows = [
     "pywinauto>=0.6.8; platform_system == 'Windows'",
 ]
+ocr = [
+    "Pillow>=10.4.0",
+    "pytesseract>=0.3.13",
+]
 
 [tool.uv]
 package = true
