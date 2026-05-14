@@ -26,6 +26,23 @@ Expected result:
 - `dry-run` exits successfully, writes a trace directory, and does not move the mouse.
 - `inspect-screen` writes `inspect-screen.json` and a screenshot when enabled.
 
+## Opt-In Pytest Smoke Tests
+
+After preparing the browser and native fixtures below, run the Windows smoke
+tests explicitly:
+
+```powershell
+$env:DESKPILOT_WINDOWS_SMOKE = "1"
+pytest -m windows_smoke tests\test_windows_smoke.py
+```
+
+Expected result:
+
+- `inspect-screen` writes an unlocked desktop inspection report and screenshot.
+- The browser fixture real `run` exits with status `passed`.
+- The native fixture real `run` exits with status `passed`.
+- These tests remain skipped unless `DESKPILOT_WINDOWS_SMOKE=1` is set.
+
 ## Browser Fixture
 
 1. Open `examples\browser_fixture.html` in the browser.

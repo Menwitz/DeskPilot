@@ -143,7 +143,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Add scroll cadence profiles for long pages and lists.
 - [x] Ensure all real actuation checks active window, allowed region, and
   emergency stop before sending input.
-- [ ] Add Windows smoke tests on an unlocked owned desktop session.
+- [x] Add Windows smoke tests on an unlocked owned desktop session.
 
 ## Phase 10: Operator Control And Safety
 

@@ -29,3 +29,6 @@ The following acceptance items require an unlocked, logged-in Windows desktop:
 
 Use [Windows E2E Checklist](windows-e2e-checklist.md) for the manual commands,
 expected results, and trace evidence to collect.
+The checklist also includes opt-in `pytest -m windows_smoke` coverage for
+unlocked owned Windows sessions; those tests stay skipped by default outside
+that environment.

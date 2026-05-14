@@ -45,6 +45,9 @@ packages = ["src/desktop_agent"]
 [tool.pytest.ini_options]
 addopts = "-ra --strict-config --strict-markers"
 testpaths = ["tests"]
+markers = [
+    "windows_smoke: opt-in smoke tests for an unlocked owned Windows desktop session",
+]
 
 [tool.ruff]
 line-length = 88
