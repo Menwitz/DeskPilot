@@ -69,6 +69,7 @@ clear unavailable message on unsupported platforms.
 - [OCR](docs/ocr.md)
 - [Packaging](docs/packaging.md)
 - [Planner](docs/planner.md)
+- [Post-v1 Backlog](docs/post-v1-backlog.md)
 - [Screen layer](docs/screen.md)
 - [Task DSL](docs/task-dsl.md)
 - [Safety](docs/safety.md)

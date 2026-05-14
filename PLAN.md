@@ -348,6 +348,8 @@ Windows-only acceptance items remain unchecked until they are verified on an unl
 
 ## 19. Post-v1 Backlog
 
+Post-v1 items are intentionally future work. They are triaged in `docs/post-v1-backlog.md` and should stay unchecked until they are promoted into a scoped implementation plan.
+
 - [ ] Linux X11 adapter.
 - [ ] Linux Wayland compatibility investigation.
 - [ ] Visual task recorder.
