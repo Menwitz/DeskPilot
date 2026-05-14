@@ -26,3 +26,14 @@ evasion, credential abuse, or abusive third-party automation.
 - Maximum runtime, maximum steps, and per-step retry limits.
 - Confidence thresholds for OCR, image, and UIA candidate selection.
 - Failure reports that explain why a task stopped.
+
+## Execution Profile Boundary
+
+The optional execution profile is limited to bounded timing decisions and trace
+metadata. It must not change the user's intended task outcome, choose a
+different action, leave the allowed window scope, bypass confidence gates, or
+hide that automation is running.
+
+Invalid execution profile bounds fail configuration validation before any
+desktop action can run. Timing decisions are recorded in traces so failed runs
+can be diagnosed without guessing why the planner waited or retried.

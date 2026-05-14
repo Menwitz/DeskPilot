@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from desktop_agent.config import RuntimeConfig
+from desktop_agent.screen import ScreenObservation
 from desktop_agent.task_dsl import TaskDefinition, TaskStep
 
 
@@ -31,6 +32,7 @@ class SafetyPolicy(Protocol):
         task: TaskDefinition,
         step: TaskStep,
         config: RuntimeConfig,
+        observation: ScreenObservation | None = None,
     ) -> SafetyDecision: ...
 
 
@@ -52,8 +54,18 @@ class LocalSafetyPolicy(SafetyPolicy):
         task: TaskDefinition,
         step: TaskStep,
         config: RuntimeConfig,
+        observation: ScreenObservation | None = None,
     ) -> SafetyDecision:
         _ = step, config
         if not task.allowed_windows:
             return SafetyDecision(False, "task must declare allowed windows")
+        if (
+            observation
+            and observation.active_window_title
+            and observation.active_window_title not in task.allowed_windows
+        ):
+            return SafetyDecision(
+                False,
+                "active window is outside the task allowed_windows",
+            )
         return SafetyDecision(True, "allowed")

@@ -65,6 +65,7 @@ clear unavailable message on unsupported platforms.
 - [Computer Vision](docs/computer-vision.md)
 - [Configuration](docs/configuration.md)
 - [OCR](docs/ocr.md)
+- [Planner](docs/planner.md)
 - [Screen layer](docs/screen.md)
 - [Task DSL](docs/task-dsl.md)
 - [Safety](docs/safety.md)

@@ -31,6 +31,7 @@ class StepReport:
     attempts: int
     message: str
     candidate_id: str | None = None
+    metadata: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

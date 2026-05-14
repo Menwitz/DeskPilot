@@ -162,6 +162,7 @@ class BasicTaskValidator(TaskValidator):
         if len(task.steps) > config.max_steps:
             errors.append("task exceeds max_steps")
 
+        all_step_ids = {step.id for step in task.steps if step.id}
         step_ids: set[str] = set()
         for step in task.steps:
             if not step.id:
@@ -180,6 +181,8 @@ class BasicTaskValidator(TaskValidator):
                 errors.append(
                     f"step {step.id} timeout_seconds must be greater than zero"
                 )
+            if step.on_failure is not None and step.on_failure not in all_step_ids:
+                errors.append(f"step {step.id} on_failure target does not exist")
             errors.extend(_validate_action_shape(step))
             errors.extend(_validate_verification_shape(step))
 
@@ -232,6 +235,17 @@ def _validate_action_shape(step: TaskStep) -> list[str]:
         errors.append(f"step {step.id} target or verify is required for wait_for")
     if step.action == "assert_visible" and step.verify is None and not step.target:
         errors.append(f"step {step.id} target or verify is required for assert_visible")
+    if step.action == "scroll_until" and step.region is None:
+        errors.append(f"step {step.id} region is required for scroll_until")
+    if step.action == "branch_if_visible":
+        if step.verify is None and not step.target:
+            errors.append(
+                f"step {step.id} target or verify is required for branch_if_visible"
+            )
+        if step.on_failure is None:
+            errors.append(
+                f"step {step.id} on_failure is required for branch_if_visible"
+            )
     return errors
 
 

@@ -10,6 +10,18 @@ import yaml
 
 
 @dataclass(frozen=True)
+class ExecutionProfile:
+    """Optional bounded timing profile for traceable execution pacing."""
+
+    enabled: bool = False
+    action_delay_seconds: tuple[float, float] = (0.0, 0.0)
+    retry_delay_seconds: tuple[float, float] = (0.0, 0.0)
+    hesitation_probability: float = 0.0
+    movement_smoothness: float = 0.0
+    random_seed: int | None = None
+
+
+@dataclass(frozen=True)
 class RuntimeConfig:
     """Validated runtime settings used by the execution pipeline."""
 
@@ -24,6 +36,7 @@ class RuntimeConfig:
     allowed_windows: tuple[str, ...] = field(default_factory=tuple)
     emergency_stop_hotkey: str = "ctrl+alt+esc"
     primary_monitor_only: bool = True
+    execution_profile: ExecutionProfile = field(default_factory=ExecutionProfile)
 
 
 @dataclass(frozen=True)
@@ -41,6 +54,7 @@ class ConfigOverrides:
     allowed_windows: tuple[str, ...] | None = None
     emergency_stop_hotkey: str | None = None
     primary_monitor_only: bool | None = None
+    execution_profile: ExecutionProfile | None = None
 
 
 class ConfigError(ValueError):
@@ -144,6 +158,10 @@ def apply_config_overrides(
             overrides.primary_monitor_only,
             config.primary_monitor_only,
         ),
+        execution_profile=_coalesce(
+            overrides.execution_profile,
+            config.execution_profile,
+        ),
     )
 
 
@@ -160,6 +178,7 @@ def config_overrides_from_mapping(data: dict[str, object]) -> ConfigOverrides:
         allowed_windows=_optional_string_tuple(data, "allowed_windows"),
         emergency_stop_hotkey=_optional_str(data, "emergency_stop_hotkey"),
         primary_monitor_only=_optional_bool(data, "primary_monitor_only"),
+        execution_profile=_optional_execution_profile(data, "execution_profile"),
     )
 
 
@@ -181,6 +200,7 @@ def validate_config(config: RuntimeConfig) -> None:
         errors.append("emergency_stop_hotkey is required")
     if any(not window.strip() for window in config.allowed_windows):
         errors.append("allowed_windows entries must not be blank")
+    errors.extend(_validate_execution_profile(config.execution_profile))
 
     if errors:
         raise ConfigError("; ".join(errors))
@@ -241,7 +261,130 @@ def _optional_string_tuple(
     if value in (None, ()):
         return None
     if not isinstance(value, list):
-        raise ConfigError("allowed_windows must be a list of strings")
+        raise ConfigError(f"{key} must be a list of strings")
     if not all(isinstance(item, str) for item in value):
-        raise ConfigError("allowed_windows must be a list of strings")
+        raise ConfigError(f"{key} must be a list of strings")
     return tuple(value)
+
+
+def _optional_execution_profile(
+    data: dict[str, object],
+    key: str,
+) -> ExecutionProfile | None:
+    if key not in data:
+        return None
+    value = data[key]
+    if not isinstance(value, dict):
+        raise ConfigError("execution_profile must be a mapping")
+
+    defaults = ExecutionProfile()
+    profile = cast(dict[str, object], value)
+    return ExecutionProfile(
+        enabled=_optional_bool_with_default(profile, "enabled", defaults.enabled),
+        action_delay_seconds=_optional_seconds_pair(
+            profile,
+            "action_delay_seconds",
+            defaults.action_delay_seconds,
+        ),
+        retry_delay_seconds=_optional_seconds_pair(
+            profile,
+            "retry_delay_seconds",
+            defaults.retry_delay_seconds,
+        ),
+        hesitation_probability=_optional_float_with_default(
+            profile,
+            "hesitation_probability",
+            defaults.hesitation_probability,
+        ),
+        movement_smoothness=_optional_float_with_default(
+            profile,
+            "movement_smoothness",
+            defaults.movement_smoothness,
+        ),
+        random_seed=_optional_seed(profile, "random_seed"),
+    )
+
+
+def _optional_bool_with_default(
+    data: dict[str, object],
+    key: str,
+    fallback: bool,
+) -> bool:
+    value = _optional_bool(data, key)
+    return fallback if value is None else value
+
+
+def _optional_float_with_default(
+    data: dict[str, object],
+    key: str,
+    fallback: float,
+) -> float:
+    value = _optional_float(data, key)
+    return fallback if value is None else value
+
+
+def _optional_seconds_pair(
+    data: dict[str, object],
+    key: str,
+    fallback: tuple[float, float],
+) -> tuple[float, float]:
+    if key not in data:
+        return fallback
+    value = data[key]
+    if not isinstance(value, list) or len(value) != 2:
+        raise ConfigError(f"{key} must be a two-item list of numbers")
+    lower, upper = value
+    if (
+        isinstance(lower, bool)
+        or isinstance(upper, bool)
+        or not isinstance(lower, int | float)
+        or not isinstance(upper, int | float)
+    ):
+        raise ConfigError(f"{key} must be a two-item list of numbers")
+    return (float(lower), float(upper))
+
+
+def _optional_seed(data: dict[str, object], key: str) -> int | None:
+    if key not in data:
+        return None
+    value = data[key]
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ConfigError("random_seed must be an integer")
+    return value
+
+
+def _validate_execution_profile(profile: ExecutionProfile) -> list[str]:
+    errors: list[str] = []
+    errors.extend(
+        _validate_seconds_pair(
+            profile.action_delay_seconds,
+            "execution_profile.action_delay_seconds",
+        )
+    )
+    errors.extend(
+        _validate_seconds_pair(
+            profile.retry_delay_seconds,
+            "execution_profile.retry_delay_seconds",
+        )
+    )
+    if profile.hesitation_probability < 0 or profile.hesitation_probability > 1:
+        errors.append(
+            "execution_profile.hesitation_probability must be between 0 and 1",
+        )
+    if profile.movement_smoothness < 0 or profile.movement_smoothness > 1:
+        errors.append("execution_profile.movement_smoothness must be between 0 and 1")
+    return errors
+
+
+def _validate_seconds_pair(
+    value: tuple[float, float],
+    field_name: str,
+) -> list[str]:
+    lower, upper = value
+    if lower < 0 or upper < 0:
+        return [f"{field_name} values must not be negative"]
+    if lower > upper:
+        return [f"{field_name} lower bound must not exceed upper bound"]
+    return []

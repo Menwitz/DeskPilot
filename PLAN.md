@@ -226,23 +226,23 @@
 
 ## 12. Planner And Execution Engine
 
-- [ ] Implement step executor.
-- [ ] Implement per-step timeout.
-- [ ] Implement per-step retry budget.
-- [ ] Implement task-level timeout.
-- [ ] Implement max action count.
-- [ ] Implement abort reasons.
-- [ ] Implement verification after each action when configured.
-- [ ] Implement `wait_for` polling.
-- [ ] Implement `scroll_until` loop with max scroll count.
-- [ ] Implement `branch_if_visible` with explicit branch targets.
-- [ ] Implement recovery actions:
-  - [ ] wait and re-observe;
-  - [ ] refocus allowed window;
-  - [ ] scroll search region;
-  - [ ] retry alternate candidate;
-  - [ ] abort with trace.
-- [ ] Ensure every failure path writes enough trace data to debug the run.
+- [x] Implement step executor.
+- [x] Implement per-step timeout.
+- [x] Implement per-step retry budget.
+- [x] Implement task-level timeout.
+- [x] Implement max action count.
+- [x] Implement abort reasons.
+- [x] Implement verification after each action when configured.
+- [x] Implement `wait_for` polling.
+- [x] Implement `scroll_until` loop with max scroll count.
+- [x] Implement `branch_if_visible` with explicit branch targets.
+- [x] Implement recovery actions:
+  - [x] wait and re-observe;
+  - [x] refocus allowed window;
+  - [x] scroll search region;
+  - [x] retry alternate candidate;
+  - [x] abort with trace.
+- [x] Ensure every failure path writes enough trace data to debug the run.
 
 ## 13. Safety System
 
