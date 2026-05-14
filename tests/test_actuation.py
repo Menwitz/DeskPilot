@@ -296,6 +296,15 @@ def test_movement_planner_replays_all_random_choices_with_seed() -> None:
 
     assert first == second
     assert first != different_seed
+    assert first.random_seed == 17
+    assert [record.label for record in first.sample_records] == [
+        "actuation.settle_duration",
+        "actuation.timing_variation",
+        "actuation.overshoot",
+        "actuation.overshoot_pixels",
+        "actuation.control_direction",
+        "actuation.control_direction",
+    ]
 
 
 def test_movement_planner_uses_minimum_jerk_progression() -> None:

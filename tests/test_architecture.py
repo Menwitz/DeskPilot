@@ -390,6 +390,10 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
     assert timing_events[0].metadata["timing_model"] == "target_aware"
     assert timing_events[0].metadata["execution_persona"] == "careful"
     assert timing_events[0].metadata["persona_timing_bias"] == 0.18
+    assert timing_events[0].metadata["random_seed"] == 11
+    samples = timing_events[0].metadata["sample_records"]
+    assert isinstance(samples, list)
+    assert samples
     assert timing_events[0].metadata["action_type"] == "click_text"
     assert timing_events[0].metadata["target_id"] == "candidate-1"
     operator_counts = timing_events[0].metadata["klm_operator_counts"]

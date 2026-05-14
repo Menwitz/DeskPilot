@@ -26,7 +26,8 @@ metadata so benchmark and timing analysis can group navigation, recognition,
 data-entry, verification, and submission work. Enabled `execution_timing` events
 also include `execution_persona`, `persona_timing_bias`, `klm_operators`,
 `klm_operator_counts`, `klm_total_seconds`, and input-mode metadata for the
-bounded cognitive timing model.
+bounded cognitive timing model. Timing events include `random_seed` and
+`sample_records` entries for every sampled value used in the decision.
 
 Each executed step also emits `step_timeout_budget` metadata with the planned
 action wait, retry wait, total planned wait, remaining timeout, and whether the
@@ -40,7 +41,8 @@ max-step, retry, and timeout-feasible timing limits.
 
 When a step declares `safe_action_variants`, the planner emits an
 `action_variant` event with the available variants, selected action, configured
-variant distribution, and whether a randomized selection was used.
+variant distribution, whether a randomized selection was used, and the seed and
+sample records behind that selection.
 
 ## Replay
 

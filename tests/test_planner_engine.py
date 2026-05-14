@@ -186,6 +186,10 @@ def test_execution_engine_selects_safe_action_variant() -> None:
     assert report.status == "passed"
     assert report.steps[0].action == "click_uia"
     assert variant_event.metadata["selected_action"] == "click_uia"
+    assert variant_event.metadata["random_seed"] == 2
+    samples = variant_event.metadata["sample_records"]
+    assert isinstance(samples, list)
+    assert len(samples) == 1
     assert variant_event.metadata["available_action_variants"] == [
         "click_text",
         "click_uia",

@@ -42,6 +42,9 @@ class SeededSampler:
     def records(self) -> tuple[SampleRecord, ...]:
         return tuple(self._records)
 
+    def records_since(self, sample_count: int) -> tuple[SampleRecord, ...]:
+        return tuple(self._records[sample_count:])
+
     def random(self, label: str) -> float:
         value = self._random.random()
         self._record(label, value)

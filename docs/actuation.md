@@ -34,7 +34,8 @@ variation, path step count, smoothness, and deterministic random seed. The tiny
 variation is for local reliability around UI latency, not for stealth or
 bot-evasion behavior. All actuation randomness goes through the shared seeded
 sampler, so the same profile seed replays the same timing variation, curve
-direction, overshoot, and settle decisions in tests and diagnostics.
+direction, overshoot, and settle decisions in tests and diagnostics. Movement
+metadata records the seed and sample records for the sampled actuation values.
 
 Movement duration is estimated behind a local `PointerTimingModel` interface.
 The default `FittsLawPointerTimingModel` uses pointer distance and effective

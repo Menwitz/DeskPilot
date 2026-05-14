@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from desktop_agent.config import ExecutionProfile
 from desktop_agent.perception import ElementCandidate
-from desktop_agent.sampling import SeededSampler
+from desktop_agent.sampling import SampleRecord, SeededSampler
 from desktop_agent.screen import Bounds, ScreenObservation
 from desktop_agent.task_dsl import TaskStep, step_category
 
@@ -142,6 +142,8 @@ class TimingDecision:
     execution_persona: str = "normal"
     action_context: ActionTimingContext | None = None
     klm_operators: tuple[KLMOperator, ...] = ()
+    random_seed: int | None = None
+    sample_records: tuple[SampleRecord, ...] = ()
 
     def metadata(self) -> dict[str, object]:
         metadata: dict[str, object] = {
@@ -156,6 +158,10 @@ class TimingDecision:
             "movement_smoothness": self.movement_smoothness,
             "execution_persona": self.execution_persona,
             "persona_timing_bias": _persona_timing_bias(self.execution_persona),
+            "random_seed": self.random_seed,
+            "sample_records": [
+                record.metadata() for record in self.sample_records
+            ],
         }
         if self.action_context is not None:
             metadata.update(self.action_context.metadata())
@@ -212,6 +218,8 @@ class ActionVariantDecision:
     available_actions: tuple[str, ...]
     distribution: str
     randomized: bool
+    random_seed: int | None = None
+    sample_records: tuple[SampleRecord, ...] = ()
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -219,6 +227,10 @@ class ActionVariantDecision:
             "available_action_variants": list(self.available_actions),
             "action_variant_distribution": self.distribution,
             "action_variant_randomized": self.randomized,
+            "random_seed": self.random_seed,
+            "sample_records": [
+                record.metadata() for record in self.sample_records
+            ],
         }
 
 
@@ -245,6 +257,7 @@ class ExecutionTimingController:
         )
 
     def select_action_variant(self, step: TaskStep) -> ActionVariantDecision:
+        sample_start = self._sampler.sample_count
         available_actions = _available_action_variants(step)
         randomized = self._profile.enabled and len(available_actions) > 1
         selected_index = 0
@@ -259,6 +272,8 @@ class ExecutionTimingController:
             available_actions=available_actions,
             distribution=self._profile.action_variant_distribution,
             randomized=randomized,
+            random_seed=self._sampler.seed,
+            sample_records=self._sampler.records_since(sample_start),
         )
 
     def _sample(
@@ -268,6 +283,7 @@ class ExecutionTimingController:
         context: ActionTimingContext | None,
         klm_operators: tuple[KLMOperator, ...] | None = None,
     ) -> TimingDecision:
+        sample_start = self._sampler.sample_count
         if klm_operators is None:
             klm_operators = self._klm_operators_for_action(context)
         lower, upper = bounds
@@ -283,6 +299,8 @@ class ExecutionTimingController:
                 execution_persona=self._profile.persona,
                 action_context=context,
                 klm_operators=klm_operators,
+                random_seed=self._sampler.seed,
+                sample_records=self._sampler.records_since(sample_start),
             )
 
         hesitation_applied = phase == "action" and self._sampler.probability(
@@ -323,6 +341,8 @@ class ExecutionTimingController:
             execution_persona=self._profile.persona,
             action_context=context,
             klm_operators=klm_operators,
+            random_seed=self._sampler.seed,
+            sample_records=self._sampler.records_since(sample_start),
         )
 
     def _klm_operators_for_action(

@@ -72,7 +72,7 @@ evasion, or pretending to be a person where automation is not allowed.
   action variants.
 - [x] Reject profiles whose entropy budget could exceed timeout, max-step, or
   retry constraints.
-- [ ] Record every sampled value and random seed in trace metadata.
+- [x] Record every sampled value and random seed in trace metadata.
 - [ ] Add tests proving repeated seeded runs are reproducible and unseeded runs
   remain inside safety bounds.
 

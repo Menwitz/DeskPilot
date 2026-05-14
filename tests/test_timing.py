@@ -192,6 +192,16 @@ def test_distribution_choices_affect_action_and_retry_sampling() -> None:
     assert 0.1 <= center_retry.delay_seconds <= 0.9
     assert uniform_action.delay_seconds != center_action.delay_seconds
     assert uniform_retry.delay_seconds != center_retry.delay_seconds
+    assert center_action.metadata()["random_seed"] == 123
+    action_samples = cast(
+        list[dict[str, object]],
+        center_action.metadata()["sample_records"],
+    )
+    assert [sample["sample_label"] for sample in action_samples] == [
+        "timing.hesitation",
+        "timing.action.fraction.center_a",
+        "timing.action.fraction.center_b",
+    ]
 
 
 def test_action_variant_decision_uses_configured_distribution() -> None:
@@ -215,6 +225,12 @@ def test_action_variant_decision_uses_configured_distribution() -> None:
     assert decision.selected_action == "click_uia"
     assert decision.available_actions == ("click_text", "click_uia")
     assert decision.metadata()["action_variant_randomized"] is True
+    assert decision.metadata()["random_seed"] == 2
+    variant_samples = cast(
+        list[dict[str, object]],
+        decision.metadata()["sample_records"],
+    )
+    assert len(variant_samples) == 1
 
 
 def test_klm_operators_capture_keying_pointing_and_homing() -> None:

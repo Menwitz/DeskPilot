@@ -12,7 +12,7 @@ from typing import Any, Literal, Protocol
 
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.perception import ElementCandidate
-from desktop_agent.sampling import SeededSampler
+from desktop_agent.sampling import SampleRecord, SeededSampler
 from desktop_agent.screen import (
     Bounds,
     ScreenObservation,
@@ -164,6 +164,8 @@ class MovementPlan:
     overshoot_applied: bool = False
     overshoot_point: tuple[int, int] | None = None
     settle_duration_seconds: float = 0.0
+    random_seed: int | None = None
+    sample_records: tuple[SampleRecord, ...] = ()
 
     @property
     def step_delay_seconds(self) -> float:
@@ -276,6 +278,7 @@ class SmoothMovementPlanner:
         end: tuple[int, int],
         target_size_pixels: tuple[float, float] | None = None,
     ) -> MovementPlan:
+        sample_start = self._sampler.sample_count
         estimate = self._timing_model.estimate(
             PointerTimingContext(
                 start=start,
@@ -311,6 +314,8 @@ class SmoothMovementPlanner:
                 duration_seconds=duration,
                 timing_estimate=estimate,
                 settle_duration_seconds=settle_duration,
+                random_seed=self._sampler.seed,
+                sample_records=self._sampler.records_since(sample_start),
             )
 
         overshoot_point = self._overshoot_point(start, end, target_size_pixels)
@@ -328,6 +333,8 @@ class SmoothMovementPlanner:
             overshoot_applied=overshoot_point is not None,
             overshoot_point=overshoot_point,
             settle_duration_seconds=settle_duration,
+            random_seed=self._sampler.seed,
+            sample_records=self._sampler.records_since(sample_start),
         )
 
     def _sample_seconds(self, label: str, bounds: tuple[float, float]) -> float:
@@ -523,6 +530,10 @@ class DesktopActuator(Actuator):
             settle_duration_seconds=(
                 plan.settle_duration_seconds + drag_plan.settle_duration_seconds
             ),
+            random_seed=drag_plan.random_seed
+            if drag_plan.random_seed is not None
+            else plan.random_seed,
+            sample_records=plan.sample_records + drag_plan.sample_records,
         )
 
     def scroll(
@@ -896,6 +907,8 @@ def _input_metadata(
         if plan.overshoot_point
         else None,
         "settle_duration_seconds": plan.settle_duration_seconds,
+        "random_seed": plan.random_seed,
+        "sample_records": [record.metadata() for record in plan.sample_records],
         "candidate_id": target.id if target else None,
     }
     if plan.timing_estimate is not None:
