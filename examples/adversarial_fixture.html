@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DeskPilot Adversarial Fixture</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 32px;
+        color: #172026;
+        background: #f6f8fb;
+      }
+
+      main {
+        max-width: 760px;
+      }
+
+      section {
+        margin-block: 24px;
+        padding: 20px;
+        border: 1px solid #d8dee8;
+        border-radius: 8px;
+        background: white;
+      }
+
+      button,
+      input {
+        min-height: 40px;
+        padding: 8px 12px;
+        font: inherit;
+      }
+
+      .moving-target {
+        position: relative;
+        animation: slide-target 2.4s ease-in-out infinite alternate;
+      }
+
+      .delayed-ready {
+        display: none;
+        margin-top: 12px;
+        font-weight: 700;
+      }
+
+      body.ready .delayed-ready {
+        display: block;
+      }
+
+      @keyframes slide-target {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(160px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>DeskPilot Adversarial Fixture</h1>
+
+      <section aria-label="Duplicated controls">
+        <h2>Duplicated Controls</h2>
+        <button type="button" disabled>Continue</button>
+        <button id="primary-continue" type="button">Continue</button>
+        <p id="continue-status" role="status">No duplicate target selected</p>
+      </section>
+
+      <section aria-label="Delayed control">
+        <h2>Delayed Control</h2>
+        <button id="delayed-submit" type="button" disabled>
+          Delayed Submit
+        </button>
+        <p class="delayed-ready" role="status">Delayed control ready</p>
+      </section>
+
+      <section aria-label="Moving control">
+        <h2>Moving Control</h2>
+        <button id="moving-target" class="moving-target" type="button">
+          Moving Target
+        </button>
+        <p id="moving-status" role="status">Moving target not clicked</p>
+      </section>
+    </main>
+
+    <script>
+      const delayedSubmit = document.querySelector("#delayed-submit");
+      const continueStatus = document.querySelector("#continue-status");
+      const movingStatus = document.querySelector("#moving-status");
+
+      document.querySelector("#primary-continue").addEventListener("click", () => {
+        continueStatus.textContent = "Primary continue clicked";
+      });
+
+      document.querySelector("#moving-target").addEventListener("click", () => {
+        movingStatus.textContent = "Moving target clicked";
+      });
+
+      setTimeout(() => {
+        document.body.classList.add("ready");
+        delayedSubmit.disabled = false;
+      }, 1200);
+    </script>
+  </body>
+</html>

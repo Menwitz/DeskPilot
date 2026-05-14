@@ -18,7 +18,9 @@ The source of truth is `desktop_agent.benchmarks`. Each benchmark task declares:
 ## Built-In Suites
 
 - `browser-fixture-suite` uses `examples/browser-task.yaml` and
-  `examples/browser_fixture.html`.
+  `examples/browser_fixture.html`, plus `examples/adversarial-task.yaml` and
+  `examples/adversarial_fixture.html` for delayed, disabled, duplicated, and
+  moving controls.
 - `native-windows-fixture-suite` uses `examples/native-task.yaml` and
   `examples/native_fixture.py`.
 - `mixed-fixture-suite` uses `examples/mixed-task.yaml` plus both fixture files.

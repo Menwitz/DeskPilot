@@ -33,7 +33,7 @@ evasion, or pretending to be a person where automation is not allowed.
   count, ambiguity rate, recovery rate, and operator intervention rate.
 - [x] Add run-to-run variance reports so timing and recovery behavior can be
   evaluated instead of guessed.
-- [ ] Add a fixture app with intentionally moving, delayed, disabled, and
+- [x] Add a fixture app with intentionally moving, delayed, disabled, and
   duplicated controls.
 - [ ] Add acceptance thresholds for each benchmark task before behavior is
   considered an improvement.

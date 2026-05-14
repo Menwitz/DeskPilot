@@ -98,6 +98,22 @@ DEFAULT_BENCHMARK_SUITES: tuple[BenchmarkSuite, ...] = (
                     " scroll recovery, verification, and final report data."
                 ),
             ),
+            BenchmarkTaskSpec(
+                id="adversarial-fixture-demo",
+                name="Adversarial browser fixture completion",
+                task_path=Path("examples/adversarial-task.yaml"),
+                fixture_paths=(Path("examples/adversarial_fixture.html"),),
+                allowed_windows=("DeskPilot Adversarial Fixture",),
+                pipeline_modes=("dry_run", "run"),
+                deep_search_sources=("uia", "ocr", "image", "unknown"),
+                required_trace_phases=TRACE_MONITORING_PHASES,
+                required_report_fields=REPORT_FIELDS,
+                required_metrics=BENCHMARK_METRICS,
+                description=(
+                    "Exercises duplicated labels, a disabled delayed control,"
+                    " and a moving target with traceable candidate selection."
+                ),
+            ),
         ),
     ),
     BenchmarkSuite(

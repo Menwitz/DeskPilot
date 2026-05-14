@@ -1,0 +1,28 @@
+name: adversarial-fixture-demo
+allowed_windows:
+  - DeskPilot Adversarial Fixture
+timeout_seconds: 120
+steps:
+  - id: wait-for-delayed-control
+    action: wait_for
+    verify:
+      type: visible_text
+      text: Delayed control ready
+    timeout_seconds: 10
+  - id: click-primary-continue
+    action: click_text
+    target: Continue
+    region:
+      x: 0
+      y: 0
+      width: 760
+      height: 260
+    verify:
+      type: visible_text
+      text: Primary continue clicked
+  - id: click-moving-target
+    action: click_text
+    target: Moving Target
+    verify:
+      type: visible_text
+      text: Moving target clicked
