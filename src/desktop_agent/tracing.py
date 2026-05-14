@@ -383,6 +383,12 @@ def _event_markdown_suffix(event: TraceEvent) -> str:
     scroll_step_count = event.metadata.get("scroll_step_count")
     if scroll_cadence_applied is True and isinstance(scroll_step_count, int):
         details.append(f"scroll cadence {scroll_step_count} step(s)")
+    actuation_guard = event.metadata.get("actuation_guard")
+    if event.metadata.get("input_blocked") is True and isinstance(
+        actuation_guard,
+        str,
+    ):
+        details.append(f"input blocked by {actuation_guard}")
     if not details:
         return ""
     return " - " + "; ".join(details)

@@ -71,13 +71,17 @@ the emitted scroll steps and interval values.
 The execution engine checks task safety before calling the actuator. The
 actuator also re-checks `RuntimeConfig.allowed_windows` through the backend when
 that config field is present. If the active window does not match, no input is
-sent and the action returns a failed result.
+sent and the action returns a failed result. Real actuation also applies a final
+step-region guard for targeted click and scroll actions, and `create_platform_actuator`
+can receive the same emergency-stop monitor used by the planner so the input
+adapter blocks before desktop input when the stop chord is active.
 
 ## Testing
 
 `FakeInputBackend` records input events without moving the real mouse or sending
 keys. Unit tests cover coordinate conversion, clicks, typing, key chords, drag,
-scroll, movement planning, and active-window blocking.
+scroll, movement planning, active-window blocking, region blocking, and final
+emergency-stop blocking.
 
 ## Platform Support
 

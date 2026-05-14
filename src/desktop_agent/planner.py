@@ -757,11 +757,7 @@ class ExecutionEngine:
                 )
 
             last_message = verification.message
-            last_failure_category = (
-                "actuation_failure"
-                if not action_result.success
-                else "verification_failure"
-            )
+            last_failure_category = _action_failure_category(action_result)
             if attempt < total_attempts:
                 recovery_observation, recovery_candidates = (
                     self._recovery_observation(
@@ -1359,6 +1355,21 @@ def _verification_step(step: TaskStep) -> TaskStep:
         image=step.verify.image,
         region=step.region,
         category="verification",
+    )
+
+
+def _action_failure_category(action_result: ActionResult) -> str:
+    if action_result.success:
+        return "verification_failure"
+    if _actuation_guard_blocked(action_result):
+        return "safety_stop"
+    return "actuation_failure"
+
+
+def _actuation_guard_blocked(action_result: ActionResult) -> bool:
+    return (
+        action_result.metadata.get("input_blocked") is True
+        and isinstance(action_result.metadata.get("actuation_guard"), str)
     )
 
 

@@ -103,7 +103,9 @@ events. Current categories distinguish `perception_failure`,
 category values. The Markdown report prints the category beside failed steps.
 Markdown event rows include compact decision details for recovery paths,
 ambiguity gates, and timing delays so timing, ambiguity, recovery, and safety
-stops can be reviewed without opening the JSON report.
+stops can be reviewed without opening the JSON report. Final actuator guard
+failures include `input_blocked` and `actuation_guard` metadata, and the
+Markdown report prints which guard blocked input.
 After target selection, the planner emits `ui_state_snapshot` with visible
 controls, the selected candidate, confidence and fusion scores, and blocked
 candidate reasons such as disabled, not visible, below confidence threshold,

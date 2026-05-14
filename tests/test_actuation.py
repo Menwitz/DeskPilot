@@ -9,6 +9,7 @@ from desktop_agent.actuation import (
 )
 from desktop_agent.config import ExecutionProfile, RuntimeConfig
 from desktop_agent.perception import ElementCandidate
+from desktop_agent.safety import StaticEmergencyStopMonitor
 from desktop_agent.screen import Bounds, MonitorInfo, ScreenObservation
 from desktop_agent.task_dsl import TaskRegion, TaskStep
 
@@ -267,6 +268,64 @@ def test_desktop_actuator_blocks_disallowed_active_window() -> None:
 
     assert result.success is False
     assert "allowed_windows" in result.message
+    assert result.metadata["actuation_guard"] == "active_window"
+    assert backend.events == []
+
+
+def test_desktop_actuator_blocks_target_outside_step_region() -> None:
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    actuator = DesktopActuator(backend, _instant_profile())
+    target = ElementCandidate(
+        id="outside-region",
+        source="uia",
+        label="Submit",
+        bounds=Bounds(x=180, y=20, width=30, height=10),
+        confidence=0.9,
+    )
+
+    result = actuator.execute(
+        TaskStep(
+            id="click-submit",
+            action="click_text",
+            target="Submit",
+            region=TaskRegion(x=0, y=0, width=100, height=100),
+        ),
+        target,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    assert result.success is False
+    assert "step region" in result.message
+    assert result.metadata["actuation_guard"] == "allowed_region"
+    assert backend.events == []
+
+
+def test_desktop_actuator_blocks_emergency_stop_before_input() -> None:
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    actuator = DesktopActuator(
+        backend,
+        _instant_profile(),
+        StaticEmergencyStopMonitor(triggered=True),
+    )
+    target = ElementCandidate(
+        id="target-1",
+        source="uia",
+        label="Submit",
+        bounds=Bounds(x=0, y=0, width=10, height=10),
+        confidence=0.9,
+    )
+
+    result = actuator.execute(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        target,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    assert result.success is False
+    assert result.metadata["actuation_guard"] == "emergency_stop"
+    assert result.metadata["emergency_stop_triggered"] is True
     assert backend.events == []
 
 

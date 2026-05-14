@@ -270,6 +270,16 @@ def test_file_trace_sink_renders_decision_details_in_markdown(
             },
         )
     )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="execute_action",
+            message="emergency stop requested before desktop input",
+            metadata={
+                "input_blocked": True,
+                "actuation_guard": "emergency_stop",
+            },
+        )
+    )
 
     report = trace_sink.write_final_report("failed")
 
@@ -279,5 +289,6 @@ def test_file_trace_sink_renders_decision_details_in_markdown(
     assert "delay 0.200s" in final_report
     assert "keyboard cadence 2 interval(s)" in final_report
     assert "scroll cadence 3 step(s)" in final_report
+    assert "input blocked by emergency_stop" in final_report
     assert "confidence_or_ambiguity_gate" in final_report
     assert "classify missed_target -> retry" in final_report

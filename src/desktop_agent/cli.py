@@ -158,6 +158,11 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
         cli_overrides=_cli_overrides_from_args(args),
     )
     trace_sink = FileTraceSink()
+    emergency_stop_monitor = (
+        NoopEmergencyStopMonitor()
+        if dry_run
+        else create_platform_emergency_stop_monitor()
+    )
     engine = ExecutionEngine(
         config_loader=StaticConfigLoader(config),
         task_loader=StaticTaskLoader(task),
@@ -171,10 +176,9 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
         if dry_run
         else create_platform_actuator(
             actuation_profile_from_runtime_config(config),
+            emergency_stop_monitor,
         ),
-        emergency_stop_monitor=create_platform_emergency_stop_monitor()
-        if not dry_run
-        else NoopEmergencyStopMonitor(),
+        emergency_stop_monitor=emergency_stop_monitor,
     )
     report = engine.run(args.task_yaml, args.config)
     _print_report(report, verbose=args.verbose)

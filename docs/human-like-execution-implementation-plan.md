@@ -141,7 +141,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Wire `movement_smoothness` into real pointer actuation adapters.
 - [x] Add keyboard cadence profiles for text entry without changing typed text.
 - [x] Add scroll cadence profiles for long pages and lists.
-- [ ] Ensure all real actuation checks active window, allowed region, and
+- [x] Ensure all real actuation checks active window, allowed region, and
   emergency stop before sending input.
 - [ ] Add Windows smoke tests on an unlocked owned desktop session.
 

@@ -20,9 +20,13 @@ evasion, credential abuse, or abusive third-party automation.
 
 ## Safety Controls Planned For v1
 
-- Active-window allowlist checks before every action.
+- Active-window allowlist checks before every action, with a final actuator
+  re-check before real input is sent.
 - Dry-run mode that validates and plans without moving the mouse.
-- Emergency stop hotkey polling on Windows.
+- Emergency stop hotkey polling on Windows, shared by the planner and real
+  actuator boundary.
+- Final step-region blocking for targeted click and scroll actions before real
+  input is sent.
 - Maximum runtime, maximum steps, and per-step retry limits.
 - Confidence thresholds for OCR, image, and UIA candidate selection.
 - Failure reports that explain why a task stopped.
@@ -45,8 +49,9 @@ services.
 
 `emergency_stop_hotkey` defaults to `ctrl+alt+esc`. On Windows the planner polls
 the configured key chord between bounded actions and writes an
-`emergency_stopped` report when it is pressed. Unsupported platforms use a safe
-no-op monitor until their input adapters exist.
+`emergency_stopped` report when it is pressed. Real desktop actuation receives
+the same monitor and blocks before sending input if the stop chord is active.
+Unsupported platforms use a safe no-op monitor until their input adapters exist.
 
 ## Human-Like Execution Profile Boundary
 

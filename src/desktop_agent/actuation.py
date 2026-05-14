@@ -25,6 +25,7 @@ MouseButton = Literal["left", "right", "middle"]
 
 _CLICK_ACTIONS = {"click_text", "click_image", "click_uia"}
 _PASSIVE_ACTIONS = {"wait_for", "assert_visible", "branch_if_visible"}
+_REGION_GUARDED_ACTIONS = _CLICK_ACTIONS | {"scroll", "scroll_until"}
 _DEFAULT_SCROLL_CLICKS = -3
 
 
@@ -285,6 +286,12 @@ class InputBackend(Protocol):
     def sleep(self, seconds: float) -> None: ...
 
 
+class EmergencyStopChecker(Protocol):
+    """Optional final emergency-stop guard checked by real input adapters."""
+
+    def is_triggered(self, config: RuntimeConfig) -> bool: ...
+
+
 class DryRunActuator(Actuator):
     """Adapter used by tests and dry-run flows where no input is sent."""
 
@@ -491,9 +498,11 @@ class DesktopActuator(Actuator):
         self,
         backend: InputBackend,
         profile: ActuationProfile | None = None,
+        emergency_stop_monitor: EmergencyStopChecker | None = None,
     ) -> None:
         self._profile = profile or ActuationProfile()
         self._backend = backend
+        self._emergency_stop_monitor = emergency_stop_monitor
         self._movement_planner = SmoothMovementPlanner(self._profile)
         self._keyboard_sampler = SeededSampler(self._profile.random_seed)
         self._scroll_sampler = SeededSampler(self._profile.random_seed)
@@ -506,6 +515,12 @@ class DesktopActuator(Actuator):
         config: RuntimeConfig,
     ) -> ActionResult:
         blocked = self._blocked_by_active_window(config)
+        if blocked is not None:
+            return blocked
+        blocked = self._blocked_by_allowed_region(step, target)
+        if blocked is not None:
+            return blocked
+        blocked = self._blocked_by_emergency_stop(config)
         if blocked is not None:
             return blocked
 
@@ -794,8 +809,50 @@ class DesktopActuator(Actuator):
             False,
             "active window is outside the configured allowed_windows",
             {
+                "input_blocked": True,
+                "actuation_guard": "active_window",
                 "active_window_title": active_title,
                 "allowed_windows": list(config.allowed_windows),
+            },
+        )
+
+    def _blocked_by_allowed_region(
+        self,
+        step: TaskStep,
+        target: ElementCandidate | None,
+    ) -> ActionResult | None:
+        if (
+            step.region is None
+            or target is None
+            or step.action not in _REGION_GUARDED_ACTIONS
+            or _bounds_center_inside_region(target.bounds, step.region)
+        ):
+            return None
+        return ActionResult(
+            False,
+            "target is outside the configured step region",
+            {
+                "input_blocked": True,
+                "actuation_guard": "allowed_region",
+                "candidate_id": target.id,
+                "candidate_center": list(target.bounds.center),
+                "allowed_region": _region_metadata(step.region),
+            },
+        )
+
+    def _blocked_by_emergency_stop(self, config: RuntimeConfig) -> ActionResult | None:
+        if (
+            self._emergency_stop_monitor is None
+            or not self._emergency_stop_monitor.is_triggered(config)
+        ):
+            return None
+        return ActionResult(
+            False,
+            "emergency stop requested before desktop input",
+            {
+                "input_blocked": True,
+                "actuation_guard": "emergency_stop",
+                "emergency_stop_triggered": True,
             },
         )
 
@@ -938,10 +995,11 @@ class ActuationError(RuntimeError):
 
 def create_platform_actuator(
     profile: ActuationProfile | None = None,
+    emergency_stop_monitor: EmergencyStopChecker | None = None,
 ) -> Actuator:
     if sys.platform != "win32":
         return UnavailableActuator()
-    return DesktopActuator(WindowsInputBackend(), profile)
+    return DesktopActuator(WindowsInputBackend(), profile, emergency_stop_monitor)
 
 
 def actuation_profile_from_runtime_config(
@@ -1041,6 +1099,23 @@ def _region_center(
 ) -> tuple[int, int]:
     bounds = Bounds(region.x, region.y, region.width, region.height)
     return _bounds_center(bounds, observation)
+
+
+def _bounds_center_inside_region(bounds: Bounds, region: TaskRegion) -> bool:
+    center_x, center_y = bounds.center
+    return (
+        region.x <= center_x <= region.x + region.width
+        and region.y <= center_y <= region.y + region.height
+    )
+
+
+def _region_metadata(region: TaskRegion) -> dict[str, int]:
+    return {
+        "x": region.x,
+        "y": region.y,
+        "width": region.width,
+        "height": region.height,
+    }
 
 
 def _input_metadata(

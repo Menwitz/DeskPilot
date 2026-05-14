@@ -9,7 +9,7 @@ from desktop_agent.perception import (
     PerceptionEngine,
 )
 from desktop_agent.planner import ExecutionEngine
-from desktop_agent.safety import LocalSafetyPolicy
+from desktop_agent.safety import LocalSafetyPolicy, StaticEmergencyStopMonitor
 from desktop_agent.screen import Bounds, MonitorInfo, ScreenObservation
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
@@ -241,6 +241,38 @@ def test_pipeline_records_scroll_cadence_in_execute_action_monitoring() -> None:
     assert {"detect_candidates", "execute_action"} <= phases
     assert execute_action.metadata["scroll_cadence_applied"] is True
     assert execute_action.metadata["scroll_step_count"] == 3
+
+
+def test_pipeline_reports_final_actuation_guard_before_input() -> None:
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    task = TaskDefinition(
+        name="actuation guard pipeline",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(id="click-submit", action="click_text", target="Submit"),
+        ),
+    )
+    engine = _engine(
+        task,
+        screen_observer=SequenceScreenObserver((_observation("guard.png"),)),
+        actuator=DesktopActuator(
+            backend,
+            _instant_profile(),
+            StaticEmergencyStopMonitor(triggered=True),
+        ),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    execute_action = next(
+        event for event in report.events if event.phase == "execute_action"
+    )
+    assert report.status == "failed"
+    assert backend.events == []
+    assert report.steps[0].metadata["failure_category"] == "safety_stop"
+    assert execute_action.metadata["input_blocked"] is True
+    assert execute_action.metadata["actuation_guard"] == "emergency_stop"
 
 
 def _engine(
