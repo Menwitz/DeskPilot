@@ -55,6 +55,9 @@ observation and records `recover_candidates`, so deep-search output is visible
 in the trace. Recovery events also include `recovery_chosen_action`,
 `recovery_path`, `recovery_path_summary`, and `reobserve_before_retry`; the
 Markdown report prints the path summary on recovery rows.
+Retry timing events and recovery events include bounded-backoff metadata:
+`retry_backoff_strategy`, `retry_index`, `retry_budget`,
+`retry_backoff_fraction`, and `retry_limit_respected`.
 
 ## Replay
 

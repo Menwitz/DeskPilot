@@ -296,6 +296,38 @@ def test_retry_timing_reports_system_wait_operator() -> None:
     assert 0.3 <= cast(float, metadata["delay_seconds"]) <= 0.4
 
 
+def test_retry_backoff_segments_stay_inside_bounds_and_retry_budget() -> None:
+    controller = ExecutionTimingController(
+        ExecutionProfile(
+            enabled=True,
+            retry_delay_seconds=(0.2, 1.0),
+            retry_delay_distribution="uniform",
+            random_seed=123,
+        ),
+    )
+
+    decisions = [
+        controller.before_retry(
+            retry_index=retry_index,
+            retry_budget=3,
+            backoff_strategy="bounded_exponential",
+        )
+        for retry_index in (1, 2, 3)
+    ]
+    metadata = [decision.metadata() for decision in decisions]
+    fractions = [
+        cast(float, item["retry_backoff_fraction"])
+        for item in metadata
+    ]
+
+    assert all(0.2 <= decision.delay_seconds <= 1.0 for decision in decisions)
+    assert fractions == sorted(fractions)
+    assert metadata[0]["retry_backoff_strategy"] == "bounded_exponential"
+    assert metadata[2]["retry_index"] == 3
+    assert metadata[2]["retry_budget"] == 3
+    assert metadata[2]["retry_limit_respected"] is True
+
+
 def test_step_timing_budget_accounts_for_action_and_retry_waits() -> None:
     budget = estimate_step_timing_budget(
         TaskStep(

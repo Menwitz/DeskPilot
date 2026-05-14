@@ -419,6 +419,11 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
     retry_operator_counts = timing_events[1].metadata["klm_operator_counts"]
     assert isinstance(retry_operator_counts, dict)
     assert retry_operator_counts["system_wait"] == 1
+    assert timing_events[1].metadata["retry_backoff_strategy"] == (
+        "bounded_exponential"
+    )
+    assert timing_events[1].metadata["retry_index"] == 1
+    assert timing_events[1].metadata["retry_budget"] == 1
     assert reobserve_event.metadata["attempt"] == 1
     assert reobserve_event.metadata["next_attempt"] == 2
     assert recover_candidates_event.metadata["failed_attempt"] == 1
@@ -432,6 +437,11 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
     assert recover_event.metadata["recovery_candidate_count"] == 1
     assert recover_event.metadata["recovery_reason"] == "transient_loading"
     assert recover_event.metadata["recovery_policy"] == "wait_for_transient_loading"
+    assert recover_event.metadata["recovery_backoff_strategy"] == (
+        "bounded_exponential"
+    )
+    assert recover_event.metadata["retry_backoff_strategy"] == "bounded_exponential"
+    assert recover_event.metadata["retry_limit_respected"] is True
     assert recover_event.metadata["recovery_chosen_action"] == "wait_for_loading"
     assert recover_event.metadata["recovery_actions"] == [
         "wait_for_loading",

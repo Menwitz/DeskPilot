@@ -40,6 +40,7 @@ from desktop_agent.task_dsl import (
 )
 from desktop_agent.timing import (
     ExecutionTimingController,
+    TimingDecision,
     build_action_timing_context,
     estimate_step_timing_budget,
 )
@@ -567,7 +568,6 @@ class ExecutionEngine:
 
             last_message = verification.message
             if attempt < total_attempts:
-                retry_timing = timing_controller.before_retry()
                 recovery_observation, recovery_candidates = (
                     self._recovery_observation(
                         step,
@@ -582,6 +582,11 @@ class ExecutionEngine:
                     action_result,
                     verification.passed,
                 )
+                retry_timing = timing_controller.before_retry(
+                    retry_index=attempt,
+                    retry_budget=retry_budget,
+                    backoff_strategy=recovery_policy.backoff_strategy,
+                )
                 recover_metadata = _recovery_metadata(
                     step,
                     recovery_policy,
@@ -592,6 +597,7 @@ class ExecutionEngine:
                     retry_reason=last_message,
                     retry_delay_seconds=retry_timing.delay_seconds,
                 )
+                recover_metadata.update(_retry_backoff_metadata(retry_timing))
                 self._record(
                     "recover",
                     "retrying step",
@@ -1125,6 +1131,22 @@ def _recovery_path_summary(path: list[dict[str, object]]) -> str:
         elif stage == "retry_attempt":
             parts.append(f"retry attempt {item['attempt']}")
     return " -> ".join(parts)
+
+
+def _retry_backoff_metadata(decision: TimingDecision) -> dict[str, object]:
+    decision_metadata = decision.metadata()
+    backoff_keys = {
+        "retry_backoff_strategy",
+        "retry_index",
+        "retry_budget",
+        "retry_backoff_fraction",
+        "retry_limit_respected",
+    }
+    return {
+        key: decision_metadata[key]
+        for key in backoff_keys
+        if key in decision_metadata
+    }
 
 
 def _task_entropy_metadata(task: TaskDefinition) -> dict[str, object]:

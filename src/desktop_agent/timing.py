@@ -63,6 +63,9 @@ MENTAL_OPERATOR_COUNT_BY_CATEGORY: dict[str, int] = {
     "verification": 1,
     "submission": 2,
 }
+BACKOFF_STRATEGIES: frozenset[str] = frozenset(
+    {"bounded_linear", "bounded_exponential"}
+)
 
 
 @dataclass(frozen=True)
@@ -129,6 +132,38 @@ class ActionTimingContext:
 
 
 @dataclass(frozen=True)
+class RetryBackoffContext:
+    """Retry index and strategy used to keep retry waits within safe bounds."""
+
+    retry_index: int
+    retry_budget: int
+    strategy: str
+
+    def normalized(self) -> RetryBackoffContext:
+        retry_budget = max(self.retry_budget, 1)
+        retry_index = min(max(self.retry_index, 1), retry_budget)
+        strategy = (
+            self.strategy
+            if self.strategy in BACKOFF_STRATEGIES
+            else "bounded_linear"
+        )
+        return RetryBackoffContext(
+            retry_index=retry_index,
+            retry_budget=retry_budget,
+            strategy=strategy,
+        )
+
+    def metadata(self, fraction: float) -> dict[str, object]:
+        return {
+            "retry_backoff_strategy": self.strategy,
+            "retry_index": self.retry_index,
+            "retry_budget": self.retry_budget,
+            "retry_backoff_fraction": fraction,
+            "retry_limit_respected": self.retry_index <= self.retry_budget,
+        }
+
+
+@dataclass(frozen=True)
 class TimingDecision:
     """A traceable delay decision made before an action or retry."""
 
@@ -141,6 +176,8 @@ class TimingDecision:
     reason: str
     execution_persona: str = "normal"
     action_context: ActionTimingContext | None = None
+    retry_backoff_context: RetryBackoffContext | None = None
+    retry_backoff_fraction: float | None = None
     klm_operators: tuple[KLMOperator, ...] = ()
     random_seed: int | None = None
     sample_records: tuple[SampleRecord, ...] = ()
@@ -165,6 +202,13 @@ class TimingDecision:
         }
         if self.action_context is not None:
             metadata.update(self.action_context.metadata())
+        if (
+            self.retry_backoff_context is not None
+            and self.retry_backoff_fraction is not None
+        ):
+            metadata.update(
+                self.retry_backoff_context.metadata(self.retry_backoff_fraction),
+            )
         if self.klm_operators:
             metadata["klm_operators"] = [
                 operator.metadata() for operator in self.klm_operators
@@ -248,12 +292,26 @@ class ExecutionTimingController:
     ) -> TimingDecision:
         return self._sample("action", self._profile.action_delay_seconds, context)
 
-    def before_retry(self) -> TimingDecision:
+    def before_retry(
+        self,
+        *,
+        retry_index: int | None = None,
+        retry_budget: int | None = None,
+        backoff_strategy: str = "bounded_linear",
+    ) -> TimingDecision:
+        retry_backoff_context = None
+        if retry_index is not None and retry_budget is not None:
+            retry_backoff_context = RetryBackoffContext(
+                retry_index=retry_index,
+                retry_budget=retry_budget,
+                strategy=backoff_strategy,
+            ).normalized()
         return self._sample(
             "retry",
             self._profile.retry_delay_seconds,
             None,
             (KLMOperator("system_wait", 1, KLM_OPERATOR_SECONDS["system_wait"]),),
+            retry_backoff_context=retry_backoff_context,
         )
 
     def select_action_variant(self, step: TaskStep) -> ActionVariantDecision:
@@ -282,6 +340,7 @@ class ExecutionTimingController:
         bounds: tuple[float, float],
         context: ActionTimingContext | None,
         klm_operators: tuple[KLMOperator, ...] | None = None,
+        retry_backoff_context: RetryBackoffContext | None = None,
     ) -> TimingDecision:
         sample_start = self._sampler.sample_count
         if klm_operators is None:
@@ -298,6 +357,10 @@ class ExecutionTimingController:
                 reason="execution profile disabled",
                 execution_persona=self._profile.persona,
                 action_context=context,
+                retry_backoff_context=retry_backoff_context,
+                retry_backoff_fraction=0.0
+                if retry_backoff_context is not None
+                else None,
                 klm_operators=klm_operators,
                 random_seed=self._sampler.seed,
                 sample_records=self._sampler.records_since(sample_start),
@@ -327,6 +390,13 @@ class ExecutionTimingController:
         timing_fraction = _clamp(
             timing_fraction + _persona_timing_bias(self._profile.persona),
         )
+        retry_backoff_fraction = None
+        if phase == "retry" and retry_backoff_context is not None:
+            retry_backoff_fraction = _retry_backoff_fraction(
+                timing_fraction,
+                retry_backoff_context,
+            )
+            timing_fraction = retry_backoff_fraction
 
         return TimingDecision(
             phase=phase,
@@ -340,6 +410,8 @@ class ExecutionTimingController:
             else f"{phase} timing decided",
             execution_persona=self._profile.persona,
             action_context=context,
+            retry_backoff_context=retry_backoff_context,
+            retry_backoff_fraction=retry_backoff_fraction,
             klm_operators=klm_operators,
             random_seed=self._sampler.seed,
             sample_records=self._sampler.records_since(sample_start),
@@ -436,6 +508,29 @@ def _retry_timing_slots(step: TaskStep, retry_budget: int) -> int:
     if step.action in {"branch_if_visible", "scroll_until", "wait_for"}:
         return 0
     return retry_budget
+
+
+def _retry_backoff_fraction(
+    sample_fraction: float,
+    context: RetryBackoffContext,
+) -> float:
+    lower_fraction, upper_fraction = _backoff_segment(context)
+    return _clamp(
+        lower_fraction + ((upper_fraction - lower_fraction) * sample_fraction),
+    )
+
+
+def _backoff_segment(context: RetryBackoffContext) -> tuple[float, float]:
+    retry_index = context.retry_index
+    retry_budget = context.retry_budget
+    if context.strategy == "bounded_exponential":
+        weights = tuple(2**index for index in range(retry_budget))
+        total = sum(weights)
+        lower = sum(weights[: retry_index - 1]) / total
+        upper = sum(weights[:retry_index]) / total
+        return lower, upper
+    width = 1 / retry_budget
+    return (retry_index - 1) * width, retry_index * width
 
 
 def _available_action_variants(step: TaskStep) -> tuple[str, ...]:

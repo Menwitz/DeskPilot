@@ -42,3 +42,5 @@ disabled controls, occluded controls, and transient loading states before
 emitting retry metadata. Failed action attempts also take a fresh read-only
 screen observation before retrying, run candidate detection against that
 observation, and attach the chosen recovery path to the trace and final report.
+Retry waits use bounded backoff from the recovery reason and are sampled within
+the configured retry delay range and retry budget.

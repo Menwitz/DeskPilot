@@ -17,12 +17,14 @@ class RecoveryPolicy:
     name: str
     reason: str
     actions: tuple[str, ...]
+    backoff_strategy: str = "bounded_linear"
 
     def metadata(self) -> dict[str, object]:
         return {
             "recovery_policy": self.name,
             "recovery_reason": self.reason,
             "recovery_actions": list(self.actions),
+            "recovery_backoff_strategy": self.backoff_strategy,
         }
 
 
@@ -75,6 +77,7 @@ RECOVERY_POLICIES: dict[str, RecoveryPolicy] = {
         name="wait_for_enabled_control",
         reason="disabled_control",
         actions=("wait_for_enabled", "reobserve_screen", "abort_with_trace"),
+        backoff_strategy="bounded_exponential",
     ),
     "occluded_control": RecoveryPolicy(
         name="recover_occluded_control",
@@ -85,6 +88,7 @@ RECOVERY_POLICIES: dict[str, RecoveryPolicy] = {
         name="wait_for_transient_loading",
         reason="transient_loading",
         actions=("wait_for_loading", "reobserve_screen", "abort_with_trace"),
+        backoff_strategy="bounded_exponential",
     ),
     "verification_failure": RecoveryPolicy(
         name="recover_verification_failure",
@@ -158,6 +162,7 @@ def constrain_recovery_policy(
             name=policy.name,
             reason=policy.reason,
             actions=allowed,
+            backoff_strategy=policy.backoff_strategy,
         ),
         rule,
     )

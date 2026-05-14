@@ -83,6 +83,10 @@ text, allowed windows, maximum steps, timeouts, or retry budgets.
   pre-action timing decision.
 - `retry_delay_seconds` sets the inclusive lower and upper bounds for retry
   pacing.
+- Retry pacing applies bounded backoff inside `retry_delay_seconds`. Recovery
+  reasons that are usually transient use exponential backoff; other retries use
+  linear backoff. Both strategies stay inside the configured retry range and
+  retry budget.
 - `action_delay_distribution`, `retry_delay_distribution`, and
   `action_variant_distribution` can be `uniform` or `center_weighted`.
   Distribution choices only affect where a sampled timing value or approved
