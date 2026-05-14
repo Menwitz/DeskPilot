@@ -138,7 +138,7 @@ evasion, or pretending to be a person where automation is not allowed.
 ## Phase 9: Real Actuation Integration
 
 - [x] Apply real elapsed waits from the timing controller before desktop input.
-- [ ] Wire `movement_smoothness` into real pointer actuation adapters.
+- [x] Wire `movement_smoothness` into real pointer actuation adapters.
 - [ ] Add keyboard cadence profiles for text entry without changing typed text.
 - [ ] Add scroll cadence profiles for long pages and lists.
 - [ ] Ensure all real actuation checks active window, allowed region, and

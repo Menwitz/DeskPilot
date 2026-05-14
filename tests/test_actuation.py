@@ -5,8 +5,9 @@ from desktop_agent.actuation import (
     FittsLawPointerTimingModel,
     PointerTimingContext,
     SmoothMovementPlanner,
+    actuation_profile_from_runtime_config,
 )
-from desktop_agent.config import RuntimeConfig
+from desktop_agent.config import ExecutionProfile, RuntimeConfig
 from desktop_agent.perception import ElementCandidate
 from desktop_agent.screen import Bounds, MonitorInfo, ScreenObservation
 from desktop_agent.task_dsl import TaskRegion, TaskStep
@@ -406,6 +407,35 @@ def test_movement_planner_uses_minimum_jerk_progression() -> None:
     assert plan.points[-1] == (120, 0)
     assert deltas[0] < max(deltas)
     assert deltas[-1] < max(deltas)
+
+
+def test_actuation_profile_uses_enabled_execution_smoothness() -> None:
+    base_profile = ActuationProfile(movement_smoothness=0.2, random_seed=4)
+    config = RuntimeConfig(
+        execution_profile=ExecutionProfile(
+            enabled=True,
+            movement_smoothness=0.9,
+        ),
+    )
+
+    profile = actuation_profile_from_runtime_config(config, base_profile)
+
+    assert profile.movement_smoothness == 0.9
+    assert profile.random_seed == 4
+
+
+def test_actuation_profile_preserves_default_when_execution_profile_disabled() -> None:
+    base_profile = ActuationProfile(movement_smoothness=0.7)
+    config = RuntimeConfig(
+        execution_profile=ExecutionProfile(
+            enabled=False,
+            movement_smoothness=0.1,
+        ),
+    )
+
+    profile = actuation_profile_from_runtime_config(config, base_profile)
+
+    assert profile.movement_smoothness == 0.7
 
 
 def test_movement_planner_applies_bounded_overshoot_correction_and_settle() -> None:

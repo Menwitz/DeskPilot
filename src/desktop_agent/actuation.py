@@ -808,6 +808,21 @@ def create_platform_actuator(
     return DesktopActuator(WindowsInputBackend(), profile)
 
 
+def actuation_profile_from_runtime_config(
+    config: RuntimeConfig,
+    base_profile: ActuationProfile | None = None,
+) -> ActuationProfile:
+    """Build the desktop actuation profile from enabled execution settings."""
+
+    profile = base_profile or ActuationProfile()
+    if not config.execution_profile.enabled:
+        return profile
+    return replace(
+        profile,
+        movement_smoothness=config.execution_profile.movement_smoothness,
+    )
+
+
 def _target_point(
     target: ElementCandidate | None,
     observation: ScreenObservation,

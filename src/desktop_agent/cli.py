@@ -8,7 +8,11 @@ from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
 
-from desktop_agent.actuation import DryRunActuator, create_platform_actuator
+from desktop_agent.actuation import (
+    DryRunActuator,
+    actuation_profile_from_runtime_config,
+    create_platform_actuator,
+)
 from desktop_agent.benchmark_runner import BenchmarkRunHarness
 from desktop_agent.computer_vision import OpenCvTemplatePerceptionEngine
 from desktop_agent.config import (
@@ -163,7 +167,11 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
         screen_observer=StaticScreenObserver(),
         perception_engine=_perception_engine_for_mode(dry_run),
         target_selector=ConfidenceTargetSelector(),
-        actuator=DryRunActuator() if dry_run else create_platform_actuator(),
+        actuator=DryRunActuator()
+        if dry_run
+        else create_platform_actuator(
+            actuation_profile_from_runtime_config(config),
+        ),
         emergency_stop_monitor=create_platform_emergency_stop_monitor()
         if not dry_run
         else NoopEmergencyStopMonitor(),

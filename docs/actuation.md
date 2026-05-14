@@ -36,6 +36,9 @@ bot-evasion behavior. All actuation randomness goes through the shared seeded
 sampler, so the same profile seed replays the same timing variation, curve
 direction, overshoot, and settle decisions in tests and diagnostics. Movement
 metadata records the seed and sample records for the sampled actuation values.
+For real desktop runs, enabled `RuntimeConfig.execution_profile.movement_smoothness`
+is copied into the platform actuation profile before the `DesktopActuator` is
+created, so the planner's configured smoothness reaches real pointer paths.
 
 Movement duration is estimated behind a local `PointerTimingModel` interface.
 The default `FittsLawPointerTimingModel` uses pointer distance and effective
