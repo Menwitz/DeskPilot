@@ -237,6 +237,57 @@ def test_pointer_path_stays_inside_allowed_monitor_bounds() -> None:
     assert all(100 <= point[1] <= 700 for point in move_points if point)
 
 
+def test_drag_pointer_path_stays_inside_allowed_window_and_monitor() -> None:
+    monitor = MonitorInfo(left=100, top=100, width=800, height=600)
+    backend = FakeInputBackend(
+        start_position=(120, 120),
+        active_window_title="DeskPilot Fixture",
+    )
+    actuator = DesktopActuator(
+        backend,
+        ActuationProfile(
+            movement_duration_seconds=(0.0, 0.0),
+            timing_variation_seconds=(0.0, 0.0),
+            movement_steps=8,
+            movement_smoothness=0.0,
+            overshoot_probability=1.0,
+            overshoot_pixels=(60.0, 60.0),
+            random_seed=3,
+        ),
+    )
+    target = ElementCandidate(
+        id="tile-1",
+        source="uia",
+        label="Tile",
+        bounds=Bounds(x=5, y=5, width=30, height=30),
+        confidence=0.9,
+    )
+    step = TaskStep(
+        id="drag-tile",
+        action="drag",
+        target="Tile",
+        region=TaskRegion(x=760, y=560, width=30, height=30),
+    )
+
+    result = actuator.execute(
+        step,
+        target,
+        ScreenObservation(monitor=monitor),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    pointer_points = [
+        event.point
+        for event in backend.events
+        if event.kind in {"move", "mouse_down", "mouse_up"}
+    ]
+    assert result.success is True
+    assert pointer_points
+    assert all(point is not None for point in pointer_points)
+    assert all(100 <= point[0] <= 900 for point in pointer_points if point)
+    assert all(100 <= point[1] <= 700 for point in pointer_points if point)
+
+
 def test_smooth_movement_planner_uses_eased_multi_point_path() -> None:
     planner = SmoothMovementPlanner(
         ActuationProfile(

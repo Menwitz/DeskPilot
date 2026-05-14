@@ -113,7 +113,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Add a regression test proving seeded timing decisions are reproducible.
 - [x] Add regression tests for real elapsed waits once desktop actuation consumes
   timing decisions.
-- [ ] Add regression tests proving pointer paths stay inside allowed window and
+- [x] Add regression tests proving pointer paths stay inside allowed window and
   monitor regions.
 - [ ] Add regression tests proving keyboard cadence never changes typed text.
 - [ ] Add regression tests proving scroll cadence stops at the intended target.
