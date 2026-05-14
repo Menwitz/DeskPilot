@@ -341,12 +341,26 @@ def _run_report_markdown(report: RunReport) -> str:
         )
     lines.extend(["", "## Events"])
     for event in report.events:
-        recovery_summary = event.metadata.get("recovery_path_summary")
-        suffix = (
-            f" - {recovery_summary}" if isinstance(recovery_summary, str) else ""
+        lines.append(
+            f"- `{event.phase}`: {event.message}{_event_markdown_suffix(event)}"
         )
-        lines.append(f"- `{event.phase}`: {event.message}{suffix}")
     return "\n".join(lines) + "\n"
+
+
+def _event_markdown_suffix(event: TraceEvent) -> str:
+    details: list[str] = []
+    recovery_summary = event.metadata.get("recovery_path_summary")
+    if isinstance(recovery_summary, str):
+        details.append(recovery_summary)
+    selection_blocked = event.metadata.get("selection_blocked")
+    if isinstance(selection_blocked, str):
+        details.append(selection_blocked)
+    delay_seconds = event.metadata.get("delay_seconds")
+    if isinstance(delay_seconds, int | float):
+        details.append(f"delay {delay_seconds:.3f}s")
+    if not details:
+        return ""
+    return " - " + "; ".join(details)
 
 
 def _json_safe(value: object) -> object:

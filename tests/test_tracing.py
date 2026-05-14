@@ -188,3 +188,59 @@ def test_file_trace_sink_includes_failure_category_in_markdown(
     assert report.trace_dir is not None
     final_report = (report.trace_dir / "final-report.md").read_text(encoding="utf-8")
     assert "[actuation_failure]" in final_report
+
+
+def test_file_trace_sink_renders_decision_details_in_markdown(
+    tmp_path: Path,
+) -> None:
+    task = TaskDefinition(
+        name="decision rendering fixture",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+    )
+    trace_sink = FileTraceSink()
+    trace_sink.prepare_run(
+        task,
+        RuntimeConfig(trace_root=tmp_path / "traces"),
+    )
+    trace_sink.record_step(
+        StepReport(
+            step_id="click-submit",
+            action="click_text",
+            status="failed",
+            attempts=1,
+            message="active window rejected",
+            metadata={"failure_category": "safety_stop"},
+        )
+    )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="execution_timing",
+            message="action timing decided",
+            metadata={"delay_seconds": 0.2},
+        )
+    )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="select_target",
+            message="no target selected",
+            metadata={"selection_blocked": "confidence_or_ambiguity_gate"},
+        )
+    )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="recover",
+            message="retrying step",
+            metadata={"recovery_path_summary": "classify missed_target -> retry"},
+        )
+    )
+
+    report = trace_sink.write_final_report("failed")
+
+    assert report.trace_dir is not None
+    final_report = (report.trace_dir / "final-report.md").read_text(encoding="utf-8")
+    assert "[safety_stop]" in final_report
+    assert "delay 0.200s" in final_report
+    assert "confidence_or_ambiguity_gate" in final_report
+    assert "classify missed_target -> retry" in final_report

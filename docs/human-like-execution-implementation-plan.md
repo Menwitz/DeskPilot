@@ -117,7 +117,7 @@ evasion, or pretending to be a person where automation is not allowed.
   monitor regions.
 - [x] Add regression tests proving keyboard cadence never changes typed text.
 - [x] Add regression tests proving scroll cadence stops at the intended target.
-- [ ] Add regression tests for trace report rendering of timing, ambiguity,
+- [x] Add regression tests for trace report rendering of timing, ambiguity,
   recovery, and safety-stop decisions.
 - [ ] Add regression tests for benchmark metric aggregation and variance
   reporting.

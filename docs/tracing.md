@@ -66,6 +66,9 @@ events. Current categories distinguish `perception_failure`,
 `selection_ambiguity`, `safety_stop`, `verification_failure`, and
 `actuation_failure`; timeout and execution-limit failures keep their own
 category values. The Markdown report prints the category beside failed steps.
+Markdown event rows include compact decision details for recovery paths,
+ambiguity gates, and timing delays so timing, ambiguity, recovery, and safety
+stops can be reviewed without opening the JSON report.
 After target selection, the planner emits `ui_state_snapshot` with visible
 controls, the selected candidate, confidence and fusion scores, and blocked
 candidate reasons such as disabled, not visible, below confidence threshold,
