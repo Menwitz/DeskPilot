@@ -2,15 +2,15 @@
 
 ## 0. Project Definition
 
-- [ ] Create a new standalone repository named normally, without `codex` in the branch or repo naming.
-- [ ] Define v1 as a Windows-first, local desktop automation framework.
-- [ ] Define the core use case as owned/internal QA and personal automation.
-- [ ] Exclude stealth automation, CAPTCHA bypass, bot-detection evasion, credential abuse, and abusive third-party automation.
-- [ ] Require v1 to run on an unlocked, logged-in Windows desktop session.
-- [ ] Keep all screenshots, OCR text, traces, and reports local by default.
-- [ ] Use Python 3.12 as the implementation language.
-- [ ] Use YAML as the v1 task authoring format.
-- [ ] Use deterministic task execution plus CV/OCR/UI Automation, with no cloud AI dependency in v1.
+- [x] Create a new standalone repository named normally, without `codex` in the branch or repo naming.
+- [x] Define v1 as a Windows-first, local desktop automation framework.
+- [x] Define the core use case as owned/internal QA and personal automation.
+- [x] Exclude stealth automation, CAPTCHA bypass, bot-detection evasion, credential abuse, and abusive third-party automation.
+- [x] Require v1 to run on an unlocked, logged-in Windows desktop session.
+- [x] Keep all screenshots, OCR text, traces, and reports local by default.
+- [x] Use Python 3.12 as the implementation language.
+- [x] Use YAML as the v1 task authoring format.
+- [x] Use deterministic task execution plus CV/OCR/UI Automation, with no cloud AI dependency in v1.
 
 ## 1. Repository Bootstrap
 
