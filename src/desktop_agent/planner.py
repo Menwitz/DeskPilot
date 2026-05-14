@@ -13,6 +13,7 @@ from desktop_agent.entropy import (
     entropy_capacity_metadata,
     validate_entropy_budget_constraints,
 )
+from desktop_agent.execution_paths import choose_execution_path
 from desktop_agent.perception import (
     ElementCandidate,
     PerceptionEngine,
@@ -583,14 +584,40 @@ class ExecutionEngine:
 
             if self.emergency_stop_monitor.is_triggered(config):
                 return self._emergency_stop_outcome(step, attempt, last_candidate_id)
+            execution_path = choose_execution_path(
+                step,
+                candidates,
+                target,
+                config,
+                attempt,
+            )
+            self._record(
+                "execution_path",
+                "execution path selected",
+                _step_metadata(step, **execution_path.metadata()),
+            )
             action_timing = timing_controller.before_action(
                 build_action_timing_context(step, target, observation),
             )
+            original_delay_seconds = action_timing.delay_seconds
+            if execution_path.fast:
+                action_timing = replace(
+                    action_timing,
+                    delay_seconds=action_timing.lower_bound_seconds,
+                    reason="fast-path action timing decided",
+                )
             if config.execution_profile.enabled:
                 metadata = action_timing.metadata()
                 metadata["step_id"] = step.id
                 metadata["step_category"] = step_category(step)
                 metadata["attempt"] = attempt
+                metadata.update(execution_path.metadata())
+                if execution_path.fast:
+                    metadata["original_delay_seconds"] = original_delay_seconds
+                    metadata["delay_reduction_seconds"] = max(
+                        original_delay_seconds - action_timing.delay_seconds,
+                        0.0,
+                    )
                 self._record("execution_timing", action_timing.reason, metadata)
             self._consume_timing_delay(action_timing)
             if self._deadline_expired(step_deadline):

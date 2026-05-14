@@ -32,6 +32,8 @@ for the repeated-run harness, monitoring, and report aggregation phases.
 The monitoring contract includes the `compile_task` phase so dependency and
 expected-state compiler checks are present before perception, deep-search, and
 actuation phases are evaluated.
+It also includes the `execution_path` phase so benchmark traces can separate
+standard actions from fast-path high-confidence segments.
 
 ## Repeated Dry-Run Harness
 

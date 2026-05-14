@@ -11,6 +11,14 @@ self-referential, or forward `depends_on` references and checks authored
 `compile_task` trace event with step order, dependency, and state-transition
 metadata for monitoring and reports.
 
+After target selection and before timing, the engine chooses an execution path.
+Stable first-attempt actions with exactly one visible, enabled, high-confidence
+target can use the `fast` path, which consumes the lower bound of the configured
+action delay. Careful persona runs, sensitive submission steps,
+confirmation-gated steps, retries, low-confidence targets, unstable candidates,
+and unsupported actions stay on the standard path. The planner still runs safety
+checks before choosing the path.
+
 ## Runtime Controls
 
 - Task timeout is the lower of `task.timeout_seconds` and

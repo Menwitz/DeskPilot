@@ -126,7 +126,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 - [x] Add a task compiler that validates step dependencies and expected UI state
   transitions before execution.
-- [ ] Add fast-path execution for stable, high-confidence task segments.
+- [x] Add fast-path execution for stable, high-confidence task segments.
 - [ ] Add careful-path execution for risky, sensitive, or low-confidence
   segments.
 - [ ] Add explicit verification checkpoints before irreversible actions.

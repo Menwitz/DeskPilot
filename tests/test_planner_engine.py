@@ -284,6 +284,55 @@ def test_execution_engine_selects_safe_action_variant() -> None:
     ]
 
 
+def test_execution_engine_fast_path_uses_lower_bound_timing() -> None:
+    clock = FakeClock()
+    task = TaskDefinition(
+        name="fast-path",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="open-menu", action="click_text", target="Menu"),),
+    )
+    trace_sink = MemoryTraceSink()
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=ExecutionProfile(
+                enabled=True,
+                action_delay_seconds=(0.2, 0.8),
+                hesitation_probability=0.0,
+                random_seed=3,
+            ),
+        ),
+        perception=SequencePerceptionEngine(
+            (_candidate_tuple("Menu", confidence=1.0),),
+        ),
+        clock=clock,
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    path_event = next(
+        event for event in report.events if event.phase == "execution_path"
+    )
+    timing_event = next(
+        event for event in report.events if event.phase == "execution_timing"
+    )
+    assert report.status == "passed"
+    assert path_event.metadata["execution_path"] == "fast"
+    assert timing_event.metadata["execution_path"] == "fast"
+    assert timing_event.metadata["delay_seconds"] == 0.2
+    original_delay = timing_event.metadata["original_delay_seconds"]
+    delay_reduction = timing_event.metadata["delay_reduction_seconds"]
+    assert isinstance(original_delay, float)
+    assert isinstance(delay_reduction, float)
+    assert original_delay > 0.2
+    assert delay_reduction > 0
+    assert timing_event.metadata["safety_checks_required"] is True
+    assert round(clock.now, 3) == 0.2
+
+
 def test_execution_engine_rejects_entropy_budget_before_observation() -> None:
     perception = SequencePerceptionEngine((_candidate_tuple("Submit"),))
     task = TaskDefinition(
@@ -743,10 +792,19 @@ def _engine(
 def _candidate_tuple(
     label: str,
     *,
+    confidence: float = 0.95,
     enabled: bool = True,
     visible: bool = True,
 ) -> tuple[ElementCandidate, ...]:
-    return (_candidate(f"candidate-{label}", label, enabled=enabled, visible=visible),)
+    return (
+        _candidate(
+            f"candidate-{label}",
+            label,
+            confidence=confidence,
+            enabled=enabled,
+            visible=visible,
+        ),
+    )
 
 
 def _candidate(
