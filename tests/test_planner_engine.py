@@ -595,6 +595,45 @@ def test_execution_engine_scroll_until_scrolls_search_region() -> None:
     assert "execute_action" in {event.phase for event in report.events}
 
 
+def test_execution_engine_scroll_cadence_stops_at_intended_target() -> None:
+    clock = FakeClock()
+    actuator = SequenceActuator((ActionResult(True, "scrolled"),))
+    task = TaskDefinition(
+        name="scroll-cadence",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="scroll",
+                action="scroll_until",
+                target="Submit",
+                retry=3,
+                region=TaskRegion(x=0, y=0, width=100, height=100),
+            ),
+        ),
+    )
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=ExecutionProfile(
+                enabled=True,
+                action_delay_seconds=(0.2, 0.2),
+            ),
+        ),
+        perception=SequencePerceptionEngine(((), _candidate_tuple("Submit"))),
+        actuator=actuator,
+        clock=clock,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    assert report.status == "passed"
+    assert report.steps[0].attempts == 2
+    assert actuator.calls == 1
+    assert round(clock.now, 2) == 0.2
+
+
 def test_execution_engine_branch_if_visible_jumps_to_failure_target() -> None:
     task = TaskDefinition(
         name="branch",
