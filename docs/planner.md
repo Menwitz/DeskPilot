@@ -49,3 +49,6 @@ ambiguity. Stale observations, missing targets with no candidates, disabled
 controls, occluded controls, and loading states can retry inside the step retry
 budget. Duplicated visible labels and low-confidence candidates still stop at
 the ambiguity gate before any desktop action.
+Failed step reports also carry a `failure_category` so operators can separate
+perception failures, selection ambiguity, safety stops, verification failures,
+and actuation failures without parsing free-form messages.

@@ -87,7 +87,7 @@ evasion, or pretending to be a person where automation is not allowed.
   limits.
 - [x] Add tests for stale UI, duplicated labels, delayed controls, and
   disappearing targets.
-- [ ] Add failure reports that distinguish perception failure, selection
+- [x] Add failure reports that distinguish perception failure, selection
   ambiguity, safety stop, verification failure, and actuation failure.
 
 ## Phase 6: Perception And Grounding Quality

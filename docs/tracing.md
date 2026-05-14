@@ -61,6 +61,11 @@ Retry timing events and recovery events include bounded-backoff metadata:
 Selection recovery uses the same `recover` event contract. Ambiguous duplicated
 labels keep `selection_blocked: confidence_or_ambiguity_gate` and do not emit a
 retry recovery event.
+Failed step reports include `failure_category` in step metadata and failure
+events. Current categories distinguish `perception_failure`,
+`selection_ambiguity`, `safety_stop`, `verification_failure`, and
+`actuation_failure`; timeout and execution-limit failures keep their own
+category values. The Markdown report prints the category beside failed steps.
 
 ## Replay
 

@@ -331,9 +331,13 @@ def _run_report_markdown(report: RunReport) -> str:
         "## Steps",
     ]
     for step in report.steps:
+        failure_category = step.metadata.get("failure_category")
+        category_suffix = (
+            f" [{failure_category}]" if isinstance(failure_category, str) else ""
+        )
         lines.append(
             f"- `{step.step_id}` `{step.action}`: {step.status} "
-            f"after {step.attempts} attempt(s) - {step.message}"
+            f"after {step.attempts} attempt(s){category_suffix} - {step.message}"
         )
     lines.extend(["", "## Events"])
     for event in report.events:

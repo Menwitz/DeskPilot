@@ -404,8 +404,62 @@ def test_execution_engine_reports_duplicated_labels_as_ambiguity_gate() -> None:
     assert report.steps[0].message == (
         "target selection blocked by confidence or ambiguity gate"
     )
+    assert report.steps[0].metadata["failure_category"] == "selection_ambiguity"
     assert selection.metadata["selection_blocked"] == "confidence_or_ambiguity_gate"
     assert actuator.calls == 0
+
+
+def test_execution_engine_reports_failure_category_metadata() -> None:
+    perception_report = _engine(
+        _single_click_task("perception", retry=0),
+        perception=SequencePerceptionEngine(((),)),
+    ).run(Path("task.yaml"))
+
+    safety_report = _engine(
+        _single_click_task("safety", retry=0),
+        perception=SequencePerceptionEngine((_candidate_tuple("Submit"),)),
+        screen_observer=SequenceScreenObserver(
+            (ScreenObservation(active_window_title="Unexpected Window"),),
+        ),
+    ).run(Path("task.yaml"))
+
+    verification_report = _engine(
+        TaskDefinition(
+            name="verification",
+            allowed_windows=("DeskPilot Fixture",),
+            timeout_seconds=30,
+            steps=(
+                TaskStep(
+                    id="click-submit",
+                    action="click_text",
+                    target="Submit",
+                    retry=0,
+                    verify=VerificationDefinition(
+                        type="visible_text",
+                        text="Success",
+                    ),
+                ),
+            ),
+        ),
+        perception=SequencePerceptionEngine((_candidate_tuple("Submit"), ())),
+    ).run(Path("task.yaml"))
+
+    actuation_report = _engine(
+        _single_click_task("actuation", retry=0),
+        perception=SequencePerceptionEngine((_candidate_tuple("Submit"),)),
+        actuator=SequenceActuator((ActionResult(False, "click failed"),)),
+    ).run(Path("task.yaml"))
+
+    assert perception_report.steps[0].metadata["failure_category"] == (
+        "perception_failure"
+    )
+    assert safety_report.steps[0].metadata["failure_category"] == "safety_stop"
+    assert verification_report.steps[0].metadata["failure_category"] == (
+        "verification_failure"
+    )
+    assert actuation_report.steps[0].metadata["failure_category"] == (
+        "actuation_failure"
+    )
 
 
 def test_execution_engine_recovers_when_verification_target_disappears() -> None:
@@ -614,4 +668,20 @@ def _candidate(
         confidence=confidence,
         enabled=enabled,
         visible=visible,
+    )
+
+
+def _single_click_task(name: str, *, retry: int) -> TaskDefinition:
+    return TaskDefinition(
+        name=name,
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="click-submit",
+                action="click_text",
+                target="Submit",
+                retry=retry,
+            ),
+        ),
     )

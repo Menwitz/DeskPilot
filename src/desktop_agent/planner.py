@@ -355,6 +355,7 @@ class ExecutionEngine:
                     0,
                     "step timeout budget is smaller than planned waits",
                     None,
+                    failure_category="timeout",
                 ),
             )
 
@@ -389,6 +390,7 @@ class ExecutionEngine:
         # Retry counts are budgets, so a retry value of 2 means 3 total attempts.
         total_attempts = retry_budget + 1
         last_message = "step was not attempted"
+        last_failure_category = "execution_failure"
         last_candidate_id: str | None = None
         step_deadline = self._step_deadline(step, config, task_deadline)
 
@@ -402,6 +404,7 @@ class ExecutionEngine:
                         attempt - 1,
                         "step exceeded timeout",
                         last_candidate_id,
+                        failure_category="timeout",
                     ),
                 )
             observation = self.screen_observer.observe(config)
@@ -421,6 +424,7 @@ class ExecutionEngine:
                         attempt,
                         "step exceeded timeout",
                         last_candidate_id,
+                        failure_category="timeout",
                     ),
                 )
             detection_metadata = _step_metadata(
@@ -514,6 +518,10 @@ class ExecutionEngine:
                             candidates,
                         ),
                         None,
+                        failure_category=_selection_failure_category(
+                            selection_recovery_policy,
+                            candidates,
+                        ),
                     ),
                 )
 
@@ -541,6 +549,7 @@ class ExecutionEngine:
                         attempt,
                         safety.reason,
                         last_candidate_id,
+                        failure_category="safety_stop",
                     ),
                 )
 
@@ -564,6 +573,7 @@ class ExecutionEngine:
                         attempt,
                         "task exceeded max action count",
                         last_candidate_id,
+                        failure_category="execution_limit",
                     ),
                 )
             action_result = self.actuator.execute(step, target, observation, config)
@@ -574,6 +584,7 @@ class ExecutionEngine:
                         attempt,
                         "task exceeded timeout",
                         last_candidate_id,
+                        failure_category="timeout",
                     ),
                     abort_reason="task exceeded timeout",
                 )
@@ -584,6 +595,7 @@ class ExecutionEngine:
                         attempt,
                         "step exceeded timeout",
                         last_candidate_id,
+                        failure_category="timeout",
                     ),
                 )
             action_metadata = _step_metadata(step, success=action_result.success)
@@ -623,6 +635,11 @@ class ExecutionEngine:
                 )
 
             last_message = verification.message
+            last_failure_category = (
+                "actuation_failure"
+                if not action_result.success
+                else "verification_failure"
+            )
             if attempt < total_attempts:
                 recovery_observation, recovery_candidates = (
                     self._recovery_observation(
@@ -676,6 +693,7 @@ class ExecutionEngine:
                 total_attempts,
                 last_message,
                 last_candidate_id,
+                failure_category=last_failure_category,
             ),
         )
 
@@ -738,7 +756,11 @@ class ExecutionEngine:
 
         return StepExecutionOutcome(
             self._step_failed(
-                step, attempts, f"wait_for timed out: {last_message}", None
+                step,
+                attempts,
+                f"wait_for timed out: {last_message}",
+                None,
+                failure_category="perception_failure",
             ),
         )
 
@@ -768,6 +790,7 @@ class ExecutionEngine:
                         attempt - 1,
                         "scroll_until exceeded timeout",
                         None,
+                        failure_category="timeout",
                     ),
                 )
             observation, candidates = self._detect_for_step(step, config, attempt)
@@ -793,7 +816,13 @@ class ExecutionEngine:
             )
             if not safety.allowed:
                 return StepExecutionOutcome(
-                    self._step_failed(step, attempt, safety.reason, None),
+                    self._step_failed(
+                        step,
+                        attempt,
+                        safety.reason,
+                        None,
+                        failure_category="safety_stop",
+                    ),
                 )
 
             if self.emergency_stop_monitor.is_triggered(config):
@@ -806,6 +835,7 @@ class ExecutionEngine:
                         attempt,
                         "task exceeded max action count",
                         None,
+                        failure_category="execution_limit",
                     ),
                 )
 
@@ -856,6 +886,9 @@ class ExecutionEngine:
                 max_scrolls + 1,
                 last_message,
                 None,
+                failure_category="actuation_failure"
+                if last_message != "scroll_until target was not visible"
+                else "perception_failure",
             ),
         )
 
@@ -894,11 +927,23 @@ class ExecutionEngine:
             )
         if self._deadline_expired(task_deadline):
             return StepExecutionOutcome(
-                self._step_failed(step, 1, "task exceeded timeout", None),
+                self._step_failed(
+                    step,
+                    1,
+                    "task exceeded timeout",
+                    None,
+                    failure_category="timeout",
+                ),
             )
         if step.on_failure is None:
             return StepExecutionOutcome(
-                self._step_failed(step, 1, "branch condition not visible", None),
+                self._step_failed(
+                    step,
+                    1,
+                    "branch condition not visible",
+                    None,
+                    failure_category="perception_failure",
+                ),
             )
         return StepExecutionOutcome(
             self._step_passed(
@@ -1036,12 +1081,21 @@ class ExecutionEngine:
         attempts: int,
         message: str,
         candidate_id: str | None,
+        *,
+        failure_category: str = "execution_failure",
     ) -> StepReport:
+        failure_metadata = _step_metadata(
+            step,
+            candidate_id=candidate_id,
+            failure_category=failure_category,
+        )
         self._record(
             "failure",
             message,
-            _step_metadata(step, candidate_id=candidate_id),
+            failure_metadata,
         )
+        report_metadata = _step_report_metadata(step)
+        report_metadata["failure_category"] = failure_category
         return StepReport(
             step_id=step.id,
             action=step.action,
@@ -1049,7 +1103,7 @@ class ExecutionEngine:
             attempts=max(attempts, 1),
             message=message,
             candidate_id=candidate_id,
-            metadata=_step_report_metadata(step),
+            metadata=report_metadata,
         )
 
     def _emergency_stop_outcome(
@@ -1060,7 +1114,13 @@ class ExecutionEngine:
     ) -> StepExecutionOutcome:
         reason = "emergency stop requested"
         return StepExecutionOutcome(
-            self._step_failed(step, attempts, reason, candidate_id),
+            self._step_failed(
+                step,
+                attempts,
+                reason,
+                candidate_id,
+                failure_category="safety_stop",
+            ),
             abort_reason=reason,
             stop_status="emergency_stopped",
         )
@@ -1145,6 +1205,15 @@ def _selection_retry_reason(
     if policy.reason == "missed_target" and candidates:
         return "target selection blocked by confidence or ambiguity gate"
     return f"target selection failed: {policy.reason}"
+
+
+def _selection_failure_category(
+    policy: RecoveryPolicy | None,
+    candidates: tuple[ElementCandidate, ...],
+) -> str:
+    if policy is not None and policy.reason == "missed_target" and candidates:
+        return "selection_ambiguity"
+    return "perception_failure"
 
 
 def _recovery_path_metadata(

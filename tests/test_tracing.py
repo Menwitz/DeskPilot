@@ -19,7 +19,7 @@ from desktop_agent.task_dsl import (
     TaskStep,
     VerificationDefinition,
 )
-from desktop_agent.tracing import FileTraceSink, TraceEvent
+from desktop_agent.tracing import FileTraceSink, StepReport, TraceEvent
 
 
 class TraceScreenObserver:
@@ -156,3 +156,35 @@ def test_file_trace_sink_includes_recovery_path_summary_in_markdown(
     assert report.trace_dir is not None
     final_report = (report.trace_dir / "final-report.md").read_text(encoding="utf-8")
     assert "classify transient_loading" in final_report
+
+
+def test_file_trace_sink_includes_failure_category_in_markdown(
+    tmp_path: Path,
+) -> None:
+    task = TaskDefinition(
+        name="failure category fixture",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+    )
+    trace_sink = FileTraceSink()
+    trace_sink.prepare_run(
+        task,
+        RuntimeConfig(trace_root=tmp_path / "traces"),
+    )
+    trace_sink.record_step(
+        StepReport(
+            step_id="click-submit",
+            action="click_text",
+            status="failed",
+            attempts=1,
+            message="click failed",
+            metadata={"failure_category": "actuation_failure"},
+        )
+    )
+
+    report = trace_sink.write_final_report("failed")
+
+    assert report.trace_dir is not None
+    final_report = (report.trace_dir / "final-report.md").read_text(encoding="utf-8")
+    assert "[actuation_failure]" in final_report
