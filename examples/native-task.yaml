@@ -1,0 +1,23 @@
+name: native-fixture-demo
+allowed_windows:
+  - DeskPilot Native Fixture
+timeout_seconds: 120
+steps:
+  - id: click-native-input
+    action: click_text
+    target: Native Input
+  - id: type-native-input
+    action: type_text
+    text: DeskPilot native demo
+  - id: click-native-submit
+    action: click_text
+    target: Submit Native Fixture
+    verify:
+      type: visible_text
+      text: Native fixture success
+  - id: open-menu-state
+    action: click_text
+    target: Open Menu State
+    verify:
+      type: visible_text
+      text: Menu opened

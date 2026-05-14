@@ -280,27 +280,27 @@
 
 ## 15. Example Workflows
 
-- [ ] Create browser fixture HTML app.
-- [ ] Add browser task that:
-  - [ ] opens or targets browser window;
-  - [ ] clicks email field;
-  - [ ] types email;
-  - [ ] scrolls to submit button;
-  - [ ] clicks submit;
-  - [ ] verifies success text.
-- [ ] Create native Windows fixture app.
-- [ ] Add native task that:
-  - [ ] targets app window;
-  - [ ] clicks text input;
-  - [ ] types text;
-  - [ ] clicks button;
-  - [ ] opens menu;
-  - [ ] verifies changed state.
-- [ ] Create mixed workflow task that:
-  - [ ] interacts with browser fixture;
-  - [ ] switches to native fixture;
-  - [ ] completes a final verification.
-- [ ] Keep all demo workflows deterministic and safe.
+- [x] Create browser fixture HTML app.
+- [x] Add browser task that:
+  - [x] opens or targets browser window;
+  - [x] clicks email field;
+  - [x] types email;
+  - [x] scrolls to submit button;
+  - [x] clicks submit;
+  - [x] verifies success text.
+- [x] Create native Windows fixture app.
+- [x] Add native task that:
+  - [x] targets app window;
+  - [x] clicks text input;
+  - [x] types text;
+  - [x] clicks button;
+  - [x] opens menu;
+  - [x] verifies changed state.
+- [x] Create mixed workflow task that:
+  - [x] interacts with browser fixture;
+  - [x] switches to native fixture;
+  - [x] completes a final verification.
+- [x] Keep all demo workflows deterministic and safe.
 
 ## 16. Packaging
 

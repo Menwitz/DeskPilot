@@ -1,10 +1,33 @@
 # Examples
 
-This directory will contain deterministic, safe desktop automation examples:
+This directory contains deterministic, safe desktop automation examples.
 
-- Browser fixture tasks.
-- Native Windows fixture tasks.
-- Mixed browser and native workflow tasks.
+## Browser Fixture
 
-Examples should be runnable without external services and should keep generated
-traces, screenshots, and reports local.
+Open `browser_fixture.html` in a browser window. The page title is
+`DeskPilot Browser Fixture`, which matches `browser-task.yaml`.
+
+```bash
+desktop-agent dry-run examples/browser-task.yaml
+```
+
+## Native Fixture
+
+Run the Tkinter fixture on Windows with Python:
+
+```bash
+python examples/native_fixture.py
+desktop-agent dry-run examples/native-task.yaml
+```
+
+## Mixed Fixture
+
+Open the browser fixture and the native fixture, place the browser window in
+front, then dry-run or run `mixed-task.yaml`.
+
+```bash
+desktop-agent dry-run examples/mixed-task.yaml
+```
+
+The examples do not call external services. Generated traces, screenshots, OCR
+text, overlays, and reports stay under the configured local trace directory.

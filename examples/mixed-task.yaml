@@ -1,0 +1,42 @@
+name: mixed-fixture-demo
+allowed_windows:
+  - DeskPilot Browser Fixture
+  - DeskPilot Native Fixture
+timeout_seconds: 180
+steps:
+  - id: browser-click-email
+    action: click_text
+    target: Email
+  - id: browser-type-email
+    action: type_text
+    text: mixed@example.test
+  - id: browser-scroll-submit
+    action: scroll_until
+    target: Submit Browser Fixture
+    region:
+      x: 0
+      y: 0
+      width: 1400
+      height: 1000
+    retry: 4
+  - id: browser-submit
+    action: click_text
+    target: Submit Browser Fixture
+    verify:
+      type: visible_text
+      text: Browser fixture success
+  - id: switch-to-native
+    action: press_key
+    text: alt+tab
+  - id: native-click-input
+    action: click_text
+    target: Native Input
+  - id: native-type-input
+    action: type_text
+    text: DeskPilot mixed demo
+  - id: native-submit
+    action: click_text
+    target: Submit Native Fixture
+    verify:
+      type: visible_text
+      text: Native fixture success

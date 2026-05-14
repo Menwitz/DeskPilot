@@ -1,0 +1,26 @@
+name: browser-fixture-demo
+allowed_windows:
+  - DeskPilot Browser Fixture
+timeout_seconds: 120
+steps:
+  - id: click-email-field
+    action: click_text
+    target: Email
+  - id: type-email
+    action: type_text
+    text: qa@example.test
+  - id: scroll-to-submit
+    action: scroll_until
+    target: Submit Browser Fixture
+    region:
+      x: 0
+      y: 0
+      width: 1400
+      height: 1000
+    retry: 4
+  - id: click-submit
+    action: click_text
+    target: Submit Browser Fixture
+    verify:
+      type: visible_text
+      text: Browser fixture success

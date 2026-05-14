@@ -64,6 +64,7 @@ clear unavailable message on unsupported platforms.
 - [Candidate Fusion](docs/candidate-fusion.md)
 - [Computer Vision](docs/computer-vision.md)
 - [Configuration](docs/configuration.md)
+- [Examples](docs/examples.md)
 - [OCR](docs/ocr.md)
 - [Planner](docs/planner.md)
 - [Screen layer](docs/screen.md)
