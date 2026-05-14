@@ -153,7 +153,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Add an operator approval prompt for irreversible or externally visible
   actions.
 - [x] Add a safety audit report for every execution-profile run.
-- [ ] Document that the feature is not for stealth automation, CAPTCHA bypass,
+- [x] Document that the feature is not for stealth automation, CAPTCHA bypass,
   bot-detection evasion, credential abuse, or abusive third-party automation.
 - [ ] Add tests proving unsafe profile values and unconfirmed sensitive actions
   stop before actuation.

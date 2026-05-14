@@ -81,6 +81,9 @@ steps:
 `execution_profile` is an optional, safety-bounded timing profile for local
 automation. It does not change task intent, action order, target text, typed
 text, allowed windows, maximum steps, timeouts, or retry budgets.
+It is for transparent owned-desktop reliability work, not stealth automation,
+CAPTCHA bypass, bot-detection evasion, credential abuse, or abusive third-party
+automation.
 
 - `enabled` turns profile timing decisions on.
 - `persona` can be `fast`, `normal`, or `careful`. It biases sampled timing
