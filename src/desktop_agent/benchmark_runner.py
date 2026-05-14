@@ -67,6 +67,29 @@ class BenchmarkSummaryMetrics:
 
 
 @dataclass(frozen=True)
+class MetricVariance:
+    """Run-to-run distribution values for one numeric metric."""
+
+    minimum: float
+    maximum: float
+    mean: float
+    population_stdev: float
+
+
+@dataclass(frozen=True)
+class BenchmarkVarianceReport:
+    """Variance report for timing, recovery, and execution-count metrics."""
+
+    task_time_seconds: MetricVariance
+    step_count: MetricVariance
+    action_count: MetricVariance
+    retry_count: MetricVariance
+    ambiguity_count: MetricVariance
+    recovery_count: MetricVariance
+    operator_intervention_count: MetricVariance
+
+
+@dataclass(frozen=True)
 class BenchmarkRunReport:
     """Machine-readable report for one repeated benchmark invocation."""
 
@@ -74,8 +97,10 @@ class BenchmarkRunReport:
     output_dir: Path
     metrics_path: Path
     report_path: Path
+    variance_report_path: Path
     runs: tuple[BenchmarkRunMetrics, ...]
     summary: BenchmarkSummaryMetrics
+    variance: BenchmarkVarianceReport
 
 
 class BenchmarkRunHarness:
@@ -111,17 +136,30 @@ class BenchmarkRunHarness:
             for iteration in range(1, iterations + 1)
         )
         summary = _summary_from_runs(runs)
+        variance = _variance_from_runs(runs)
         metrics_path = output_dir / "runs.jsonl"
         report_path = output_dir / "benchmark-report.json"
+        variance_report_path = output_dir / "variance-report.json"
         _write_metrics(metrics_path, runs)
-        _write_report(report_path, task_path, output_dir, metrics_path, runs, summary)
+        _write_variance_report(variance_report_path, variance)
+        _write_report(
+            report_path,
+            task_path,
+            output_dir,
+            metrics_path,
+            variance_report_path,
+            runs,
+            summary,
+        )
         return BenchmarkRunReport(
             task_path=task_path,
             output_dir=output_dir,
             metrics_path=metrics_path,
             report_path=report_path,
+            variance_report_path=variance_report_path,
             runs=runs,
             summary=summary,
+            variance=variance,
         )
 
     def _run_once(
@@ -193,6 +231,7 @@ def _write_report(
     task_path: Path,
     output_dir: Path,
     metrics_path: Path,
+    variance_report_path: Path,
     runs: tuple[BenchmarkRunMetrics, ...],
     summary: BenchmarkSummaryMetrics,
 ) -> None:
@@ -200,12 +239,24 @@ def _write_report(
         "task_path": str(task_path),
         "output_dir": str(output_dir),
         "metrics_path": str(metrics_path),
+        "variance_report_path": str(variance_report_path),
         "iterations": len(runs),
         "summary": _summary_to_dict(summary),
         "runs": [_metrics_to_dict(run) for run in runs],
     }
     path.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_variance_report(
+    path: Path,
+    variance: BenchmarkVarianceReport,
+) -> None:
+    path.write_text(
+        json.dumps(_variance_report_to_dict(variance), indent=2, sort_keys=True)
+        + "\n",
         encoding="utf-8",
     )
 
@@ -239,6 +290,32 @@ def _nonzero_rate(values: Iterable[int]) -> float:
     return sum(1 for value in counts if value > 0) / len(counts)
 
 
+def _variance_from_runs(
+    runs: tuple[BenchmarkRunMetrics, ...],
+) -> BenchmarkVarianceReport:
+    return BenchmarkVarianceReport(
+        task_time_seconds=_metric_variance(run.task_time_seconds for run in runs),
+        step_count=_metric_variance(float(run.step_count) for run in runs),
+        action_count=_metric_variance(float(run.action_count) for run in runs),
+        retry_count=_metric_variance(float(run.retry_count) for run in runs),
+        ambiguity_count=_metric_variance(float(run.ambiguity_count) for run in runs),
+        recovery_count=_metric_variance(float(run.recovery_count) for run in runs),
+        operator_intervention_count=_metric_variance(
+            float(run.operator_intervention_count) for run in runs
+        ),
+    )
+
+
+def _metric_variance(values: Iterable[float]) -> MetricVariance:
+    samples = tuple(values)
+    return MetricVariance(
+        minimum=min(samples),
+        maximum=max(samples),
+        mean=statistics.fmean(samples),
+        population_stdev=statistics.pstdev(samples),
+    )
+
+
 def _summary_to_dict(summary: BenchmarkSummaryMetrics) -> dict[str, object]:
     return {
         "run_count": summary.run_count,
@@ -250,6 +327,29 @@ def _summary_to_dict(summary: BenchmarkSummaryMetrics) -> dict[str, object]:
         "ambiguity_rate": summary.ambiguity_rate,
         "recovery_rate": summary.recovery_rate,
         "operator_intervention_rate": summary.operator_intervention_rate,
+    }
+
+
+def _variance_report_to_dict(report: BenchmarkVarianceReport) -> dict[str, object]:
+    return {
+        "task_time_seconds": _variance_to_dict(report.task_time_seconds),
+        "step_count": _variance_to_dict(report.step_count),
+        "action_count": _variance_to_dict(report.action_count),
+        "retry_count": _variance_to_dict(report.retry_count),
+        "ambiguity_count": _variance_to_dict(report.ambiguity_count),
+        "recovery_count": _variance_to_dict(report.recovery_count),
+        "operator_intervention_count": _variance_to_dict(
+            report.operator_intervention_count
+        ),
+    }
+
+
+def _variance_to_dict(variance: MetricVariance) -> dict[str, float]:
+    return {
+        "minimum": variance.minimum,
+        "maximum": variance.maximum,
+        "mean": variance.mean,
+        "population_stdev": variance.population_stdev,
     }
 
 

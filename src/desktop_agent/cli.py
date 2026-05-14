@@ -264,6 +264,7 @@ def _run_benchmark(args: argparse.Namespace) -> int:
     print(f"benchmark: {args.task_yaml}")
     print(f"iterations: {len(report.runs)}")
     print(f"metrics: {report.metrics_path}")
+    print(f"variance: {report.variance_report_path}")
     print(f"report: {report.report_path}")
     return 0 if all(run.status == "passed" for run in report.runs) else 1
 

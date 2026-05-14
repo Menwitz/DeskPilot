@@ -31,7 +31,7 @@ evasion, or pretending to be a person where automation is not allowed.
   stores per-run metrics.
 - [x] Track success rate, median task time, step count, action count, retry
   count, ambiguity rate, recovery rate, and operator intervention rate.
-- [ ] Add run-to-run variance reports so timing and recovery behavior can be
+- [x] Add run-to-run variance reports so timing and recovery behavior can be
   evaluated instead of guessed.
 - [ ] Add a fixture app with intentionally moving, delayed, disabled, and
   duplicated controls.
