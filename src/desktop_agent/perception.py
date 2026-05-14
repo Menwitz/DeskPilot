@@ -71,6 +71,31 @@ class EmptyPerceptionEngine(PerceptionEngine):
         return ()
 
 
+class DryRunPerceptionEngine(PerceptionEngine):
+    """Produces synthetic candidates so dry-run can plan without live screen data."""
+
+    def detect(
+        self,
+        step: TaskStep,
+        observation: ScreenObservation,
+        config: RuntimeConfig,
+    ) -> tuple[ElementCandidate, ...]:
+        _ = observation, config
+        label = _dry_run_label(step)
+        if label is None:
+            return ()
+        return (
+            ElementCandidate(
+                id=f"dry-run-{step.id}",
+                source="unknown",
+                label=label,
+                bounds=Bounds(x=0, y=0, width=1, height=1),
+                confidence=1.0,
+                metadata={"dry_run": True},
+            ),
+        )
+
+
 class CompositePerceptionEngine(PerceptionEngine):
     """Runs the deep-search pipeline across all configured perception engines."""
 
@@ -343,3 +368,15 @@ def _is_ambiguous(
 
 def _normalize_text(value: str) -> str:
     return " ".join(value.casefold().split())
+
+
+def _dry_run_label(step: TaskStep) -> str | None:
+    if step.target:
+        return step.target
+    if step.verify and step.verify.text:
+        return step.verify.text
+    if step.image:
+        return step.image.name
+    if step.verify and step.verify.image:
+        return step.verify.image.name
+    return None

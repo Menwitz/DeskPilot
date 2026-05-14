@@ -61,6 +61,7 @@ clear unavailable message on unsupported platforms.
 - [Project definition](docs/project-definition.md)
 - [Actuation](docs/actuation.md)
 - [Architecture](docs/architecture.md)
+- [V1 Acceptance](docs/acceptance.md)
 - [Candidate Fusion](docs/candidate-fusion.md)
 - [Computer Vision](docs/computer-vision.md)
 - [Configuration](docs/configuration.md)

@@ -17,25 +17,43 @@ from desktop_agent.config import (
     YamlConfigLoader,
     resolve_runtime_config,
 )
-from desktop_agent.ocr import OcrPerceptionEngine
+from desktop_agent.ocr import (
+    OcrPerceptionEngine,
+    OcrTextBlock,
+    OcrUnavailableError,
+    TesseractOcrProvider,
+    ocr_blocks_to_candidates,
+)
 from desktop_agent.perception import (
+    CandidateFusion,
     CompositePerceptionEngine,
     ConfidenceTargetSelector,
+    DryRunPerceptionEngine,
+    ElementCandidate,
+    candidate_ranking_metadata,
 )
 from desktop_agent.planner import ExecutionEngine
+from desktop_agent.platforms.windows.uia import (
+    WindowsUiaAdapter,
+    WindowsUiaUnavailableError,
+    write_uia_tree_snapshot,
+)
 from desktop_agent.safety import (
     LocalSafetyPolicy,
     NoopEmergencyStopMonitor,
     create_platform_emergency_stop_monitor,
 )
 from desktop_agent.screen import (
+    Bounds,
     MssScreenObserver,
+    ScreenObservation,
     ScreenUnavailableError,
     StaticScreenObserver,
 )
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
     StaticTaskLoader,
+    TaskStep,
     TaskValidationError,
     YamlTaskLoader,
 )
@@ -114,12 +132,7 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
         trace_sink=trace_sink,
         safety_policy=LocalSafetyPolicy(),
         screen_observer=StaticScreenObserver(),
-        perception_engine=CompositePerceptionEngine(
-            (
-                OcrPerceptionEngine(),
-                OpenCvTemplatePerceptionEngine(),
-            ),
-        ),
+        perception_engine=_perception_engine_for_mode(dry_run),
         target_selector=ConfidenceTargetSelector(),
         actuator=DryRunActuator() if dry_run else create_platform_actuator(),
         emergency_stop_monitor=create_platform_emergency_stop_monitor()
@@ -129,6 +142,17 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
     report = engine.run(args.task_yaml, args.config)
     _print_report(report, verbose=args.verbose)
     return 0 if report.status == "passed" else 1
+
+
+def _perception_engine_for_mode(dry_run: bool) -> CompositePerceptionEngine:
+    if dry_run:
+        return CompositePerceptionEngine((DryRunPerceptionEngine(),))
+    return CompositePerceptionEngine(
+        (
+            OcrPerceptionEngine(),
+            OpenCvTemplatePerceptionEngine(),
+        ),
+    )
 
 
 def _cli_overrides_from_args(args: argparse.Namespace) -> ConfigOverrides:
@@ -163,10 +187,76 @@ def _inspect_screen(args: argparse.Namespace) -> int:
         "warnings": list(observation.warnings),
         "metadata": observation.metadata,
     }
+    payload.update(_collect_screen_inspection(args.output, observation, config))
     output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print("status: passed")
     print(f"inspection report: {output_path}")
     return 0
+
+
+def _collect_screen_inspection(
+    output_dir: Path,
+    observation: ScreenObservation,
+    config: RuntimeConfig,
+) -> dict[str, object]:
+    # A targetless inspection step asks OCR/UIA to report all visible candidates
+    # above the configured threshold instead of matching one task target.
+    inspect_step = TaskStep(id="inspect-screen", action="assert_visible")
+    ocr_blocks, ocr_status = _collect_ocr_blocks(observation)
+    ocr_candidates = ocr_blocks_to_candidates(inspect_step, ocr_blocks, config)
+    uia_tree, uia_candidates, uia_status = _collect_uia(output_dir)
+    fused_candidates = CandidateFusion().fuse(
+        inspect_step,
+        uia_candidates + ocr_candidates,
+        config,
+    )
+    return {
+        "ocr": {
+            "status": ocr_status,
+            "blocks": [_ocr_block_to_dict(block) for block in ocr_blocks],
+            "candidates": [
+                _candidate_to_dict(candidate) for candidate in ocr_candidates
+            ],
+        },
+        "uia": {
+            "status": uia_status,
+            "tree": uia_tree,
+            "candidates": [
+                _candidate_to_dict(candidate) for candidate in uia_candidates
+            ],
+        },
+        "candidates": [_candidate_to_dict(candidate) for candidate in fused_candidates],
+        "candidate_rankings": candidate_ranking_metadata(
+            inspect_step,
+            fused_candidates,
+            config,
+        )["candidate_rankings"],
+    }
+
+
+def _collect_ocr_blocks(
+    observation: ScreenObservation,
+) -> tuple[tuple[OcrTextBlock, ...], str]:
+    if observation.screenshot_path is None:
+        return (), "skipped: no screenshot"
+    try:
+        blocks = TesseractOcrProvider().extract_text(observation.screenshot_path)
+        return blocks, "passed"
+    except OcrUnavailableError as exc:
+        return (), f"unavailable: {exc}"
+
+
+def _collect_uia(
+    output_dir: Path,
+) -> tuple[dict[str, object], tuple[ElementCandidate, ...], str]:
+    adapter = WindowsUiaAdapter()
+    try:
+        tree = adapter.tree_snapshot()
+        candidates = adapter.candidates()
+    except WindowsUiaUnavailableError as exc:
+        return {}, (), f"unavailable: {exc}"
+    write_uia_tree_snapshot(output_dir / "uia-tree.json", tree)
+    return tree, candidates, "passed"
 
 
 def _replay(args: argparse.Namespace) -> int:
@@ -203,3 +293,33 @@ def _print_report(report: RunReport, *, verbose: bool) -> None:
     if verbose:
         for event in report.events:
             print(f"event {event.phase}: {event.message}")
+
+
+def _ocr_block_to_dict(block: OcrTextBlock) -> dict[str, object]:
+    return {
+        "text": block.text,
+        "bounds": _bounds_to_dict(block.bounds),
+        "confidence": block.confidence,
+    }
+
+
+def _candidate_to_dict(candidate: ElementCandidate) -> dict[str, object]:
+    return {
+        "id": candidate.id,
+        "source": candidate.source,
+        "label": candidate.label,
+        "bounds": _bounds_to_dict(candidate.bounds),
+        "confidence": candidate.confidence,
+        "visible": candidate.visible,
+        "enabled": candidate.enabled,
+        "metadata": candidate.metadata,
+    }
+
+
+def _bounds_to_dict(bounds: Bounds) -> dict[str, int]:
+    return {
+        "x": bounds.x,
+        "y": bounds.y,
+        "width": bounds.width,
+        "height": bounds.height,
+    }

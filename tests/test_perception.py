@@ -3,12 +3,13 @@ from desktop_agent.perception import (
     CandidateFusion,
     CandidateSource,
     ConfidenceTargetSelector,
+    DryRunPerceptionEngine,
     ElementCandidate,
     candidate_ranking_metadata,
     deduplicate_candidates,
     rank_candidates,
 )
-from desktop_agent.screen import Bounds
+from desktop_agent.screen import Bounds, ScreenObservation
 from desktop_agent.task_dsl import TaskRegion, TaskStep
 
 
@@ -131,3 +132,16 @@ def test_candidate_ranking_metadata_is_trace_ready() -> None:
     assert isinstance(rankings, list)
     assert rankings[0]["id"] == "candidate-1"
     assert rankings[0]["rank"] == 1
+
+
+def test_dry_run_perception_emits_synthetic_planning_candidate() -> None:
+    candidates = DryRunPerceptionEngine().detect(
+        TaskStep(id="scroll-submit", action="scroll_until", target="Submit"),
+        ScreenObservation(),
+        config=RuntimeConfig(),
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].id == "dry-run-scroll-submit"
+    assert candidates[0].label == "Submit"
+    assert candidates[0].metadata["dry_run"] is True

@@ -333,16 +333,18 @@
 ## 18. V1 Acceptance Criteria
 
 - [ ] `desktop-agent run` executes a YAML task end to end.
-- [ ] `desktop-agent dry-run` validates and explains the planned task without actions.
-- [ ] `desktop-agent inspect-screen` captures screenshot, OCR, UIA, and candidate data.
+- [x] `desktop-agent dry-run` validates and explains the planned task without actions.
+- [x] `desktop-agent inspect-screen` captures screenshot, OCR, UIA, and candidate data.
 - [ ] Browser demo completes unattended on an unlocked Windows desktop.
 - [ ] Native Windows demo completes unattended on an unlocked Windows desktop.
 - [ ] Mixed demo completes unattended on an unlocked Windows desktop.
 - [ ] Emergency hotkey stops execution within one second.
-- [ ] Failed runs produce useful screenshots, logs, candidates, and abort reason.
-- [ ] No cloud service is required.
-- [ ] No task can act outside the allowed window whitelist.
-- [ ] Documentation is sufficient for a new engineer to install, run, debug, and extend v1.
+- [x] Failed runs produce useful screenshots, logs, candidates, and abort reason.
+- [x] No cloud service is required.
+- [x] No task can act outside the allowed window whitelist.
+- [x] Documentation is sufficient for a new engineer to install, run, debug, and extend v1.
+
+Windows-only acceptance items remain unchecked until they are verified on an unlocked, logged-in Windows desktop.
 
 ## 19. Post-v1 Backlog
 
