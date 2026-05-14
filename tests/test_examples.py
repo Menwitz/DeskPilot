@@ -6,9 +6,18 @@ from desktop_agent.task_dsl import BasicTaskValidator, YamlTaskLoader
 EXAMPLE_TASKS = (
     Path("examples/adversarial-task.yaml"),
     Path("examples/browser-task.yaml"),
+    Path("examples/execution-profile-careful-task.yaml"),
+    Path("examples/execution-profile-fast-task.yaml"),
+    Path("examples/execution-profile-normal-task.yaml"),
     Path("examples/native-task.yaml"),
     Path("examples/mixed-task.yaml"),
 )
+
+EXECUTION_PROFILE_EXAMPLES = {
+    "careful": Path("examples/execution-profile-careful-task.yaml"),
+    "fast": Path("examples/execution-profile-fast-task.yaml"),
+    "normal": Path("examples/execution-profile-normal-task.yaml"),
+}
 
 
 def test_example_fixture_files_exist() -> None:
@@ -36,3 +45,22 @@ def test_example_tasks_validate() -> None:
         validator.validate(task, config)
         assert task.allowed_windows
         assert task.steps
+
+
+def test_execution_profile_examples_cover_personas_and_reporting_gates() -> None:
+    loader = YamlTaskLoader()
+
+    for persona, task_path in EXECUTION_PROFILE_EXAMPLES.items():
+        task = loader.load(task_path)
+        profile = task.config_overrides.execution_profile
+        submission_steps = [
+            step for step in task.steps if step.category == "submission"
+        ]
+
+        assert profile is not None
+        assert profile.enabled is True
+        assert profile.persona == persona
+        assert task.config_overrides.confirmed_steps == ("click-submit",)
+        assert submission_steps
+        assert all(step.checkpoint is not None for step in submission_steps)
+        assert all(step.verify is not None for step in submission_steps)

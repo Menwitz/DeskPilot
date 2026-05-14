@@ -42,6 +42,18 @@ def test_benchmark_tasks_define_pipeline_search_monitoring_and_reports() -> None
         assert set(BENCHMARK_METRICS) <= set(task.required_metrics)
 
 
+def test_execution_profile_examples_are_registered_benchmark_tasks() -> None:
+    suite = benchmark_suite_by_id("execution-profile-examples-suite")
+    task_paths = {task.task_path for task in suite.tasks}
+
+    assert suite.domain == "browser"
+    assert task_paths == {
+        Path("examples/execution-profile-careful-task.yaml"),
+        Path("examples/execution-profile-fast-task.yaml"),
+        Path("examples/execution-profile-normal-task.yaml"),
+    }
+
+
 def test_benchmark_tasks_define_acceptance_thresholds() -> None:
     for task in all_benchmark_tasks():
         thresholds = task.acceptance_thresholds

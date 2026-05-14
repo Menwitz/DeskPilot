@@ -23,6 +23,12 @@ The source of truth is `desktop_agent.benchmarks`. Each benchmark task declares:
   `examples/browser_fixture.html`, plus `examples/adversarial-task.yaml` and
   `examples/adversarial_fixture.html` for delayed, disabled, duplicated, and
   moving controls.
+- `execution-profile-examples-suite` uses
+  `examples/execution-profile-fast-task.yaml`,
+  `examples/execution-profile-normal-task.yaml`, and
+  `examples/execution-profile-careful-task.yaml` with
+  `examples/browser_fixture.html` to verify each execution profile through the
+  same dry-run/run, deep-search, monitoring, and report contract.
 - `native-windows-fixture-suite` uses `examples/native-task.yaml` and
   `examples/native_fixture.py`.
 - `mixed-fixture-suite` uses `examples/mixed-task.yaml` plus both fixture files.

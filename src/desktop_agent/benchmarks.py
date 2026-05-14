@@ -109,6 +109,18 @@ BROWSER_FIXTURE_ACCEPTANCE = BenchmarkAcceptanceThresholds(
     max_operator_intervention_rate=0.0,
 )
 
+PROFILE_FIXTURE_ACCEPTANCE = BenchmarkAcceptanceThresholds(
+    min_success_rate=1.0,
+    max_median_task_time_seconds=45.0,
+    max_task_time_seconds_per_run=90.0,
+    max_step_count_per_run=5,
+    max_action_count_per_run=5,
+    max_retry_count_per_run=0,
+    max_ambiguity_rate=0.0,
+    max_recovery_rate=0.0,
+    max_operator_intervention_rate=0.0,
+)
+
 ADVERSARIAL_FIXTURE_ACCEPTANCE = BenchmarkAcceptanceThresholds(
     min_success_rate=1.0,
     max_median_task_time_seconds=30.0,
@@ -185,6 +197,71 @@ DEFAULT_BENCHMARK_SUITES: tuple[BenchmarkSuite, ...] = (
                 description=(
                     "Exercises duplicated labels, a disabled delayed control,"
                     " and a moving target with traceable candidate selection."
+                ),
+            ),
+        ),
+    ),
+    BenchmarkSuite(
+        id="execution-profile-examples-suite",
+        domain="browser",
+        name="Execution Profile Examples Suite",
+        description=(
+            "Exercises complete browser fixture tasks for fast, normal, and"
+            " careful execution profiles."
+        ),
+        tasks=(
+            BenchmarkTaskSpec(
+                id="execution-profile-fast-browser-demo",
+                name="Fast execution profile browser completion",
+                task_path=Path("examples/execution-profile-fast-task.yaml"),
+                fixture_paths=(Path("examples/browser_fixture.html"),),
+                allowed_windows=("DeskPilot Browser Fixture",),
+                pipeline_modes=("dry_run", "run"),
+                deep_search_sources=("uia", "ocr", "image", "unknown"),
+                required_trace_phases=TRACE_MONITORING_PHASES,
+                required_report_fields=REPORT_FIELDS,
+                required_metrics=BENCHMARK_METRICS,
+                acceptance_thresholds=PROFILE_FIXTURE_ACCEPTANCE,
+                description=(
+                    "Completes the browser fixture with fast bounded timing,"
+                    " task-state dependencies, recovery, and submission"
+                    " checkpoint evidence."
+                ),
+            ),
+            BenchmarkTaskSpec(
+                id="execution-profile-normal-browser-demo",
+                name="Normal execution profile browser completion",
+                task_path=Path("examples/execution-profile-normal-task.yaml"),
+                fixture_paths=(Path("examples/browser_fixture.html"),),
+                allowed_windows=("DeskPilot Browser Fixture",),
+                pipeline_modes=("dry_run", "run"),
+                deep_search_sources=("uia", "ocr", "image", "unknown"),
+                required_trace_phases=TRACE_MONITORING_PHASES,
+                required_report_fields=REPORT_FIELDS,
+                required_metrics=BENCHMARK_METRICS,
+                acceptance_thresholds=PROFILE_FIXTURE_ACCEPTANCE,
+                description=(
+                    "Completes the browser fixture with normal centered"
+                    " timing, strict QA confirmation, recovery, and report"
+                    " evidence."
+                ),
+            ),
+            BenchmarkTaskSpec(
+                id="execution-profile-careful-browser-demo",
+                name="Careful execution profile browser completion",
+                task_path=Path("examples/execution-profile-careful-task.yaml"),
+                fixture_paths=(Path("examples/browser_fixture.html"),),
+                allowed_windows=("DeskPilot Browser Fixture",),
+                pipeline_modes=("dry_run", "run"),
+                deep_search_sources=("uia", "ocr", "image", "unknown"),
+                required_trace_phases=TRACE_MONITORING_PHASES,
+                required_report_fields=REPORT_FIELDS,
+                required_metrics=BENCHMARK_METRICS,
+                acceptance_thresholds=PROFILE_FIXTURE_ACCEPTANCE,
+                description=(
+                    "Completes the browser fixture with careful bounded"
+                    " timing, stronger smoothing, recovery, and submission"
+                    " checkpoint evidence."
                 ),
             ),
         ),

@@ -1,0 +1,98 @@
+# Complete local browser fixture demonstrating the careful execution profile.
+name: execution-profile-careful-browser-demo
+allowed_windows:
+  - DeskPilot Browser Fixture
+timeout_seconds: 120
+entropy_budget: 2.0
+config:
+  policy_preset: strict_qa
+  require_operator_approval: false
+  confirmed_steps:
+    - click-submit
+  execution_profile:
+    persona: careful
+    enabled: true
+    action_delay_seconds: [0.15, 0.45]
+    retry_delay_seconds: [0.5, 1.2]
+    action_delay_distribution: center_weighted
+    retry_delay_distribution: center_weighted
+    action_variant_distribution: center_weighted
+    hesitation_probability: 0.35
+    movement_smoothness: 0.85
+    keyboard_interval_seconds: [0.03, 0.07]
+    scroll_interval_seconds: [0.05, 0.12]
+    random_seed: 37
+steps:
+  - id: wait-for-email-label
+    action: wait_for
+    target: Email
+    category: recognition
+    timeout_seconds: 5
+    verify:
+      type: visible_text
+      text: Email
+    expected_state:
+      after: browser-form-ready
+    recovery:
+      - reason: transient_loading
+        actions:
+          - wait_for_loading
+          - abort_with_trace
+  - id: click-email-field
+    action: click_text
+    target: Email
+    depends_on:
+      - wait-for-email-label
+    safe_action_variants:
+      - click_uia
+    expected_state:
+      before: browser-form-ready
+      after: email-focused
+    recovery:
+      - reason: missed_target
+        actions:
+          - reobserve_screen
+          - retry_with_fresh_candidates
+  - id: type-email
+    action: type_text
+    text: careful-profile@example.test
+    depends_on:
+      - click-email-field
+    expected_state:
+      before: email-focused
+      after: email-entered
+  - id: scroll-to-submit
+    action: scroll_until
+    target: Submit Browser Fixture
+    depends_on:
+      - type-email
+    region:
+      x: 0
+      y: 0
+      width: 1400
+      height: 1000
+    retry: 4
+    expected_state:
+      before: email-entered
+      after: submit-visible
+    recovery:
+      - reason: missed_target
+        actions:
+          - scroll_search_region
+          - retry_with_fresh_candidates
+  - id: click-submit
+    action: click_text
+    target: Submit Browser Fixture
+    category: submission
+    requires_confirmation: true
+    depends_on:
+      - scroll-to-submit
+    checkpoint:
+      type: visible_text
+      text: Submit Browser Fixture
+    verify:
+      type: visible_text
+      text: Browser fixture success
+    expected_state:
+      before: submit-visible
+      after: browser-submitted

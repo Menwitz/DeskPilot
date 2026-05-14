@@ -162,7 +162,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 - [x] Expand the research brief with concrete model choices, tradeoffs, and
   rejected unsafe approaches.
-- [ ] Add complete example tasks for each execution profile.
+- [x] Add complete example tasks for each execution profile.
 - [ ] Add operator guidance for choosing delay bounds and entropy budgets.
 - [ ] Add troubleshooting docs for ambiguity gates, recovery stops, and safety
   stops.

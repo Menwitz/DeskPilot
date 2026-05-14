@@ -11,6 +11,20 @@ Open `browser_fixture.html` in a browser window. The page title is
 desktop-agent dry-run examples/browser-task.yaml
 ```
 
+## Execution Profile Browser Fixtures
+
+The profile tasks use the same browser fixture and demonstrate complete
+execution-profile configs for `fast`, `normal`, and `careful` personas. They
+include task-state dependencies, recovery rules, checkpoints before submission,
+and confirmed sensitive steps so dry-run traces include monitoring and report
+evidence for the full pipeline.
+
+```bash
+desktop-agent dry-run examples/execution-profile-fast-task.yaml
+desktop-agent dry-run examples/execution-profile-normal-task.yaml
+desktop-agent dry-run examples/execution-profile-careful-task.yaml
+```
+
 ## Native Fixture
 
 Run the Tkinter fixture on Windows with Python:
