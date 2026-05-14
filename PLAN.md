@@ -1,0 +1,359 @@
+# Desktop Automation Agent v1 Roadmap
+
+## 0. Project Definition
+
+- [ ] Create a new standalone repository named normally, without `codex` in the branch or repo naming.
+- [ ] Define v1 as a Windows-first, local desktop automation framework.
+- [ ] Define the core use case as owned/internal QA and personal automation.
+- [ ] Exclude stealth automation, CAPTCHA bypass, bot-detection evasion, credential abuse, and abusive third-party automation.
+- [ ] Require v1 to run on an unlocked, logged-in Windows desktop session.
+- [ ] Keep all screenshots, OCR text, traces, and reports local by default.
+- [ ] Use Python 3.12 as the implementation language.
+- [ ] Use YAML as the v1 task authoring format.
+- [ ] Use deterministic task execution plus CV/OCR/UI Automation, with no cloud AI dependency in v1.
+
+## 1. Repository Bootstrap
+
+- [ ] Add `README.md` with project purpose, constraints, quickstart, and safety boundaries.
+- [ ] Add `pyproject.toml` configured for Python 3.12.
+- [ ] Add `src/desktop_agent/` package.
+- [ ] Add `tests/` directory.
+- [ ] Add `examples/` directory.
+- [ ] Add `docs/architecture.md`.
+- [ ] Add `docs/task-dsl.md`.
+- [ ] Add `docs/safety.md`.
+- [ ] Add `docs/roadmap.md`.
+- [ ] Add `.gitignore` for Python caches, traces, screenshots, packaged builds, virtualenvs, and local config.
+- [ ] Configure `uv` for dependency management.
+- [ ] Configure `pytest`.
+- [ ] Configure `ruff` for linting and formatting.
+- [ ] Configure `mypy` for type checking.
+- [ ] Configure GitHub Actions for lint, type check, and tests.
+- [ ] Add comments only where code behavior is non-obvious, especially around safety, retries, coordinate transforms, and perception fusion.
+
+## 2. Target Architecture
+
+- [ ] Implement the system as separate modules:
+  - [ ] `cli`
+  - [ ] `config`
+  - [ ] `task_dsl`
+  - [ ] `screen`
+  - [ ] `perception`
+  - [ ] `actuation`
+  - [ ] `planner`
+  - [ ] `safety`
+  - [ ] `tracing`
+  - [ ] `platforms/windows`
+  - [ ] `platforms/linux_placeholder`
+- [ ] Define the main execution loop:
+  - [ ] Load config.
+  - [ ] Load task YAML.
+  - [ ] Validate task.
+  - [ ] Prepare trace directory.
+  - [ ] Check safety preconditions.
+  - [ ] Observe screen.
+  - [ ] Detect candidate UI elements.
+  - [ ] Select target.
+  - [ ] Execute action.
+  - [ ] Verify result.
+  - [ ] Retry, recover, or abort.
+  - [ ] Write final report.
+- [ ] Define all platform-specific behavior behind interfaces so Linux can be added later.
+
+## 3. CLI
+
+- [ ] Add command: `desktop-agent run <task.yaml> --config <config.yaml>`.
+- [ ] Add command: `desktop-agent dry-run <task.yaml> --config <config.yaml>`.
+- [ ] Add command: `desktop-agent inspect-screen --output <trace-dir>`.
+- [ ] Add command: `desktop-agent replay <trace-dir>`.
+- [ ] Add `--verbose`.
+- [ ] Add `--no-screenshots`.
+- [ ] Add `--max-runtime-seconds`.
+- [ ] Add `--confidence-threshold`.
+- [ ] Add `--allowed-window`.
+- [ ] Ensure CLI exits with nonzero status on failed task execution.
+- [ ] Ensure every CLI failure prints a clear human-readable reason.
+
+## 4. Configuration
+
+- [ ] Support project-level config file.
+- [ ] Support task-level config overrides.
+- [ ] Support CLI overrides.
+- [ ] Define precedence: CLI > task YAML > config file > defaults.
+- [ ] Add config fields:
+  - [ ] `default_timeout_seconds`
+  - [ ] `confidence_threshold`
+  - [ ] `max_steps`
+  - [ ] `max_retries_per_step`
+  - [ ] `max_runtime_seconds`
+  - [ ] `trace_root`
+  - [ ] `save_screenshots`
+  - [ ] `save_ocr_text`
+  - [ ] `allowed_windows`
+  - [ ] `emergency_stop_hotkey`
+  - [ ] `primary_monitor_only`
+- [ ] Validate config at startup.
+- [ ] Reject unsafe config values such as zero timeouts, negative retries, or missing safety limits.
+
+## 5. YAML Task DSL
+
+- [ ] Define a strict YAML schema.
+- [ ] Require every task to have:
+  - [ ] `name`
+  - [ ] `allowed_windows`
+  - [ ] `timeout_seconds`
+  - [ ] `steps`
+- [ ] Require every step to have:
+  - [ ] `id`
+  - [ ] `action`
+- [ ] Support optional step fields:
+  - [ ] `target`
+  - [ ] `text`
+  - [ ] `image`
+  - [ ] `region`
+  - [ ] `verify`
+  - [ ] `timeout_seconds`
+  - [ ] `retry`
+  - [ ] `on_failure`
+- [ ] Implement actions:
+  - [ ] `click_text`
+  - [ ] `click_image`
+  - [ ] `click_uia`
+  - [ ] `type_text`
+  - [ ] `press_key`
+  - [ ] `scroll`
+  - [ ] `scroll_until`
+  - [ ] `wait_for`
+  - [ ] `assert_visible`
+  - [ ] `branch_if_visible`
+  - [ ] `drag`
+- [ ] Implement verification types:
+  - [ ] `visible_text`
+  - [ ] `not_visible_text`
+  - [ ] `visible_image`
+  - [ ] `focused`
+  - [ ] `window_title_contains`
+  - [ ] `uia_element_exists`
+- [ ] Validate duplicate step IDs.
+- [ ] Validate references to missing image templates.
+- [ ] Validate unknown actions.
+- [ ] Validate unknown verification types.
+- [ ] Document complete task examples in `docs/task-dsl.md`.
+
+## 6. Screen Layer
+
+- [ ] Implement screenshot capture using `mss`.
+- [ ] Capture full primary monitor.
+- [ ] Capture active window region.
+- [ ] Save raw screenshots to trace directory when enabled.
+- [ ] Detect monitor dimensions.
+- [ ] Detect Windows DPI scaling.
+- [ ] Normalize coordinates between screenshot space and physical mouse space.
+- [ ] Add a clear warning when multiple monitors are detected but v1 is using primary monitor only.
+- [ ] Detect locked or unavailable desktop session and abort cleanly.
+- [ ] Add tests for coordinate normalization using synthetic monitor data.
+
+## 7. Windows UI Automation Layer
+
+- [ ] Add Windows adapter using `pywinauto`.
+- [ ] Detect active window title and process.
+- [ ] Extract visible UIA elements.
+- [ ] Extract element name, control type, bounds, enabled state, and visible state.
+- [ ] Convert UIA elements into shared `ElementCandidate` objects.
+- [ ] Prefer UIA candidates over OCR/CV candidates when confidence is similar.
+- [ ] Add fallback behavior when UIA is unavailable or returns incomplete data.
+- [ ] Add inspection output for UIA tree snapshots.
+- [ ] Add tests using mocked UIA element data.
+
+## 8. OCR Layer
+
+- [ ] Add offline OCR adapter.
+- [ ] Normalize OCR output into text candidates with bounds and confidence.
+- [ ] Support case-insensitive matching.
+- [ ] Support exact text matching.
+- [ ] Support contains matching.
+- [ ] Support simple fuzzy matching.
+- [ ] Filter OCR candidates below confidence threshold.
+- [ ] Save OCR text output to trace directory when enabled.
+- [ ] Add OCR tests using saved fixture screenshots.
+- [ ] Document OCR limitations around fonts, scaling, themes, and partial visibility.
+
+## 9. Computer Vision Layer
+
+- [ ] Add OpenCV template matching.
+- [ ] Support image templates from `examples/assets/` or task-relative paths.
+- [ ] Return image candidates with bounds and confidence.
+- [ ] Support target region restriction.
+- [ ] Support grayscale matching.
+- [ ] Support scale-tolerant matching as a later v1 enhancement.
+- [ ] Save detection overlays to trace directory.
+- [ ] Add tests for template matching with fixture screenshots.
+- [ ] Document when image matching should be used instead of text/UIA.
+
+## 10. Candidate Fusion
+
+- [ ] Define shared candidate model:
+  - [ ] `id`
+  - [ ] `source`
+  - [ ] `label`
+  - [ ] `bounds`
+  - [ ] `confidence`
+  - [ ] `visible`
+  - [ ] `enabled`
+  - [ ] `metadata`
+- [ ] Merge candidates from UIA, OCR, and template matching.
+- [ ] Deduplicate overlapping candidates.
+- [ ] Rank candidates by source reliability, confidence, visibility, and target match quality.
+- [ ] Reject ambiguous candidates unless the task provides a region or selector.
+- [ ] Include candidate ranking in trace logs.
+- [ ] Add unit tests for candidate ranking, deduplication, and ambiguity rejection.
+
+## 11. Actuation Layer
+
+- [ ] Implement mouse move.
+- [ ] Implement click.
+- [ ] Implement double click.
+- [ ] Implement drag.
+- [ ] Implement scroll.
+- [ ] Implement keyboard typing.
+- [ ] Implement key press and key chord.
+- [ ] Add smooth movement using curved paths and acceleration/deceleration.
+- [ ] Add configurable movement duration.
+- [ ] Add tiny timing variation for natural reliability, not stealth.
+- [ ] Verify target window is still allowed immediately before every action.
+- [ ] Add fake input adapter for tests.
+- [ ] Add comments explaining coordinate conversion and safety checks.
+
+## 12. Planner And Execution Engine
+
+- [ ] Implement step executor.
+- [ ] Implement per-step timeout.
+- [ ] Implement per-step retry budget.
+- [ ] Implement task-level timeout.
+- [ ] Implement max action count.
+- [ ] Implement abort reasons.
+- [ ] Implement verification after each action when configured.
+- [ ] Implement `wait_for` polling.
+- [ ] Implement `scroll_until` loop with max scroll count.
+- [ ] Implement `branch_if_visible` with explicit branch targets.
+- [ ] Implement recovery actions:
+  - [ ] wait and re-observe;
+  - [ ] refocus allowed window;
+  - [ ] scroll search region;
+  - [ ] retry alternate candidate;
+  - [ ] abort with trace.
+- [ ] Ensure every failure path writes enough trace data to debug the run.
+
+## 13. Safety System
+
+- [ ] Require allowed window/app whitelist for every task.
+- [ ] Block actions when active window does not match whitelist.
+- [ ] Add global emergency stop hotkey.
+- [ ] Add task-level max runtime.
+- [ ] Add task-level max steps.
+- [ ] Add per-step retry limit.
+- [ ] Add confidence threshold enforcement.
+- [ ] Add dry-run mode that validates and plans without moving the mouse.
+- [ ] Add clear warning that v1 does not support locked-screen background automation.
+- [ ] Add local-only trace policy.
+- [ ] Add safety documentation in `docs/safety.md`.
+
+## 14. Tracing And Reports
+
+- [ ] Create one trace directory per run.
+- [ ] Save normalized task config.
+- [ ] Save action log as JSONL.
+- [ ] Save final report as JSON.
+- [ ] Save human-readable report as HTML or Markdown.
+- [ ] Save screenshots before and after each step when enabled.
+- [ ] Save OCR output when enabled.
+- [ ] Save candidate overlays when enabled.
+- [ ] Include final status:
+  - [ ] passed;
+  - [ ] failed;
+  - [ ] aborted;
+  - [ ] emergency_stopped.
+- [ ] Include abort reason.
+- [ ] Include step timings.
+- [ ] Include candidate confidence values.
+- [ ] Implement `replay` command that summarizes a trace without rerunning actions.
+
+## 15. Example Workflows
+
+- [ ] Create browser fixture HTML app.
+- [ ] Add browser task that:
+  - [ ] opens or targets browser window;
+  - [ ] clicks email field;
+  - [ ] types email;
+  - [ ] scrolls to submit button;
+  - [ ] clicks submit;
+  - [ ] verifies success text.
+- [ ] Create native Windows fixture app.
+- [ ] Add native task that:
+  - [ ] targets app window;
+  - [ ] clicks text input;
+  - [ ] types text;
+  - [ ] clicks button;
+  - [ ] opens menu;
+  - [ ] verifies changed state.
+- [ ] Create mixed workflow task that:
+  - [ ] interacts with browser fixture;
+  - [ ] switches to native fixture;
+  - [ ] completes a final verification.
+- [ ] Keep all demo workflows deterministic and safe.
+
+## 16. Packaging
+
+- [ ] Add PyInstaller config.
+- [ ] Package Windows executable.
+- [ ] Include default config template.
+- [ ] Include example tasks.
+- [ ] Include troubleshooting docs.
+- [ ] Verify packaged executable can run `--help`.
+- [ ] Verify packaged executable can run `dry-run`.
+- [ ] Verify packaged executable can run demo task on a logged-in Windows desktop.
+
+## 17. Testing
+
+- [ ] Add unit tests for config precedence.
+- [ ] Add unit tests for YAML validation.
+- [ ] Add unit tests for invalid task failures.
+- [ ] Add unit tests for candidate ranking.
+- [ ] Add unit tests for retry policy.
+- [ ] Add unit tests for timeout handling.
+- [ ] Add unit tests for safety aborts.
+- [ ] Add unit tests for coordinate normalization.
+- [ ] Add OCR fixture tests.
+- [ ] Add template matching fixture tests.
+- [ ] Add fake-screen integration tests.
+- [ ] Add fake-input integration tests.
+- [ ] Add planner integration tests without real mouse movement.
+- [ ] Add manual Windows e2e checklist for real desktop execution.
+
+## 18. V1 Acceptance Criteria
+
+- [ ] `desktop-agent run` executes a YAML task end to end.
+- [ ] `desktop-agent dry-run` validates and explains the planned task without actions.
+- [ ] `desktop-agent inspect-screen` captures screenshot, OCR, UIA, and candidate data.
+- [ ] Browser demo completes unattended on an unlocked Windows desktop.
+- [ ] Native Windows demo completes unattended on an unlocked Windows desktop.
+- [ ] Mixed demo completes unattended on an unlocked Windows desktop.
+- [ ] Emergency hotkey stops execution within one second.
+- [ ] Failed runs produce useful screenshots, logs, candidates, and abort reason.
+- [ ] No cloud service is required.
+- [ ] No task can act outside the allowed window whitelist.
+- [ ] Documentation is sufficient for a new engineer to install, run, debug, and extend v1.
+
+## 19. Post-v1 Backlog
+
+- [ ] Linux X11 adapter.
+- [ ] Linux Wayland compatibility investigation.
+- [ ] Visual task recorder.
+- [ ] Optional local vision model.
+- [ ] Optional cloud VLM adapter disabled by default.
+- [ ] Redacted trace mode.
+- [ ] Team report server.
+- [ ] Remote worker orchestration.
+- [ ] Rich desktop tray UI.
+- [ ] More advanced recovery planning.
+- [ ] Plugin system for app-specific task libraries.
