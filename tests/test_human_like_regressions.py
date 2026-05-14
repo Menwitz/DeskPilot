@@ -170,6 +170,64 @@ def test_regression_seeded_timing_decisions_are_reproducible() -> None:
     assert timing_sequence(profile) == timing_sequence(profile)
 
 
+def test_regression_seeded_runs_reproduce_trace_random_samples() -> None:
+    first_actuator = CountingActuator()
+    second_actuator = CountingActuator()
+    config = RuntimeConfig(
+        confidence_threshold=0.8,
+        execution_profile=enabled_profile(),
+    )
+
+    first = run_fixture(
+        actuator=first_actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=config,
+    )
+    second = run_fixture(
+        actuator=second_actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=config,
+    )
+
+    assert first.status == second.status == "passed"
+    assert first.steps[0].candidate_id == second.steps[0].candidate_id
+    assert first_actuator.calls == second_actuator.calls == 1
+    assert timing_delay(first) == timing_delay(second)
+    assert timing_sample_records(first) == timing_sample_records(second)
+
+
+def test_regression_unseeded_runs_remain_inside_timing_and_safety_bounds() -> None:
+    reports: list[RunReport] = []
+    actuators: list[CountingActuator] = []
+    for _ in range(5):
+        actuator = CountingActuator()
+        actuators.append(actuator)
+        reports.append(
+            run_fixture(
+                actuator=actuator,
+                observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+                perception_engine=SingleCandidatePerceptionEngine(),
+                config=RuntimeConfig(
+                    confidence_threshold=0.8,
+                    execution_profile=ExecutionProfile(
+                        enabled=True,
+                        action_delay_seconds=(0.1, 0.2),
+                        retry_delay_seconds=(0.3, 0.4),
+                        hesitation_probability=0.5,
+                    ),
+                ),
+            ),
+        )
+
+    assert all(report.status == "passed" for report in reports)
+    assert all(report.steps[0].candidate_id == "candidate-1" for report in reports)
+    assert all(actuator.calls == 1 for actuator in actuators)
+    assert all(0.1 <= timing_delay(report) <= 0.2 for report in reports)
+    assert all("execute_action" in event_phases(report) for report in reports)
+
+
 def test_regression_klm_metadata_is_trace_only_after_safety_gates() -> None:
     actuator = CountingActuator()
     report = run_fixture(
@@ -307,6 +365,11 @@ def timing_delay(report: RunReport) -> float:
 def timing_persona(report: RunReport) -> str:
     event = next(event for event in report.events if event.phase == "execution_timing")
     return cast(str, event.metadata["execution_persona"])
+
+
+def timing_sample_records(report: RunReport) -> object:
+    event = next(event for event in report.events if event.phase == "execution_timing")
+    return event.metadata["sample_records"]
 
 
 def selected_candidate_id(report: RunReport) -> str:
