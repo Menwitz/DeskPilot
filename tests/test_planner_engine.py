@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from desktop_agent.actuation import ActionResult, Actuator, DryRunActuator
-from desktop_agent.config import RuntimeConfig, StaticConfigLoader
+from desktop_agent.config import ExecutionProfile, RuntimeConfig, StaticConfigLoader
 from desktop_agent.perception import (
     CompositePerceptionEngine,
     ConfidenceTargetSelector,
@@ -98,6 +98,56 @@ def test_execution_engine_enforces_per_step_timeout() -> None:
 
     assert report.status == "failed"
     assert report.steps[0].message == "step exceeded timeout"
+
+
+def test_execution_engine_rejects_impossible_step_timing_budget() -> None:
+    clock = FakeClock()
+    actuator = AdvancingActuator(clock)
+    perception = SequencePerceptionEngine((_candidate_tuple("Submit"),))
+    trace_sink = MemoryTraceSink()
+    task = TaskDefinition(
+        name="step-budget",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="click-submit",
+                action="click_text",
+                target="Submit",
+                retry=1,
+                timeout_seconds=0.4,
+            ),
+        ),
+    )
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=ExecutionProfile(
+                enabled=True,
+                action_delay_seconds=(0.1, 0.25),
+                retry_delay_seconds=(0.2, 0.25),
+            ),
+        ),
+        perception=perception,
+        actuator=actuator,
+        clock=clock,
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    budget_event = next(
+        event for event in trace_sink.events if event.phase == "step_timeout_budget"
+    )
+    assert report.status == "failed"
+    assert report.steps[0].message == (
+        "step timeout budget is smaller than planned waits"
+    )
+    assert actuator.calls == 0
+    assert perception.calls == 0
+    assert budget_event.metadata["planned_wait_seconds"] == 0.75
+    assert budget_event.metadata["fits_timeout"] is False
 
 
 def test_execution_engine_enforces_task_level_timeout() -> None:

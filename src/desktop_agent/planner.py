@@ -31,6 +31,7 @@ from desktop_agent.task_dsl import (
 from desktop_agent.timing import (
     ExecutionTimingController,
     build_action_timing_context,
+    estimate_step_timing_budget,
 )
 from desktop_agent.tracing import (
     RunReport,
@@ -300,6 +301,27 @@ class ExecutionEngine:
         task_deadline: float,
         action_count: int,
     ) -> StepExecutionOutcome:
+        budget = estimate_step_timing_budget(
+            step,
+            config.execution_profile,
+            default_timeout_seconds=config.default_timeout_seconds,
+            max_retries_per_step=config.max_retries_per_step,
+        )
+        self._record(
+            "step_timeout_budget",
+            "step timing budget planned",
+            _step_metadata(step, **budget.metadata()),
+        )
+        if not budget.fits_timeout:
+            return StepExecutionOutcome(
+                self._step_failed(
+                    step,
+                    0,
+                    "step timeout budget is smaller than planned waits",
+                    None,
+                ),
+            )
+
         if step.action == "wait_for":
             return self._execute_wait_for(step, config, task_deadline)
         if step.action == "scroll_until":

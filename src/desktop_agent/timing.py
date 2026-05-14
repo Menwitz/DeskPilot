@@ -53,6 +53,9 @@ POINTER_ACTIONS: frozenset[str] = frozenset(
     },
 )
 KEYBOARD_ACTIONS: frozenset[str] = frozenset({"press_key", "type_text"})
+ACTION_TIMED_ACTIONS: frozenset[str] = POINTER_ACTIONS | KEYBOARD_ACTIONS | frozenset(
+    {"assert_visible"},
+)
 MENTAL_OPERATOR_COUNT_BY_CATEGORY: dict[str, int] = {
     "navigation": 1,
     "recognition": 1,
@@ -165,6 +168,40 @@ class TimingDecision:
             )
             metadata["klm_total_seconds"] = _klm_total_seconds(self.klm_operators)
         return metadata
+
+
+@dataclass(frozen=True)
+class StepTimingBudget:
+    """Worst-case planned timing overhead for a step's configured timeout."""
+
+    timeout_seconds: float
+    attempt_count: int
+    action_timing_slots: int
+    retry_timing_slots: int
+    planned_action_wait_seconds: float
+    planned_retry_wait_seconds: float
+    planned_wait_seconds: float
+
+    @property
+    def remaining_timeout_seconds(self) -> float:
+        return self.timeout_seconds - self.planned_wait_seconds
+
+    @property
+    def fits_timeout(self) -> bool:
+        return self.remaining_timeout_seconds >= 0
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "timeout_seconds": self.timeout_seconds,
+            "attempt_count": self.attempt_count,
+            "action_timing_slots": self.action_timing_slots,
+            "retry_timing_slots": self.retry_timing_slots,
+            "planned_action_wait_seconds": self.planned_action_wait_seconds,
+            "planned_retry_wait_seconds": self.planned_retry_wait_seconds,
+            "planned_wait_seconds": self.planned_wait_seconds,
+            "remaining_timeout_seconds": self.remaining_timeout_seconds,
+            "fits_timeout": self.fits_timeout,
+        }
 
 
 class ExecutionTimingController:
@@ -292,6 +329,49 @@ def build_action_timing_context(
         input_mode=_input_mode(step.action),
         keypress_count=_keypress_count(step),
     )
+
+
+def estimate_step_timing_budget(
+    step: TaskStep,
+    profile: ExecutionProfile,
+    *,
+    default_timeout_seconds: float,
+    max_retries_per_step: int,
+) -> StepTimingBudget:
+    """Estimate worst-case profile waits that must fit inside a step timeout."""
+
+    retry_budget = step.retry if step.retry is not None else max_retries_per_step
+    attempt_count = retry_budget + 1
+    action_timing_slots = _action_timing_slots(step, attempt_count)
+    retry_timing_slots = _retry_timing_slots(step, retry_budget)
+    action_wait_seconds = 0.0
+    retry_wait_seconds = 0.0
+    if profile.enabled:
+        action_wait_seconds = action_timing_slots * profile.action_delay_seconds[1]
+        retry_wait_seconds = retry_timing_slots * profile.retry_delay_seconds[1]
+    return StepTimingBudget(
+        timeout_seconds=step.timeout_seconds or default_timeout_seconds,
+        attempt_count=attempt_count,
+        action_timing_slots=action_timing_slots,
+        retry_timing_slots=retry_timing_slots,
+        planned_action_wait_seconds=action_wait_seconds,
+        planned_retry_wait_seconds=retry_wait_seconds,
+        planned_wait_seconds=action_wait_seconds + retry_wait_seconds,
+    )
+
+
+def _action_timing_slots(step: TaskStep, attempt_count: int) -> int:
+    if step.action == "scroll_until":
+        return attempt_count
+    if step.action in ACTION_TIMED_ACTIONS:
+        return attempt_count
+    return 0
+
+
+def _retry_timing_slots(step: TaskStep, retry_budget: int) -> int:
+    if step.action in {"branch_if_visible", "scroll_until", "wait_for"}:
+        return 0
+    return retry_budget
 
 
 def _build_klm_operators(

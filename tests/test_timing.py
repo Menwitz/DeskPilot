@@ -7,6 +7,7 @@ from desktop_agent.task_dsl import TaskStep
 from desktop_agent.timing import (
     ExecutionTimingController,
     build_action_timing_context,
+    estimate_step_timing_budget,
 )
 
 
@@ -219,3 +220,31 @@ def test_retry_timing_reports_system_wait_operator() -> None:
     assert metadata["timing_model"] == "profile_bounds"
     assert counts == {"system_wait": 1}
     assert 0.3 <= cast(float, metadata["delay_seconds"]) <= 0.4
+
+
+def test_step_timing_budget_accounts_for_action_and_retry_waits() -> None:
+    budget = estimate_step_timing_budget(
+        TaskStep(
+            id="click-submit",
+            action="click_text",
+            target="Submit",
+            retry=2,
+            timeout_seconds=2.0,
+        ),
+        ExecutionProfile(
+            enabled=True,
+            action_delay_seconds=(0.1, 0.2),
+            retry_delay_seconds=(0.3, 0.4),
+        ),
+        default_timeout_seconds=30.0,
+        max_retries_per_step=1,
+    )
+
+    assert budget.attempt_count == 3
+    assert budget.action_timing_slots == 3
+    assert budget.retry_timing_slots == 2
+    assert round(budget.planned_action_wait_seconds, 2) == 0.6
+    assert budget.planned_retry_wait_seconds == 0.8
+    assert budget.fits_timeout is True
+    remaining_timeout = cast(float, budget.metadata()["remaining_timeout_seconds"])
+    assert round(remaining_timeout, 2) == 0.6

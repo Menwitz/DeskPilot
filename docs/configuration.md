@@ -77,6 +77,9 @@ text, allowed windows, maximum steps, timeouts, or retry budgets.
   pre-action timing decision.
 - `retry_delay_seconds` sets the inclusive lower and upper bounds for retry
   pacing.
+- Per-step timeout budgeting uses the upper action and retry delay bounds, the
+  step retry budget, and the step timeout. DeskPilot fails a step before
+  desktop action when the configured timeout cannot fit the planned waits.
 - `hesitation_probability` chooses the upper half of the configured action
   delay range with that probability.
 - Enabled action timing is target-aware inside the same bounds: selected target

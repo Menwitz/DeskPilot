@@ -72,7 +72,8 @@ Supported verification types:
 - `image` references a task-relative image template or `examples/assets/`.
 - `region` restricts perception to `{x, y, width, height}`.
 - `verify` declares a post-action verification.
-- `timeout_seconds` overrides the step timeout.
+- `timeout_seconds` overrides the step timeout. Enabled execution profiles
+  budget planned action and retry waits against this value before desktop input.
 - `retry` overrides the per-step retry budget.
 - `on_failure` names a future recovery or branch target.
 - `requires_confirmation` blocks the step unless its ID is explicitly confirmed

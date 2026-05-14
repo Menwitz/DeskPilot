@@ -114,4 +114,5 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert task_payload["steps"][0]["resolved_category"] == "submission"
     assert any("candidate_rankings" in line for line in action_log)
     assert any('"step_category": "submission"' in line for line in action_log)
+    assert any("step_timeout_budget" in line for line in action_log)
     assert any("observe_after_action" in line for line in action_log)

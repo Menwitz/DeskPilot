@@ -59,7 +59,7 @@ evasion, or pretending to be a person where automation is not allowed.
   system waits, keying, pointing, and homing between input modes.
 - [x] Let task authors choose an execution persona such as careful, normal, or
   fast while keeping all values inside safe bounds.
-- [ ] Add per-step timeout budgeting that accounts for planned waits and retry
+- [x] Add per-step timeout budgeting that accounts for planned waits and retry
   pacing.
 - [ ] Add tests proving persona changes affect timing only, not task outcome or
   target selection.

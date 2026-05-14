@@ -28,6 +28,10 @@ also include `execution_persona`, `persona_timing_bias`, `klm_operators`,
 `klm_operator_counts`, `klm_total_seconds`, and input-mode metadata for the
 bounded cognitive timing model.
 
+Each executed step also emits `step_timeout_budget` metadata with the planned
+action wait, retry wait, total planned wait, remaining timeout, and whether the
+budget fits before any desktop action is attempted.
+
 ## Replay
 
 `desktop-agent replay <trace-dir>` reads `final-report.json` and prints a
