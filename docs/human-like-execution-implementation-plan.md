@@ -29,7 +29,7 @@ evasion, or pretending to be a person where automation is not allowed.
   workflows.
 - [x] Add a repeated-run harness that executes the same task many times and
   stores per-run metrics.
-- [ ] Track success rate, median task time, step count, action count, retry
+- [x] Track success rate, median task time, step count, action count, retry
   count, ambiguity rate, recovery rate, and operator intervention rate.
 - [ ] Add run-to-run variance reports so timing and recovery behavior can be
   evaluated instead of guessed.

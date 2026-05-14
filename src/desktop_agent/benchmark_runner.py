@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import statistics
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -50,6 +52,21 @@ class BenchmarkRunMetrics:
 
 
 @dataclass(frozen=True)
+class BenchmarkSummaryMetrics:
+    """Aggregate metrics computed across all repeated runs."""
+
+    run_count: int
+    success_rate: float
+    median_task_time_seconds: float
+    step_count: int
+    action_count: int
+    retry_count: int
+    ambiguity_rate: float
+    recovery_rate: float
+    operator_intervention_rate: float
+
+
+@dataclass(frozen=True)
 class BenchmarkRunReport:
     """Machine-readable report for one repeated benchmark invocation."""
 
@@ -58,6 +75,7 @@ class BenchmarkRunReport:
     metrics_path: Path
     report_path: Path
     runs: tuple[BenchmarkRunMetrics, ...]
+    summary: BenchmarkSummaryMetrics
 
 
 class BenchmarkRunHarness:
@@ -92,16 +110,18 @@ class BenchmarkRunHarness:
             self._run_once(task_path, task, config, iteration)
             for iteration in range(1, iterations + 1)
         )
+        summary = _summary_from_runs(runs)
         metrics_path = output_dir / "runs.jsonl"
         report_path = output_dir / "benchmark-report.json"
         _write_metrics(metrics_path, runs)
-        _write_report(report_path, task_path, output_dir, metrics_path, runs)
+        _write_report(report_path, task_path, output_dir, metrics_path, runs, summary)
         return BenchmarkRunReport(
             task_path=task_path,
             output_dir=output_dir,
             metrics_path=metrics_path,
             report_path=report_path,
             runs=runs,
+            summary=summary,
         )
 
     def _run_once(
@@ -174,18 +194,63 @@ def _write_report(
     output_dir: Path,
     metrics_path: Path,
     runs: tuple[BenchmarkRunMetrics, ...],
+    summary: BenchmarkSummaryMetrics,
 ) -> None:
     payload = {
         "task_path": str(task_path),
         "output_dir": str(output_dir),
         "metrics_path": str(metrics_path),
         "iterations": len(runs),
+        "summary": _summary_to_dict(summary),
         "runs": [_metrics_to_dict(run) for run in runs],
     }
     path.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def _summary_from_runs(
+    runs: tuple[BenchmarkRunMetrics, ...],
+) -> BenchmarkSummaryMetrics:
+    run_count = len(runs)
+    successful_runs = sum(1 for run in runs if run.status == "passed")
+    return BenchmarkSummaryMetrics(
+        run_count=run_count,
+        success_rate=successful_runs / run_count,
+        median_task_time_seconds=statistics.median(
+            run.task_time_seconds for run in runs
+        ),
+        step_count=sum(run.step_count for run in runs),
+        action_count=sum(run.action_count for run in runs),
+        retry_count=sum(run.retry_count for run in runs),
+        ambiguity_rate=_nonzero_rate(run.ambiguity_count for run in runs),
+        recovery_rate=_nonzero_rate(run.recovery_count for run in runs),
+        operator_intervention_rate=_nonzero_rate(
+            run.operator_intervention_count for run in runs
+        ),
+    )
+
+
+def _nonzero_rate(values: Iterable[int]) -> float:
+    counts = tuple(values)
+    if not counts:
+        return 0.0
+    return sum(1 for value in counts if value > 0) / len(counts)
+
+
+def _summary_to_dict(summary: BenchmarkSummaryMetrics) -> dict[str, object]:
+    return {
+        "run_count": summary.run_count,
+        "success_rate": summary.success_rate,
+        "median_task_time_seconds": summary.median_task_time_seconds,
+        "step_count": summary.step_count,
+        "action_count": summary.action_count,
+        "retry_count": summary.retry_count,
+        "ambiguity_rate": summary.ambiguity_rate,
+        "recovery_rate": summary.recovery_rate,
+        "operator_intervention_rate": summary.operator_intervention_rate,
+    }
 
 
 def _metrics_to_dict(metrics: BenchmarkRunMetrics) -> dict[str, object]:

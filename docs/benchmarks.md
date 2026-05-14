@@ -41,9 +41,13 @@ The harness writes:
 
 - `runs.jsonl` with one per-run metrics record per line.
 - `benchmark-report.json` with the task path, output paths, iteration count,
-  and per-run metrics.
+  aggregate summary metrics, and per-run metrics.
 - Per-iteration trace directories under `<output>/traces/`.
 
 Per-run metrics currently include status, elapsed task time, step count, action
 count, retry count, ambiguity count, recovery count, operator intervention
 count, trace directory, and abort reason.
+
+Summary metrics currently include success rate, median task time, total step
+count, total action count, total retry count, ambiguity rate, recovery rate, and
+operator intervention rate.

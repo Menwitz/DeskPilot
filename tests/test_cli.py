@@ -233,6 +233,9 @@ def test_cli_benchmark_run_writes_metrics_and_report(
     metrics = (output_dir / "runs.jsonl").read_text().splitlines()
     assert status == 0
     assert report["iterations"] == 2
+    assert report["summary"]["success_rate"] == 1.0
+    assert report["summary"]["step_count"] > 0
+    assert report["summary"]["action_count"] > 0
     assert len(metrics) == 2
     assert "metrics:" in output
     assert "report:" in output
