@@ -8,7 +8,7 @@ import random
 import sys
 import time
 from ctypes import wintypes
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Literal, Protocol
 
 from desktop_agent.config import RuntimeConfig
@@ -16,6 +16,7 @@ from desktop_agent.perception import ElementCandidate
 from desktop_agent.screen import (
     Bounds,
     ScreenObservation,
+    screenshot_bounds_to_physical,
     screenshot_point_to_physical,
 )
 from desktop_agent.task_dsl import TaskRegion, TaskStep
@@ -62,11 +63,90 @@ class ActuationProfile:
 
 
 @dataclass(frozen=True)
+class PointerTimingContext:
+    """Physical pointer movement geometry used by pointer timing models."""
+
+    start: tuple[int, int]
+    end: tuple[int, int]
+    target_width_pixels: float | None = None
+    target_height_pixels: float | None = None
+
+    @property
+    def distance_pixels(self) -> float:
+        return math.hypot(self.end[0] - self.start[0], self.end[1] - self.start[1])
+
+    @property
+    def effective_target_width_pixels(self) -> float:
+        if (
+            self.target_width_pixels is None
+            or self.target_height_pixels is None
+            or self.target_width_pixels <= 0
+            or self.target_height_pixels <= 0
+        ):
+            return 1.0
+        return min(self.target_width_pixels, self.target_height_pixels)
+
+
+@dataclass(frozen=True)
+class PointerTimingEstimate:
+    """Traceable pointer timing estimate emitted by a movement model."""
+
+    model: str
+    duration_seconds: float
+    distance_pixels: float
+    effective_target_width_pixels: float
+    index_of_difficulty: float
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "pointer_timing_model": self.model,
+            "pointer_model_duration_seconds": self.duration_seconds,
+            "pointer_distance_pixels": self.distance_pixels,
+            "pointer_effective_target_width_pixels": (
+                self.effective_target_width_pixels
+            ),
+            "pointer_index_of_difficulty": self.index_of_difficulty,
+        }
+
+
+class PointerTimingModel(Protocol):
+    """Interface for local pointer timing duration estimates."""
+
+    def estimate(self, context: PointerTimingContext) -> PointerTimingEstimate: ...
+
+
+@dataclass(frozen=True)
+class FittsLawPointerTimingModel:
+    """Simple Fitts' Law-inspired model for bounded local pointer timing."""
+
+    intercept_seconds: float = 0.05
+    slope_seconds: float = 0.08
+    minimum_target_width_pixels: float = 1.0
+
+    def estimate(self, context: PointerTimingContext) -> PointerTimingEstimate:
+        width = max(
+            context.effective_target_width_pixels,
+            self.minimum_target_width_pixels,
+        )
+        distance = context.distance_pixels
+        index_of_difficulty = math.log2((distance / width) + 1)
+        return PointerTimingEstimate(
+            model="fitts_law",
+            duration_seconds=self.intercept_seconds
+            + (self.slope_seconds * index_of_difficulty),
+            distance_pixels=distance,
+            effective_target_width_pixels=width,
+            index_of_difficulty=index_of_difficulty,
+        )
+
+
+@dataclass(frozen=True)
 class MovementPlan:
     """Concrete physical mouse path emitted by the movement planner."""
 
     points: tuple[tuple[int, int], ...]
     duration_seconds: float
+    timing_estimate: PointerTimingEstimate | None = None
 
     @property
     def step_delay_seconds(self) -> float:
@@ -160,20 +240,47 @@ class UnavailableActuator(Actuator):
 class SmoothMovementPlanner:
     """Builds small eased mouse paths between physical coordinates."""
 
-    def __init__(self, profile: ActuationProfile | None = None) -> None:
+    def __init__(
+        self,
+        profile: ActuationProfile | None = None,
+        timing_model: PointerTimingModel | None = None,
+    ) -> None:
         self._profile = profile or ActuationProfile()
+        self._timing_model = timing_model or FittsLawPointerTimingModel()
         self._random = random.Random(self._profile.random_seed)
 
     def plan(
         self,
         start: tuple[int, int],
         end: tuple[int, int],
+        target_size_pixels: tuple[float, float] | None = None,
     ) -> MovementPlan:
-        duration = self._sample_seconds(
+        estimate = self._timing_model.estimate(
+            PointerTimingContext(
+                start=start,
+                end=end,
+                target_width_pixels=target_size_pixels[0]
+                if target_size_pixels
+                else None,
+                target_height_pixels=target_size_pixels[1]
+                if target_size_pixels
+                else None,
+            )
+        )
+        bounded_duration = _clamp_seconds(
+            estimate.duration_seconds,
             self._profile.movement_duration_seconds,
-        ) + self._sample_seconds(self._profile.timing_variation_seconds)
+        )
+        estimate = replace(estimate, duration_seconds=bounded_duration)
+        duration = bounded_duration + self._sample_seconds(
+            self._profile.timing_variation_seconds
+        )
         if start == end:
-            return MovementPlan(points=(end,), duration_seconds=duration)
+            return MovementPlan(
+                points=(end,),
+                duration_seconds=duration,
+                timing_estimate=estimate,
+            )
 
         control = self._control_point(start, end)
         points = tuple(
@@ -185,7 +292,11 @@ class SmoothMovementPlanner:
             )
             for index in range(1, self._profile.movement_steps + 1)
         )
-        return MovementPlan(points=points, duration_seconds=duration)
+        return MovementPlan(
+            points=points,
+            duration_seconds=duration,
+            timing_estimate=estimate,
+        )
 
     def _sample_seconds(self, bounds: tuple[float, float]) -> float:
         lower, upper = bounds
@@ -258,9 +369,13 @@ class DesktopActuator(Actuator):
 
         return ActionResult(False, f"unsupported actuation action: {step.action}")
 
-    def move_mouse(self, point: tuple[int, int]) -> MovementPlan:
+    def move_mouse(
+        self,
+        point: tuple[int, int],
+        target_size_pixels: tuple[float, float] | None = None,
+    ) -> MovementPlan:
         start = self._backend.current_position()
-        plan = self._movement_planner.plan(start, point)
+        plan = self._movement_planner.plan(start, point, target_size_pixels)
         for path_point in plan.points:
             self._backend.move_to(path_point)
             if plan.step_delay_seconds > 0:
@@ -271,8 +386,10 @@ class DesktopActuator(Actuator):
         self,
         point: tuple[int, int],
         button: MouseButton = "left",
+        *,
+        target_size_pixels: tuple[float, float] | None = None,
     ) -> MovementPlan:
-        plan = self.move_mouse(point)
+        plan = self.move_mouse(point, target_size_pixels)
         self._backend.mouse_down(point, button)
         self._backend.mouse_up(point, button)
         return plan
@@ -281,8 +398,10 @@ class DesktopActuator(Actuator):
         self,
         point: tuple[int, int],
         button: MouseButton = "left",
+        *,
+        target_size_pixels: tuple[float, float] | None = None,
     ) -> MovementPlan:
-        plan = self.click(point, button)
+        plan = self.click(point, button, target_size_pixels=target_size_pixels)
         self._backend.sleep(0.05)
         self._backend.mouse_down(point, button)
         self._backend.mouse_up(point, button)
@@ -293,18 +412,26 @@ class DesktopActuator(Actuator):
         start: tuple[int, int],
         end: tuple[int, int],
         button: MouseButton = "left",
+        *,
+        start_target_size_pixels: tuple[float, float] | None = None,
+        end_target_size_pixels: tuple[float, float] | None = None,
     ) -> MovementPlan:
-        plan = self.move_mouse(start)
+        plan = self.move_mouse(start, start_target_size_pixels)
         self._backend.mouse_down(start, button)
-        drag_plan = self.move_mouse(end)
+        drag_plan = self.move_mouse(end, end_target_size_pixels)
         self._backend.mouse_up(end, button)
         return MovementPlan(
             points=plan.points + drag_plan.points,
             duration_seconds=plan.duration_seconds + drag_plan.duration_seconds,
         )
 
-    def scroll(self, point: tuple[int, int], clicks: int) -> None:
-        self.move_mouse(point)
+    def scroll(
+        self,
+        point: tuple[int, int],
+        clicks: int,
+        target_size_pixels: tuple[float, float] | None = None,
+    ) -> None:
+        self.move_mouse(point, target_size_pixels)
         self._backend.scroll(point, clicks)
 
     def type_text(self, text: str) -> None:
@@ -335,7 +462,10 @@ class DesktopActuator(Actuator):
         observation: ScreenObservation,
     ) -> ActionResult:
         point = _target_point(target, observation)
-        plan = self.click(point)
+        plan = self.click(
+            point,
+            target_size_pixels=_target_size_pixels(target, observation),
+        )
         return ActionResult(
             True,
             f"clicked {step.action}",
@@ -370,7 +500,8 @@ class DesktopActuator(Actuator):
     ) -> ActionResult:
         point = _target_or_region_point(target, step.region, observation)
         clicks = _scroll_clicks(step)
-        self.scroll(point, clicks)
+        target_size = _target_or_region_size_pixels(target, step.region, observation)
+        self.scroll(point, clicks, target_size)
         return ActionResult(
             True,
             "scrolled",
@@ -387,7 +518,12 @@ class DesktopActuator(Actuator):
             raise ActuationError("drag requires a destination region")
         start = _target_point(target, observation)
         end = _region_center(step.region, observation)
-        plan = self.drag(start, end)
+        plan = self.drag(
+            start,
+            end,
+            start_target_size_pixels=_target_size_pixels(target, observation),
+            end_target_size_pixels=_region_size_pixels(step.region, observation),
+        )
         return ActionResult(
             True,
             "dragged",
@@ -582,6 +718,47 @@ def _target_or_region_point(
     raise ActuationError("scroll requires a target or region")
 
 
+def _target_size_pixels(
+    target: ElementCandidate | None,
+    observation: ScreenObservation,
+) -> tuple[float, float] | None:
+    if target is None:
+        return None
+    return _bounds_size_pixels(target.bounds, observation)
+
+
+def _target_or_region_size_pixels(
+    target: ElementCandidate | None,
+    region: TaskRegion | None,
+    observation: ScreenObservation,
+) -> tuple[float, float] | None:
+    if target is not None:
+        return _bounds_size_pixels(target.bounds, observation)
+    if region is not None:
+        return _region_size_pixels(region, observation)
+    return None
+
+
+def _region_size_pixels(
+    region: TaskRegion,
+    observation: ScreenObservation,
+) -> tuple[float, float]:
+    return _bounds_size_pixels(
+        Bounds(region.x, region.y, region.width, region.height),
+        observation,
+    )
+
+
+def _bounds_size_pixels(
+    bounds: Bounds,
+    observation: ScreenObservation,
+) -> tuple[float, float]:
+    if observation.monitor is None:
+        return (float(bounds.width), float(bounds.height))
+    physical = screenshot_bounds_to_physical(bounds, observation.monitor)
+    return (float(physical.width), float(physical.height))
+
+
 def _bounds_center(
     bounds: Bounds,
     observation: ScreenObservation,
@@ -608,13 +785,16 @@ def _input_metadata(
     plan: MovementPlan,
     target: ElementCandidate | None,
 ) -> dict[str, object]:
-    return {
+    metadata: dict[str, object] = {
         "input_action": action,
         "point": list(point),
         "movement_points": len(plan.points),
         "movement_duration_seconds": plan.duration_seconds,
         "candidate_id": target.id if target else None,
     }
+    if plan.timing_estimate is not None:
+        metadata.update(plan.timing_estimate.metadata())
+    return metadata
 
 
 def _scroll_clicks(step: TaskStep) -> int:
@@ -640,6 +820,11 @@ def _quadratic_bezier(
 
 def _ease_in_out(t: float) -> float:
     return t * t * (3 - 2 * t)
+
+
+def _clamp_seconds(value: float, bounds: tuple[float, float]) -> float:
+    lower, upper = bounds
+    return max(lower, min(upper, value))
 
 
 def _validate_seconds_pair(value: tuple[float, float], field_name: str) -> None:

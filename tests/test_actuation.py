@@ -2,6 +2,8 @@ from desktop_agent.actuation import (
     ActuationProfile,
     DesktopActuator,
     FakeInputBackend,
+    FittsLawPointerTimingModel,
+    PointerTimingContext,
     SmoothMovementPlanner,
 )
 from desktop_agent.config import RuntimeConfig
@@ -43,6 +45,8 @@ def test_desktop_actuator_clicks_converted_target_center() -> None:
 
     assert result.success is True
     assert result.metadata["point"] == [150, 250]
+    assert result.metadata["pointer_timing_model"] == "fitts_law"
+    assert result.metadata["pointer_effective_target_width_pixels"] == 20.0
     assert backend.events[-2].kind == "mouse_down"
     assert backend.events[-2].point == (150, 250)
     assert backend.events[-1].kind == "mouse_up"
@@ -174,6 +178,52 @@ def test_smooth_movement_planner_uses_eased_multi_point_path() -> None:
     assert plan.points[-1] == (100, 0)
     assert plan.duration_seconds == 0.21000000000000002
     assert plan.points[0][0] < plan.points[1][0] < plan.points[2][0]
+    assert plan.timing_estimate is not None
+    assert plan.timing_estimate.model == "fitts_law"
+
+
+def test_fitts_law_pointer_timing_increases_for_far_small_targets() -> None:
+    model = FittsLawPointerTimingModel(intercept_seconds=0.1, slope_seconds=0.2)
+
+    easy = model.estimate(
+        PointerTimingContext(
+            start=(0, 0),
+            end=(50, 0),
+            target_width_pixels=100,
+            target_height_pixels=100,
+        )
+    )
+    hard = model.estimate(
+        PointerTimingContext(
+            start=(0, 0),
+            end=(500, 0),
+            target_width_pixels=10,
+            target_height_pixels=10,
+        )
+    )
+
+    assert hard.index_of_difficulty > easy.index_of_difficulty
+    assert hard.duration_seconds > easy.duration_seconds
+
+
+def test_movement_planner_clamps_fitts_duration_inside_profile_bounds() -> None:
+    planner = SmoothMovementPlanner(
+        ActuationProfile(
+            movement_duration_seconds=(0.05, 0.5),
+            timing_variation_seconds=(0.0, 0.0),
+            movement_steps=2,
+            movement_smoothness=0.0,
+            random_seed=1,
+        ),
+        FittsLawPointerTimingModel(intercept_seconds=0.0, slope_seconds=0.2),
+    )
+
+    large_target = planner.plan((0, 0), (100, 0), target_size_pixels=(100, 100))
+    small_target = planner.plan((0, 0), (100, 0), target_size_pixels=(5, 5))
+
+    assert large_target.duration_seconds >= 0.05
+    assert small_target.duration_seconds <= 0.5
+    assert small_target.duration_seconds > large_target.duration_seconds
 
 
 def _instant_profile() -> ActuationProfile:
