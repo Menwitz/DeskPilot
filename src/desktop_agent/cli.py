@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 
 from desktop_agent.actuation import DryRunActuator, create_platform_actuator
@@ -32,6 +33,7 @@ from desktop_agent.perception import (
     DryRunPerceptionEngine,
     ElementCandidate,
     candidate_ranking_metadata,
+    ui_state_snapshot_metadata,
 )
 from desktop_agent.planner import ExecutionEngine
 from desktop_agent.platforms.windows.uia import (
@@ -71,6 +73,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_task(args, dry_run=True)
         if args.command == "inspect-screen":
             return _inspect_screen(args)
+        if args.command == "calibrate-target":
+            return _calibrate_target(args)
         if args.command == "benchmark-run":
             return _run_benchmark(args)
         if args.command == "replay":
@@ -101,6 +105,17 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     inspect_parser.add_argument("--output", required=True, type=Path)
     inspect_parser.add_argument("--verbose", action="store_true")
+
+    calibrate_parser = subparsers.add_parser(
+        "calibrate-target",
+        help="explain why a task target is selected or rejected",
+    )
+    calibrate_parser.add_argument("task_yaml", type=Path)
+    calibrate_parser.add_argument("--step-id")
+    calibrate_parser.add_argument("--output", required=True, type=Path)
+    calibrate_parser.add_argument("--config", type=Path)
+    calibrate_parser.add_argument("--confidence-threshold", type=float)
+    calibrate_parser.add_argument("--allowed-window", action="append", default=[])
 
     replay_parser = subparsers.add_parser("replay", help="summarize a trace directory")
     replay_parser.add_argument("trace_dir", type=Path)
@@ -206,6 +221,127 @@ def _inspect_screen(args: argparse.Namespace) -> int:
     print("status: passed")
     print(f"inspection report: {output_path}")
     return 0
+
+
+def _calibrate_target(args: argparse.Namespace) -> int:
+    task = YamlTaskLoader().load(args.task_yaml)
+    step = _calibration_step(task.steps, args.step_id)
+    file_config = YamlConfigLoader().load(args.config)
+    config = resolve_runtime_config(
+        file_config,
+        task_overrides=task.config_overrides,
+        cli_overrides=ConfigOverrides(
+            confidence_threshold=args.confidence_threshold,
+            allowed_windows=tuple(args.allowed_window)
+            if args.allowed_window
+            else None,
+        ),
+    )
+    args.output.mkdir(parents=True, exist_ok=True)
+    config = replace(config, trace_root=args.output)
+    output_path = args.output / "target-calibration.json"
+    try:
+        observation = MssScreenObserver().observe(config)
+    except ScreenUnavailableError as exc:
+        payload: dict[str, object] = {
+            "status": "failed",
+            "reason": str(exc),
+            "step_id": step.id,
+        }
+        output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        print(f"error: {payload['reason']}")
+        print(f"calibration report: {output_path}")
+        return 1
+
+    candidates = _calibration_candidates(args.output, step, observation, config)
+    selected = ConfidenceTargetSelector().select(step, candidates, config)
+    selection_blocked = (
+        "confidence_or_ambiguity_gate"
+        if selected is None and candidates
+        else None
+    )
+    snapshot = ui_state_snapshot_metadata(
+        step,
+        candidates,
+        selected,
+        config,
+        selection_blocked=selection_blocked,
+    )
+    payload = {
+        "status": "selected" if selected is not None else "rejected",
+        "step_id": step.id,
+        "action": step.action,
+        "target": step.target,
+        "selected_candidate_id": selected.id if selected is not None else None,
+        "rejection_reason": None
+        if selected is not None
+        else _calibration_rejection_reason(snapshot, selection_blocked),
+        "candidate_rankings": candidate_ranking_metadata(
+            step,
+            candidates,
+            config,
+        )["candidate_rankings"],
+        "ui_state_snapshot": snapshot,
+    }
+    output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(f"status: {payload['status']}")
+    if payload["rejection_reason"]:
+        print(f"reason: {payload['rejection_reason']}")
+    if payload["selected_candidate_id"]:
+        print(f"selected: {payload['selected_candidate_id']}")
+    print(f"calibration report: {output_path}")
+    return 0 if selected is not None else 1
+
+
+def _calibration_step(
+    steps: tuple[TaskStep, ...],
+    step_id: str | None,
+) -> TaskStep:
+    if not steps:
+        raise ValueError("task must contain at least one step")
+    if step_id is None:
+        return steps[0]
+    for step in steps:
+        if step.id == step_id:
+            return step
+    raise ValueError(f"step not found: {step_id}")
+
+
+def _calibration_candidates(
+    output_dir: Path,
+    step: TaskStep,
+    observation: ScreenObservation,
+    config: RuntimeConfig,
+) -> tuple[ElementCandidate, ...]:
+    ocr_blocks, _ = _collect_ocr_blocks(observation)
+    ocr_candidates = ocr_blocks_to_candidates(step, ocr_blocks, config)
+    _, uia_candidates, _ = _collect_uia(output_dir)
+    image_candidates = OpenCvTemplatePerceptionEngine().detect(
+        step,
+        observation,
+        config,
+    )
+    return CandidateFusion().fuse(
+        step,
+        uia_candidates + ocr_candidates + image_candidates,
+        config,
+    )
+
+
+def _calibration_rejection_reason(
+    snapshot: dict[str, object],
+    selection_blocked: str | None,
+) -> str:
+    if selection_blocked is not None:
+        return selection_blocked
+    blocked = snapshot.get("blocked_candidates")
+    if isinstance(blocked, list) and blocked:
+        first = blocked[0]
+        if isinstance(first, dict):
+            reason = first.get("blocked_reason")
+            if isinstance(reason, str):
+                return reason
+    return "no_candidates"
 
 
 def _collect_screen_inspection(

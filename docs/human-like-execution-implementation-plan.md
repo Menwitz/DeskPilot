@@ -97,7 +97,7 @@ evasion, or pretending to be a person where automation is not allowed.
   icons.
 - [x] Add UI state snapshots that summarize visible controls, selected
   candidates, confidence values, and blocked candidates.
-- [ ] Add a calibration command that shows why a target was selected or rejected.
+- [x] Add a calibration command that shows why a target was selected or rejected.
 - [ ] Add tests for conflicting perception sources and low-confidence candidate
   sets.
 - [ ] Add benchmark metrics for grounding accuracy and ambiguity rate.

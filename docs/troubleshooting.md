@@ -14,6 +14,10 @@ must match exactly in v1.
 
 Increase fixture visibility, avoid overlapping windows, confirm DPI scaling,
 and inspect the trace screenshots, OCR JSON, overlays, and candidate rankings.
+Use `desktop-agent calibrate-target <task.yaml> --output <dir>` to capture a
+target calibration report. The report shows candidate rankings, UI state
+snapshot data, the selected candidate ID, or the rejection reason such as an
+ambiguity gate, low confidence, target mismatch, or no candidates.
 
 ## Packaged Executable Fails
 

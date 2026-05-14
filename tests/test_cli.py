@@ -141,6 +141,12 @@ class FixtureOcrProvider:
         )
 
 
+class EmptyOcrProvider:
+    def extract_text(self, screenshot_path: Path) -> tuple[OcrTextBlock, ...]:
+        _ = screenshot_path
+        return ()
+
+
 class FixtureUiaAdapter:
     def tree_snapshot(self) -> dict[str, object]:
         return {
@@ -156,6 +162,29 @@ class FixtureUiaAdapter:
                 label="Submit",
                 bounds=Bounds(x=120, y=20, width=90, height=28),
                 confidence=0.95,
+            ),
+        )
+
+
+class AmbiguousUiaAdapter:
+    def tree_snapshot(self) -> dict[str, object]:
+        return {"active_window": {"title": "DeskPilot Fixture"}, "elements": []}
+
+    def candidates(self) -> tuple[ElementCandidate, ...]:
+        return (
+            ElementCandidate(
+                id="uia-submit-1",
+                source="uia",
+                label="Submit",
+                bounds=Bounds(x=10, y=20, width=90, height=28),
+                confidence=0.95,
+            ),
+            ElementCandidate(
+                id="uia-submit-2",
+                source="uia",
+                label="Submit",
+                bounds=Bounds(x=180, y=20, width=90, height=28),
+                confidence=0.94,
             ),
         )
 
@@ -186,6 +215,69 @@ def test_cli_inspect_screen_writes_success_report(
     assert report["candidate_rankings"][0]["source"] == "uia"
     assert (output_dir / "uia-tree.json").exists()
     assert "status: passed" in output
+
+
+def test_cli_calibrate_target_writes_selected_report(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    task_path = tmp_path / "task.yaml"
+    output_dir = tmp_path / "calibration"
+    write_task(task_path)
+    monkeypatch.setattr("desktop_agent.cli.MssScreenObserver", FixtureScreenObserver)
+    monkeypatch.setattr("desktop_agent.cli.TesseractOcrProvider", FixtureOcrProvider)
+    monkeypatch.setattr("desktop_agent.cli.WindowsUiaAdapter", FixtureUiaAdapter)
+
+    status = main(
+        [
+            "calibrate-target",
+            str(task_path),
+            "--output",
+            str(output_dir),
+            "--allowed-window",
+            "DeskPilot Fixture",
+        ],
+    )
+
+    output = capsys.readouterr().out
+    report = json.loads((output_dir / "target-calibration.json").read_text())
+    assert status == 0
+    assert report["status"] == "selected"
+    assert report["selected_candidate_id"] == "uia-submit"
+    assert report["ui_state_snapshot"]["selected_candidate"]["id"] == "uia-submit"
+    assert "selected: uia-submit" in output
+
+
+def test_cli_calibrate_target_writes_rejected_report(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    task_path = tmp_path / "task.yaml"
+    output_dir = tmp_path / "calibration"
+    write_task(task_path)
+    monkeypatch.setattr("desktop_agent.cli.MssScreenObserver", FixtureScreenObserver)
+    monkeypatch.setattr("desktop_agent.cli.TesseractOcrProvider", EmptyOcrProvider)
+    monkeypatch.setattr("desktop_agent.cli.WindowsUiaAdapter", AmbiguousUiaAdapter)
+
+    status = main(
+        [
+            "calibrate-target",
+            str(task_path),
+            "--output",
+            str(output_dir),
+            "--confidence-threshold",
+            "0.8",
+        ],
+    )
+
+    output = capsys.readouterr().out
+    report = json.loads((output_dir / "target-calibration.json").read_text())
+    assert status == 1
+    assert report["status"] == "rejected"
+    assert report["rejection_reason"] == "confidence_or_ambiguity_gate"
+    assert "reason: confidence_or_ambiguity_gate" in output
 
 
 def test_cli_inspect_screen_writes_failure_report(
