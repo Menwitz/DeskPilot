@@ -24,11 +24,25 @@ match quality, and visibility/enabled state. UIA is preferred over OCR and image
 matching when scores are close because UIA usually reflects real controls rather
 than pixels alone.
 
+Ranking metadata includes a score breakdown for monitoring and reports:
+
+- `fusion_score`: final ranking score used for ordering.
+- `source_reliability_score`: highest reliability score from the candidate's
+  supporting sources.
+- `source_support_score`: weighted support from merged UIA, OCR, image, and
+  unknown-source evidence.
+- `confidence_score`: the source confidence value.
+- `target_match_score`: text or label match against the task target.
+- `visibility_score`: whether the candidate is visible and enabled.
+
 ## Deduplication
 
 Overlapping candidates are deduplicated when their intersection-over-union is
 high enough to represent the same target. The retained candidate includes
 metadata describing merged candidate IDs and sources.
+Merged sources feed the `source_support_score`, so a target corroborated by UIA,
+OCR, and image-template detection receives stronger grounding metadata than a
+single-source candidate with similar confidence.
 
 ## Ambiguity
 

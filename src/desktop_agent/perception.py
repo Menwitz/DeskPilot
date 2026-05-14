@@ -18,6 +18,18 @@ SOURCE_PRIORITY: dict[CandidateSource, int] = {
     "image": 1,
     "unknown": 0,
 }
+SOURCE_RELIABILITY_SCORE: dict[CandidateSource, float] = {
+    "uia": 1.0,
+    "ocr": 0.78,
+    "image": 0.68,
+    "unknown": 0.35,
+}
+SOURCE_SUPPORT_WEIGHT: dict[CandidateSource, float] = {
+    "uia": 0.45,
+    "ocr": 0.30,
+    "image": 0.20,
+    "unknown": 0.05,
+}
 MAX_SOURCE_PRIORITY = max(SOURCE_PRIORITY.values())
 OVERLAP_DEDUPLICATION_THRESHOLD = 0.6
 
@@ -45,6 +57,10 @@ class RankedCandidate:
     score: float
     source_priority: int
     target_match_score: float
+    source_reliability_score: float
+    source_support_score: float
+    confidence_score: float
+    visibility_score: float
 
 
 class PerceptionEngine(Protocol):
@@ -207,13 +223,7 @@ def rank_candidates(
 ) -> tuple[RankedCandidate, ...]:
     _ = config
     ranked = [
-        RankedCandidate(
-            candidate=candidate,
-            rank=0,
-            score=_ranking_score(step, candidate),
-            source_priority=SOURCE_PRIORITY[candidate.source],
-            target_match_score=_target_match_score(step.target, candidate.label),
-        )
+        _ranked_candidate(step, candidate)
         for candidate in candidates
     ]
     ranked.sort(
@@ -244,8 +254,13 @@ def candidate_ranking_metadata(
                 "label": ranked.candidate.label,
                 "confidence": ranked.candidate.confidence,
                 "score": ranked.score,
+                "fusion_score": ranked.score,
                 "source_priority": ranked.source_priority,
+                "source_reliability_score": ranked.source_reliability_score,
+                "source_support_score": ranked.source_support_score,
+                "confidence_score": ranked.confidence_score,
                 "target_match_score": ranked.target_match_score,
+                "visibility_score": ranked.visibility_score,
             }
             for ranked in rank_candidates(step, candidates, config)
         ],
@@ -257,22 +272,69 @@ def _with_rank_metadata(ranked: RankedCandidate) -> ElementCandidate:
         **ranked.candidate.metadata,
         "rank": ranked.rank,
         "ranking_score": ranked.score,
+        "fusion_score": ranked.score,
         "source_priority": ranked.source_priority,
+        "source_reliability_score": ranked.source_reliability_score,
+        "source_support_score": ranked.source_support_score,
+        "confidence_score": ranked.confidence_score,
         "target_match_score": ranked.target_match_score,
+        "visibility_score": ranked.visibility_score,
     }
     return replace(ranked.candidate, metadata=metadata)
 
 
-def _ranking_score(step: TaskStep, candidate: ElementCandidate) -> float:
+def _ranked_candidate(step: TaskStep, candidate: ElementCandidate) -> RankedCandidate:
     visibility_score = 1.0 if candidate.visible and candidate.enabled else 0.0
-    source_score = SOURCE_PRIORITY[candidate.source] / MAX_SOURCE_PRIORITY
+    source_reliability_score = _source_reliability_score(candidate)
+    source_support_score = _source_support_score(candidate)
     target_score = _target_match_score(step.target, candidate.label)
-    return (
-        (source_score * 0.35)
-        + (candidate.confidence * 0.35)
-        + (target_score * 0.2)
+    score = (
+        (source_reliability_score * 0.25)
+        + (candidate.confidence * 0.25)
+        + (target_score * 0.25)
+        + (source_support_score * 0.15)
         + (visibility_score * 0.1)
     )
+    return RankedCandidate(
+        candidate=candidate,
+        rank=0,
+        score=score,
+        source_priority=SOURCE_PRIORITY[candidate.source],
+        target_match_score=target_score,
+        source_reliability_score=source_reliability_score,
+        source_support_score=source_support_score,
+        confidence_score=candidate.confidence,
+        visibility_score=visibility_score,
+    )
+
+
+def _source_reliability_score(candidate: ElementCandidate) -> float:
+    return max(
+        SOURCE_RELIABILITY_SCORE[source]
+        for source in _candidate_sources(candidate)
+    )
+
+
+def _source_support_score(candidate: ElementCandidate) -> float:
+    return min(
+        1.0,
+        sum(
+            SOURCE_SUPPORT_WEIGHT[source]
+            for source in set(_candidate_sources(candidate))
+        ),
+    )
+
+
+def _candidate_sources(candidate: ElementCandidate) -> tuple[CandidateSource, ...]:
+    sources: list[CandidateSource] = []
+    raw_sources = candidate.metadata.get("merged_sources")
+    if isinstance(raw_sources, tuple | list):
+        for source in raw_sources:
+            if isinstance(source, str) and source in SOURCE_PRIORITY:
+                sources.append(source)
+    if candidate.source not in sources:
+        sources.append(candidate.source)
+    return tuple(sources)
 
 
 def _target_match_score(target: str | None, label: str) -> float:

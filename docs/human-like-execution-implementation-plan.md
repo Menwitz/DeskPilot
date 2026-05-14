@@ -92,7 +92,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 ## Phase 6: Perception And Grounding Quality
 
-- [ ] Add candidate-fusion scoring across UIA, OCR, and image-template sources.
+- [x] Add candidate-fusion scoring across UIA, OCR, and image-template sources.
 - [ ] Add region-aware disambiguation rules for repeated labels and repeated
   icons.
 - [ ] Add UI state snapshots that summarize visible controls, selected

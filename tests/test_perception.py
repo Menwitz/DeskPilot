@@ -58,7 +58,34 @@ def test_candidate_fusion_ranks_and_annotates_candidates() -> None:
     assert [item.id for item in fused] == ["uia-1", "image-1"]
     assert fused[0].metadata["rank"] == 1
     assert fused[0].metadata["source_priority"] == 3
+    assert "fusion_score" in fused[0].metadata
+    assert "source_support_score" in fused[0].metadata
     assert fused[1].metadata["rank"] == 2
+
+
+def test_candidate_fusion_scores_cross_source_support() -> None:
+    fused = CandidateFusion().fuse(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        (
+            candidate("uia-1", "uia", 0.90),
+            candidate("ocr-1", "ocr", 0.88),
+            candidate("image-1", "image", 0.86),
+            candidate("ocr-2", "ocr", 0.97, x=240),
+        ),
+        RuntimeConfig(confidence_threshold=0.8),
+    )
+
+    supported = fused[0]
+    unsupported = fused[1]
+    assert supported.id == "uia-1"
+    assert supported.metadata["merged_sources"] == ("uia", "ocr", "image")
+    assert supported.metadata["source_reliability_score"] == 1.0
+    assert supported.metadata["source_support_score"] == 0.95
+    supported_score = supported.metadata["fusion_score"]
+    unsupported_score = unsupported.metadata["fusion_score"]
+    assert isinstance(supported_score, float)
+    assert isinstance(unsupported_score, float)
+    assert supported_score > unsupported_score
 
 
 def test_rank_candidates_uses_target_match_quality() -> None:
@@ -132,6 +159,8 @@ def test_candidate_ranking_metadata_is_trace_ready() -> None:
     assert isinstance(rankings, list)
     assert rankings[0]["id"] == "candidate-1"
     assert rankings[0]["rank"] == 1
+    assert "fusion_score" in rankings[0]
+    assert "source_support_score" in rankings[0]
 
 
 def test_dry_run_perception_emits_synthetic_planning_candidate() -> None:
