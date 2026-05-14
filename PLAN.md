@@ -33,32 +33,32 @@
 
 ## 2. Target Architecture
 
-- [ ] Implement the system as separate modules:
-  - [ ] `cli`
-  - [ ] `config`
-  - [ ] `task_dsl`
-  - [ ] `screen`
-  - [ ] `perception`
-  - [ ] `actuation`
-  - [ ] `planner`
-  - [ ] `safety`
-  - [ ] `tracing`
-  - [ ] `platforms/windows`
-  - [ ] `platforms/linux_placeholder`
-- [ ] Define the main execution loop:
-  - [ ] Load config.
-  - [ ] Load task YAML.
-  - [ ] Validate task.
-  - [ ] Prepare trace directory.
-  - [ ] Check safety preconditions.
-  - [ ] Observe screen.
-  - [ ] Detect candidate UI elements.
-  - [ ] Select target.
-  - [ ] Execute action.
-  - [ ] Verify result.
-  - [ ] Retry, recover, or abort.
-  - [ ] Write final report.
-- [ ] Define all platform-specific behavior behind interfaces so Linux can be added later.
+- [x] Implement the system as separate modules:
+  - [x] `cli`
+  - [x] `config`
+  - [x] `task_dsl`
+  - [x] `screen`
+  - [x] `perception`
+  - [x] `actuation`
+  - [x] `planner`
+  - [x] `safety`
+  - [x] `tracing`
+  - [x] `platforms/windows`
+  - [x] `platforms/linux_placeholder`
+- [x] Define the main execution loop:
+  - [x] Load config.
+  - [x] Load task YAML.
+  - [x] Validate task.
+  - [x] Prepare trace directory.
+  - [x] Check safety preconditions.
+  - [x] Observe screen.
+  - [x] Detect candidate UI elements.
+  - [x] Select target.
+  - [x] Execute action.
+  - [x] Verify result.
+  - [x] Retry, recover, or abort.
+  - [x] Write final report.
+- [x] Define all platform-specific behavior behind interfaces so Linux can be added later.
 
 ## 3. CLI
 

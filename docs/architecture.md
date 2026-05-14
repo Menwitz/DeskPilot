@@ -18,6 +18,10 @@ screen capture, UI Automation, and actuation are implemented behind adapters.
 - `platforms/windows` contains Windows-specific adapters.
 - `platforms/linux_placeholder` reserves the future Linux adapter boundary.
 
+The initial architecture commit defines these modules as Python contracts plus
+safe in-memory implementations for tests. Real adapters are added in later
+roadmap phases without changing the planner contract.
+
 ## Execution Pipeline
 
 1. Load default configuration.
@@ -35,6 +39,11 @@ screen capture, UI Automation, and actuation are implemented behind adapters.
 13. Verify the result when requested.
 14. Retry, recover, or abort.
 15. Write final machine-readable and human-readable reports.
+
+The `ExecutionEngine` coordinates the pipeline through explicit interfaces for
+configuration, task loading, task validation, screen observation, deep candidate
+search, target selection, actuation, safety, verification, tracing, and final
+reporting.
 
 ## Observability
 
