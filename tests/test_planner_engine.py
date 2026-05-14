@@ -400,12 +400,18 @@ def test_execution_engine_reports_duplicated_labels_as_ambiguity_gate() -> None:
     report = engine.run(Path("task.yaml"))
 
     selection = next(event for event in report.events if event.phase == "select_target")
+    snapshot = next(
+        event for event in report.events if event.phase == "ui_state_snapshot"
+    )
     assert report.status == "failed"
     assert report.steps[0].message == (
         "target selection blocked by confidence or ambiguity gate"
     )
     assert report.steps[0].metadata["failure_category"] == "selection_ambiguity"
     assert selection.metadata["selection_blocked"] == "confidence_or_ambiguity_gate"
+    blocked_candidates = snapshot.metadata["blocked_candidates"]
+    assert isinstance(blocked_candidates, list)
+    assert blocked_candidates[0]["blocked_reason"] == "confidence_or_ambiguity_gate"
     assert actuator.calls == 0
 
 

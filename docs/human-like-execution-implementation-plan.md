@@ -95,7 +95,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Add candidate-fusion scoring across UIA, OCR, and image-template sources.
 - [x] Add region-aware disambiguation rules for repeated labels and repeated
   icons.
-- [ ] Add UI state snapshots that summarize visible controls, selected
+- [x] Add UI state snapshots that summarize visible controls, selected
   candidates, confidence values, and blocked candidates.
 - [ ] Add a calibration command that shows why a target was selected or rejected.
 - [ ] Add tests for conflicting perception sources and low-confidence candidate

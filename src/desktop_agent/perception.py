@@ -270,6 +270,40 @@ def candidate_ranking_metadata(
     }
 
 
+def ui_state_snapshot_metadata(
+    step: TaskStep,
+    candidates: tuple[ElementCandidate, ...],
+    selected: ElementCandidate | None,
+    config: RuntimeConfig,
+    *,
+    selection_blocked: str | None = None,
+) -> dict[str, object]:
+    ranked = rank_candidates(step, candidates, config)
+    selected_id = selected.id if selected is not None else None
+    return {
+        "visible_controls": [
+            _candidate_snapshot(ranked_candidate)
+            for ranked_candidate in ranked
+            if ranked_candidate.candidate.visible
+        ],
+        "selected_candidate": _candidate_snapshot_for_id(ranked, selected_id),
+        "blocked_candidates": [
+            {
+                **_candidate_snapshot(ranked_candidate),
+                "blocked_reason": _candidate_block_reason(
+                    step,
+                    ranked_candidate,
+                    config,
+                    selected_id,
+                    selection_blocked,
+                ),
+            }
+            for ranked_candidate in ranked
+            if ranked_candidate.candidate.id != selected_id
+        ],
+    }
+
+
 def _with_rank_metadata(ranked: RankedCandidate) -> ElementCandidate:
     metadata = {
         **ranked.candidate.metadata,
@@ -285,6 +319,57 @@ def _with_rank_metadata(ranked: RankedCandidate) -> ElementCandidate:
         "visibility_score": ranked.visibility_score,
     }
     return replace(ranked.candidate, metadata=metadata)
+
+
+def _candidate_snapshot_for_id(
+    ranked: tuple[RankedCandidate, ...],
+    candidate_id: str | None,
+) -> dict[str, object] | None:
+    if candidate_id is None:
+        return None
+    for ranked_candidate in ranked:
+        if ranked_candidate.candidate.id == candidate_id:
+            return _candidate_snapshot(ranked_candidate)
+    return None
+
+
+def _candidate_snapshot(ranked: RankedCandidate) -> dict[str, object]:
+    candidate = ranked.candidate
+    return {
+        "id": candidate.id,
+        "source": candidate.source,
+        "label": candidate.label,
+        "confidence": candidate.confidence,
+        "enabled": candidate.enabled,
+        "visible": candidate.visible,
+        "rank": ranked.rank,
+        "fusion_score": ranked.score,
+        "target_match_score": ranked.target_match_score,
+        "region_match_score": ranked.region_match_score,
+    }
+
+
+def _candidate_block_reason(
+    step: TaskStep,
+    ranked: RankedCandidate,
+    config: RuntimeConfig,
+    selected_id: str | None,
+    selection_blocked: str | None,
+) -> str:
+    candidate = ranked.candidate
+    if not candidate.visible:
+        return "not_visible"
+    if not candidate.enabled:
+        return "disabled"
+    if candidate.confidence < config.confidence_threshold:
+        return "below_confidence_threshold"
+    if ranked.target_match_score <= 0:
+        return "target_mismatch"
+    if step.region is not None and ranked.region_match_score <= 0:
+        return "outside_region"
+    if selected_id is None and selection_blocked is not None:
+        return selection_blocked
+    return "lower_ranked_candidate"
 
 
 def _ranked_candidate(step: TaskStep, candidate: ElementCandidate) -> RankedCandidate:

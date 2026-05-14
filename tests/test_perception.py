@@ -8,6 +8,7 @@ from desktop_agent.perception import (
     candidate_ranking_metadata,
     deduplicate_candidates,
     rank_candidates,
+    ui_state_snapshot_metadata,
 )
 from desktop_agent.screen import Bounds, ScreenObservation
 from desktop_agent.task_dsl import TaskRegion, TaskStep
@@ -200,6 +201,38 @@ def test_candidate_ranking_metadata_is_trace_ready() -> None:
     assert "fusion_score" in rankings[0]
     assert "source_support_score" in rankings[0]
     assert "region_match_score" in rankings[0]
+
+
+def test_ui_state_snapshot_summarizes_selected_and_blocked_candidates() -> None:
+    step = TaskStep(id="click-submit", action="click_text", target="Submit")
+    selected = candidate("candidate-1", "uia", 0.95)
+    hidden = candidate("candidate-2", "uia", 0.94, x=200)
+    hidden = ElementCandidate(
+        id=hidden.id,
+        source=hidden.source,
+        label=hidden.label,
+        bounds=hidden.bounds,
+        confidence=hidden.confidence,
+        visible=False,
+    )
+
+    metadata = ui_state_snapshot_metadata(
+        step,
+        (selected, hidden, candidate("candidate-3", "ocr", 0.2, x=400)),
+        selected,
+        RuntimeConfig(confidence_threshold=0.8),
+    )
+
+    selected_snapshot = metadata["selected_candidate"]
+    visible_controls = metadata["visible_controls"]
+    blocked = metadata["blocked_candidates"]
+    assert isinstance(selected_snapshot, dict)
+    assert isinstance(visible_controls, list)
+    assert isinstance(blocked, list)
+    assert selected_snapshot["id"] == "candidate-1"
+    assert len(visible_controls) == 2
+    assert blocked[0]["blocked_reason"] == "not_visible"
+    assert blocked[1]["blocked_reason"] == "below_confidence_threshold"
 
 
 def test_dry_run_perception_emits_synthetic_planning_candidate() -> None:

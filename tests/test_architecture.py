@@ -122,6 +122,9 @@ def test_execution_engine_runs_pipeline_and_reports_success() -> None:
     assert report.steps[0].metadata["step_category"] == "submission"
     assert "detect_candidates" in {event.phase for event in report.events}
     selection = next(event for event in report.events if event.phase == "select_target")
+    snapshot = next(
+        event for event in report.events if event.phase == "ui_state_snapshot"
+    )
     detection = next(
         event for event in report.events if event.phase == "detect_candidates"
     )
@@ -129,6 +132,12 @@ def test_execution_engine_runs_pipeline_and_reports_success() -> None:
     assert selection.metadata["step_category"] == "submission"
     assert detection.metadata["step_category"] == "submission"
     assert selection.metadata["candidate_confidence"] == 0.95
+    selected_candidate = snapshot.metadata["selected_candidate"]
+    assert isinstance(selected_candidate, dict)
+    assert selected_candidate["id"] == "candidate-1"
+    visible_controls = snapshot.metadata["visible_controls"]
+    assert isinstance(visible_controls, list)
+    assert visible_controls[0]["confidence"] == 0.95
     assert isinstance(rankings, list)
     first_ranking = rankings[0]
     assert isinstance(first_ranking, dict)

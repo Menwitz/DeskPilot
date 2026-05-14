@@ -66,6 +66,10 @@ events. Current categories distinguish `perception_failure`,
 `selection_ambiguity`, `safety_stop`, `verification_failure`, and
 `actuation_failure`; timeout and execution-limit failures keep their own
 category values. The Markdown report prints the category beside failed steps.
+After target selection, the planner emits `ui_state_snapshot` with visible
+controls, the selected candidate, confidence and fusion scores, and blocked
+candidate reasons such as disabled, not visible, below confidence threshold,
+outside region, target mismatch, or ambiguity gate.
 
 ## Replay
 

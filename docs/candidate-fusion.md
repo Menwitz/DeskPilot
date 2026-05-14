@@ -58,3 +58,11 @@ target selection. Candidates whose center falls inside the region receive a full
 region score; partial overlaps receive proportional credit. This lets repeated
 labels and repeated image-template icon matches resolve to the intended part of
 the screen without disabling confidence checks.
+
+## UI State Snapshots
+
+The planner records `ui_state_snapshot` after each target-selection pass. The
+snapshot summarizes visible controls, the selected candidate, confidence and
+fusion scores, and blocked candidates with reasons such as disabled, not
+visible, below confidence threshold, outside the task region, target mismatch,
+or ambiguity gate.

@@ -18,6 +18,7 @@ from desktop_agent.perception import (
     PerceptionEngine,
     TargetSelector,
     candidate_ranking_metadata,
+    ui_state_snapshot_metadata,
 )
 from desktop_agent.recovery import (
     RecoveryPolicy,
@@ -468,6 +469,23 @@ class ExecutionEngine:
                 "select_target",
                 "target selected" if target else "no target selected",
                 selection_metadata,
+            )
+            selection_blocked = selection_metadata.get("selection_blocked")
+            self._record(
+                "ui_state_snapshot",
+                "ui state summarized",
+                _step_metadata(
+                    step,
+                    **ui_state_snapshot_metadata(
+                        step,
+                        candidates,
+                        target,
+                        config,
+                        selection_blocked=selection_blocked
+                        if isinstance(selection_blocked, str)
+                        else None,
+                    ),
+                ),
             )
             if target is None and step.action in TARGETED_ACTIONS:
                 if (
