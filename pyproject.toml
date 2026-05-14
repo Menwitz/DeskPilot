@@ -24,6 +24,9 @@ dev = [
     "ruff>=0.8.0",
     "types-PyYAML>=6.0.12",
 ]
+windows = [
+    "pywinauto>=0.6.8; platform_system == 'Windows'",
+]
 
 [tool.uv]
 package = true

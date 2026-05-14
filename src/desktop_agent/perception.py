@@ -11,6 +11,12 @@ from desktop_agent.screen import Bounds, ScreenObservation
 from desktop_agent.task_dsl import TaskStep
 
 CandidateSource = Literal["uia", "ocr", "image", "unknown"]
+SOURCE_PRIORITY: dict[CandidateSource, int] = {
+    "uia": 3,
+    "ocr": 2,
+    "image": 1,
+    "unknown": 0,
+}
 
 
 @dataclass(frozen=True)
@@ -83,6 +89,8 @@ class TargetSelector(Protocol):
 class ConfidenceTargetSelector(TargetSelector):
     """Selects the highest-confidence enabled and visible candidate."""
 
+    similarity_window: float = 0.05
+
     def select(
         self,
         step: TaskStep,
@@ -99,4 +107,16 @@ class ConfidenceTargetSelector(TargetSelector):
         ]
         if not eligible:
             return None
-        return max(eligible, key=lambda candidate: candidate.confidence)
+        best_confidence = max(candidate.confidence for candidate in eligible)
+        similar = [
+            candidate
+            for candidate in eligible
+            if best_confidence - candidate.confidence <= self.similarity_window
+        ]
+        return max(
+            similar,
+            key=lambda candidate: (
+                SOURCE_PRIORITY[candidate.source],
+                candidate.confidence,
+            ),
+        )

@@ -155,15 +155,15 @@
 
 ## 7. Windows UI Automation Layer
 
-- [ ] Add Windows adapter using `pywinauto`.
-- [ ] Detect active window title and process.
-- [ ] Extract visible UIA elements.
-- [ ] Extract element name, control type, bounds, enabled state, and visible state.
-- [ ] Convert UIA elements into shared `ElementCandidate` objects.
-- [ ] Prefer UIA candidates over OCR/CV candidates when confidence is similar.
-- [ ] Add fallback behavior when UIA is unavailable or returns incomplete data.
-- [ ] Add inspection output for UIA tree snapshots.
-- [ ] Add tests using mocked UIA element data.
+- [x] Add Windows adapter using `pywinauto`.
+- [x] Detect active window title and process.
+- [x] Extract visible UIA elements.
+- [x] Extract element name, control type, bounds, enabled state, and visible state.
+- [x] Convert UIA elements into shared `ElementCandidate` objects.
+- [x] Prefer UIA candidates over OCR/CV candidates when confidence is similar.
+- [x] Add fallback behavior when UIA is unavailable or returns incomplete data.
+- [x] Add inspection output for UIA tree snapshots.
+- [x] Add tests using mocked UIA element data.
 
 ## 8. OCR Layer
 

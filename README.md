@@ -64,4 +64,5 @@ until real actuation adapters are implemented.
 - [Screen layer](docs/screen.md)
 - [Task DSL](docs/task-dsl.md)
 - [Safety](docs/safety.md)
+- [Windows UI Automation](docs/windows-uia.md)
 - [Roadmap](docs/roadmap.md)
