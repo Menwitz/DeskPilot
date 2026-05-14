@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import cast
 
 from desktop_agent.actuation import ActionResult
 from desktop_agent.config import ExecutionProfile, RuntimeConfig, StaticConfigLoader
@@ -193,6 +194,38 @@ def test_regression_klm_metadata_is_trace_only_after_safety_gates() -> None:
     assert "execute_action" in event_phases(report)
 
 
+def test_regression_persona_changes_timing_only_not_outcome_or_target() -> None:
+    fast_actuator = CountingActuator()
+    careful_actuator = CountingActuator()
+
+    fast_report = run_fixture(
+        actuator=fast_actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=persona_profile("fast"),
+        ),
+    )
+    careful_report = run_fixture(
+        actuator=careful_actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=persona_profile("careful"),
+        ),
+    )
+
+    assert fast_report.status == careful_report.status == "passed"
+    assert fast_report.steps[0].candidate_id == careful_report.steps[0].candidate_id
+    assert selected_candidate_id(fast_report) == selected_candidate_id(careful_report)
+    assert fast_actuator.calls == careful_actuator.calls == 1
+    assert timing_delay(fast_report) < timing_delay(careful_report)
+    assert timing_persona(fast_report) == "fast"
+    assert timing_persona(careful_report) == "careful"
+
+
 def run_fixture(
     *,
     actuator: CountingActuator,
@@ -240,6 +273,18 @@ def enabled_profile() -> ExecutionProfile:
     )
 
 
+def persona_profile(persona: str) -> ExecutionProfile:
+    return ExecutionProfile(
+        persona=persona,
+        enabled=True,
+        action_delay_seconds=(0.1, 0.9),
+        retry_delay_seconds=(0.3, 0.4),
+        hesitation_probability=0.0,
+        movement_smoothness=0.5,
+        random_seed=7,
+    )
+
+
 def timing_sequence(profile: ExecutionProfile) -> tuple[tuple[float, bool], ...]:
     controller = ExecutionTimingController(profile)
     decisions = (
@@ -252,6 +297,21 @@ def timing_sequence(profile: ExecutionProfile) -> tuple[tuple[float, bool], ...]
         (decision.delay_seconds, decision.hesitation_applied)
         for decision in decisions
     )
+
+
+def timing_delay(report: RunReport) -> float:
+    event = next(event for event in report.events if event.phase == "execution_timing")
+    return cast(float, event.metadata["delay_seconds"])
+
+
+def timing_persona(report: RunReport) -> str:
+    event = next(event for event in report.events if event.phase == "execution_timing")
+    return cast(str, event.metadata["execution_persona"])
+
+
+def selected_candidate_id(report: RunReport) -> str:
+    event = next(event for event in report.events if event.phase == "select_target")
+    return cast(str, event.metadata["candidate_id"])
 
 
 def event_phases(report: RunReport) -> set[str]:

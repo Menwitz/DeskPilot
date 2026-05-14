@@ -61,7 +61,7 @@ evasion, or pretending to be a person where automation is not allowed.
   fast while keeping all values inside safe bounds.
 - [x] Add per-step timeout budgeting that accounts for planned waits and retry
   pacing.
-- [ ] Add tests proving persona changes affect timing only, not task outcome or
+- [x] Add tests proving persona changes affect timing only, not task outcome or
   target selection.
 
 ## Phase 4: Entropy And Controlled Randomness
