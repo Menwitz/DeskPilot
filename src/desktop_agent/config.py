@@ -49,6 +49,7 @@ class RuntimeConfig:
     emergency_stop_hotkey: str = "ctrl+alt+esc"
     primary_monitor_only: bool = True
     policy_preset: str = "personal_automation"
+    require_operator_approval: bool = False
     execution_profile: ExecutionProfile = field(default_factory=ExecutionProfile)
     confirmed_steps: tuple[str, ...] = field(default_factory=tuple)
 
@@ -69,6 +70,7 @@ class ConfigOverrides:
     emergency_stop_hotkey: str | None = None
     primary_monitor_only: bool | None = None
     policy_preset: str | None = None
+    require_operator_approval: bool | None = None
     execution_profile: ExecutionProfile | None = None
     confirmed_steps: tuple[str, ...] | None = None
 
@@ -175,6 +177,10 @@ def apply_config_overrides(
             config.primary_monitor_only,
         ),
         policy_preset=_coalesce(overrides.policy_preset, config.policy_preset),
+        require_operator_approval=_coalesce(
+            overrides.require_operator_approval,
+            config.require_operator_approval,
+        ),
         execution_profile=_coalesce(
             overrides.execution_profile,
             config.execution_profile,
@@ -197,6 +203,7 @@ def config_overrides_from_mapping(data: dict[str, object]) -> ConfigOverrides:
         emergency_stop_hotkey=_optional_str(data, "emergency_stop_hotkey"),
         primary_monitor_only=_optional_bool(data, "primary_monitor_only"),
         policy_preset=_optional_str(data, "policy_preset"),
+        require_operator_approval=_optional_bool(data, "require_operator_approval"),
         execution_profile=_optional_execution_profile(data, "execution_profile"),
         confirmed_steps=_optional_string_tuple(data, "confirmed_steps"),
     )

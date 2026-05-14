@@ -61,9 +61,11 @@ from desktop_agent.screen import (
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
     StaticTaskLoader,
+    TaskDefinition,
     TaskStep,
     TaskValidationError,
     YamlTaskLoader,
+    step_category,
 )
 from desktop_agent.tracing import FileTraceSink, RunReport
 
@@ -158,6 +160,8 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
         task_overrides=task.config_overrides,
         cli_overrides=_cli_overrides_from_args(args),
     )
+    if not dry_run:
+        config = _config_with_operator_approvals(task, config)
     trace_sink = FileTraceSink()
     emergency_stop_monitor = (
         NoopEmergencyStopMonitor()
@@ -186,6 +190,43 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
     report = engine.run(args.task_yaml, args.config)
     _print_report(report, verbose=args.verbose)
     return 0 if report.status == "passed" else 1
+
+
+def _config_with_operator_approvals(
+    task: TaskDefinition,
+    config: RuntimeConfig,
+) -> RuntimeConfig:
+    confirmed_steps = list(config.confirmed_steps)
+    for step in task.steps:
+        if not _step_requires_operator_approval(step):
+            continue
+        if step.id in confirmed_steps:
+            continue
+        if _prompt_operator_approval(step):
+            confirmed_steps.append(step.id)
+        else:
+            print(f"step {step.id} not approved; planner will stop before input")
+    return replace(
+        config,
+        require_operator_approval=True,
+        confirmed_steps=tuple(dict.fromkeys(confirmed_steps)),
+    )
+
+
+def _step_requires_operator_approval(step: TaskStep) -> bool:
+    return step.requires_confirmation or step_category(step) == "submission"
+
+
+def _prompt_operator_approval(step: TaskStep) -> bool:
+    category = step_category(step)
+    prompt = (
+        f"approve step {step.id} ({step.action}, {category})? "
+        f"Type {step.id} to approve: "
+    )
+    try:
+        return input(prompt).strip() == step.id
+    except EOFError:
+        return False
 
 
 def _perception_engine_for_mode(dry_run: bool) -> CompositePerceptionEngine:

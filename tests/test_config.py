@@ -26,6 +26,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
                 "allowed_windows:",
                 "  - Config Window",
                 "policy_preset: strict_qa",
+                "require_operator_approval: true",
                 "confirmed_steps:",
                 "  - submit-payment",
                 "execution_profile:",
@@ -65,6 +66,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
     assert resolved.max_steps == 5
     assert resolved.allowed_windows == ("CLI Window",)
     assert resolved.policy_preset == "strict_qa"
+    assert resolved.require_operator_approval is True
     assert resolved.confirmed_steps == ("submit-payment",)
     assert resolved.execution_profile.persona == "careful"
     assert resolved.execution_profile.enabled is True
@@ -93,6 +95,7 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
                 "  save_screenshots: false",
                 "  confidence_threshold: 0.95",
                 "  policy_preset: exploratory_testing",
+                "  require_operator_approval: true",
                 "  confirmed_steps:",
                 "    - submit",
                 "  execution_profile:",
@@ -115,6 +118,7 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
     assert task.config_overrides.save_screenshots is False
     assert task.config_overrides.confidence_threshold == 0.95
     assert task.config_overrides.policy_preset == "exploratory_testing"
+    assert task.config_overrides.require_operator_approval is True
     assert task.config_overrides.confirmed_steps == ("submit",)
     assert task.config_overrides.execution_profile is not None
     assert task.config_overrides.execution_profile.persona == "fast"

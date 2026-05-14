@@ -31,20 +31,34 @@ def test_windows_smoke_inspect_screen_writes_unlocked_desktop_report(
 
 
 @pytest.mark.parametrize(
-    ("task_path", "fixture_name"),
+    ("task_path", "fixture_name", "confirmed_step"),
     [
-        (Path("examples/browser-task.yaml"), "browser fixture"),
-        (Path("examples/native-task.yaml"), "native fixture"),
+        (Path("examples/browser-task.yaml"), "browser fixture", "click-submit"),
+        (
+            Path("examples/native-task.yaml"),
+            "native fixture",
+            "click-native-submit",
+        ),
     ],
 )
 def test_windows_smoke_fixture_run_passes_on_owned_desktop(
     task_path: Path,
     fixture_name: str,
+    confirmed_step: str,
 ) -> None:
     _require_windows_smoke()
     config_path = Path("packaging/default-config.yaml")
 
-    exit_code = main(["run", str(task_path), "--config", str(config_path)])
+    exit_code = main(
+        [
+            "run",
+            str(task_path),
+            "--config",
+            str(config_path),
+            "--confirm-step",
+            confirmed_step,
+        ]
+    )
 
     assert exit_code == 0, f"{fixture_name} smoke run failed"
 

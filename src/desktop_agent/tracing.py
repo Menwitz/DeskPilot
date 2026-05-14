@@ -205,6 +205,7 @@ def _config_to_dict(config: RuntimeConfig) -> dict[str, object]:
         "emergency_stop_hotkey": config.emergency_stop_hotkey,
         "primary_monitor_only": config.primary_monitor_only,
         "policy_preset": config.policy_preset,
+        "require_operator_approval": config.require_operator_approval,
         "execution_profile": _execution_profile_to_dict(config.execution_profile),
         "confirmed_steps": list(config.confirmed_steps),
     }

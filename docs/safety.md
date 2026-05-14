@@ -29,6 +29,8 @@ evasion, credential abuse, or abusive third-party automation.
   input is sent.
 - Runtime policy presets for strict QA, personal automation, and exploratory
   testing.
+- Operator approval prompts for real runs before unconfirmed irreversible or
+  externally visible steps.
 - Maximum runtime, maximum steps, and per-step retry limits.
 - Confidence thresholds for OCR, image, and UIA candidate selection.
 - Failure reports that explain why a task stopped.
@@ -72,6 +74,10 @@ targets, bypass confidence checks, or expand allowed timing limits.
 Sensitive task steps can declare `requires_confirmation: true`. The planner
 stops before the action unless the operator confirms the step ID through runtime
 configuration or `--confirm-step`.
+For real `run` commands, the CLI also prompts before unconfirmed
+`requires_confirmation` or `submission` category steps. If the operator declines
+or the prompt cannot read input, the run continues to the planner with
+`require_operator_approval` enabled and stops with a report before input.
 Sensitive or irreversible steps can also declare `checkpoint`; the planner must
 pass that read-only verification before timing or action execution.
 

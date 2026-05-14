@@ -31,6 +31,8 @@ bounded cognitive timing model. Timing events include `random_seed` and
 The active `policy_preset` is stored in `config.json` and the `load_config`
 event so report review can tell whether the run used strict QA, personal
 automation, or exploratory-testing safety behavior.
+`config.json` also records `require_operator_approval`, which is enabled by CLI
+real runs after operator prompts are processed.
 Text-entry `execute_action` events include `keyboard_cadence_applied`,
 `keyboard_interval_count`, and `keyboard_interval_seconds` when a cadence
 profile inserts bounded waits between typed characters. The Markdown report

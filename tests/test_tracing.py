@@ -82,6 +82,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
                 trace_root=tmp_path / "traces",
                 confidence_threshold=0.8,
                 policy_preset="strict_qa",
+                require_operator_approval=True,
                 confirmed_steps=("click-submit",),
                 execution_profile=ExecutionProfile(
                     keyboard_interval_seconds=(0.01, 0.03),
@@ -122,6 +123,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert final_report["steps"][0]["metadata"]["step_category"] == "submission"
     assert final_report["steps"][0]["metadata"]["step_entropy_budget"] == 1.0
     assert config_payload["policy_preset"] == "strict_qa"
+    assert config_payload["require_operator_approval"] is True
     assert config_payload["execution_profile"]["persona"] == "normal"
     assert config_payload["execution_profile"]["keyboard_interval_seconds"] == [
         0.01,

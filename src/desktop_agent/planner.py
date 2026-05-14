@@ -411,6 +411,30 @@ class ExecutionEngine:
         if variant_decision.selected_action != step.action:
             step = replace(step, action=variant_decision.selected_action)
 
+        if config.require_operator_approval:
+            early_safety = self.safety_policy.check_before_action(task, step, config)
+            if not early_safety.allowed:
+                self._record(
+                    "recover",
+                    "aborting with trace after safety rejection",
+                    _step_metadata(
+                        step,
+                        recovery_actions=[
+                            "refocus_allowed_window",
+                            "abort_with_trace",
+                        ],
+                    ),
+                )
+                return StepExecutionOutcome(
+                    self._step_failed(
+                        step,
+                        0,
+                        early_safety.reason,
+                        None,
+                        failure_category="safety_stop",
+                    ),
+                )
+
         if step.action == "wait_for":
             return self._execute_wait_for(step, config, task_deadline)
         if step.action == "scroll_until":

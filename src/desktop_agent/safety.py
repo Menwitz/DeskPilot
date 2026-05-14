@@ -13,6 +13,7 @@ from desktop_agent.task_dsl import TaskDefinition, TaskStep, step_category
 
 STRICT_QA_CONFIRMATION_CATEGORIES: frozenset[str] = frozenset({"submission"})
 EXPLORATORY_BLOCKED_CATEGORIES: frozenset[str] = frozenset({"submission"})
+OPERATOR_APPROVAL_CATEGORIES: frozenset[str] = frozenset({"submission"})
 
 
 @dataclass(frozen=True)
@@ -109,6 +110,15 @@ class LocalSafetyPolicy(SafetyPolicy):
         _ = step, config
         if not task.allowed_windows:
             return SafetyDecision(False, "task must declare allowed windows")
+        if (
+            config.require_operator_approval
+            and _operator_approval_required(step)
+            and step.id not in config.confirmed_steps
+        ):
+            return SafetyDecision(
+                False,
+                f"step {step.id} requires operator approval",
+            )
         if step.requires_confirmation and step.id not in config.confirmed_steps:
             return SafetyDecision(
                 False,
@@ -142,6 +152,13 @@ class LocalSafetyPolicy(SafetyPolicy):
                 "active window is outside the task allowed_windows",
             )
         return SafetyDecision(True, "allowed")
+
+
+def _operator_approval_required(step: TaskStep) -> bool:
+    return (
+        step.requires_confirmation
+        or step_category(step) in OPERATOR_APPROVAL_CATEGORIES
+    )
 
 
 def create_platform_emergency_stop_monitor() -> EmergencyStopMonitor:

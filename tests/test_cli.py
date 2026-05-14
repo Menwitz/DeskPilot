@@ -3,10 +3,12 @@ from pathlib import Path
 
 from pytest import CaptureFixture, MonkeyPatch
 
+from desktop_agent.actuation import ActuationProfile, DryRunActuator
 from desktop_agent.cli import main
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.ocr import OcrTextBlock
 from desktop_agent.perception import ElementCandidate
+from desktop_agent.safety import EmergencyStopMonitor
 from desktop_agent.screen import Bounds, ScreenObservation, ScreenUnavailableError
 
 
@@ -22,6 +24,26 @@ def write_task(path: Path) -> None:
                 "  - id: click-submit",
                 "    action: click_text",
                 "    target: Submit",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_submission_task(path: Path) -> None:
+    path.write_text(
+        "\n".join(
+            [
+                "name: cli-submission",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "timeout_seconds: 30",
+                "steps:",
+                "  - id: click-submit",
+                "    action: press_key",
+                "    text: enter",
+                "    category: submission",
                 "",
             ],
         ),
@@ -152,6 +174,51 @@ def test_cli_run_fails_when_platform_actuation_is_unavailable(
     output = capsys.readouterr().out
     assert status == 1
     assert "desktop actuation is unavailable on this platform" in output
+
+
+def test_cli_run_stops_when_operator_denies_submission_approval(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    task_path = tmp_path / "task.yaml"
+    _write_submission_task(task_path)
+    monkeypatch.setattr("builtins.input", lambda _prompt: "no")
+
+    status = main(["run", str(task_path), "--allowed-window", "DeskPilot Fixture"])
+
+    output = capsys.readouterr().out
+    assert status == 1
+    assert "step click-submit not approved" in output
+    assert (
+        "step click-submit: failed (step click-submit requires operator approval)"
+        in output
+    )
+
+
+def test_cli_run_uses_operator_approval_for_submission_steps(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    task_path = tmp_path / "task.yaml"
+    _write_submission_task(task_path)
+    monkeypatch.setattr("builtins.input", lambda _prompt: "click-submit")
+
+    def create_actuator(
+        profile: ActuationProfile | None = None,
+        emergency_stop_monitor: EmergencyStopMonitor | None = None,
+    ) -> DryRunActuator:
+        _ = profile, emergency_stop_monitor
+        return DryRunActuator()
+
+    monkeypatch.setattr("desktop_agent.cli.create_platform_actuator", create_actuator)
+
+    status = main(["run", str(task_path), "--allowed-window", "DeskPilot Fixture"])
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "step click-submit: passed" in output
 
 
 class FixtureScreenObserver:

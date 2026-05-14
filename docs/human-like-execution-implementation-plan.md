@@ -150,7 +150,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Add policy presets for strict QA, personal automation, and exploratory
   testing.
 - [x] Add a dry-run preview that shows planned timing bounds and recovery paths.
-- [ ] Add an operator approval prompt for irreversible or externally visible
+- [x] Add an operator approval prompt for irreversible or externally visible
   actions.
 - [ ] Add a safety audit report for every execution-profile run.
 - [ ] Document that the feature is not for stealth automation, CAPTCHA bypass,

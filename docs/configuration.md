@@ -26,6 +26,7 @@ allowed_windows:
 emergency_stop_hotkey: ctrl+alt+esc
 primary_monitor_only: true
 policy_preset: personal_automation
+require_operator_approval: false
 confirmed_steps: []
 execution_profile:
   persona: normal
@@ -145,6 +146,10 @@ Tasks can mark a step with `requires_confirmation: true`. Those steps are
 blocked unless their step ID appears in `confirmed_steps` or is passed with the
 CLI `--confirm-step` option. This keeps sensitive actions opt-in at run time
 instead of relying only on task authoring.
+Real `run` commands also prompt for operator approval before unconfirmed
+`requires_confirmation` or `submission` category steps. Approved prompts are
+added to the runtime `confirmed_steps`; declined prompts leave the step
+unconfirmed so the planner writes a safety-stop report before input.
 
 ## Validation
 

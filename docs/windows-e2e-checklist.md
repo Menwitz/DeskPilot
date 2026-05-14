@@ -42,6 +42,8 @@ Expected result:
 - The browser fixture real `run` exits with status `passed`.
 - The native fixture real `run` exits with status `passed`.
 - These tests remain skipped unless `DESKPILOT_WINDOWS_SMOKE=1` is set.
+- The smoke tests pass `--confirm-step` for the local fixture submission steps
+  so they do not pause for interactive approval.
 
 ## Browser Fixture
 
@@ -55,6 +57,8 @@ dist\deskpilot.exe run examples\browser-task.yaml --config packaging\default-con
 
 Expected result:
 
+- The CLI prompts for approval before `click-submit`; type `click-submit` or
+  pass `--confirm-step click-submit` to approve the local fixture submission.
 - The email field is filled with `qa@example.test`.
 - The page scrolls to the submit button.
 - The task clicks the submit button and verifies `Browser fixture success`.
@@ -72,6 +76,8 @@ dist\deskpilot.exe run examples\native-task.yaml --config packaging\default-conf
 
 Expected result:
 
+- The CLI prompts for approval before `click-native-submit`; type
+  `click-native-submit` or pass `--confirm-step click-native-submit`.
 - The input receives `DeskPilot native demo`.
 - The submit action verifies `Native fixture success`.
 - The menu-state action verifies `Menu opened`.
@@ -89,6 +95,8 @@ dist\deskpilot.exe run examples\mixed-task.yaml --config packaging\default-confi
 
 Expected result:
 
+- The CLI prompts for approval before `browser-submit` and `native-submit`; type
+  each step ID when prompted or pass both IDs with `--confirm-step`.
 - The browser fixture completes first.
 - `alt+tab` switches to the native fixture.
 - The native fixture completes final verification.
