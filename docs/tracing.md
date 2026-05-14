@@ -44,6 +44,10 @@ When a step declares `safe_action_variants`, the planner emits an
 variant distribution, whether a randomized selection was used, and the seed and
 sample records behind that selection.
 
+Recovery events include `recovery_policy`, `recovery_reason`, and
+`recovery_actions` so reports can distinguish stale observations, missed
+targets, disabled controls, occluded controls, and transient loading states.
+
 ## Replay
 
 `desktop-agent replay <trace-dir>` reads `final-report.json` and prints a

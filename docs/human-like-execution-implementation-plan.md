@@ -78,7 +78,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 ## Phase 5: Adaptive Recovery
 
-- [ ] Add recovery policies for stale observations, missed targets, disabled
+- [x] Add recovery policies for stale observations, missed targets, disabled
   controls, occluded controls, and transient loading states.
 - [ ] Add recovery trees to the task DSL with explicit allowed recovery actions.
 - [ ] Re-observe the screen after each failed attempt and explain the chosen

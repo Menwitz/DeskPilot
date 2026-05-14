@@ -407,3 +407,5 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
     assert isinstance(retry_operator_counts, dict)
     assert retry_operator_counts["system_wait"] == 1
     assert recover_event.metadata["retry_reason"] == "transient failure"
+    assert recover_event.metadata["recovery_reason"] == "transient_loading"
+    assert recover_event.metadata["recovery_policy"] == "wait_for_transient_loading"

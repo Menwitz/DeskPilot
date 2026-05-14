@@ -37,3 +37,6 @@ Retry, wait, scroll, safety, and abort paths write trace events with enough
 metadata to understand what the planner tried next. Recovery events identify
 the planned recovery action such as waiting and re-observing, scrolling a search
 region, retrying another candidate on the next attempt, or aborting with trace.
+The recovery policy layer classifies stale observations, missed targets,
+disabled controls, occluded controls, and transient loading states before
+emitting retry metadata.

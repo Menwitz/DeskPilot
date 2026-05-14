@@ -19,6 +19,11 @@ from desktop_agent.perception import (
     TargetSelector,
     candidate_ranking_metadata,
 )
+from desktop_agent.recovery import (
+    RecoveryPolicy,
+    recovery_policy_for_action_result,
+    recovery_policy_for_selection,
+)
 from desktop_agent.safety import (
     EmergencyStopMonitor,
     NoopEmergencyStopMonitor,
@@ -431,6 +436,14 @@ class ExecutionEngine:
             )
             if target is None and candidates:
                 selection_metadata["selection_blocked"] = "confidence_or_ambiguity_gate"
+            if target is None:
+                selection_metadata.update(
+                    recovery_policy_for_selection(
+                        observation,
+                        candidates,
+                        target,
+                    ).metadata(),
+                )
             self._record(
                 "select_target",
                 "target selected" if target else "no target selected",
@@ -554,17 +567,19 @@ class ExecutionEngine:
             last_message = verification.message
             if attempt < total_attempts:
                 retry_timing = timing_controller.before_retry()
+                recovery_policy = recovery_policy_for_action_result(
+                    verification_observation,
+                    verification_candidates,
+                    action_result,
+                    verification.passed,
+                )
                 recover_metadata = _step_metadata(
                     step,
                     next_attempt=attempt + 1,
                     retry_reason=last_message,
                     retry_delay_seconds=retry_timing.delay_seconds,
-                    recovery_actions=[
-                        "wait_and_reobserve",
-                        "retry_alternate_candidate",
-                        "abort_with_trace",
-                    ],
                 )
+                recover_metadata.update(recovery_policy.metadata())
                 self._record(
                     "recover",
                     "retrying step",
@@ -632,10 +647,10 @@ class ExecutionEngine:
             self._record(
                 "recover",
                 "waiting and re-observing",
-                _step_metadata(
+                _recovery_metadata(
                     step,
+                    recovery_policy_for_selection(observation, candidates, target),
                     next_attempt=attempts + 1,
-                    recovery_actions=["wait_and_reobserve", "abort_with_trace"],
                 ),
             )
             self.clock.sleep(
@@ -743,14 +758,18 @@ class ExecutionEngine:
             self._record(
                 "recover",
                 "scrolling search region and re-observing",
-                _step_metadata(
+                _recovery_metadata(
                     step,
+                    RecoveryPolicy(
+                        name="scroll_search_region",
+                        reason="missed_target",
+                        actions=(
+                            "scroll_search_region",
+                            "wait_and_reobserve",
+                            "abort_with_trace",
+                        ),
+                    ),
                     next_attempt=attempt + 1,
-                    recovery_actions=[
-                        "scroll_search_region",
-                        "wait_and_reobserve",
-                        "abort_with_trace",
-                    ],
                 ),
             )
 
@@ -967,6 +986,16 @@ def _step_metadata(step: TaskStep, **metadata: object) -> dict[str, object]:
     if step.entropy_budget is not None:
         step_metadata["step_entropy_budget"] = step.entropy_budget
     return step_metadata
+
+
+def _recovery_metadata(
+    step: TaskStep,
+    policy: RecoveryPolicy,
+    **metadata: object,
+) -> dict[str, object]:
+    recovery_metadata = _step_metadata(step, **metadata)
+    recovery_metadata.update(policy.metadata())
+    return recovery_metadata
 
 
 def _task_entropy_metadata(task: TaskDefinition) -> dict[str, object]:
