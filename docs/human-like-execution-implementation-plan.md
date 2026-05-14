@@ -48,7 +48,7 @@ evasion, or pretending to be a person where automation is not allowed.
   bounds.
 - [x] Add tests proving pointer paths stay inside the target window and never
   cross disallowed monitor or window regions.
-- [ ] Compare model timing against deterministic baseline runs in the benchmark
+- [x] Compare model timing against deterministic baseline runs in the benchmark
   harness.
 
 ## Phase 3: Task-Level Cognitive Timing

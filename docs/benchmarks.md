@@ -47,6 +47,8 @@ The harness writes:
 - `benchmark-report.json` with the task path, output paths, iteration count,
   aggregate summary metrics, acceptance status, and per-run metrics.
 - `variance-report.json` with run-to-run distribution values.
+- `pointer-timing-comparison.json` with deterministic baseline-vs-Fitts pointer
+  timing comparisons for representative movement scenarios.
 - Per-iteration trace directories under `<output>/traces/`.
 
 Per-run metrics currently include status, elapsed task time, step count, action
@@ -60,6 +62,11 @@ operator intervention rate.
 Variance reports include minimum, maximum, mean, and population standard
 deviation for task time, step count, action count, retry count, ambiguity count,
 recovery count, and operator intervention count.
+
+Pointer timing comparison reports compare the current `FittsLawPointerTimingModel`
+against a fixed deterministic baseline. The harness records baseline duration,
+model duration, delta, pointer distance, effective target width, and model index
+of difficulty for near-large, far-small, and diagonal-medium target scenarios.
 
 ## Acceptance Thresholds
 

@@ -5,6 +5,7 @@ from desktop_agent.benchmark_runner import (
     BenchmarkRunHarness,
     BenchmarkRunMetrics,
     BenchmarkSummaryMetrics,
+    compare_pointer_timing_models,
     evaluate_benchmark_acceptance,
 )
 from desktop_agent.benchmarks import BenchmarkAcceptanceThresholds, all_benchmark_tasks
@@ -24,6 +25,9 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     variance_payload = json.loads(
         report.variance_report_path.read_text(encoding="utf-8")
     )
+    pointer_timing_payload = json.loads(
+        report.pointer_timing_comparison_path.read_text(encoding="utf-8")
+    )
     assert len(report.runs) == 2
     assert report.summary.run_count == 2
     assert report.summary.success_rate == 1.0
@@ -34,9 +38,13 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert report.acceptance.configured
     assert report.acceptance.passed
     assert report.acceptance.status == "passed"
+    assert len(report.pointer_timing_comparison.samples) == 3
     assert len(metrics_lines) == 2
     assert report_payload["iterations"] == 2
     assert report_payload["variance_report_path"] == str(report.variance_report_path)
+    assert report_payload["pointer_timing_comparison_path"] == str(
+        report.pointer_timing_comparison_path
+    )
     assert report_payload["summary"]["success_rate"] == 1.0
     assert report_payload["summary"]["median_task_time_seconds"] >= 0
     assert report_payload["summary"]["step_count"] > 0
@@ -56,6 +64,12 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert variance_payload["task_time_seconds"]["minimum"] >= 0
     assert variance_payload["step_count"]["maximum"] > 0
     assert variance_payload["recovery_count"]["population_stdev"] >= 0
+    assert pointer_timing_payload["comparison_model"] == "fitts_law"
+    assert pointer_timing_payload["samples"][0]["scenario"] == "near-large-target"
+    assert (
+        report_payload["pointer_timing_comparison"]["samples"][1]["scenario"]
+        == "far-small-target"
+    )
 
 
 def test_benchmark_run_harness_rejects_empty_iterations(tmp_path: Path) -> None:
@@ -69,6 +83,21 @@ def test_benchmark_run_harness_rejects_empty_iterations(tmp_path: Path) -> None:
         assert str(exc) == "iterations must be greater than zero"
     else:
         raise AssertionError("expected iterations validation failure")
+
+
+def test_pointer_timing_comparison_contrasts_model_with_baseline() -> None:
+    comparison = compare_pointer_timing_models()
+    samples = {sample.scenario: sample for sample in comparison.samples}
+
+    near = samples["near-large-target"]
+    far = samples["far-small-target"]
+
+    assert comparison.baseline_model == "deterministic_fixed_duration"
+    assert comparison.comparison_model == "fitts_law"
+    assert near.baseline_duration_seconds == 0.2
+    assert far.baseline_duration_seconds == 0.2
+    assert far.model_duration_seconds > near.model_duration_seconds
+    assert far.model_index_of_difficulty > near.model_index_of_difficulty
 
 
 def test_benchmark_acceptance_records_threshold_failures() -> None:

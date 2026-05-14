@@ -10,7 +10,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from desktop_agent.actuation import DryRunActuator
+from desktop_agent.actuation import (
+    ActuationProfile,
+    DryRunActuator,
+    FittsLawPointerTimingModel,
+    MovementPlan,
+    PointerTimingContext,
+    PointerTimingEstimate,
+    SmoothMovementPlanner,
+)
 from desktop_agent.benchmarks import (
     BenchmarkAcceptanceThresholds,
     benchmark_task_by_path,
@@ -39,6 +47,15 @@ from desktop_agent.task_dsl import (
 from desktop_agent.tracing import FileTraceSink, RunReport, RunStatus
 
 BenchmarkAcceptanceStatus = Literal["passed", "failed", "not_configured"]
+
+DEFAULT_POINTER_TIMING_PROFILE = ActuationProfile(
+    movement_duration_seconds=(0.05, 0.5),
+    timing_variation_seconds=(0.0, 0.0),
+    movement_steps=8,
+    movement_smoothness=0.0,
+    random_seed=1,
+)
+DEFAULT_BASELINE_POINTER_DURATION_SECONDS = 0.2
 
 
 @dataclass(frozen=True)
@@ -108,6 +125,38 @@ class BenchmarkAcceptanceResult:
 
 
 @dataclass(frozen=True)
+class PointerTimingScenario:
+    """Representative pointer movement used by benchmark model comparison."""
+
+    name: str
+    start: tuple[int, int]
+    end: tuple[int, int]
+    target_size_pixels: tuple[float, float]
+
+
+@dataclass(frozen=True)
+class PointerTimingComparisonSample:
+    """One deterministic baseline-vs-model pointer timing comparison."""
+
+    scenario: str
+    baseline_duration_seconds: float
+    model_duration_seconds: float
+    duration_delta_seconds: float
+    pointer_distance_pixels: float
+    effective_target_width_pixels: float
+    model_index_of_difficulty: float
+
+
+@dataclass(frozen=True)
+class PointerTimingComparisonReport:
+    """Benchmark report comparing current pointer timing to a fixed baseline."""
+
+    baseline_model: str
+    comparison_model: str
+    samples: tuple[PointerTimingComparisonSample, ...]
+
+
+@dataclass(frozen=True)
 class BenchmarkRunReport:
     """Machine-readable report for one repeated benchmark invocation."""
 
@@ -116,10 +165,34 @@ class BenchmarkRunReport:
     metrics_path: Path
     report_path: Path
     variance_report_path: Path
+    pointer_timing_comparison_path: Path
     runs: tuple[BenchmarkRunMetrics, ...]
     summary: BenchmarkSummaryMetrics
     variance: BenchmarkVarianceReport
     acceptance: BenchmarkAcceptanceResult
+    pointer_timing_comparison: PointerTimingComparisonReport
+
+
+DEFAULT_POINTER_TIMING_SCENARIOS: tuple[PointerTimingScenario, ...] = (
+    PointerTimingScenario(
+        name="near-large-target",
+        start=(0, 0),
+        end=(100, 0),
+        target_size_pixels=(100.0, 100.0),
+    ),
+    PointerTimingScenario(
+        name="far-small-target",
+        start=(0, 0),
+        end=(500, 0),
+        target_size_pixels=(10.0, 10.0),
+    ),
+    PointerTimingScenario(
+        name="diagonal-medium-target",
+        start=(50, 50),
+        end=(450, 350),
+        target_size_pixels=(40.0, 40.0),
+    ),
+)
 
 
 class BenchmarkRunHarness:
@@ -162,17 +235,25 @@ class BenchmarkRunHarness:
         metrics_path = output_dir / "runs.jsonl"
         report_path = output_dir / "benchmark-report.json"
         variance_report_path = output_dir / "variance-report.json"
+        pointer_timing_comparison_path = output_dir / "pointer-timing-comparison.json"
+        pointer_timing_comparison = compare_pointer_timing_models()
         _write_metrics(metrics_path, runs)
         _write_variance_report(variance_report_path, variance)
+        _write_pointer_timing_comparison(
+            pointer_timing_comparison_path,
+            pointer_timing_comparison,
+        )
         _write_report(
             report_path,
             task_path,
             output_dir,
             metrics_path,
             variance_report_path,
+            pointer_timing_comparison_path,
             runs,
             summary,
             acceptance,
+            pointer_timing_comparison,
         )
         return BenchmarkRunReport(
             task_path=task_path,
@@ -180,10 +261,12 @@ class BenchmarkRunHarness:
             metrics_path=metrics_path,
             report_path=report_path,
             variance_report_path=variance_report_path,
+            pointer_timing_comparison_path=pointer_timing_comparison_path,
             runs=runs,
             summary=summary,
             variance=variance,
             acceptance=acceptance,
+            pointer_timing_comparison=pointer_timing_comparison,
         )
 
     def _run_once(
@@ -332,6 +415,36 @@ def evaluate_benchmark_acceptance(
     )
 
 
+def compare_pointer_timing_models(
+    scenarios: tuple[PointerTimingScenario, ...] = DEFAULT_POINTER_TIMING_SCENARIOS,
+) -> PointerTimingComparisonReport:
+    """Compare current pointer timing against a deterministic fixed baseline."""
+
+    baseline_planner = SmoothMovementPlanner(
+        DEFAULT_POINTER_TIMING_PROFILE,
+        _DeterministicPointerTimingModel(
+            DEFAULT_BASELINE_POINTER_DURATION_SECONDS,
+        ),
+    )
+    comparison_planner = SmoothMovementPlanner(
+        DEFAULT_POINTER_TIMING_PROFILE,
+        FittsLawPointerTimingModel(),
+    )
+    samples = tuple(
+        _compare_pointer_timing_scenario(
+            scenario,
+            baseline_planner,
+            comparison_planner,
+        )
+        for scenario in scenarios
+    )
+    return PointerTimingComparisonReport(
+        baseline_model="deterministic_fixed_duration",
+        comparison_model="fitts_law",
+        samples=samples,
+    )
+
+
 def _write_metrics(path: Path, runs: tuple[BenchmarkRunMetrics, ...]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = (json.dumps(_metrics_to_dict(run), sort_keys=True) + "\n" for run in runs)
@@ -344,18 +457,24 @@ def _write_report(
     output_dir: Path,
     metrics_path: Path,
     variance_report_path: Path,
+    pointer_timing_comparison_path: Path,
     runs: tuple[BenchmarkRunMetrics, ...],
     summary: BenchmarkSummaryMetrics,
     acceptance: BenchmarkAcceptanceResult,
+    pointer_timing_comparison: PointerTimingComparisonReport,
 ) -> None:
     payload = {
         "task_path": str(task_path),
         "output_dir": str(output_dir),
         "metrics_path": str(metrics_path),
         "variance_report_path": str(variance_report_path),
+        "pointer_timing_comparison_path": str(pointer_timing_comparison_path),
         "iterations": len(runs),
         "summary": _summary_to_dict(summary),
         "acceptance": _acceptance_to_dict(acceptance),
+        "pointer_timing_comparison": _pointer_timing_comparison_to_dict(
+            pointer_timing_comparison,
+        ),
         "runs": [_metrics_to_dict(run) for run in runs],
     }
     path.write_text(
@@ -370,6 +489,17 @@ def _write_variance_report(
 ) -> None:
     path.write_text(
         json.dumps(_variance_report_to_dict(variance), indent=2, sort_keys=True)
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_pointer_timing_comparison(
+    path: Path,
+    report: PointerTimingComparisonReport,
+) -> None:
+    path.write_text(
+        json.dumps(_pointer_timing_comparison_to_dict(report), indent=2, sort_keys=True)
         + "\n",
         encoding="utf-8",
     )
@@ -495,6 +625,32 @@ def _thresholds_to_dict(
     }
 
 
+def _pointer_timing_comparison_to_dict(
+    report: PointerTimingComparisonReport,
+) -> dict[str, object]:
+    return {
+        "baseline_model": report.baseline_model,
+        "comparison_model": report.comparison_model,
+        "samples": [
+            _pointer_timing_sample_to_dict(sample) for sample in report.samples
+        ],
+    }
+
+
+def _pointer_timing_sample_to_dict(
+    sample: PointerTimingComparisonSample,
+) -> dict[str, object]:
+    return {
+        "scenario": sample.scenario,
+        "baseline_duration_seconds": sample.baseline_duration_seconds,
+        "model_duration_seconds": sample.model_duration_seconds,
+        "duration_delta_seconds": sample.duration_delta_seconds,
+        "pointer_distance_pixels": sample.pointer_distance_pixels,
+        "effective_target_width_pixels": sample.effective_target_width_pixels,
+        "model_index_of_difficulty": sample.model_index_of_difficulty,
+    }
+
+
 def _metrics_to_dict(metrics: BenchmarkRunMetrics) -> dict[str, object]:
     return {
         "iteration": metrics.iteration,
@@ -509,3 +665,56 @@ def _metrics_to_dict(metrics: BenchmarkRunMetrics) -> dict[str, object]:
         "trace_dir": str(metrics.trace_dir) if metrics.trace_dir else None,
         "abort_reason": metrics.abort_reason,
     }
+
+
+def _compare_pointer_timing_scenario(
+    scenario: PointerTimingScenario,
+    baseline_planner: SmoothMovementPlanner,
+    comparison_planner: SmoothMovementPlanner,
+) -> PointerTimingComparisonSample:
+    baseline_plan = baseline_planner.plan(
+        scenario.start,
+        scenario.end,
+        scenario.target_size_pixels,
+    )
+    comparison_plan = comparison_planner.plan(
+        scenario.start,
+        scenario.end,
+        scenario.target_size_pixels,
+    )
+    comparison_estimate = _require_pointer_timing_estimate(comparison_plan)
+    return PointerTimingComparisonSample(
+        scenario=scenario.name,
+        baseline_duration_seconds=baseline_plan.duration_seconds,
+        model_duration_seconds=comparison_plan.duration_seconds,
+        duration_delta_seconds=(
+            comparison_plan.duration_seconds - baseline_plan.duration_seconds
+        ),
+        pointer_distance_pixels=comparison_estimate.distance_pixels,
+        effective_target_width_pixels=(
+            comparison_estimate.effective_target_width_pixels
+        ),
+        model_index_of_difficulty=comparison_estimate.index_of_difficulty,
+    )
+
+
+def _require_pointer_timing_estimate(plan: MovementPlan) -> PointerTimingEstimate:
+    if plan.timing_estimate is None:
+        raise ValueError("movement plan did not include a pointer timing estimate")
+    return plan.timing_estimate
+
+
+@dataclass(frozen=True)
+class _DeterministicPointerTimingModel:
+    """Fixed-duration model used as the benchmark comparison baseline."""
+
+    duration_seconds: float
+
+    def estimate(self, context: PointerTimingContext) -> PointerTimingEstimate:
+        return PointerTimingEstimate(
+            model="deterministic_fixed_duration",
+            duration_seconds=self.duration_seconds,
+            distance_pixels=context.distance_pixels,
+            effective_target_width_pixels=context.effective_target_width_pixels,
+            index_of_difficulty=0.0,
+        )

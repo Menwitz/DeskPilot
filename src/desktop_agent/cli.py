@@ -265,6 +265,7 @@ def _run_benchmark(args: argparse.Namespace) -> int:
     print(f"iterations: {len(report.runs)}")
     print(f"metrics: {report.metrics_path}")
     print(f"variance: {report.variance_report_path}")
+    print(f"pointer timing: {report.pointer_timing_comparison_path}")
     print(f"acceptance: {report.acceptance.status}")
     for failure in report.acceptance.failures:
         print(f"acceptance failure: {failure}")
