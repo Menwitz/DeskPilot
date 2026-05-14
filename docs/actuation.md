@@ -61,6 +61,11 @@ bounded sleeps between characters. The actuator still emits the exact authored
 text in order; metadata records whether cadence was applied and the interval
 values used.
 
+Wheel scrolling can use `ActuationProfile.scroll_interval_seconds` to split a
+multi-click scroll into same-direction unit scroll events with bounded sleeps
+between them. The total scroll click count is preserved, and metadata records
+the emitted scroll steps and interval values.
+
 ## Safety
 
 The execution engine checks task safety before calling the actuator. The

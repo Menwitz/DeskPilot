@@ -207,6 +207,46 @@ def test_desktop_actuator_scrolls_at_region_when_no_target_exists() -> None:
     assert backend.events[-1].clicks == -5
 
 
+def test_scroll_cadence_profiles_preserve_total_scroll_clicks() -> None:
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    actuator = DesktopActuator(
+        backend,
+        ActuationProfile(
+            movement_duration_seconds=(0.0, 0.0),
+            timing_variation_seconds=(0.0, 0.0),
+            scroll_interval_seconds=(0.02, 0.02),
+            movement_steps=1,
+            random_seed=11,
+        ),
+    )
+    step = TaskStep(
+        id="scroll-feed",
+        action="scroll",
+        text="-3",
+        region=TaskRegion(x=20, y=30, width=100, height=40),
+    )
+
+    result = actuator.execute(
+        step,
+        None,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    scroll_clicks = [
+        event.clicks for event in backend.events if event.kind == "scroll"
+    ]
+    sleep_durations = [
+        event.duration_seconds for event in backend.events if event.kind == "sleep"
+    ]
+    assert result.success is True
+    assert scroll_clicks == [-1, -1, -1]
+    assert sum(click for click in scroll_clicks if click is not None) == -3
+    assert sleep_durations == [0.02, 0.02]
+    assert result.metadata["scroll_cadence_applied"] is True
+    assert result.metadata["scroll_step_count"] == 3
+
+
 def test_desktop_actuator_blocks_disallowed_active_window() -> None:
     backend = FakeInputBackend(active_window_title="Unexpected Window")
     actuator = DesktopActuator(backend, _instant_profile())
@@ -455,6 +495,7 @@ def test_actuation_profile_uses_enabled_execution_smoothness() -> None:
             enabled=True,
             movement_smoothness=0.9,
             keyboard_interval_seconds=(0.02, 0.03),
+            scroll_interval_seconds=(0.04, 0.05),
         ),
     )
 
@@ -462,6 +503,7 @@ def test_actuation_profile_uses_enabled_execution_smoothness() -> None:
 
     assert profile.movement_smoothness == 0.9
     assert profile.keyboard_interval_seconds == (0.02, 0.03)
+    assert profile.scroll_interval_seconds == (0.04, 0.05)
     assert profile.random_seed == 4
 
 

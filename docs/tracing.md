@@ -32,6 +32,10 @@ Text-entry `execute_action` events include `keyboard_cadence_applied`,
 `keyboard_interval_count`, and `keyboard_interval_seconds` when a cadence
 profile inserts bounded waits between typed characters. The Markdown report
 prints the interval count on the action row.
+Scroll `execute_action` events include `scroll_cadence_applied`,
+`scroll_step_count`, `scroll_step_clicks`, and `scroll_interval_seconds` when a
+cadence profile splits a multi-click wheel action. The Markdown report prints
+the emitted step count on the action row.
 
 The `compile_task` event records static step order, dependency edges, and
 expected UI state transitions before the planner observes the screen or attempts

@@ -37,6 +37,7 @@ execution_profile:
   hesitation_probability: 0.0
   movement_smoothness: 0.0
   keyboard_interval_seconds: [0.0, 0.0]
+  scroll_interval_seconds: [0.0, 0.0]
   random_seed: null
 ```
 
@@ -65,6 +66,7 @@ config:
     hesitation_probability: 0.1
     movement_smoothness: 0.6
     keyboard_interval_seconds: [0.01, 0.03]
+    scroll_interval_seconds: [0.02, 0.05]
 steps:
   - id: submit
     action: click_text
@@ -114,6 +116,10 @@ text, allowed windows, maximum steps, timeouts, or retry budgets.
 - `keyboard_interval_seconds` sets bounded sleeps between typed characters.
   Text content and character order are not changed, and the intervals are
   recorded on `execute_action` metadata and final reports.
+- `scroll_interval_seconds` sets bounded sleeps between same-direction wheel
+  units for multi-click scroll actions. The total scroll distance is preserved,
+  and the emitted steps are recorded on `execute_action` metadata and final
+  reports.
 - `random_seed` makes timing decisions reproducible through the shared seeded
   sampler used by bounded runtime randomness.
 

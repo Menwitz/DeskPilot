@@ -15,6 +15,7 @@ from desktop_agent.task_dsl import (
     BasicTaskValidator,
     StaticTaskLoader,
     TaskDefinition,
+    TaskRegion,
     TaskStep,
     VerificationDefinition,
 )
@@ -193,6 +194,53 @@ def test_pipeline_records_keyboard_cadence_in_execute_action_monitoring() -> Non
     assert {"detect_candidates", "execute_action"} <= phases
     assert execute_action.metadata["keyboard_cadence_applied"] is True
     assert execute_action.metadata["keyboard_interval_count"] == 2
+
+
+def test_pipeline_records_scroll_cadence_in_execute_action_monitoring() -> None:
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    task = TaskDefinition(
+        name="scrolling pipeline",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="scroll-feed",
+                action="scroll",
+                text="-3",
+                region=TaskRegion(x=20, y=30, width=100, height=40),
+            ),
+        ),
+    )
+    trace_sink = MemoryTraceSink()
+    engine = _engine(
+        task,
+        screen_observer=SequenceScreenObserver((_observation("scrolling.png"),)),
+        actuator=DesktopActuator(
+            backend,
+            ActuationProfile(
+                movement_duration_seconds=(0.0, 0.0),
+                timing_variation_seconds=(0.0, 0.0),
+                scroll_interval_seconds=(0.02, 0.02),
+                movement_steps=1,
+            ),
+        ),
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    scroll_clicks = [
+        event.clicks for event in backend.events if event.kind == "scroll"
+    ]
+    execute_action = next(
+        event for event in report.events if event.phase == "execute_action"
+    )
+    phases = {event.phase for event in report.events}
+    assert report.status == "passed"
+    assert scroll_clicks == [-1, -1, -1]
+    assert {"detect_candidates", "execute_action"} <= phases
+    assert execute_action.metadata["scroll_cadence_applied"] is True
+    assert execute_action.metadata["scroll_step_count"] == 3
 
 
 def _engine(

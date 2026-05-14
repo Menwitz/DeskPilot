@@ -83,6 +83,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
                 confidence_threshold=0.8,
                 execution_profile=ExecutionProfile(
                     keyboard_interval_seconds=(0.01, 0.03),
+                    scroll_interval_seconds=(0.02, 0.04),
                 ),
             ),
         ),
@@ -122,6 +123,10 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert config_payload["execution_profile"]["keyboard_interval_seconds"] == [
         0.01,
         0.03,
+    ]
+    assert config_payload["execution_profile"]["scroll_interval_seconds"] == [
+        0.02,
+        0.04,
     ]
     assert task_payload["entropy_budget"] == 2.0
     assert task_payload["steps"][0]["category"] == "submission"
@@ -255,6 +260,16 @@ def test_file_trace_sink_renders_decision_details_in_markdown(
             },
         )
     )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="execute_action",
+            message="scrolled",
+            metadata={
+                "scroll_cadence_applied": True,
+                "scroll_step_count": 3,
+            },
+        )
+    )
 
     report = trace_sink.write_final_report("failed")
 
@@ -263,5 +278,6 @@ def test_file_trace_sink_renders_decision_details_in_markdown(
     assert "[safety_stop]" in final_report
     assert "delay 0.200s" in final_report
     assert "keyboard cadence 2 interval(s)" in final_report
+    assert "scroll cadence 3 step(s)" in final_report
     assert "confidence_or_ambiguity_gate" in final_report
     assert "classify missed_target -> retry" in final_report

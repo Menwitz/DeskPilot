@@ -221,6 +221,7 @@ def _execution_profile_to_dict(profile: ExecutionProfile) -> dict[str, object]:
         "hesitation_probability": profile.hesitation_probability,
         "movement_smoothness": profile.movement_smoothness,
         "keyboard_interval_seconds": list(profile.keyboard_interval_seconds),
+        "scroll_interval_seconds": list(profile.scroll_interval_seconds),
         "random_seed": profile.random_seed,
     }
 
@@ -378,6 +379,10 @@ def _event_markdown_suffix(event: TraceEvent) -> str:
     interval_count = event.metadata.get("keyboard_interval_count")
     if cadence_applied is True and isinstance(interval_count, int):
         details.append(f"keyboard cadence {interval_count} interval(s)")
+    scroll_cadence_applied = event.metadata.get("scroll_cadence_applied")
+    scroll_step_count = event.metadata.get("scroll_step_count")
+    if scroll_cadence_applied is True and isinstance(scroll_step_count, int):
+        details.append(f"scroll cadence {scroll_step_count} step(s)")
     if not details:
         return ""
     return " - " + "; ".join(details)

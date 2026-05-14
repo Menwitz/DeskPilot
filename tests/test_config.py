@@ -38,6 +38,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
                 "  hesitation_probability: 0.25",
                 "  movement_smoothness: 0.7",
                 "  keyboard_interval_seconds: [0.01, 0.03]",
+                "  scroll_interval_seconds: [0.02, 0.04]",
                 "  random_seed: 7",
                 "",
             ],
@@ -73,6 +74,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
     assert resolved.execution_profile.hesitation_probability == 0.25
     assert resolved.execution_profile.movement_smoothness == 0.7
     assert resolved.execution_profile.keyboard_interval_seconds == (0.01, 0.03)
+    assert resolved.execution_profile.scroll_interval_seconds == (0.02, 0.04)
     assert resolved.execution_profile.random_seed == 7
 
 
@@ -95,6 +97,7 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
                 "    enabled: true",
                 "    action_delay_seconds: [0.05, 0.1]",
                 "    keyboard_interval_seconds: [0.01, 0.02]",
+                "    scroll_interval_seconds: [0.02, 0.03]",
                 "steps:",
                 "  - id: submit",
                 "    action: click_text",
@@ -116,6 +119,10 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
     assert task.config_overrides.execution_profile.keyboard_interval_seconds == (
         0.01,
         0.02,
+    )
+    assert task.config_overrides.execution_profile.scroll_interval_seconds == (
+        0.02,
+        0.03,
     )
 
 
@@ -148,6 +155,14 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
                 ),
             ),
             "execution_profile.keyboard_interval_seconds",
+        ),
+        (
+            ConfigOverrides(
+                execution_profile=ExecutionProfile(
+                    scroll_interval_seconds=(0.3, 0.1),
+                ),
+            ),
+            "execution_profile.scroll_interval_seconds",
         ),
         (
             ConfigOverrides(
