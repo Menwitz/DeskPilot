@@ -9,6 +9,10 @@ from typing import Protocol
 
 from desktop_agent.actuation import ActionResult, Actuator
 from desktop_agent.config import ConfigLoader, RuntimeConfig
+from desktop_agent.entropy import (
+    entropy_capacity_metadata,
+    validate_entropy_budget_constraints,
+)
 from desktop_agent.perception import (
     ElementCandidate,
     PerceptionEngine,
@@ -208,10 +212,14 @@ class ExecutionEngine:
             )
             self.task_validator.validate(task, config)
             self._record("validate_task", "task validated")
+            validate_entropy_budget_constraints(task, config)
             self._record(
                 "entropy_budget",
                 "entropy budget defined",
-                _task_entropy_metadata(task),
+                {
+                    **_task_entropy_metadata(task),
+                    **entropy_capacity_metadata(task, config),
+                },
             )
             self._record("prepare_trace", "trace sink prepared")
             timing_controller = ExecutionTimingController(config.execution_profile)

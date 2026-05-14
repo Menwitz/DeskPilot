@@ -192,6 +192,31 @@ def test_execution_engine_selects_safe_action_variant() -> None:
     ]
 
 
+def test_execution_engine_rejects_entropy_budget_before_observation() -> None:
+    perception = SequencePerceptionEngine((_candidate_tuple("Submit"),))
+    task = TaskDefinition(
+        name="entropy-over-budget",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        entropy_budget=5.0,
+        steps=(
+            TaskStep(
+                id="click-submit",
+                action="click_text",
+                target="Submit",
+                retry=0,
+            ),
+        ),
+    )
+    engine = _engine(task, perception=perception)
+
+    report = engine.run(Path("task.yaml"))
+
+    assert report.status == "failed"
+    assert report.abort_reason == "entropy_budget exceeds task runtime capacity"
+    assert perception.calls == 0
+
+
 def test_execution_engine_enforces_task_level_timeout() -> None:
     clock = FakeClock()
     task = TaskDefinition(

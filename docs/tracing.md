@@ -35,7 +35,8 @@ budget fits before any desktop action is attempted.
 Task artifacts include task-level and step-level `entropy_budget` values, and
 step-related trace events include explicit `step_entropy_budget` metadata when a
 step has one. The planner also emits an `entropy_budget` event that summarizes
-the checked task and step allocations.
+the checked task and step allocations, including runtime capacity derived from
+max-step, retry, and timeout-feasible timing limits.
 
 When a step declares `safe_action_variants`, the planner emits an
 `action_variant` event with the available variants, selected action, configured

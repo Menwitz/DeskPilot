@@ -43,6 +43,8 @@ steps:
   `data_entry`, `verification`, or `submission` when provided.
 - Task and step `entropy_budget` values must be non-negative. When a task-level
   budget is set, the total of explicit step budgets must not exceed it.
+- At runtime, entropy budgets are also rejected when they exceed the random
+  decision capacity allowed by max-step, retry, and timeout constraints.
 
 ## Actions
 
