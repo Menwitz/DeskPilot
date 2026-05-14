@@ -5,6 +5,10 @@ from desktop_agent.benchmark_runner import (
     BenchmarkRunHarness,
     BenchmarkRunMetrics,
     BenchmarkSummaryMetrics,
+    _summary_from_runs,
+    _summary_to_dict,
+    _variance_from_runs,
+    _write_variance_report,
     compare_pointer_timing_models,
     evaluate_benchmark_acceptance,
 )
@@ -88,6 +92,94 @@ def test_benchmark_run_harness_rejects_empty_iterations(tmp_path: Path) -> None:
         assert str(exc) == "iterations must be greater than zero"
     else:
         raise AssertionError("expected iterations validation failure")
+
+
+def test_benchmark_aggregation_and_variance_reporting_regression(
+    tmp_path: Path,
+) -> None:
+    # The mixed run set catches aggregate-vs-average grounding mistakes and
+    # ensures nonzero monitoring rates survive JSON variance reporting.
+    runs = (
+        BenchmarkRunMetrics(
+            iteration=1,
+            status="passed",
+            task_time_seconds=1.0,
+            step_count=2,
+            action_count=3,
+            retry_count=0,
+            grounding_attempt_count=2,
+            grounded_selection_count=2,
+            grounding_accuracy=1.0,
+            ambiguity_count=0,
+            recovery_count=0,
+            operator_intervention_count=0,
+            trace_dir=None,
+            abort_reason=None,
+        ),
+        BenchmarkRunMetrics(
+            iteration=2,
+            status="failed",
+            task_time_seconds=3.0,
+            step_count=4,
+            action_count=5,
+            retry_count=2,
+            grounding_attempt_count=4,
+            grounded_selection_count=2,
+            grounding_accuracy=0.5,
+            ambiguity_count=1,
+            recovery_count=2,
+            operator_intervention_count=1,
+            trace_dir=None,
+            abort_reason="selection_ambiguity",
+        ),
+        BenchmarkRunMetrics(
+            iteration=3,
+            status="passed",
+            task_time_seconds=5.0,
+            step_count=6,
+            action_count=7,
+            retry_count=1,
+            grounding_attempt_count=0,
+            grounded_selection_count=0,
+            grounding_accuracy=1.0,
+            ambiguity_count=0,
+            recovery_count=0,
+            operator_intervention_count=0,
+            trace_dir=None,
+            abort_reason=None,
+        ),
+    )
+
+    summary = _summary_from_runs(runs)
+    variance = _variance_from_runs(runs)
+    variance_path = tmp_path / "variance-report.json"
+    _write_variance_report(variance_path, variance)
+
+    summary_payload = _summary_to_dict(summary)
+    variance_payload = json.loads(variance_path.read_text(encoding="utf-8"))
+    assert summary_payload == {
+        "run_count": 3,
+        "success_rate": 2 / 3,
+        "median_task_time_seconds": 3.0,
+        "step_count": 12,
+        "action_count": 15,
+        "retry_count": 3,
+        "grounding_accuracy": 4 / 6,
+        "ambiguity_rate": 1 / 3,
+        "recovery_rate": 1 / 3,
+        "operator_intervention_rate": 1 / 3,
+    }
+    assert variance_payload["task_time_seconds"]["minimum"] == 1.0
+    assert variance_payload["task_time_seconds"]["maximum"] == 5.0
+    assert variance_payload["task_time_seconds"]["mean"] == 3.0
+    assert variance_payload["step_count"]["mean"] == 4.0
+    assert variance_payload["action_count"]["mean"] == 5.0
+    assert variance_payload["retry_count"]["mean"] == 1.0
+    assert variance_payload["grounding_accuracy"]["minimum"] == 0.5
+    assert variance_payload["grounding_accuracy"]["maximum"] == 1.0
+    assert variance_payload["ambiguity_count"]["mean"] == 1 / 3
+    assert variance_payload["recovery_count"]["maximum"] == 2.0
+    assert variance_payload["operator_intervention_count"]["mean"] == 1 / 3
 
 
 def test_pointer_timing_comparison_contrasts_model_with_baseline() -> None:
