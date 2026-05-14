@@ -383,6 +383,37 @@ def test_execution_engine_careful_path_uses_upper_bound_timing() -> None:
     assert round(clock.now, 3) == 0.8
 
 
+def test_execution_engine_records_elapsed_input_wait_before_action() -> None:
+    clock = FakeClock()
+    task = TaskDefinition(
+        name="input-wait",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+    )
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=ExecutionProfile(
+                enabled=True,
+                action_delay_seconds=(0.2, 0.2),
+            ),
+        ),
+        clock=clock,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    phases = [event.phase for event in report.events]
+    wait_event = next(event for event in report.events if event.phase == "input_wait")
+    assert report.status == "passed"
+    assert wait_event.metadata["requested_delay_seconds"] == 0.2
+    assert wait_event.metadata["elapsed_wait_seconds"] == 0.2
+    assert wait_event.metadata["before_desktop_input"] is True
+    assert phases.index("input_wait") < phases.index("execute_action")
+
+
 def test_execution_engine_runs_checkpoint_before_irreversible_action() -> None:
     task = TaskDefinition(
         name="checkpoint-pass",

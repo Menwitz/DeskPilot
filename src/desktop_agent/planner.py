@@ -675,7 +675,7 @@ class ExecutionEngine:
                         0.0,
                     )
                 self._record("execution_timing", action_timing.reason, metadata)
-            self._consume_timing_delay(action_timing)
+            self._consume_input_wait(step, action_timing, attempt)
             if self._deadline_expired(step_deadline):
                 return StepExecutionOutcome(
                     self._step_failed(
@@ -971,7 +971,7 @@ class ExecutionEngine:
                 metadata["step_category"] = step_category(step)
                 metadata["attempt"] = attempt
                 self._record("execution_timing", action_timing.reason, metadata)
-            self._consume_timing_delay(action_timing)
+            self._consume_input_wait(step, action_timing, attempt)
             if self._deadline_expired(step_deadline):
                 return StepExecutionOutcome(
                     self._step_failed(
@@ -1233,9 +1233,32 @@ class ExecutionEngine:
     def _deadline_expired(self, deadline: float) -> bool:
         return self.clock.monotonic() >= deadline
 
-    def _consume_timing_delay(self, decision: TimingDecision) -> None:
-        if decision.delay_seconds > 0:
-            self.clock.sleep(decision.delay_seconds)
+    def _consume_input_wait(
+        self,
+        step: TaskStep,
+        decision: TimingDecision,
+        attempt: int,
+    ) -> None:
+        elapsed_wait_seconds = self._consume_timing_delay(decision)
+        if decision.phase == "action" and decision.delay_seconds > 0:
+            self._record(
+                "input_wait",
+                "timing delay consumed before desktop input",
+                _step_metadata(
+                    step,
+                    attempt=attempt,
+                    requested_delay_seconds=decision.delay_seconds,
+                    elapsed_wait_seconds=elapsed_wait_seconds,
+                    before_desktop_input=True,
+                ),
+            )
+
+    def _consume_timing_delay(self, decision: TimingDecision) -> float:
+        if decision.delay_seconds <= 0:
+            return 0.0
+        started = self.clock.monotonic()
+        self.clock.sleep(decision.delay_seconds)
+        return max(0.0, self.clock.monotonic() - started)
 
     def _step_passed(
         self,

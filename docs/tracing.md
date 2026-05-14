@@ -52,6 +52,10 @@ believed UI state before and after steps. State failures are categorized as
 `task_state` failures, which makes skipped setup or invalid branch paths visible
 in reports.
 
+`input_wait` events record requested and elapsed action-delay seconds after
+timing decisions and before `execute_action`, providing evidence that real
+desktop input was delayed by the timing controller.
+
 Each executed step also emits `step_timeout_budget` metadata with the planned
 action wait, retry wait, total planned wait, remaining timeout, and whether the
 budget fits before any desktop action is attempted.

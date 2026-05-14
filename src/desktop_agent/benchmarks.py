@@ -38,6 +38,7 @@ TRACE_MONITORING_PHASES: tuple[str, ...] = (
     "select_target",
     "execution_path",
     "verification_checkpoint",
+    "input_wait",
     "execute_action",
     "verify_result",
 )

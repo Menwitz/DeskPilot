@@ -33,6 +33,11 @@ the step complete and updates the believed state from `expected_state.after`.
 These checks emit `task_state` trace events and catch branch paths that skip
 required setup.
 
+Action timing waits are consumed immediately before desktop input. The planner
+measures the elapsed wait through its clock and emits `input_wait` before
+`execute_action`, so real runs can prove the timing controller's delay actually
+happened before input was sent.
+
 ## Runtime Controls
 
 - Task timeout is the lower of `task.timeout_seconds` and
