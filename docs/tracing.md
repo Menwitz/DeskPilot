@@ -47,6 +47,8 @@ sample records behind that selection.
 Recovery events include `recovery_policy`, `recovery_reason`, and
 `recovery_actions` so reports can distinguish stale observations, missed
 targets, disabled controls, occluded controls, and transient loading states.
+When a step has an explicit `recovery` rule, recovery events also include the
+allowed actions and whether the default policy was constrained by that rule.
 
 ## Replay
 

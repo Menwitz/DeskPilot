@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from desktop_agent.actuation import ActionResult
 from desktop_agent.perception import ElementCandidate
 from desktop_agent.screen import ScreenObservation
+from desktop_agent.task_dsl import RecoveryRule, TaskStep
 
 
 @dataclass(frozen=True)
@@ -23,6 +24,22 @@ class RecoveryPolicy:
             "recovery_reason": self.reason,
             "recovery_actions": list(self.actions),
         }
+
+
+@dataclass(frozen=True)
+class ConstrainedRecoveryPolicy:
+    """Recovery policy after applying task-authored allowed recovery actions."""
+
+    policy: RecoveryPolicy
+    rule: RecoveryRule | None = None
+
+    def metadata(self) -> dict[str, object]:
+        metadata = self.policy.metadata()
+        if self.rule is not None:
+            metadata["recovery_allowed_actions"] = list(self.rule.actions)
+            metadata["recovery_rule_next_step"] = self.rule.next_step
+            metadata["recovery_actions_constrained"] = True
+        return metadata
 
 
 RECOVERY_POLICIES: dict[str, RecoveryPolicy] = {
@@ -114,6 +131,36 @@ def recovery_policy_for_action_result(
     if not verification_passed:
         return recovery_policy_for_selection(observation, candidates, None)
     return RECOVERY_POLICIES["verification_failure"]
+
+
+def constrain_recovery_policy(
+    step: TaskStep,
+    policy: RecoveryPolicy,
+) -> ConstrainedRecoveryPolicy:
+    rule = _matching_recovery_rule(step, policy.reason)
+    if rule is None:
+        return ConstrainedRecoveryPolicy(policy)
+    allowed = tuple(action for action in policy.actions if action in rule.actions)
+    if not allowed:
+        allowed = ("abort_with_trace",)
+    return ConstrainedRecoveryPolicy(
+        RecoveryPolicy(
+            name=policy.name,
+            reason=policy.reason,
+            actions=allowed,
+        ),
+        rule,
+    )
+
+
+def _matching_recovery_rule(
+    step: TaskStep,
+    reason: str,
+) -> RecoveryRule | None:
+    for rule in step.recovery:
+        if rule.reason == reason:
+            return rule
+    return None
 
 
 def _observation_has_state(observation: ScreenObservation, state: str) -> bool:

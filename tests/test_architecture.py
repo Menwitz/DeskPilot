@@ -13,6 +13,7 @@ from desktop_agent.safety import LocalSafetyPolicy
 from desktop_agent.screen import Bounds, ScreenObservation, StaticScreenObserver
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
+    RecoveryRule,
     StaticTaskLoader,
     TaskDefinition,
     TaskStep,
@@ -338,6 +339,12 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
                 action="click_text",
                 target="Submit",
                 retry=1,
+                recovery=(
+                    RecoveryRule(
+                        reason="transient_loading",
+                        actions=("wait_for_loading", "abort_with_trace"),
+                    ),
+                ),
             ),
         ),
     )
@@ -409,3 +416,8 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
     assert recover_event.metadata["retry_reason"] == "transient failure"
     assert recover_event.metadata["recovery_reason"] == "transient_loading"
     assert recover_event.metadata["recovery_policy"] == "wait_for_transient_loading"
+    assert recover_event.metadata["recovery_actions"] == [
+        "wait_for_loading",
+        "abort_with_trace",
+    ]
+    assert recover_event.metadata["recovery_actions_constrained"] is True

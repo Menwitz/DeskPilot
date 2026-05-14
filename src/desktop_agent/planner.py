@@ -21,6 +21,7 @@ from desktop_agent.perception import (
 )
 from desktop_agent.recovery import (
     RecoveryPolicy,
+    constrain_recovery_policy,
     recovery_policy_for_action_result,
     recovery_policy_for_selection,
 )
@@ -573,13 +574,13 @@ class ExecutionEngine:
                     action_result,
                     verification.passed,
                 )
-                recover_metadata = _step_metadata(
+                recover_metadata = _recovery_metadata(
                     step,
+                    recovery_policy,
                     next_attempt=attempt + 1,
                     retry_reason=last_message,
                     retry_delay_seconds=retry_timing.delay_seconds,
                 )
-                recover_metadata.update(recovery_policy.metadata())
                 self._record(
                     "recover",
                     "retrying step",
@@ -994,7 +995,7 @@ def _recovery_metadata(
     **metadata: object,
 ) -> dict[str, object]:
     recovery_metadata = _step_metadata(step, **metadata)
-    recovery_metadata.update(policy.metadata())
+    recovery_metadata.update(constrain_recovery_policy(step, policy).metadata())
     return recovery_metadata
 
 

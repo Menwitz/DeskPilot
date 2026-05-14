@@ -11,6 +11,7 @@ from typing import Literal, Protocol
 
 from desktop_agent.config import ExecutionProfile, RuntimeConfig
 from desktop_agent.task_dsl import (
+    RecoveryRule,
     TaskDefinition,
     TaskRegion,
     TaskStep,
@@ -249,6 +250,15 @@ def _step_to_dict(step: TaskStep) -> dict[str, object]:
         "requires_confirmation": step.requires_confirmation,
         "entropy_budget": step.entropy_budget,
         "safe_action_variants": list(step.safe_action_variants),
+        "recovery": [_recovery_rule_to_dict(rule) for rule in step.recovery],
+    }
+
+
+def _recovery_rule_to_dict(rule: RecoveryRule) -> dict[str, object]:
+    return {
+        "reason": rule.reason,
+        "actions": list(rule.actions),
+        "next_step": rule.next_step,
     }
 
 

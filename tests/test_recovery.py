@@ -1,10 +1,13 @@
 from desktop_agent.actuation import ActionResult
 from desktop_agent.perception import ElementCandidate
 from desktop_agent.recovery import (
+    RECOVERY_POLICIES,
+    constrain_recovery_policy,
     recovery_policy_for_action_result,
     recovery_policy_for_selection,
 )
 from desktop_agent.screen import Bounds, ScreenObservation
+from desktop_agent.task_dsl import RecoveryRule, TaskStep
 
 
 def candidate(
@@ -77,3 +80,25 @@ def test_recovery_policy_classifies_transient_action_failure() -> None:
 
     assert policy.reason == "transient_loading"
     assert "wait_for_loading" in policy.actions
+
+
+def test_recovery_policy_constrains_actions_from_task_rule() -> None:
+    step = TaskStep(
+        id="click-submit",
+        action="click_text",
+        target="Submit",
+        recovery=(
+            RecoveryRule(
+                reason="transient_loading",
+                actions=("wait_for_loading", "abort_with_trace"),
+            ),
+        ),
+    )
+
+    constrained = constrain_recovery_policy(
+        step,
+        RECOVERY_POLICIES["transient_loading"],
+    )
+
+    assert constrained.policy.actions == ("wait_for_loading", "abort_with_trace")
+    assert constrained.metadata()["recovery_actions_constrained"] is True

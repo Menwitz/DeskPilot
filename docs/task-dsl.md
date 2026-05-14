@@ -26,6 +26,11 @@ steps:
     entropy_budget: 0.5
     safe_action_variants:
       - click_uia
+    recovery:
+      - reason: transient_loading
+        actions:
+          - wait_for_loading
+          - abort_with_trace
     requires_confirmation: true
     verify:
       type: visible_text
@@ -88,6 +93,10 @@ Supported verification types:
 - `safe_action_variants` lists task-author-approved equivalent actions that may
   be selected by the execution profile. Today this is limited to the conservative
   `click_text` / `click_uia` equivalence class.
+- `recovery` declares explicit allowed recovery actions for a recovery reason.
+  Supported reasons include `stale_observation`, `missed_target`,
+  `disabled_control`, `occluded_control`, `transient_loading`, and
+  `verification_failure`.
 - `on_failure` names a future recovery or branch target.
 - `requires_confirmation` blocks the step unless its ID is explicitly confirmed
   in runtime configuration or with `--confirm-step`.
@@ -147,6 +156,11 @@ steps:
     entropy_budget: 1.0
     safe_action_variants:
       - click_uia
+    recovery:
+      - reason: transient_loading
+        actions:
+          - wait_for_loading
+          - abort_with_trace
     requires_confirmation: true
     verify:
       type: visible_text

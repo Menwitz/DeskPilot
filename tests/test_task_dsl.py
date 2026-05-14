@@ -153,6 +153,11 @@ def test_task_dsl_accepts_safe_action_variants_for_equivalent_actions(
                 "    target: Submit",
                 "    safe_action_variants:",
                 "      - click_uia",
+                "    recovery:",
+                "      - reason: transient_loading",
+                "        actions:",
+                "          - wait_for_loading",
+                "          - abort_with_trace",
                 "",
             ],
         ),
@@ -163,6 +168,11 @@ def test_task_dsl_accepts_safe_action_variants_for_equivalent_actions(
     BasicTaskValidator().validate(task, RuntimeConfig())
 
     assert task.steps[0].safe_action_variants == ("click_uia",)
+    assert task.steps[0].recovery[0].reason == "transient_loading"
+    assert task.steps[0].recovery[0].actions == (
+        "wait_for_loading",
+        "abort_with_trace",
+    )
 
 
 def test_task_dsl_rejects_non_equivalent_safe_action_variants(
@@ -189,6 +199,33 @@ def test_task_dsl_rejects_non_equivalent_safe_action_variants(
     )
 
     with pytest.raises(TaskValidationError, match="safe_action_variants"):
+        validate_task(task_path)
+
+
+def test_task_dsl_rejects_unknown_recovery_actions(tmp_path: Path) -> None:
+    task_path = tmp_path / "task.yaml"
+    task_path.write_text(
+        "\n".join(
+            [
+                "name: bad-recovery",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "timeout_seconds: 30",
+                "steps:",
+                "  - id: click-submit",
+                "    action: click_text",
+                "    target: Submit",
+                "    recovery:",
+                "      - reason: transient_loading",
+                "        actions:",
+                "          - teleport",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(TaskValidationError, match="unknown recovery action"):
         validate_task(task_path)
 
 

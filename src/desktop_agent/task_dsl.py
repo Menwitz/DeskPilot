@@ -75,6 +75,29 @@ SAFE_ACTION_VARIANTS_BY_ACTION: dict[str, frozenset[str]] = {
     "click_text": frozenset({"click_text", "click_uia"}),
     "click_uia": frozenset({"click_text", "click_uia"}),
 }
+SUPPORTED_RECOVERY_REASONS: frozenset[str] = frozenset(
+    {
+        "stale_observation",
+        "missed_target",
+        "disabled_control",
+        "occluded_control",
+        "transient_loading",
+        "verification_failure",
+    },
+)
+SUPPORTED_RECOVERY_ACTIONS: frozenset[str] = frozenset(
+    {
+        "abort_with_trace",
+        "refocus_allowed_window",
+        "reobserve_screen",
+        "retry_alternate_candidate",
+        "retry_with_fresh_candidates",
+        "scroll_search_region",
+        "wait_and_reobserve",
+        "wait_for_enabled",
+        "wait_for_loading",
+    },
+)
 
 
 @dataclass(frozen=True)
@@ -97,6 +120,15 @@ class TaskRegion:
 
 
 @dataclass(frozen=True)
+class RecoveryRule:
+    """Task-authored allowed recovery actions for one recovery reason."""
+
+    reason: str
+    actions: tuple[str, ...]
+    next_step: str | None = None
+
+
+@dataclass(frozen=True)
 class TaskStep:
     """Single deterministic action in a DeskPilot task."""
 
@@ -114,6 +146,7 @@ class TaskStep:
     category: str | None = None
     entropy_budget: float | None = None
     safe_action_variants: tuple[str, ...] = ()
+    recovery: tuple[RecoveryRule, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -233,6 +266,7 @@ class BasicTaskValidator(TaskValidator):
                 )
             if step.on_failure is not None and step.on_failure not in all_step_ids:
                 errors.append(f"step {step.id} on_failure target does not exist")
+            errors.extend(_validate_recovery_rules(step, all_step_ids))
             errors.extend(_validate_action_shape(step))
             errors.extend(_validate_verification_shape(step))
 
@@ -272,6 +306,7 @@ def _step_from_mapping(value: object, task_dir: Path) -> TaskStep:
             "safe_action_variants",
         )
         or (),
+        recovery=_recovery_rules_from_value(data.get("recovery")),
     )
 
 
@@ -350,6 +385,24 @@ def _validate_safe_action_variants(step: TaskStep) -> list[str]:
     return errors
 
 
+def _validate_recovery_rules(
+    step: TaskStep,
+    all_step_ids: set[str],
+) -> list[str]:
+    errors: list[str] = []
+    for rule in step.recovery:
+        if rule.reason not in SUPPORTED_RECOVERY_REASONS:
+            errors.append(f"unknown recovery reason: {rule.reason}")
+        if not rule.actions:
+            errors.append(f"step {step.id} recovery actions are required")
+        for action in rule.actions:
+            if action not in SUPPORTED_RECOVERY_ACTIONS:
+                errors.append(f"unknown recovery action: {action}")
+        if rule.next_step is not None and rule.next_step not in all_step_ids:
+            errors.append(f"step {step.id} recovery next_step target does not exist")
+    return errors
+
+
 def step_category(step: TaskStep) -> str:
     """Return an explicit step category or a stable action-based default."""
 
@@ -417,6 +470,23 @@ def _optional_bool(value: object) -> bool:
     if not isinstance(value, bool):
         raise TaskValidationError("requires_confirmation must be true or false")
     return value
+
+
+def _recovery_rules_from_value(value: object) -> tuple[RecoveryRule, ...]:
+    if value in (None, ()):
+        return ()
+    if not isinstance(value, list):
+        raise TaskValidationError("recovery must be a list of mappings")
+    return tuple(_recovery_rule_from_mapping(item) for item in value)
+
+
+def _recovery_rule_from_mapping(value: object) -> RecoveryRule:
+    data = _mapping(value, "each recovery rule must be a mapping")
+    return RecoveryRule(
+        reason=str(data.get("reason", data.get("on", ""))),
+        actions=_optional_string_tuple(data.get("actions"), "recovery.actions") or (),
+        next_step=_optional_str(data.get("next_step")),
+    )
 
 
 def _optional_image(value: object, task_dir: Path) -> Path | None:
