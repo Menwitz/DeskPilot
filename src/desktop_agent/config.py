@@ -11,7 +11,7 @@ import yaml
 
 @dataclass(frozen=True)
 class ExecutionProfile:
-    """Optional bounded timing profile for traceable execution pacing."""
+    """Optional bounded timing profile for natural-feeling local automation."""
 
     enabled: bool = False
     action_delay_seconds: tuple[float, float] = (0.0, 0.0)
@@ -37,6 +37,7 @@ class RuntimeConfig:
     emergency_stop_hotkey: str = "ctrl+alt+esc"
     primary_monitor_only: bool = True
     execution_profile: ExecutionProfile = field(default_factory=ExecutionProfile)
+    confirmed_steps: tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,7 @@ class ConfigOverrides:
     emergency_stop_hotkey: str | None = None
     primary_monitor_only: bool | None = None
     execution_profile: ExecutionProfile | None = None
+    confirmed_steps: tuple[str, ...] | None = None
 
 
 class ConfigError(ValueError):
@@ -162,6 +164,7 @@ def apply_config_overrides(
             overrides.execution_profile,
             config.execution_profile,
         ),
+        confirmed_steps=_coalesce(overrides.confirmed_steps, config.confirmed_steps),
     )
 
 
@@ -179,6 +182,7 @@ def config_overrides_from_mapping(data: dict[str, object]) -> ConfigOverrides:
         emergency_stop_hotkey=_optional_str(data, "emergency_stop_hotkey"),
         primary_monitor_only=_optional_bool(data, "primary_monitor_only"),
         execution_profile=_optional_execution_profile(data, "execution_profile"),
+        confirmed_steps=_optional_string_tuple(data, "confirmed_steps"),
     )
 
 
@@ -200,6 +204,8 @@ def validate_config(config: RuntimeConfig) -> None:
         errors.append("emergency_stop_hotkey is required")
     if any(not window.strip() for window in config.allowed_windows):
         errors.append("allowed_windows entries must not be blank")
+    if any(not step_id.strip() for step_id in config.confirmed_steps):
+        errors.append("confirmed_steps entries must not be blank")
     errors.extend(_validate_execution_profile(config.execution_profile))
 
     if errors:

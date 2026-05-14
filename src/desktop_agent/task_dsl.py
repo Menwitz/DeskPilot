@@ -81,6 +81,7 @@ class TaskStep:
     timeout_seconds: float | None = None
     retry: int | None = None
     on_failure: str | None = None
+    requires_confirmation: bool = False
 
 
 @dataclass(frozen=True)
@@ -208,6 +209,7 @@ def _step_from_mapping(value: object, task_dir: Path) -> TaskStep:
         timeout_seconds=_optional_float(data.get("timeout_seconds")),
         retry=_optional_int(data.get("retry")),
         on_failure=_optional_str(data.get("on_failure")),
+        requires_confirmation=_optional_bool(data.get("requires_confirmation")),
     )
 
 
@@ -311,6 +313,14 @@ def _optional_str(value: object) -> str | None:
         return None
     if not isinstance(value, str):
         raise TaskValidationError("string field must be a string")
+    return value
+
+
+def _optional_bool(value: object) -> bool:
+    if value is None:
+        return False
+    if not isinstance(value, bool):
+        raise TaskValidationError("requires_confirmation must be true or false")
     return value
 
 

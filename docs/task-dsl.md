@@ -21,6 +21,7 @@ steps:
   - id: submit
     action: click_text
     target: "Submit"
+    requires_confirmation: true
     verify:
       type: visible_text
       text: "Success"
@@ -71,6 +72,8 @@ Supported verification types:
 - `timeout_seconds` overrides the step timeout.
 - `retry` overrides the per-step retry budget.
 - `on_failure` names a future recovery or branch target.
+- `requires_confirmation` blocks the step unless its ID is explicitly confirmed
+  in runtime configuration or with `--confirm-step`.
 
 ## Task-Level Configuration
 
@@ -88,6 +91,12 @@ timeout_seconds: 120
 config:
   confidence_threshold: 0.85
   max_retries_per_step: 2
+  execution_profile:
+    enabled: true
+    action_delay_seconds: [0.05, 0.25]
+    retry_delay_seconds: [0.25, 1.0]
+    hesitation_probability: 0.1
+    movement_smoothness: 0.6
 steps:
   - id: click-email
     action: click_text
@@ -106,6 +115,7 @@ steps:
   - id: click-submit
     action: click_text
     target: Submit
+    requires_confirmation: true
     verify:
       type: visible_text
       text: Success

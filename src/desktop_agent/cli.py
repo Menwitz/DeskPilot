@@ -23,7 +23,11 @@ from desktop_agent.perception import (
     ConfidenceTargetSelector,
 )
 from desktop_agent.planner import ExecutionEngine
-from desktop_agent.safety import LocalSafetyPolicy
+from desktop_agent.safety import (
+    LocalSafetyPolicy,
+    NoopEmergencyStopMonitor,
+    create_platform_emergency_stop_monitor,
+)
 from desktop_agent.screen import (
     MssScreenObserver,
     ScreenUnavailableError,
@@ -91,6 +95,7 @@ def _add_task_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--max-runtime-seconds", type=float)
     parser.add_argument("--confidence-threshold", type=float)
     parser.add_argument("--allowed-window", action="append", default=[])
+    parser.add_argument("--confirm-step", action="append", default=[])
 
 
 def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
@@ -117,6 +122,9 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
         ),
         target_selector=ConfidenceTargetSelector(),
         actuator=DryRunActuator() if dry_run else create_platform_actuator(),
+        emergency_stop_monitor=create_platform_emergency_stop_monitor()
+        if not dry_run
+        else NoopEmergencyStopMonitor(),
     )
     report = engine.run(args.task_yaml, args.config)
     _print_report(report, verbose=args.verbose)
@@ -129,6 +137,7 @@ def _cli_overrides_from_args(args: argparse.Namespace) -> ConfigOverrides:
         max_runtime_seconds=args.max_runtime_seconds,
         confidence_threshold=args.confidence_threshold,
         allowed_windows=tuple(args.allowed_window) if args.allowed_window else None,
+        confirmed_steps=tuple(args.confirm_step) if args.confirm_step else None,
     )
 
 

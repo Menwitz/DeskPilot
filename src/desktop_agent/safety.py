@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import ctypes
+import sys
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol, cast
 
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.screen import ScreenObservation
@@ -36,6 +38,51 @@ class SafetyPolicy(Protocol):
     ) -> SafetyDecision: ...
 
 
+class EmergencyStopMonitor(Protocol):
+    """Interface for checking whether the operator requested an immediate stop."""
+
+    def is_triggered(self, config: RuntimeConfig) -> bool: ...
+
+
+class NoopEmergencyStopMonitor(EmergencyStopMonitor):
+    """Emergency monitor used by tests and platforms without hotkey polling."""
+
+    def is_triggered(self, config: RuntimeConfig) -> bool:
+        _ = config
+        return False
+
+
+class StaticEmergencyStopMonitor(EmergencyStopMonitor):
+    """Deterministic emergency monitor for planner tests."""
+
+    def __init__(self, *, triggered: bool) -> None:
+        self._triggered = triggered
+
+    def is_triggered(self, config: RuntimeConfig) -> bool:
+        _ = config
+        return self._triggered
+
+
+class WindowsHotkeyEmergencyStopMonitor(EmergencyStopMonitor):
+    """Polls the configured Windows hotkey without installing hooks."""
+
+    def __init__(self) -> None:
+        self._user32: Any | None = None
+        if sys.platform == "win32":
+            self._user32 = cast(Any, ctypes).windll.user32
+
+    def is_triggered(self, config: RuntimeConfig) -> bool:
+        if self._user32 is None:
+            return False
+        virtual_keys = _hotkey_virtual_keys(config.emergency_stop_hotkey)
+        # GetAsyncKeyState is process-local polling of the global key state; the
+        # planner checks it between bounded actions so the operator can stop a run.
+        return bool(virtual_keys) and all(
+            self._user32.GetAsyncKeyState(virtual_key) & 0x8000
+            for virtual_key in virtual_keys
+        )
+
+
 class LocalSafetyPolicy(SafetyPolicy):
     """Applies platform-neutral safety checks before adapters do real work."""
 
@@ -59,6 +106,11 @@ class LocalSafetyPolicy(SafetyPolicy):
         _ = step, config
         if not task.allowed_windows:
             return SafetyDecision(False, "task must declare allowed windows")
+        if step.requires_confirmation and step.id not in config.confirmed_steps:
+            return SafetyDecision(
+                False,
+                f"step {step.id} requires explicit confirmation",
+            )
         if (
             observation
             and observation.active_window_title
@@ -69,3 +121,36 @@ class LocalSafetyPolicy(SafetyPolicy):
                 "active window is outside the task allowed_windows",
             )
         return SafetyDecision(True, "allowed")
+
+
+def create_platform_emergency_stop_monitor() -> EmergencyStopMonitor:
+    if sys.platform == "win32":
+        return WindowsHotkeyEmergencyStopMonitor()
+    return NoopEmergencyStopMonitor()
+
+
+def _hotkey_virtual_keys(hotkey: str) -> tuple[int, ...]:
+    keys: list[int] = []
+    for part in hotkey.split("+"):
+        normalized = part.strip().lower()
+        if not normalized:
+            continue
+        if normalized not in _HOTKEY_ALIASES:
+            raise ValueError(f"unsupported emergency stop key: {part}")
+        keys.append(_HOTKEY_ALIASES[normalized])
+    return tuple(keys)
+
+
+_HOTKEY_ALIASES = {
+    "ctrl": 0x11,
+    "control": 0x11,
+    "shift": 0x10,
+    "alt": 0x12,
+    "esc": 0x1B,
+    "escape": 0x1B,
+    "space": 0x20,
+    "enter": 0x0D,
+    "return": 0x0D,
+    **{chr(code).lower(): code for code in range(ord("A"), ord("Z") + 1)},
+    **{str(number): ord(str(number)) for number in range(10)},
+}

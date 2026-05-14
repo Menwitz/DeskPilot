@@ -246,17 +246,17 @@
 
 ## 13. Safety System
 
-- [ ] Require allowed window/app whitelist for every task.
-- [ ] Block actions when active window does not match whitelist.
-- [ ] Add global emergency stop hotkey.
-- [ ] Add task-level max runtime.
-- [ ] Add task-level max steps.
-- [ ] Add per-step retry limit.
-- [ ] Add confidence threshold enforcement.
-- [ ] Add dry-run mode that validates and plans without moving the mouse.
-- [ ] Add clear warning that v1 does not support locked-screen background automation.
-- [ ] Add local-only trace policy.
-- [ ] Add safety documentation in `docs/safety.md`.
+- [x] Require allowed window/app whitelist for every task.
+- [x] Block actions when active window does not match whitelist.
+- [x] Add global emergency stop hotkey.
+- [x] Add task-level max runtime.
+- [x] Add task-level max steps.
+- [x] Add per-step retry limit.
+- [x] Add confidence threshold enforcement.
+- [x] Add dry-run mode that validates and plans without moving the mouse.
+- [x] Add clear warning that v1 does not support locked-screen background automation.
+- [x] Add local-only trace policy.
+- [x] Add safety documentation in `docs/safety.md`.
 
 ## 14. Tracing And Reports
 

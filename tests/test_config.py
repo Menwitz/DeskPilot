@@ -25,6 +25,8 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
                 "max_retries_per_step: 1",
                 "allowed_windows:",
                 "  - Config Window",
+                "confirmed_steps:",
+                "  - submit-payment",
                 "execution_profile:",
                 "  enabled: true",
                 "  action_delay_seconds: [0.1, 0.3]",
@@ -55,6 +57,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
     assert resolved.max_retries_per_step == 3
     assert resolved.max_steps == 5
     assert resolved.allowed_windows == ("CLI Window",)
+    assert resolved.confirmed_steps == ("submit-payment",)
     assert resolved.execution_profile.enabled is True
     assert resolved.execution_profile.action_delay_seconds == (0.1, 0.3)
     assert resolved.execution_profile.retry_delay_seconds == (0.5, 1.5)
@@ -75,6 +78,8 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
                 "config:",
                 "  save_screenshots: false",
                 "  confidence_threshold: 0.95",
+                "  confirmed_steps:",
+                "    - submit",
                 "  execution_profile:",
                 "    enabled: true",
                 "    action_delay_seconds: [0.05, 0.1]",
@@ -91,6 +96,7 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
 
     assert task.config_overrides.save_screenshots is False
     assert task.config_overrides.confidence_threshold == 0.95
+    assert task.config_overrides.confirmed_steps == ("submit",)
     assert task.config_overrides.execution_profile is not None
     assert task.config_overrides.execution_profile.enabled is True
     assert task.config_overrides.execution_profile.action_delay_seconds == (0.05, 0.1)
@@ -103,6 +109,7 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
         (ConfigOverrides(max_retries_per_step=-1), "max_retries_per_step"),
         (ConfigOverrides(max_runtime_seconds=0), "max_runtime_seconds"),
         (ConfigOverrides(confidence_threshold=1.5), "confidence_threshold"),
+        (ConfigOverrides(confirmed_steps=("",)), "confirmed_steps"),
         (
             ConfigOverrides(
                 execution_profile=ExecutionProfile(

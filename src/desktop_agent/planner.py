@@ -15,11 +15,21 @@ from desktop_agent.perception import (
     TargetSelector,
     candidate_ranking_metadata,
 )
-from desktop_agent.safety import SafetyPolicy
+from desktop_agent.safety import (
+    EmergencyStopMonitor,
+    NoopEmergencyStopMonitor,
+    SafetyPolicy,
+)
 from desktop_agent.screen import ScreenObservation, ScreenObserver
 from desktop_agent.task_dsl import TaskDefinition, TaskLoader, TaskStep, TaskValidator
 from desktop_agent.timing import ExecutionTimingController
-from desktop_agent.tracing import RunReport, StepReport, TraceEvent, TraceSink
+from desktop_agent.tracing import (
+    RunReport,
+    RunStatus,
+    StepReport,
+    TraceEvent,
+    TraceSink,
+)
 
 TARGETED_ACTIONS: frozenset[str] = frozenset(
     {
@@ -50,6 +60,7 @@ class StepExecutionOutcome:
     report: StepReport
     next_step_id: str | None = None
     abort_reason: str | None = None
+    stop_status: RunStatus | None = None
 
 
 class Clock(Protocol):
@@ -166,6 +177,9 @@ class ExecutionEngine:
     actuator: Actuator
     verifier: StepVerifier = field(default_factory=PassingStepVerifier)
     clock: Clock = field(default_factory=MonotonicClock)
+    emergency_stop_monitor: EmergencyStopMonitor = field(
+        default_factory=NoopEmergencyStopMonitor,
+    )
 
     def run(self, task_path: Path, config_path: Path | None = None) -> RunReport:
         config = self.config_loader.load(config_path)
@@ -199,6 +213,13 @@ class ExecutionEngine:
             action_count = 0
 
             while step_index < len(task.steps):
+                if self.emergency_stop_monitor.is_triggered(config):
+                    reason = "emergency stop requested"
+                    self._record("emergency_stop", reason)
+                    return self.trace_sink.write_final_report(
+                        "emergency_stopped",
+                        reason,
+                    )
                 if self._deadline_expired(task_deadline):
                     reason = "task exceeded timeout"
                     self._record("abort", reason, {"deadline": task_deadline})
@@ -226,12 +247,14 @@ class ExecutionEngine:
                 self.trace_sink.record_step(step_report)
                 if outcome.abort_reason is not None:
                     self._record(
-                        "abort",
+                        "emergency_stop"
+                        if outcome.stop_status == "emergency_stopped"
+                        else "abort",
                         outcome.abort_reason,
                         {"step_id": step.id},
                     )
                     return self.trace_sink.write_final_report(
-                        "aborted",
+                        outcome.stop_status or "aborted",
                         outcome.abort_reason,
                     )
                 if step_report.status != "passed":
@@ -293,6 +316,8 @@ class ExecutionEngine:
         step_deadline = self._step_deadline(step, config, task_deadline)
 
         for attempt in range(1, total_attempts + 1):
+            if self.emergency_stop_monitor.is_triggered(config):
+                return self._emergency_stop_outcome(step, attempt, last_candidate_id)
             if self._deadline_expired(step_deadline):
                 return StepExecutionOutcome(
                     self._step_failed(
@@ -385,6 +410,8 @@ class ExecutionEngine:
                     ),
                 )
 
+            if self.emergency_stop_monitor.is_triggered(config):
+                return self._emergency_stop_outcome(step, attempt, last_candidate_id)
             action_timing = timing_controller.before_action()
             if config.execution_profile.enabled:
                 metadata = action_timing.metadata()
@@ -510,6 +537,8 @@ class ExecutionEngine:
         last_message = "wait_for condition was not visible"
         while not self._deadline_expired(step_deadline):
             attempts += 1
+            if self.emergency_stop_monitor.is_triggered(config):
+                return self._emergency_stop_outcome(step, attempts, None)
             observation, candidates = self._detect_for_step(step, config, attempts)
             target = self.target_selector.select(step, candidates, config)
             verification = self.verifier.verify(
@@ -575,6 +604,8 @@ class ExecutionEngine:
         last_message = "scroll_until target was not visible"
 
         for attempt in range(1, max_scrolls + 2):
+            if self.emergency_stop_monitor.is_triggered(config):
+                return self._emergency_stop_outcome(step, attempt, None)
             if self._deadline_expired(step_deadline):
                 return StepExecutionOutcome(
                     self._step_failed(
@@ -610,6 +641,8 @@ class ExecutionEngine:
                     self._step_failed(step, attempt, safety.reason, None),
                 )
 
+            if self.emergency_stop_monitor.is_triggered(config):
+                return self._emergency_stop_outcome(step, attempt, None)
             action_count += 1
             if action_count > config.max_steps:
                 return StepExecutionOutcome(
@@ -671,6 +704,8 @@ class ExecutionEngine:
         task_deadline: float,
     ) -> StepExecutionOutcome:
         observation, candidates = self._detect_for_step(step, config, 1)
+        if self.emergency_stop_monitor.is_triggered(config):
+            return self._emergency_stop_outcome(step, 1, None)
         target = self.target_selector.select(step, candidates, config)
         verification = self.verifier.verify(
             step,
@@ -796,6 +831,19 @@ class ExecutionEngine:
             attempts=max(attempts, 1),
             message=message,
             candidate_id=candidate_id,
+        )
+
+    def _emergency_stop_outcome(
+        self,
+        step: TaskStep,
+        attempts: int,
+        candidate_id: str | None,
+    ) -> StepExecutionOutcome:
+        reason = "emergency stop requested"
+        return StepExecutionOutcome(
+            self._step_failed(step, attempts, reason, candidate_id),
+            abort_reason=reason,
+            stop_status="emergency_stopped",
         )
 
     def _record(

@@ -25,6 +25,7 @@ allowed_windows:
   - DeskPilot Fixture
 emergency_stop_hotkey: ctrl+alt+esc
 primary_monitor_only: true
+confirmed_steps: []
 execution_profile:
   enabled: false
   action_delay_seconds: [0.0, 0.0]
@@ -46,6 +47,8 @@ timeout_seconds: 30
 config:
   confidence_threshold: 0.9
   max_retries_per_step: 2
+  confirmed_steps:
+    - submit-payment
   execution_profile:
     enabled: true
     action_delay_seconds: [0.05, 0.25]
@@ -71,8 +74,15 @@ text, allowed windows, maximum steps, timeouts, or retry budgets.
   pacing.
 - `hesitation_probability` chooses the upper half of the configured action
   delay range with that probability.
-- `movement_smoothness` is reserved for pointer actuation adapters.
+- `movement_smoothness` is reserved for future real pointer actuation adapters.
 - `random_seed` makes timing decisions reproducible for tests and diagnostics.
+
+## Sensitive Step Confirmation
+
+Tasks can mark a step with `requires_confirmation: true`. Those steps are
+blocked unless their step ID appears in `confirmed_steps` or is passed with the
+CLI `--confirm-step` option. This keeps sensitive actions opt-in at run time
+instead of relying only on task authoring.
 
 ## Validation
 
@@ -85,5 +95,6 @@ Startup rejects unsafe values before any desktop action can run:
   to upper.
 - Execution profile probability and smoothness values must be between `0` and
   `1`.
+- Confirmed step IDs must not be blank.
 - Emergency stop hotkey and trace root must be present.
 - Window names must not be blank.

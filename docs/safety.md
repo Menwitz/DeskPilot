@@ -22,12 +22,33 @@ evasion, credential abuse, or abusive third-party automation.
 
 - Active-window allowlist checks before every action.
 - Dry-run mode that validates and plans without moving the mouse.
-- Emergency stop hotkey.
+- Emergency stop hotkey polling on Windows.
 - Maximum runtime, maximum steps, and per-step retry limits.
 - Confidence thresholds for OCR, image, and UIA candidate selection.
 - Failure reports that explain why a task stopped.
+- Step-level explicit confirmation for task actions marked as sensitive.
 
-## Execution Profile Boundary
+## Locked Screen Boundary
+
+v1 does not support locked-screen or background desktop automation. The desktop
+must be unlocked and visible because screenshot capture, UI Automation,
+computer vision, OCR, and input actuation all depend on the active interactive
+session.
+
+## Local Trace Policy
+
+Screenshots, OCR text, candidate data, action logs, and reports are written to
+the configured local trace directory. v1 does not upload traces or call cloud AI
+services.
+
+## Emergency Stop
+
+`emergency_stop_hotkey` defaults to `ctrl+alt+esc`. On Windows the planner polls
+the configured key chord between bounded actions and writes an
+`emergency_stopped` report when it is pressed. Unsupported platforms use a safe
+no-op monitor until their input adapters exist.
+
+## Human-Like Execution Profile Boundary
 
 The optional execution profile is limited to bounded timing decisions and trace
 metadata. It must not change the user's intended task outcome, choose a
@@ -37,3 +58,7 @@ hide that automation is running.
 Invalid execution profile bounds fail configuration validation before any
 desktop action can run. Timing decisions are recorded in traces so failed runs
 can be diagnosed without guessing why the planner waited or retried.
+
+Sensitive task steps can declare `requires_confirmation: true`. The planner
+stops before the action unless the operator confirms the step ID through runtime
+configuration or `--confirm-step`.
