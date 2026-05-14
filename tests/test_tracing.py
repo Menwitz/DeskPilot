@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from desktop_agent.actuation import DryRunActuator
-from desktop_agent.config import RuntimeConfig, StaticConfigLoader
+from desktop_agent.config import ExecutionProfile, RuntimeConfig, StaticConfigLoader
 from desktop_agent.perception import (
     CompositePerceptionEngine,
     ConfidenceTargetSelector,
@@ -78,7 +78,13 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     trace_sink = FileTraceSink()
     engine = ExecutionEngine(
         config_loader=StaticConfigLoader(
-            RuntimeConfig(trace_root=tmp_path / "traces", confidence_threshold=0.8),
+            RuntimeConfig(
+                trace_root=tmp_path / "traces",
+                confidence_threshold=0.8,
+                execution_profile=ExecutionProfile(
+                    keyboard_interval_seconds=(0.01, 0.03),
+                ),
+            ),
         ),
         task_loader=StaticTaskLoader(task),
         task_validator=BasicTaskValidator(),
@@ -113,6 +119,10 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert final_report["steps"][0]["metadata"]["step_category"] == "submission"
     assert final_report["steps"][0]["metadata"]["step_entropy_budget"] == 1.0
     assert config_payload["execution_profile"]["persona"] == "normal"
+    assert config_payload["execution_profile"]["keyboard_interval_seconds"] == [
+        0.01,
+        0.03,
+    ]
     assert task_payload["entropy_budget"] == 2.0
     assert task_payload["steps"][0]["category"] == "submission"
     assert task_payload["steps"][0]["entropy_budget"] == 1.0
@@ -235,6 +245,16 @@ def test_file_trace_sink_renders_decision_details_in_markdown(
             metadata={"recovery_path_summary": "classify missed_target -> retry"},
         )
     )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="execute_action",
+            message="typed text",
+            metadata={
+                "keyboard_cadence_applied": True,
+                "keyboard_interval_count": 2,
+            },
+        )
+    )
 
     report = trace_sink.write_final_report("failed")
 
@@ -242,5 +262,6 @@ def test_file_trace_sink_renders_decision_details_in_markdown(
     final_report = (report.trace_dir / "final-report.md").read_text(encoding="utf-8")
     assert "[safety_stop]" in final_report
     assert "delay 0.200s" in final_report
+    assert "keyboard cadence 2 interval(s)" in final_report
     assert "confidence_or_ambiguity_gate" in final_report
     assert "classify missed_target -> retry" in final_report

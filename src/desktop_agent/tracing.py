@@ -220,6 +220,7 @@ def _execution_profile_to_dict(profile: ExecutionProfile) -> dict[str, object]:
         "action_variant_distribution": profile.action_variant_distribution,
         "hesitation_probability": profile.hesitation_probability,
         "movement_smoothness": profile.movement_smoothness,
+        "keyboard_interval_seconds": list(profile.keyboard_interval_seconds),
         "random_seed": profile.random_seed,
     }
 
@@ -373,6 +374,10 @@ def _event_markdown_suffix(event: TraceEvent) -> str:
     delay_seconds = event.metadata.get("delay_seconds")
     if isinstance(delay_seconds, int | float):
         details.append(f"delay {delay_seconds:.3f}s")
+    cadence_applied = event.metadata.get("keyboard_cadence_applied")
+    interval_count = event.metadata.get("keyboard_interval_count")
+    if cadence_applied is True and isinstance(interval_count, int):
+        details.append(f"keyboard cadence {interval_count} interval(s)")
     if not details:
         return ""
     return " - " + "; ".join(details)

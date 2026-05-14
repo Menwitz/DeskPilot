@@ -37,6 +37,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
                 "  action_variant_distribution: center_weighted",
                 "  hesitation_probability: 0.25",
                 "  movement_smoothness: 0.7",
+                "  keyboard_interval_seconds: [0.01, 0.03]",
                 "  random_seed: 7",
                 "",
             ],
@@ -71,6 +72,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
     assert resolved.execution_profile.action_variant_distribution == "center_weighted"
     assert resolved.execution_profile.hesitation_probability == 0.25
     assert resolved.execution_profile.movement_smoothness == 0.7
+    assert resolved.execution_profile.keyboard_interval_seconds == (0.01, 0.03)
     assert resolved.execution_profile.random_seed == 7
 
 
@@ -92,6 +94,7 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
                 "    persona: fast",
                 "    enabled: true",
                 "    action_delay_seconds: [0.05, 0.1]",
+                "    keyboard_interval_seconds: [0.01, 0.02]",
                 "steps:",
                 "  - id: submit",
                 "    action: click_text",
@@ -110,6 +113,10 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
     assert task.config_overrides.execution_profile.persona == "fast"
     assert task.config_overrides.execution_profile.enabled is True
     assert task.config_overrides.execution_profile.action_delay_seconds == (0.05, 0.1)
+    assert task.config_overrides.execution_profile.keyboard_interval_seconds == (
+        0.01,
+        0.02,
+    )
 
 
 @pytest.mark.parametrize(
@@ -133,6 +140,14 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
                 execution_profile=ExecutionProfile(hesitation_probability=1.5),
             ),
             "execution_profile.hesitation_probability",
+        ),
+        (
+            ConfigOverrides(
+                execution_profile=ExecutionProfile(
+                    keyboard_interval_seconds=(0.2, 0.1),
+                ),
+            ),
+            "execution_profile.keyboard_interval_seconds",
         ),
         (
             ConfigOverrides(

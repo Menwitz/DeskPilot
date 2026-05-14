@@ -28,6 +28,10 @@ also include `execution_persona`, `persona_timing_bias`, `klm_operators`,
 `klm_operator_counts`, `klm_total_seconds`, and input-mode metadata for the
 bounded cognitive timing model. Timing events include `random_seed` and
 `sample_records` entries for every sampled value used in the decision.
+Text-entry `execute_action` events include `keyboard_cadence_applied`,
+`keyboard_interval_count`, and `keyboard_interval_seconds` when a cadence
+profile inserts bounded waits between typed characters. The Markdown report
+prints the interval count on the action row.
 
 The `compile_task` event records static step order, dependency edges, and
 expected UI state transitions before the planner observes the screen or attempts

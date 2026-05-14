@@ -25,6 +25,7 @@ class ExecutionProfile:
     action_variant_distribution: str = "uniform"
     hesitation_probability: float = 0.0
     movement_smoothness: float = 0.0
+    keyboard_interval_seconds: tuple[float, float] = (0.0, 0.0)
     random_seed: int | None = None
 
 
@@ -330,6 +331,11 @@ def _optional_execution_profile(
             "movement_smoothness",
             defaults.movement_smoothness,
         ),
+        keyboard_interval_seconds=_optional_seconds_pair(
+            profile,
+            "keyboard_interval_seconds",
+            defaults.keyboard_interval_seconds,
+        ),
         random_seed=_optional_seed(profile, "random_seed"),
     )
 
@@ -422,6 +428,12 @@ def _validate_execution_profile(profile: ExecutionProfile) -> list[str]:
         _validate_seconds_pair(
             profile.retry_delay_seconds,
             "execution_profile.retry_delay_seconds",
+        )
+    )
+    errors.extend(
+        _validate_seconds_pair(
+            profile.keyboard_interval_seconds,
+            "execution_profile.keyboard_interval_seconds",
         )
     )
     if profile.hesitation_probability < 0 or profile.hesitation_probability > 1:

@@ -139,7 +139,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 - [x] Apply real elapsed waits from the timing controller before desktop input.
 - [x] Wire `movement_smoothness` into real pointer actuation adapters.
-- [ ] Add keyboard cadence profiles for text entry without changing typed text.
+- [x] Add keyboard cadence profiles for text entry without changing typed text.
 - [ ] Add scroll cadence profiles for long pages and lists.
 - [ ] Ensure all real actuation checks active window, allowed region, and
   emergency stop before sending input.

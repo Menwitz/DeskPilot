@@ -148,6 +148,7 @@ config:
     retry_delay_seconds: [0.25, 1.0]
     hesitation_probability: 0.1
     movement_smoothness: 0.6
+    keyboard_interval_seconds: [0.01, 0.03]
 steps:
   - id: click-email
     action: click_text

@@ -36,6 +36,7 @@ execution_profile:
   action_variant_distribution: uniform
   hesitation_probability: 0.0
   movement_smoothness: 0.0
+  keyboard_interval_seconds: [0.0, 0.0]
   random_seed: null
 ```
 
@@ -63,6 +64,7 @@ config:
     action_variant_distribution: uniform
     hesitation_probability: 0.1
     movement_smoothness: 0.6
+    keyboard_interval_seconds: [0.01, 0.03]
 steps:
   - id: submit
     action: click_text
@@ -107,7 +109,11 @@ text, allowed windows, maximum steps, timeouts, or retry budgets.
   homing between keyboard and pointer modes. These operators can bias where a
   sampled delay lands inside the configured bounds, but they never expand those
   bounds or change the selected action.
-- `movement_smoothness` is reserved for future real pointer actuation adapters.
+- `movement_smoothness` controls the real pointer path smoothness used by the
+  desktop actuation adapter.
+- `keyboard_interval_seconds` sets bounded sleeps between typed characters.
+  Text content and character order are not changed, and the intervals are
+  recorded on `execute_action` metadata and final reports.
 - `random_seed` makes timing decisions reproducible through the shared seeded
   sampler used by bounded runtime randomness.
 

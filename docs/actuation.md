@@ -56,6 +56,11 @@ clamped by the effective target width, followed by a correction path back to the
 target center, and then an optional settle wait. Metadata records whether
 overshoot happened, the overshoot point, and settle duration.
 
+Keyboard text entry can use `ActuationProfile.keyboard_interval_seconds` to add
+bounded sleeps between characters. The actuator still emits the exact authored
+text in order; metadata records whether cadence was applied and the interval
+values used.
+
 ## Safety
 
 The execution engine checks task safety before calling the actuator. The

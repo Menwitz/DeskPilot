@@ -149,6 +149,52 @@ def test_task_compilation_failure_stops_before_fake_screen_or_input() -> None:
     assert backend.events == []
 
 
+def test_pipeline_records_keyboard_cadence_in_execute_action_monitoring() -> None:
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    task = TaskDefinition(
+        name="typing pipeline",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="type-code",
+                action="type_text",
+                text="abc",
+            ),
+        ),
+    )
+    trace_sink = MemoryTraceSink()
+    engine = _engine(
+        task,
+        screen_observer=SequenceScreenObserver((_observation("typing.png"),)),
+        actuator=DesktopActuator(
+            backend,
+            ActuationProfile(
+                movement_duration_seconds=(0.0, 0.0),
+                timing_variation_seconds=(0.0, 0.0),
+                keyboard_interval_seconds=(0.01, 0.01),
+                movement_steps=1,
+            ),
+        ),
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    typed_text = "".join(
+        event.text or "" for event in backend.events if event.kind == "type_text"
+    )
+    execute_action = next(
+        event for event in report.events if event.phase == "execute_action"
+    )
+    phases = {event.phase for event in report.events}
+    assert report.status == "passed"
+    assert typed_text == "abc"
+    assert {"detect_candidates", "execute_action"} <= phases
+    assert execute_action.metadata["keyboard_cadence_applied"] is True
+    assert execute_action.metadata["keyboard_interval_count"] == 2
+
+
 def _engine(
     task: TaskDefinition,
     *,

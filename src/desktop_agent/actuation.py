@@ -43,6 +43,7 @@ class ActuationProfile:
 
     movement_duration_seconds: tuple[float, float] = (0.05, 0.20)
     timing_variation_seconds: tuple[float, float] = (0.0, 0.03)
+    keyboard_interval_seconds: tuple[float, float] = (0.0, 0.0)
     movement_steps: int = 12
     movement_smoothness: float = 0.65
     overshoot_probability: float = 0.0
@@ -58,6 +59,10 @@ class ActuationProfile:
         _validate_seconds_pair(
             self.timing_variation_seconds,
             "timing_variation_seconds",
+        )
+        _validate_seconds_pair(
+            self.keyboard_interval_seconds,
+            "keyboard_interval_seconds",
         )
         _validate_seconds_pair(
             self.overshoot_pixels,
@@ -176,6 +181,27 @@ class MovementPlan:
     @property
     def movement_duration_seconds(self) -> float:
         return max(0.0, self.duration_seconds - self.settle_duration_seconds)
+
+
+@dataclass(frozen=True)
+class KeyboardCadencePlan:
+    """Text cadence emitted by the desktop actuator without changing text."""
+
+    text: str
+    interval_seconds: tuple[float, ...] = ()
+    random_seed: int | None = None
+    sample_records: tuple[SampleRecord, ...] = ()
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "keyboard_cadence_applied": bool(self.interval_seconds),
+            "keyboard_interval_count": len(self.interval_seconds),
+            "keyboard_interval_seconds": list(self.interval_seconds),
+            "random_seed": self.random_seed,
+            "sample_records": [
+                record.metadata() for record in self.sample_records
+            ],
+        }
 
 
 @dataclass(frozen=True)
@@ -436,8 +462,10 @@ class DesktopActuator(Actuator):
         backend: InputBackend,
         profile: ActuationProfile | None = None,
     ) -> None:
+        self._profile = profile or ActuationProfile()
         self._backend = backend
-        self._movement_planner = SmoothMovementPlanner(profile)
+        self._movement_planner = SmoothMovementPlanner(self._profile)
+        self._keyboard_sampler = SeededSampler(self._profile.random_seed)
 
     def execute(
         self,
@@ -545,8 +573,40 @@ class DesktopActuator(Actuator):
         self.move_mouse(point, target_size_pixels)
         self._backend.scroll(point, clicks)
 
-    def type_text(self, text: str) -> None:
-        self._backend.type_text(text)
+    def type_text(self, text: str) -> KeyboardCadencePlan:
+        interval_bounds = self._profile.keyboard_interval_seconds
+        if len(text) <= 1 or interval_bounds == (0.0, 0.0):
+            # Preserve the legacy single-call path unless a cadence profile is active.
+            self._backend.type_text(text)
+            return KeyboardCadencePlan(
+                text=text,
+                random_seed=self._keyboard_sampler.seed,
+            )
+
+        sample_start = self._keyboard_sampler.sample_count
+        intervals: list[float] = []
+        for index, character in enumerate(text):
+            self._backend.type_text(character)
+            if index == len(text) - 1:
+                continue
+            interval = self._sample_keyboard_interval()
+            intervals.append(interval)
+            self._backend.sleep(interval)
+        return KeyboardCadencePlan(
+            text=text,
+            interval_seconds=tuple(intervals),
+            random_seed=self._keyboard_sampler.seed,
+            sample_records=self._keyboard_sampler.records_since(sample_start),
+        )
+
+    def _sample_keyboard_interval(self) -> float:
+        lower, upper = self._profile.keyboard_interval_seconds
+        if lower == upper:
+            return lower
+        return self._keyboard_sampler.uniform(
+            "actuation.keyboard_interval",
+            self._profile.keyboard_interval_seconds,
+        )
 
     def press_key_or_chord(self, value: str) -> None:
         parts = tuple(part.strip() for part in value.split("+") if part.strip())
@@ -586,11 +646,15 @@ class DesktopActuator(Actuator):
     def _execute_type_text(self, step: TaskStep) -> ActionResult:
         if step.text is None:
             raise ActuationError("type_text requires step.text")
-        self.type_text(step.text)
+        cadence = self.type_text(step.text)
         return ActionResult(
             True,
             "typed text",
-            {"input_action": "type_text", "text_length": len(step.text)},
+            {
+                "input_action": "type_text",
+                "text_length": len(step.text),
+                **cadence.metadata(),
+            },
         )
 
     def _execute_press_key(self, step: TaskStep) -> ActionResult:
@@ -820,6 +884,7 @@ def actuation_profile_from_runtime_config(
     return replace(
         profile,
         movement_smoothness=config.execution_profile.movement_smoothness,
+        keyboard_interval_seconds=config.execution_profile.keyboard_interval_seconds,
     )
 
 

@@ -113,6 +113,45 @@ def test_keyboard_cadence_never_changes_typed_text() -> None:
     assert backend.events[0].text == text
 
 
+def test_keyboard_cadence_profiles_type_same_text_with_intervals() -> None:
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    actuator = DesktopActuator(
+        backend,
+        ActuationProfile(
+            movement_duration_seconds=(0.0, 0.0),
+            timing_variation_seconds=(0.0, 0.0),
+            keyboard_interval_seconds=(0.01, 0.01),
+            random_seed=9,
+        ),
+    )
+
+    result = actuator.execute(
+        TaskStep(id="type-code", action="type_text", text="abc"),
+        None,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    typed_text = "".join(
+        event.text or "" for event in backend.events if event.kind == "type_text"
+    )
+    sleep_durations = [
+        event.duration_seconds for event in backend.events if event.kind == "sleep"
+    ]
+    assert result.success is True
+    assert typed_text == "abc"
+    assert [event.kind for event in backend.events] == [
+        "type_text",
+        "sleep",
+        "type_text",
+        "sleep",
+        "type_text",
+    ]
+    assert sleep_durations == [0.01, 0.01]
+    assert result.metadata["keyboard_cadence_applied"] is True
+    assert result.metadata["keyboard_interval_count"] == 2
+
+
 def test_desktop_actuator_drags_to_destination_region() -> None:
     backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
     actuator = DesktopActuator(backend, _instant_profile())
@@ -415,12 +454,14 @@ def test_actuation_profile_uses_enabled_execution_smoothness() -> None:
         execution_profile=ExecutionProfile(
             enabled=True,
             movement_smoothness=0.9,
+            keyboard_interval_seconds=(0.02, 0.03),
         ),
     )
 
     profile = actuation_profile_from_runtime_config(config, base_profile)
 
     assert profile.movement_smoothness == 0.9
+    assert profile.keyboard_interval_seconds == (0.02, 0.03)
     assert profile.random_seed == 4
 
 
