@@ -85,6 +85,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
                 require_operator_approval=True,
                 confirmed_steps=("click-submit",),
                 execution_profile=ExecutionProfile(
+                    enabled=True,
                     keyboard_interval_seconds=(0.01, 0.03),
                     scroll_interval_seconds=(0.02, 0.04),
                 ),
@@ -108,6 +109,8 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert (report.trace_dir / "config.json").exists()
     assert (report.trace_dir / "task.json").exists()
     assert (report.trace_dir / "action-log.jsonl").exists()
+    assert (report.trace_dir / "safety-audit.json").exists()
+    assert (report.trace_dir / "safety-audit.md").exists()
     assert (report.trace_dir / "final-report.json").exists()
     assert (report.trace_dir / "final-report.md").exists()
     assert (report.trace_dir / "screenshots" / "screen-1.png").exists()
@@ -116,6 +119,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     final_report = json.loads((report.trace_dir / "final-report.json").read_text())
     config_payload = json.loads((report.trace_dir / "config.json").read_text())
     task_payload = json.loads((report.trace_dir / "task.json").read_text())
+    audit_payload = json.loads((report.trace_dir / "safety-audit.json").read_text())
     action_log = (report.trace_dir / "action-log.jsonl").read_text().splitlines()
     assert final_report["status"] == "passed"
     assert final_report["abort_reason"] is None
@@ -125,6 +129,8 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert config_payload["policy_preset"] == "strict_qa"
     assert config_payload["require_operator_approval"] is True
     assert config_payload["execution_profile"]["persona"] == "normal"
+    assert audit_payload["policy_preset"] == "strict_qa"
+    assert audit_payload["sensitive_steps"][0]["step_id"] == "click-submit"
     assert config_payload["execution_profile"]["keyboard_interval_seconds"] == [
         0.01,
         0.03,

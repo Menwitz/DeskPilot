@@ -31,6 +31,7 @@ evasion, credential abuse, or abusive third-party automation.
   testing.
 - Operator approval prompts for real runs before unconfirmed irreversible or
   externally visible steps.
+- Safety audit artifacts for execution-profile runs.
 - Maximum runtime, maximum steps, and per-step retry limits.
 - Confidence thresholds for OCR, image, and UIA candidate selection.
 - Failure reports that explain why a task stopped.
@@ -88,3 +89,11 @@ pass that read-only verification before timing or action execution.
 `submission` category steps. `exploratory_testing` blocks `submission` category
 steps entirely so exploratory runs can inspect and navigate without crossing
 into final actions.
+
+## Safety Audit
+
+When `execution_profile.enabled` is true, the trace directory includes
+`safety-audit.json` and `safety-audit.md`. The audit records the active policy
+preset, operator approval requirement, allowed windows, emergency stop hotkey,
+sensitive steps, checkpoint coverage, and findings such as missing checkpoints
+or unconfirmed confirmation-required steps.

@@ -10,6 +10,10 @@ from pathlib import Path
 from typing import Literal, Protocol
 
 from desktop_agent.config import ExecutionProfile, RuntimeConfig
+from desktop_agent.safety_audit import (
+    build_safety_audit,
+    render_safety_audit_markdown,
+)
 from desktop_agent.task_dsl import (
     ExpectedStateTransition,
     RecoveryRule,
@@ -132,6 +136,13 @@ class FileTraceSink(TraceSink):
         runtime_config = replace(config, trace_root=self._run_dir)
         _write_json(self._run_dir / "config.json", _config_to_dict(runtime_config))
         _write_json(self._run_dir / "task.json", _task_to_dict(task))
+        if runtime_config.execution_profile.enabled:
+            audit = build_safety_audit(task, runtime_config)
+            _write_json(self._run_dir / "safety-audit.json", audit)
+            (self._run_dir / "safety-audit.md").write_text(
+                render_safety_audit_markdown(audit),
+                encoding="utf-8",
+            )
         (self._run_dir / "action-log.jsonl").write_text("", encoding="utf-8")
         return runtime_config
 

@@ -9,6 +9,9 @@ the execution pipeline as the active `config.trace_root`.
 - `config.json` stores the normalized runtime configuration used by the run.
 - `task.json` stores the normalized task definition.
 - `action-log.jsonl` stores every trace event as newline-delimited JSON.
+- `safety-audit.json` stores an execution-profile safety audit when
+  `execution_profile.enabled` is true.
+- `safety-audit.md` stores the human-readable safety audit for the same runs.
 - `final-report.json` stores the machine-readable final report.
 - `final-report.md` stores a human-readable report.
 - `screenshots/` receives screen captures when `save_screenshots` is enabled.
@@ -33,6 +36,9 @@ event so report review can tell whether the run used strict QA, personal
 automation, or exploratory-testing safety behavior.
 `config.json` also records `require_operator_approval`, which is enabled by CLI
 real runs after operator prompts are processed.
+For execution-profile runs, `safety-audit.json` and `safety-audit.md` summarize
+the active policy preset, operator-approval state, allowed windows, emergency
+stop hotkey, sensitive steps, checkpoint coverage, and audit findings.
 Text-entry `execute_action` events include `keyboard_cadence_applied`,
 `keyboard_interval_count`, and `keyboard_interval_seconds` when a cadence
 profile inserts bounded waits between typed characters. The Markdown report

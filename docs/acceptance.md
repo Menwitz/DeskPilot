@@ -13,6 +13,7 @@ logged-in Windows desktop session.
   and candidate rankings.
 - Failed planner runs include a final status, abort reason, step message,
   events, candidate confidence values, and trace artifacts.
+- Execution-profile runs write safety-audit JSON and Markdown artifacts.
 - The v1 pipeline uses local screenshot, OCR, computer vision, UIA, actuation,
   tracing, and report modules without requiring a cloud service.
 - Safety checks block actions when the active window is outside the task
