@@ -209,6 +209,7 @@ def _config_to_dict(config: RuntimeConfig) -> dict[str, object]:
 
 def _execution_profile_to_dict(profile: ExecutionProfile) -> dict[str, object]:
     return {
+        "persona": profile.persona,
         "enabled": profile.enabled,
         "action_delay_seconds": list(profile.action_delay_seconds),
         "retry_delay_seconds": list(profile.retry_delay_seconds),

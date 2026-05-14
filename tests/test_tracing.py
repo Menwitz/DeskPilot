@@ -102,12 +102,14 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert (report.trace_dir / "screenshots" / "screen-2.png").exists()
 
     final_report = json.loads((report.trace_dir / "final-report.json").read_text())
+    config_payload = json.loads((report.trace_dir / "config.json").read_text())
     task_payload = json.loads((report.trace_dir / "task.json").read_text())
     action_log = (report.trace_dir / "action-log.jsonl").read_text().splitlines()
     assert final_report["status"] == "passed"
     assert final_report["abort_reason"] is None
     assert final_report["steps"][0]["candidate_id"] == "candidate-Submit"
     assert final_report["steps"][0]["metadata"]["step_category"] == "submission"
+    assert config_payload["execution_profile"]["persona"] == "normal"
     assert task_payload["steps"][0]["category"] == "submission"
     assert task_payload["steps"][0]["resolved_category"] == "submission"
     assert any("candidate_rankings" in line for line in action_log)

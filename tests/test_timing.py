@@ -107,6 +107,57 @@ def test_action_type_contributes_to_timing_complexity() -> None:
     assert drag_context.target_complexity > click_context.target_complexity
 
 
+def test_execution_persona_biases_timing_inside_configured_bounds() -> None:
+    observation = ScreenObservation(size=(1000, 1000))
+    target = ElementCandidate(
+        id="submit",
+        source="uia",
+        label="Submit",
+        bounds=Bounds(x=500, y=500, width=120, height=40),
+        confidence=0.95,
+    )
+    context = build_action_timing_context(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        target,
+        observation,
+    )
+
+    fast = ExecutionTimingController(
+        ExecutionProfile(
+            persona="fast",
+            enabled=True,
+            action_delay_seconds=(0.1, 0.9),
+            hesitation_probability=0.0,
+            random_seed=123,
+        ),
+    ).before_action(context)
+    normal = ExecutionTimingController(
+        ExecutionProfile(
+            persona="normal",
+            enabled=True,
+            action_delay_seconds=(0.1, 0.9),
+            hesitation_probability=0.0,
+            random_seed=123,
+        ),
+    ).before_action(context)
+    careful = ExecutionTimingController(
+        ExecutionProfile(
+            persona="careful",
+            enabled=True,
+            action_delay_seconds=(0.1, 0.9),
+            hesitation_probability=0.0,
+            random_seed=123,
+        ),
+    ).before_action(context)
+
+    assert 0.1 <= fast.delay_seconds <= 0.9
+    assert 0.1 <= normal.delay_seconds <= 0.9
+    assert 0.1 <= careful.delay_seconds <= 0.9
+    assert fast.delay_seconds < normal.delay_seconds < careful.delay_seconds
+    assert fast.metadata()["execution_persona"] == "fast"
+    assert cast(float, careful.metadata()["persona_timing_bias"]) > 0
+
+
 def test_klm_operators_capture_keying_pointing_and_homing() -> None:
     profile = ExecutionProfile(
         enabled=True,

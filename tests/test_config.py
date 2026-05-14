@@ -28,6 +28,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
                 "confirmed_steps:",
                 "  - submit-payment",
                 "execution_profile:",
+                "  persona: careful",
                 "  enabled: true",
                 "  action_delay_seconds: [0.1, 0.3]",
                 "  retry_delay_seconds: [0.5, 1.5]",
@@ -58,6 +59,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
     assert resolved.max_steps == 5
     assert resolved.allowed_windows == ("CLI Window",)
     assert resolved.confirmed_steps == ("submit-payment",)
+    assert resolved.execution_profile.persona == "careful"
     assert resolved.execution_profile.enabled is True
     assert resolved.execution_profile.action_delay_seconds == (0.1, 0.3)
     assert resolved.execution_profile.retry_delay_seconds == (0.5, 1.5)
@@ -81,6 +83,7 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
                 "  confirmed_steps:",
                 "    - submit",
                 "  execution_profile:",
+                "    persona: fast",
                 "    enabled: true",
                 "    action_delay_seconds: [0.05, 0.1]",
                 "steps:",
@@ -98,6 +101,7 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
     assert task.config_overrides.confidence_threshold == 0.95
     assert task.config_overrides.confirmed_steps == ("submit",)
     assert task.config_overrides.execution_profile is not None
+    assert task.config_overrides.execution_profile.persona == "fast"
     assert task.config_overrides.execution_profile.enabled is True
     assert task.config_overrides.execution_profile.action_delay_seconds == (0.05, 0.1)
 
@@ -123,6 +127,12 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
                 execution_profile=ExecutionProfile(hesitation_probability=1.5),
             ),
             "execution_profile.hesitation_probability",
+        ),
+        (
+            ConfigOverrides(
+                execution_profile=ExecutionProfile(persona="reckless"),
+            ),
+            "execution_profile.persona",
         ),
     ],
 )

@@ -98,6 +98,7 @@ config:
   confidence_threshold: 0.85
   max_retries_per_step: 2
   execution_profile:
+    persona: careful
     enabled: true
     action_delay_seconds: [0.05, 0.25]
     retry_delay_seconds: [0.25, 1.0]

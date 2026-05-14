@@ -27,6 +27,7 @@ emergency_stop_hotkey: ctrl+alt+esc
 primary_monitor_only: true
 confirmed_steps: []
 execution_profile:
+  persona: normal
   enabled: false
   action_delay_seconds: [0.0, 0.0]
   retry_delay_seconds: [0.0, 0.0]
@@ -50,6 +51,7 @@ config:
   confirmed_steps:
     - submit-payment
   execution_profile:
+    persona: careful
     enabled: true
     action_delay_seconds: [0.05, 0.25]
     retry_delay_seconds: [0.25, 1.0]
@@ -68,6 +70,9 @@ automation. It does not change task intent, action order, target text, typed
 text, allowed windows, maximum steps, timeouts, or retry budgets.
 
 - `enabled` turns profile timing decisions on.
+- `persona` can be `fast`, `normal`, or `careful`. It biases sampled timing
+  toward the lower, middle, or upper part of configured timing bounds without
+  changing actions, targets, retries, or maximum allowed delays.
 - `action_delay_seconds` sets the inclusive lower and upper bounds for a
   pre-action timing decision.
 - `retry_delay_seconds` sets the inclusive lower and upper bounds for retry

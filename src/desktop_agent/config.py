@@ -8,11 +8,14 @@ from typing import Protocol, cast
 
 import yaml
 
+EXECUTION_PERSONAS: frozenset[str] = frozenset({"careful", "normal", "fast"})
+
 
 @dataclass(frozen=True)
 class ExecutionProfile:
     """Optional bounded timing profile for natural-feeling local automation."""
 
+    persona: str = "normal"
     enabled: bool = False
     action_delay_seconds: tuple[float, float] = (0.0, 0.0)
     retry_delay_seconds: tuple[float, float] = (0.0, 0.0)
@@ -286,6 +289,7 @@ def _optional_execution_profile(
     defaults = ExecutionProfile()
     profile = cast(dict[str, object], value)
     return ExecutionProfile(
+        persona=_optional_str_with_default(profile, "persona", defaults.persona),
         enabled=_optional_bool_with_default(profile, "enabled", defaults.enabled),
         action_delay_seconds=_optional_seconds_pair(
             profile,
@@ -317,6 +321,15 @@ def _optional_bool_with_default(
     fallback: bool,
 ) -> bool:
     value = _optional_bool(data, key)
+    return fallback if value is None else value
+
+
+def _optional_str_with_default(
+    data: dict[str, object],
+    key: str,
+    fallback: str,
+) -> str:
+    value = _optional_str(data, key)
     return fallback if value is None else value
 
 
@@ -363,6 +376,8 @@ def _optional_seed(data: dict[str, object], key: str) -> int | None:
 
 def _validate_execution_profile(profile: ExecutionProfile) -> list[str]:
     errors: list[str] = []
+    if profile.persona not in EXECUTION_PERSONAS:
+        errors.append("execution_profile.persona must be careful, normal, or fast")
     errors.extend(
         _validate_seconds_pair(
             profile.action_delay_seconds,

@@ -352,6 +352,7 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
                     retry_delay_seconds=(0.3, 0.4),
                     hesitation_probability=1.0,
                     movement_smoothness=0.5,
+                    persona="careful",
                     random_seed=11,
                 ),
             )
@@ -387,6 +388,8 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
     assert 0.1 <= action_delay <= 0.2
     assert 0.3 <= retry_delay <= 0.4
     assert timing_events[0].metadata["timing_model"] == "target_aware"
+    assert timing_events[0].metadata["execution_persona"] == "careful"
+    assert timing_events[0].metadata["persona_timing_bias"] == 0.18
     assert timing_events[0].metadata["action_type"] == "click_text"
     assert timing_events[0].metadata["target_id"] == "candidate-1"
     operator_counts = timing_events[0].metadata["klm_operator_counts"]

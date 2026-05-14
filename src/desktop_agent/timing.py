@@ -36,6 +36,11 @@ KLM_OPERATOR_SECONDS: dict[str, float] = {
     "pointing": 1.1,
     "homing": 0.4,
 }
+PERSONA_TIMING_BIAS: dict[str, float] = {
+    "fast": -0.18,
+    "normal": 0.0,
+    "careful": 0.18,
+}
 
 POINTER_ACTIONS: frozenset[str] = frozenset(
     {
@@ -131,6 +136,7 @@ class TimingDecision:
     hesitation_applied: bool
     movement_smoothness: float
     reason: str
+    execution_persona: str = "normal"
     action_context: ActionTimingContext | None = None
     klm_operators: tuple[KLMOperator, ...] = ()
 
@@ -145,6 +151,8 @@ class TimingDecision:
             "upper_bound_seconds": self.upper_bound_seconds,
             "hesitation_applied": self.hesitation_applied,
             "movement_smoothness": self.movement_smoothness,
+            "execution_persona": self.execution_persona,
+            "persona_timing_bias": _persona_timing_bias(self.execution_persona),
         }
         if self.action_context is not None:
             metadata.update(self.action_context.metadata())
@@ -200,6 +208,7 @@ class ExecutionTimingController:
                 hesitation_applied=False,
                 movement_smoothness=0.0,
                 reason="execution profile disabled",
+                execution_persona=self._profile.persona,
                 action_context=context,
                 klm_operators=klm_operators,
             )
@@ -221,6 +230,9 @@ class ExecutionTimingController:
                 + (context.target_complexity * TARGET_TIMING_WEIGHT)
                 + (_klm_complexity(klm_operators) * KLM_TIMING_WEIGHT)
             )
+        timing_fraction = _clamp(
+            timing_fraction + _persona_timing_bias(self._profile.persona),
+        )
 
         return TimingDecision(
             phase=phase,
@@ -232,6 +244,7 @@ class ExecutionTimingController:
             reason="target-aware action timing decided"
             if phase == "action" and context is not None
             else f"{phase} timing decided",
+            execution_persona=self._profile.persona,
             action_context=context,
             klm_operators=klm_operators,
         )
@@ -422,6 +435,10 @@ def _klm_complexity(operators: tuple[KLMOperator, ...]) -> float:
     # The KLM estimate biases the sampled point within configured bounds; it
     # never expands the actual lower or upper delay limits.
     return _clamp(_klm_total_seconds(operators) / 6.0)
+
+
+def _persona_timing_bias(persona: str) -> float:
+    return PERSONA_TIMING_BIAS.get(persona, 0.0)
 
 
 def _clamp(value: float) -> float:
