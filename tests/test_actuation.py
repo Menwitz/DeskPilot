@@ -85,6 +85,33 @@ def test_desktop_actuator_types_text_and_key_chords() -> None:
     assert backend.events[2].key == "s"
 
 
+def test_keyboard_cadence_never_changes_typed_text() -> None:
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    actuator = DesktopActuator(
+        backend,
+        ActuationProfile(
+            movement_duration_seconds=(0.1, 0.2),
+            timing_variation_seconds=(0.01, 0.02),
+            movement_steps=3,
+            movement_smoothness=0.5,
+            random_seed=9,
+        ),
+    )
+    text = "Hello, qa@example.test!\nNext line: 123"
+
+    result = actuator.execute(
+        TaskStep(id="type-note", action="type_text", text=text),
+        None,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    assert result.success is True
+    assert result.metadata["text_length"] == len(text)
+    assert [event.kind for event in backend.events] == ["type_text"]
+    assert backend.events[0].text == text
+
+
 def test_desktop_actuator_drags_to_destination_region() -> None:
     backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
     actuator = DesktopActuator(backend, _instant_profile())
