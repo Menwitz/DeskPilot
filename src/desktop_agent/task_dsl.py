@@ -20,12 +20,51 @@ class TaskValidationError(ValueError):
     """Raised when a task definition fails platform-neutral validation."""
 
 
+SUPPORTED_ACTIONS: frozenset[str] = frozenset(
+    {
+        "click_text",
+        "click_image",
+        "click_uia",
+        "type_text",
+        "press_key",
+        "scroll",
+        "scroll_until",
+        "wait_for",
+        "assert_visible",
+        "branch_if_visible",
+        "drag",
+    },
+)
+
+SUPPORTED_VERIFICATION_TYPES: frozenset[str] = frozenset(
+    {
+        "visible_text",
+        "not_visible_text",
+        "visible_image",
+        "focused",
+        "window_title_contains",
+        "uia_element_exists",
+    },
+)
+
+
 @dataclass(frozen=True)
 class VerificationDefinition:
-    """Planned verification attached to a task step."""
+    """Verification attached to a task step."""
 
     type: str
     text: str | None = None
+    image: Path | None = None
+
+
+@dataclass(frozen=True)
+class TaskRegion:
+    """Optional task-region restriction in screenshot coordinate space."""
+
+    x: int
+    y: int
+    width: int
+    height: int
 
 
 @dataclass(frozen=True)
@@ -36,9 +75,12 @@ class TaskStep:
     action: str
     target: str | None = None
     text: str | None = None
+    image: Path | None = None
+    region: TaskRegion | None = None
     verify: VerificationDefinition | None = None
     timeout_seconds: float | None = None
     retry: int | None = None
+    on_failure: str | None = None
 
 
 @dataclass(frozen=True)
@@ -91,7 +133,9 @@ class YamlTaskLoader(TaskLoader):
             name=str(data.get("name", "")),
             allowed_windows=_string_tuple(data.get("allowed_windows", ())),
             timeout_seconds=_float_value(data.get("timeout_seconds", 0)),
-            steps=tuple(_step_from_mapping(item) for item in steps_value),
+            steps=tuple(
+                _step_from_mapping(item, task_path.parent) for item in steps_value
+            ),
             config_overrides=config_overrides,
         )
 
@@ -113,6 +157,8 @@ class BasicTaskValidator(TaskValidator):
             errors.append("allowed_windows is required")
         if task.timeout_seconds <= 0:
             errors.append("timeout_seconds must be greater than zero")
+        if not task.steps:
+            errors.append("steps is required")
         if len(task.steps) > config.max_steps:
             errors.append("task exceeds max_steps")
 
@@ -126,33 +172,86 @@ class BasicTaskValidator(TaskValidator):
 
             if not step.action:
                 errors.append(f"step {step.id} action is required")
+            elif step.action not in SUPPORTED_ACTIONS:
+                errors.append(f"unknown action: {step.action}")
             if step.retry is not None and step.retry < 0:
                 errors.append(f"step {step.id} retry must not be negative")
+            if step.timeout_seconds is not None and step.timeout_seconds <= 0:
+                errors.append(
+                    f"step {step.id} timeout_seconds must be greater than zero"
+                )
+            errors.extend(_validate_action_shape(step))
+            errors.extend(_validate_verification_shape(step))
 
         if errors:
             raise TaskValidationError("; ".join(errors))
 
 
-def _step_from_mapping(value: object) -> TaskStep:
+def _step_from_mapping(value: object, task_dir: Path) -> TaskStep:
     data = _mapping(value, "each step must be a mapping")
     verify_value = data.get("verify")
     verify = None
     if verify_value is not None:
-        verify_data = _mapping(verify_value, "verify must be a mapping")
-        verify = VerificationDefinition(
-            type=str(verify_data.get("type", "")),
-            text=_optional_str(verify_data.get("text")),
-        )
+        verify = _verification_from_mapping(verify_value, task_dir)
 
     return TaskStep(
         id=str(data.get("id", "")),
         action=str(data.get("action", "")),
         target=_optional_str(data.get("target")),
         text=_optional_str(data.get("text")),
+        image=_optional_image(data.get("image"), task_dir),
+        region=_optional_region(data.get("region")),
         verify=verify,
         timeout_seconds=_optional_float(data.get("timeout_seconds")),
         retry=_optional_int(data.get("retry")),
+        on_failure=_optional_str(data.get("on_failure")),
     )
+
+
+def _verification_from_mapping(
+    value: object,
+    task_dir: Path,
+) -> VerificationDefinition:
+    data = _mapping(value, "verify must be a mapping")
+    return VerificationDefinition(
+        type=str(data.get("type", "")),
+        text=_optional_str(data.get("text")),
+        image=_optional_image(data.get("image"), task_dir),
+    )
+
+
+def _validate_action_shape(step: TaskStep) -> list[str]:
+    errors: list[str] = []
+    if step.action in {"click_text", "click_uia"} and not step.target:
+        errors.append(f"step {step.id} target is required for {step.action}")
+    if step.action == "click_image" and step.image is None:
+        errors.append(f"step {step.id} image is required for click_image")
+    if step.action in {"type_text", "press_key"} and step.text is None:
+        errors.append(f"step {step.id} text is required for {step.action}")
+    if step.action == "wait_for" and step.verify is None and not step.target:
+        errors.append(f"step {step.id} target or verify is required for wait_for")
+    if step.action == "assert_visible" and step.verify is None and not step.target:
+        errors.append(f"step {step.id} target or verify is required for assert_visible")
+    return errors
+
+
+def _validate_verification_shape(step: TaskStep) -> list[str]:
+    if step.verify is None:
+        return []
+
+    errors: list[str] = []
+    if step.verify.type not in SUPPORTED_VERIFICATION_TYPES:
+        errors.append(f"unknown verification type: {step.verify.type}")
+    if (
+        step.verify.type in {"visible_text", "not_visible_text"}
+        and not step.verify.text
+    ):
+        errors.append(f"step {step.id} verify.text is required")
+    if step.verify.type == "visible_image" and step.verify.image is None:
+        errors.append(f"step {step.id} verify.image is required")
+    if step.verify.type == "window_title_contains" and not step.verify.text:
+        errors.append(f"step {step.id} verify.text is required")
+    return errors
 
 
 def _mapping(value: object, message: str) -> Mapping[str, object]:
@@ -180,7 +279,7 @@ def _float_value(value: object) -> float:
 def _optional_float(value: object) -> float | None:
     if value is None:
         return None
-    if not isinstance(value, int | float):
+    if isinstance(value, bool) or not isinstance(value, int | float):
         raise TaskValidationError("timeout_seconds must be a number")
     return float(value)
 
@@ -188,7 +287,7 @@ def _optional_float(value: object) -> float | None:
 def _optional_int(value: object) -> int | None:
     if value is None:
         return None
-    if not isinstance(value, int):
+    if isinstance(value, bool) or not isinstance(value, int):
         raise TaskValidationError("retry must be an integer")
     return value
 
@@ -198,4 +297,42 @@ def _optional_str(value: object) -> str | None:
         return None
     if not isinstance(value, str):
         raise TaskValidationError("string field must be a string")
+    return value
+
+
+def _optional_image(value: object, task_dir: Path) -> Path | None:
+    image = _optional_str(value)
+    if image is None:
+        return None
+
+    raw_path = Path(image)
+    candidates = [raw_path] if raw_path.is_absolute() else [task_dir / raw_path]
+    if not raw_path.is_absolute():
+        candidates.append(Path("examples") / "assets" / raw_path)
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    raise TaskValidationError(f"image template not found: {image}")
+
+
+def _optional_region(value: object) -> TaskRegion | None:
+    if value is None:
+        return None
+    data = _mapping(value, "region must be a mapping")
+    region = TaskRegion(
+        x=_required_int(data, "x"),
+        y=_required_int(data, "y"),
+        width=_required_int(data, "width"),
+        height=_required_int(data, "height"),
+    )
+    if region.width <= 0 or region.height <= 0:
+        raise TaskValidationError("region width and height must be greater than zero")
+    return region
+
+
+def _required_int(data: Mapping[str, object], key: str) -> int:
+    value = data.get(key)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TaskValidationError(f"region.{key} must be an integer")
     return value

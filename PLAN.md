@@ -97,48 +97,48 @@
 
 ## 5. YAML Task DSL
 
-- [ ] Define a strict YAML schema.
-- [ ] Require every task to have:
-  - [ ] `name`
-  - [ ] `allowed_windows`
-  - [ ] `timeout_seconds`
-  - [ ] `steps`
-- [ ] Require every step to have:
-  - [ ] `id`
-  - [ ] `action`
-- [ ] Support optional step fields:
-  - [ ] `target`
-  - [ ] `text`
-  - [ ] `image`
-  - [ ] `region`
-  - [ ] `verify`
-  - [ ] `timeout_seconds`
-  - [ ] `retry`
-  - [ ] `on_failure`
-- [ ] Implement actions:
-  - [ ] `click_text`
-  - [ ] `click_image`
-  - [ ] `click_uia`
-  - [ ] `type_text`
-  - [ ] `press_key`
-  - [ ] `scroll`
-  - [ ] `scroll_until`
-  - [ ] `wait_for`
-  - [ ] `assert_visible`
-  - [ ] `branch_if_visible`
-  - [ ] `drag`
-- [ ] Implement verification types:
-  - [ ] `visible_text`
-  - [ ] `not_visible_text`
-  - [ ] `visible_image`
-  - [ ] `focused`
-  - [ ] `window_title_contains`
-  - [ ] `uia_element_exists`
-- [ ] Validate duplicate step IDs.
-- [ ] Validate references to missing image templates.
-- [ ] Validate unknown actions.
-- [ ] Validate unknown verification types.
-- [ ] Document complete task examples in `docs/task-dsl.md`.
+- [x] Define a strict YAML schema.
+- [x] Require every task to have:
+  - [x] `name`
+  - [x] `allowed_windows`
+  - [x] `timeout_seconds`
+  - [x] `steps`
+- [x] Require every step to have:
+  - [x] `id`
+  - [x] `action`
+- [x] Support optional step fields:
+  - [x] `target`
+  - [x] `text`
+  - [x] `image`
+  - [x] `region`
+  - [x] `verify`
+  - [x] `timeout_seconds`
+  - [x] `retry`
+  - [x] `on_failure`
+- [x] Implement actions:
+  - [x] `click_text`
+  - [x] `click_image`
+  - [x] `click_uia`
+  - [x] `type_text`
+  - [x] `press_key`
+  - [x] `scroll`
+  - [x] `scroll_until`
+  - [x] `wait_for`
+  - [x] `assert_visible`
+  - [x] `branch_if_visible`
+  - [x] `drag`
+- [x] Implement verification types:
+  - [x] `visible_text`
+  - [x] `not_visible_text`
+  - [x] `visible_image`
+  - [x] `focused`
+  - [x] `window_title_contains`
+  - [x] `uia_element_exists`
+- [x] Validate duplicate step IDs.
+- [x] Validate references to missing image templates.
+- [x] Validate unknown actions.
+- [x] Validate unknown verification types.
+- [x] Document complete task examples in `docs/task-dsl.md`.
 
 ## 6. Screen Layer
 

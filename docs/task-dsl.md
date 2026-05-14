@@ -4,7 +4,7 @@ DeskPilot tasks are authored as YAML. The DSL is intentionally strict so tasks
 can be validated before the runtime moves the mouse, types text, or captures
 task artifacts.
 
-## Planned Minimal Shape
+## Minimal Shape
 
 ```yaml
 name: browser-login-fixture
@@ -26,7 +26,7 @@ steps:
       text: "Success"
 ```
 
-## Planned Guarantees
+## Guarantees
 
 - Every task must declare a name, allowed windows, timeout, and steps.
 - Every step must declare an ID and action.
@@ -34,13 +34,82 @@ steps:
 - Duplicate step IDs fail validation before execution.
 - Image templates must resolve before execution starts.
 
-Complete examples will be added as the task DSL implementation lands.
+## Actions
+
+Supported actions:
+
+- `click_text`
+- `click_image`
+- `click_uia`
+- `type_text`
+- `press_key`
+- `scroll`
+- `scroll_until`
+- `wait_for`
+- `assert_visible`
+- `branch_if_visible`
+- `drag`
+
+## Verification Types
+
+Supported verification types:
+
+- `visible_text`
+- `not_visible_text`
+- `visible_image`
+- `focused`
+- `window_title_contains`
+- `uia_element_exists`
+
+## Optional Step Fields
+
+- `target` identifies text, UIA labels, or future selectors.
+- `text` provides typed text, key names, or text verification content.
+- `image` references a task-relative image template or `examples/assets/`.
+- `region` restricts perception to `{x, y, width, height}`.
+- `verify` declares a post-action verification.
+- `timeout_seconds` overrides the step timeout.
+- `retry` overrides the per-step retry budget.
+- `on_failure` names a future recovery or branch target.
 
 ## Task-Level Configuration
 
 Task YAML can include a `config` block for task-level runtime overrides. The
 final precedence is CLI overrides, then task `config`, then project config, then
 defaults.
+
+## Complete Example
+
+```yaml
+name: browser-fixture-submit
+allowed_windows:
+  - DeskPilot Browser Fixture
+timeout_seconds: 120
+config:
+  confidence_threshold: 0.85
+  max_retries_per_step: 2
+steps:
+  - id: click-email
+    action: click_text
+    target: Email
+    timeout_seconds: 10
+
+  - id: type-email
+    action: type_text
+    text: qa@example.test
+
+  - id: find-submit
+    action: scroll_until
+    target: Submit
+    retry: 3
+
+  - id: click-submit
+    action: click_text
+    target: Submit
+    verify:
+      type: visible_text
+      text: Success
+```
 
 ## CLI Support
 

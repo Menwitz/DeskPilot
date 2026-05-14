@@ -194,7 +194,7 @@ def _optional_float(data: dict[str, object], key: str) -> float | None:
     if key not in data:
         return None
     value = data[key]
-    if not isinstance(value, int | float):
+    if isinstance(value, bool) or not isinstance(value, int | float):
         raise ConfigError(f"{key} must be a number")
     return float(value)
 
@@ -203,7 +203,7 @@ def _optional_int(data: dict[str, object], key: str) -> int | None:
     if key not in data:
         return None
     value = data[key]
-    if not isinstance(value, int):
+    if isinstance(value, bool) or not isinstance(value, int):
         raise ConfigError(f"{key} must be an integer")
     return value
 

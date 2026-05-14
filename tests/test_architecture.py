@@ -75,7 +75,7 @@ def test_execution_engine_reports_validation_failures() -> None:
         name="invalid",
         allowed_windows=(),
         timeout_seconds=30,
-        steps=(TaskStep(id="click-submit", action="click_text"),),
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
     )
     engine = ExecutionEngine(
         config_loader=StaticConfigLoader(),
