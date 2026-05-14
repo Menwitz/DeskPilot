@@ -50,3 +50,18 @@ def test_troubleshooting_documents_stop_categories_and_report_fields() -> None:
         "actuation_guard",
     ):
         assert phrase in documentation
+
+
+def test_release_notes_distinguish_natural_execution_from_impersonation() -> None:
+    documentation = Path("docs/release-notes.md").read_text(encoding="utf-8")
+
+    for phrase in (
+        "Natural execution",
+        "deceptive human impersonation",
+        "stealth automation",
+        "CAPTCHA bypass",
+        "bot-detection evasion",
+        "safety audit",
+        "benchmark-run",
+    ):
+        assert phrase in documentation

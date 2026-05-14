@@ -166,7 +166,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Add operator guidance for choosing delay bounds and entropy budgets.
 - [x] Add troubleshooting docs for ambiguity gates, recovery stops, and safety
   stops.
-- [ ] Add release notes that explain the difference between natural execution
+- [x] Add release notes that explain the difference between natural execution
   and deceptive human impersonation.
 - [ ] Keep this roadmap updated as each phase lands.
 
