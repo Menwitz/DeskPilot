@@ -1,13 +1,30 @@
-"""Action execution contracts for desktop input adapters."""
+"""Action execution adapters for local desktop input."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Protocol
+import ctypes
+import math
+import random
+import sys
+import time
+from ctypes import wintypes
+from dataclasses import dataclass, field
+from typing import Any, Literal, Protocol
 
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.perception import ElementCandidate
-from desktop_agent.task_dsl import TaskStep
+from desktop_agent.screen import (
+    Bounds,
+    ScreenObservation,
+    screenshot_point_to_physical,
+)
+from desktop_agent.task_dsl import TaskRegion, TaskStep
+
+MouseButton = Literal["left", "right", "middle"]
+
+_CLICK_ACTIONS = {"click_text", "click_image", "click_uia"}
+_PASSIVE_ACTIONS = {"wait_for", "assert_visible", "branch_if_visible"}
+_DEFAULT_SCROLL_CLICKS = -3
 
 
 @dataclass(frozen=True)
@@ -16,6 +33,59 @@ class ActionResult:
 
     success: bool
     message: str
+    metadata: dict[str, object] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ActuationProfile:
+    """Bounded movement and timing settings for desktop input."""
+
+    movement_duration_seconds: tuple[float, float] = (0.05, 0.20)
+    timing_variation_seconds: tuple[float, float] = (0.0, 0.03)
+    movement_steps: int = 12
+    movement_smoothness: float = 0.65
+    random_seed: int | None = None
+
+    def __post_init__(self) -> None:
+        _validate_seconds_pair(
+            self.movement_duration_seconds,
+            "movement_duration_seconds",
+        )
+        _validate_seconds_pair(
+            self.timing_variation_seconds,
+            "timing_variation_seconds",
+        )
+        if self.movement_steps <= 0:
+            raise ValueError("movement_steps must be greater than zero")
+        if self.movement_smoothness < 0 or self.movement_smoothness > 1:
+            raise ValueError("movement_smoothness must be between 0 and 1")
+
+
+@dataclass(frozen=True)
+class MovementPlan:
+    """Concrete physical mouse path emitted by the movement planner."""
+
+    points: tuple[tuple[int, int], ...]
+    duration_seconds: float
+
+    @property
+    def step_delay_seconds(self) -> float:
+        if len(self.points) <= 1:
+            return 0.0
+        return self.duration_seconds / len(self.points)
+
+
+@dataclass(frozen=True)
+class InputEvent:
+    """Recorded fake-backend event used by tests."""
+
+    kind: str
+    point: tuple[int, int] | None = None
+    button: MouseButton | None = None
+    text: str | None = None
+    key: str | None = None
+    clicks: int | None = None
+    duration_seconds: float | None = None
 
 
 class Actuator(Protocol):
@@ -25,8 +95,35 @@ class Actuator(Protocol):
         self,
         step: TaskStep,
         target: ElementCandidate | None,
+        observation: ScreenObservation,
         config: RuntimeConfig,
     ) -> ActionResult: ...
+
+
+class InputBackend(Protocol):
+    """Low-level OS input boundary used by the high-level actuator."""
+
+    def current_position(self) -> tuple[int, int]: ...
+
+    def move_to(self, point: tuple[int, int]) -> None: ...
+
+    def mouse_down(self, point: tuple[int, int], button: MouseButton) -> None: ...
+
+    def mouse_up(self, point: tuple[int, int], button: MouseButton) -> None: ...
+
+    def scroll(self, point: tuple[int, int], clicks: int) -> None: ...
+
+    def type_text(self, text: str) -> None: ...
+
+    def key_down(self, key: str) -> None: ...
+
+    def key_up(self, key: str) -> None: ...
+
+    def press_key(self, key: str) -> None: ...
+
+    def active_window_title(self) -> str | None: ...
+
+    def sleep(self, seconds: float) -> None: ...
 
 
 class DryRunActuator(Actuator):
@@ -36,23 +133,588 @@ class DryRunActuator(Actuator):
         self,
         step: TaskStep,
         target: ElementCandidate | None,
+        observation: ScreenObservation,
         config: RuntimeConfig,
     ) -> ActionResult:
-        _ = target, config
+        _ = target, observation, config
         return ActionResult(success=True, message=f"planned {step.action}")
 
 
 class UnavailableActuator(Actuator):
-    """Adapter used by `run` until real desktop input is implemented."""
+    """Adapter used where real desktop input is not available."""
 
     def execute(
         self,
         step: TaskStep,
         target: ElementCandidate | None,
+        observation: ScreenObservation,
         config: RuntimeConfig,
     ) -> ActionResult:
-        _ = step, target, config
+        _ = step, target, observation, config
         return ActionResult(
             success=False,
-            message="desktop actuation is not implemented yet; use dry-run",
+            message="desktop actuation is unavailable on this platform; use dry-run",
         )
+
+
+class SmoothMovementPlanner:
+    """Builds small eased mouse paths between physical coordinates."""
+
+    def __init__(self, profile: ActuationProfile | None = None) -> None:
+        self._profile = profile or ActuationProfile()
+        self._random = random.Random(self._profile.random_seed)
+
+    def plan(
+        self,
+        start: tuple[int, int],
+        end: tuple[int, int],
+    ) -> MovementPlan:
+        duration = self._sample_seconds(
+            self._profile.movement_duration_seconds,
+        ) + self._sample_seconds(self._profile.timing_variation_seconds)
+        if start == end:
+            return MovementPlan(points=(end,), duration_seconds=duration)
+
+        control = self._control_point(start, end)
+        points = tuple(
+            _quadratic_bezier(
+                start,
+                control,
+                end,
+                _ease_in_out(index / self._profile.movement_steps),
+            )
+            for index in range(1, self._profile.movement_steps + 1)
+        )
+        return MovementPlan(points=points, duration_seconds=duration)
+
+    def _sample_seconds(self, bounds: tuple[float, float]) -> float:
+        lower, upper = bounds
+        if lower == upper:
+            return lower
+        return self._random.uniform(lower, upper)
+
+    def _control_point(
+        self,
+        start: tuple[int, int],
+        end: tuple[int, int],
+    ) -> tuple[float, float]:
+        start_x, start_y = start
+        end_x, end_y = end
+        mid_x = (start_x + end_x) / 2
+        mid_y = (start_y + end_y) / 2
+        delta_x = end_x - start_x
+        delta_y = end_y - start_y
+        distance = math.hypot(delta_x, delta_y)
+        if distance == 0:
+            return (mid_x, mid_y)
+
+        bend = distance * 0.18 * self._profile.movement_smoothness
+        direction = -1 if self._random.random() < 0.5 else 1
+        normal_x = -delta_y / distance
+        normal_y = delta_x / distance
+        return (
+            mid_x + normal_x * bend * direction,
+            mid_y + normal_y * bend * direction,
+        )
+
+
+class DesktopActuator(Actuator):
+    """Executes high-level task actions through a low-level input backend."""
+
+    def __init__(
+        self,
+        backend: InputBackend,
+        profile: ActuationProfile | None = None,
+    ) -> None:
+        self._backend = backend
+        self._movement_planner = SmoothMovementPlanner(profile)
+
+    def execute(
+        self,
+        step: TaskStep,
+        target: ElementCandidate | None,
+        observation: ScreenObservation,
+        config: RuntimeConfig,
+    ) -> ActionResult:
+        blocked = self._blocked_by_active_window(config)
+        if blocked is not None:
+            return blocked
+
+        try:
+            if step.action in _PASSIVE_ACTIONS:
+                return ActionResult(True, f"observed {step.action}")
+            if step.action in _CLICK_ACTIONS:
+                return self._execute_click(step, target, observation)
+            if step.action == "type_text":
+                return self._execute_type_text(step)
+            if step.action == "press_key":
+                return self._execute_press_key(step)
+            if step.action in {"scroll", "scroll_until"}:
+                return self._execute_scroll(step, target, observation)
+            if step.action == "drag":
+                return self._execute_drag(step, target, observation)
+        except ActuationError as exc:
+            return ActionResult(False, str(exc))
+
+        return ActionResult(False, f"unsupported actuation action: {step.action}")
+
+    def move_mouse(self, point: tuple[int, int]) -> MovementPlan:
+        start = self._backend.current_position()
+        plan = self._movement_planner.plan(start, point)
+        for path_point in plan.points:
+            self._backend.move_to(path_point)
+            if plan.step_delay_seconds > 0:
+                self._backend.sleep(plan.step_delay_seconds)
+        return plan
+
+    def click(
+        self,
+        point: tuple[int, int],
+        button: MouseButton = "left",
+    ) -> MovementPlan:
+        plan = self.move_mouse(point)
+        self._backend.mouse_down(point, button)
+        self._backend.mouse_up(point, button)
+        return plan
+
+    def double_click(
+        self,
+        point: tuple[int, int],
+        button: MouseButton = "left",
+    ) -> MovementPlan:
+        plan = self.click(point, button)
+        self._backend.sleep(0.05)
+        self._backend.mouse_down(point, button)
+        self._backend.mouse_up(point, button)
+        return plan
+
+    def drag(
+        self,
+        start: tuple[int, int],
+        end: tuple[int, int],
+        button: MouseButton = "left",
+    ) -> MovementPlan:
+        plan = self.move_mouse(start)
+        self._backend.mouse_down(start, button)
+        drag_plan = self.move_mouse(end)
+        self._backend.mouse_up(end, button)
+        return MovementPlan(
+            points=plan.points + drag_plan.points,
+            duration_seconds=plan.duration_seconds + drag_plan.duration_seconds,
+        )
+
+    def scroll(self, point: tuple[int, int], clicks: int) -> None:
+        self.move_mouse(point)
+        self._backend.scroll(point, clicks)
+
+    def type_text(self, text: str) -> None:
+        self._backend.type_text(text)
+
+    def press_key_or_chord(self, value: str) -> None:
+        parts = tuple(part.strip() for part in value.split("+") if part.strip())
+        if not parts:
+            raise ActuationError("key value must not be blank")
+        if len(parts) == 1:
+            self._backend.press_key(parts[0])
+            return
+
+        modifiers = parts[:-1]
+        key = parts[-1]
+        for modifier in modifiers:
+            self._backend.key_down(modifier)
+        try:
+            self._backend.press_key(key)
+        finally:
+            for modifier in reversed(modifiers):
+                self._backend.key_up(modifier)
+
+    def _execute_click(
+        self,
+        step: TaskStep,
+        target: ElementCandidate | None,
+        observation: ScreenObservation,
+    ) -> ActionResult:
+        point = _target_point(target, observation)
+        plan = self.click(point)
+        return ActionResult(
+            True,
+            f"clicked {step.action}",
+            _input_metadata("click", point, plan, target),
+        )
+
+    def _execute_type_text(self, step: TaskStep) -> ActionResult:
+        if step.text is None:
+            raise ActuationError("type_text requires step.text")
+        self.type_text(step.text)
+        return ActionResult(
+            True,
+            "typed text",
+            {"input_action": "type_text", "text_length": len(step.text)},
+        )
+
+    def _execute_press_key(self, step: TaskStep) -> ActionResult:
+        if step.text is None:
+            raise ActuationError("press_key requires step.text")
+        self.press_key_or_chord(step.text)
+        return ActionResult(
+            True,
+            "pressed key",
+            {"input_action": "press_key", "key": step.text},
+        )
+
+    def _execute_scroll(
+        self,
+        step: TaskStep,
+        target: ElementCandidate | None,
+        observation: ScreenObservation,
+    ) -> ActionResult:
+        point = _target_or_region_point(target, step.region, observation)
+        clicks = _scroll_clicks(step)
+        self.scroll(point, clicks)
+        return ActionResult(
+            True,
+            "scrolled",
+            {"input_action": "scroll", "point": list(point), "scroll_clicks": clicks},
+        )
+
+    def _execute_drag(
+        self,
+        step: TaskStep,
+        target: ElementCandidate | None,
+        observation: ScreenObservation,
+    ) -> ActionResult:
+        if step.region is None:
+            raise ActuationError("drag requires a destination region")
+        start = _target_point(target, observation)
+        end = _region_center(step.region, observation)
+        plan = self.drag(start, end)
+        return ActionResult(
+            True,
+            "dragged",
+            {
+                "input_action": "drag",
+                "start": list(start),
+                "end": list(end),
+                "movement_points": len(plan.points),
+                "movement_duration_seconds": plan.duration_seconds,
+                "candidate_id": target.id if target else None,
+            },
+        )
+
+    def _blocked_by_active_window(self, config: RuntimeConfig) -> ActionResult | None:
+        if not config.allowed_windows:
+            return None
+        active_title = self._backend.active_window_title()
+        if active_title in config.allowed_windows:
+            return None
+        return ActionResult(
+            False,
+            "active window is outside the configured allowed_windows",
+            {
+                "active_window_title": active_title,
+                "allowed_windows": list(config.allowed_windows),
+            },
+        )
+
+
+class FakeInputBackend(InputBackend):
+    """Deterministic input backend for actuation tests."""
+
+    def __init__(
+        self,
+        *,
+        start_position: tuple[int, int] = (0, 0),
+        active_window_title: str | None = None,
+    ) -> None:
+        self._position = start_position
+        self._active_window_title = active_window_title
+        self.events: list[InputEvent] = []
+
+    def current_position(self) -> tuple[int, int]:
+        return self._position
+
+    def move_to(self, point: tuple[int, int]) -> None:
+        self._position = point
+        self.events.append(InputEvent(kind="move", point=point))
+
+    def mouse_down(self, point: tuple[int, int], button: MouseButton) -> None:
+        self.events.append(InputEvent(kind="mouse_down", point=point, button=button))
+
+    def mouse_up(self, point: tuple[int, int], button: MouseButton) -> None:
+        self.events.append(InputEvent(kind="mouse_up", point=point, button=button))
+
+    def scroll(self, point: tuple[int, int], clicks: int) -> None:
+        self.events.append(InputEvent(kind="scroll", point=point, clicks=clicks))
+
+    def type_text(self, text: str) -> None:
+        self.events.append(InputEvent(kind="type_text", text=text))
+
+    def key_down(self, key: str) -> None:
+        self.events.append(InputEvent(kind="key_down", key=key))
+
+    def key_up(self, key: str) -> None:
+        self.events.append(InputEvent(kind="key_up", key=key))
+
+    def press_key(self, key: str) -> None:
+        self.events.append(InputEvent(kind="press_key", key=key))
+
+    def active_window_title(self) -> str | None:
+        return self._active_window_title
+
+    def sleep(self, seconds: float) -> None:
+        if seconds > 0:
+            self.events.append(InputEvent(kind="sleep", duration_seconds=seconds))
+
+
+class WindowsInputBackend(InputBackend):
+    """Windows input backend using the local user32 API."""
+
+    def __init__(self) -> None:
+        if sys.platform != "win32":
+            raise ActuationError("Windows input backend requires Windows")
+        self._user32: Any = ctypes.windll.user32
+
+    def current_position(self) -> tuple[int, int]:
+        point = wintypes.POINT()
+        if not self._user32.GetCursorPos(ctypes.byref(point)):
+            raise ActuationError("unable to read cursor position")
+        return (int(point.x), int(point.y))
+
+    def move_to(self, point: tuple[int, int]) -> None:
+        if not self._user32.SetCursorPos(int(point[0]), int(point[1])):
+            raise ActuationError("unable to move mouse")
+
+    def mouse_down(self, point: tuple[int, int], button: MouseButton) -> None:
+        self.move_to(point)
+        self._user32.mouse_event(_MOUSE_DOWN_FLAGS[button], 0, 0, 0, 0)
+
+    def mouse_up(self, point: tuple[int, int], button: MouseButton) -> None:
+        self.move_to(point)
+        self._user32.mouse_event(_MOUSE_UP_FLAGS[button], 0, 0, 0, 0)
+
+    def scroll(self, point: tuple[int, int], clicks: int) -> None:
+        self.move_to(point)
+        self._user32.mouse_event(_MOUSEEVENTF_WHEEL, 0, 0, clicks * 120, 0)
+
+    def type_text(self, text: str) -> None:
+        for character in text:
+            self._press_character(character)
+
+    def key_down(self, key: str) -> None:
+        self._key_event(_virtual_key(key), key_down=True)
+
+    def key_up(self, key: str) -> None:
+        self._key_event(_virtual_key(key), key_down=False)
+
+    def press_key(self, key: str) -> None:
+        virtual_key = _virtual_key(key)
+        self._key_event(virtual_key, key_down=True)
+        self._key_event(virtual_key, key_down=False)
+
+    def active_window_title(self) -> str | None:
+        hwnd = int(self._user32.GetForegroundWindow())
+        if hwnd == 0:
+            return None
+        length = int(self._user32.GetWindowTextLengthW(hwnd))
+        buffer = ctypes.create_unicode_buffer(length + 1)
+        copied = int(self._user32.GetWindowTextW(hwnd, buffer, length + 1))
+        if copied <= 0:
+            return ""
+        return buffer.value
+
+    def sleep(self, seconds: float) -> None:
+        time.sleep(seconds)
+
+    def _press_character(self, character: str) -> None:
+        if character == "\n":
+            self.press_key("enter")
+            return
+        key_scan = int(self._user32.VkKeyScanW(ord(character)))
+        if key_scan == -1:
+            raise ActuationError(f"unsupported text character: {character!r}")
+        virtual_key = key_scan & 0xFF
+        shift_state = (key_scan >> 8) & 0xFF
+        pressed_modifiers = _shift_state_modifiers(shift_state)
+        for modifier in pressed_modifiers:
+            self._key_event(modifier, key_down=True)
+        try:
+            self._key_event(virtual_key, key_down=True)
+            self._key_event(virtual_key, key_down=False)
+        finally:
+            for modifier in reversed(pressed_modifiers):
+                self._key_event(modifier, key_down=False)
+
+    def _key_event(self, virtual_key: int, *, key_down: bool) -> None:
+        flags = 0 if key_down else _KEYEVENTF_KEYUP
+        self._user32.keybd_event(virtual_key, 0, flags, 0)
+
+
+class ActuationError(RuntimeError):
+    """Raised when an action cannot be represented safely as local input."""
+
+
+def create_platform_actuator(
+    profile: ActuationProfile | None = None,
+) -> Actuator:
+    if sys.platform != "win32":
+        return UnavailableActuator()
+    return DesktopActuator(WindowsInputBackend(), profile)
+
+
+def _target_point(
+    target: ElementCandidate | None,
+    observation: ScreenObservation,
+) -> tuple[int, int]:
+    if target is None:
+        raise ActuationError("targeted action requires a selected target")
+    return _bounds_center(target.bounds, observation)
+
+
+def _target_or_region_point(
+    target: ElementCandidate | None,
+    region: TaskRegion | None,
+    observation: ScreenObservation,
+) -> tuple[int, int]:
+    if target is not None:
+        return _bounds_center(target.bounds, observation)
+    if region is not None:
+        return _region_center(region, observation)
+    raise ActuationError("scroll requires a target or region")
+
+
+def _bounds_center(
+    bounds: Bounds,
+    observation: ScreenObservation,
+) -> tuple[int, int]:
+    center = bounds.center
+    if observation.monitor is None:
+        return center
+    # Screen perception returns screenshot-space coordinates; OS input expects
+    # physical desktop coordinates after monitor origin and DPI scaling.
+    return screenshot_point_to_physical(center, observation.monitor)
+
+
+def _region_center(
+    region: TaskRegion,
+    observation: ScreenObservation,
+) -> tuple[int, int]:
+    bounds = Bounds(region.x, region.y, region.width, region.height)
+    return _bounds_center(bounds, observation)
+
+
+def _input_metadata(
+    action: str,
+    point: tuple[int, int],
+    plan: MovementPlan,
+    target: ElementCandidate | None,
+) -> dict[str, object]:
+    return {
+        "input_action": action,
+        "point": list(point),
+        "movement_points": len(plan.points),
+        "movement_duration_seconds": plan.duration_seconds,
+        "candidate_id": target.id if target else None,
+    }
+
+
+def _scroll_clicks(step: TaskStep) -> int:
+    if step.text is None:
+        return _DEFAULT_SCROLL_CLICKS
+    try:
+        return int(step.text)
+    except ValueError as exc:
+        raise ActuationError("scroll text must be an integer wheel distance") from exc
+
+
+def _quadratic_bezier(
+    start: tuple[int, int],
+    control: tuple[float, float],
+    end: tuple[int, int],
+    t: float,
+) -> tuple[int, int]:
+    inverse = 1 - t
+    x = inverse * inverse * start[0] + 2 * inverse * t * control[0] + t * t * end[0]
+    y = inverse * inverse * start[1] + 2 * inverse * t * control[1] + t * t * end[1]
+    return (round(x), round(y))
+
+
+def _ease_in_out(t: float) -> float:
+    return t * t * (3 - 2 * t)
+
+
+def _validate_seconds_pair(value: tuple[float, float], field_name: str) -> None:
+    lower, upper = value
+    if lower < 0 or upper < 0:
+        raise ValueError(f"{field_name} values must not be negative")
+    if lower > upper:
+        raise ValueError(f"{field_name} lower bound must not exceed upper bound")
+
+
+def _virtual_key(key: str) -> int:
+    normalized = key.strip().lower()
+    if len(normalized) == 1 and normalized.isascii():
+        return ord(normalized.upper())
+    if normalized in _KEY_ALIASES:
+        return _KEY_ALIASES[normalized]
+    raise ActuationError(f"unsupported key: {key}")
+
+
+def _shift_state_modifiers(shift_state: int) -> tuple[int, ...]:
+    modifiers: list[int] = []
+    if shift_state & 1:
+        modifiers.append(_VK_SHIFT)
+    if shift_state & 2:
+        modifiers.append(_VK_CONTROL)
+    if shift_state & 4:
+        modifiers.append(_VK_MENU)
+    return tuple(modifiers)
+
+
+_MOUSEEVENTF_LEFTDOWN = 0x0002
+_MOUSEEVENTF_LEFTUP = 0x0004
+_MOUSEEVENTF_RIGHTDOWN = 0x0008
+_MOUSEEVENTF_RIGHTUP = 0x0010
+_MOUSEEVENTF_MIDDLEDOWN = 0x0020
+_MOUSEEVENTF_MIDDLEUP = 0x0040
+_MOUSEEVENTF_WHEEL = 0x0800
+
+_MOUSE_DOWN_FLAGS: dict[MouseButton, int] = {
+    "left": _MOUSEEVENTF_LEFTDOWN,
+    "right": _MOUSEEVENTF_RIGHTDOWN,
+    "middle": _MOUSEEVENTF_MIDDLEDOWN,
+}
+_MOUSE_UP_FLAGS: dict[MouseButton, int] = {
+    "left": _MOUSEEVENTF_LEFTUP,
+    "right": _MOUSEEVENTF_RIGHTUP,
+    "middle": _MOUSEEVENTF_MIDDLEUP,
+}
+
+_KEYEVENTF_KEYUP = 0x0002
+_VK_SHIFT = 0x10
+_VK_CONTROL = 0x11
+_VK_MENU = 0x12
+
+_KEY_ALIASES = {
+    "ctrl": _VK_CONTROL,
+    "control": _VK_CONTROL,
+    "shift": _VK_SHIFT,
+    "alt": _VK_MENU,
+    "enter": 0x0D,
+    "return": 0x0D,
+    "tab": 0x09,
+    "esc": 0x1B,
+    "escape": 0x1B,
+    "backspace": 0x08,
+    "delete": 0x2E,
+    "space": 0x20,
+    "home": 0x24,
+    "end": 0x23,
+    "pageup": 0x21,
+    "pagedown": 0x22,
+    "left": 0x25,
+    "up": 0x26,
+    "right": 0x27,
+    "down": 0x28,
+    "win": 0x5B,
+    **{f"f{index}": 0x6F + index for index in range(1, 13)},
+}

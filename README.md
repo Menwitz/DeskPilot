@@ -45,8 +45,8 @@ desktop-agent replay traces/example-run
 ```
 
 `dry-run` validates and plans through the local execution pipeline without
-desktop input. `run` is wired into the same pipeline but intentionally fails
-until real actuation adapters are implemented.
+desktop input. `run` uses the platform actuator on Windows and fails with a
+clear unavailable message on unsupported platforms.
 
 ## Project Layout
 
@@ -59,6 +59,7 @@ until real actuation adapters are implemented.
 ## Documentation
 
 - [Project definition](docs/project-definition.md)
+- [Actuation](docs/actuation.md)
 - [Architecture](docs/architecture.md)
 - [Candidate Fusion](docs/candidate-fusion.md)
 - [Computer Vision](docs/computer-vision.md)

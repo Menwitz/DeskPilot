@@ -7,7 +7,7 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
-from desktop_agent.actuation import DryRunActuator, UnavailableActuator
+from desktop_agent.actuation import DryRunActuator, create_platform_actuator
 from desktop_agent.computer_vision import OpenCvTemplatePerceptionEngine
 from desktop_agent.config import (
     ConfigError,
@@ -116,7 +116,7 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
             ),
         ),
         target_selector=ConfidenceTargetSelector(),
-        actuator=DryRunActuator() if dry_run else UnavailableActuator(),
+        actuator=DryRunActuator() if dry_run else create_platform_actuator(),
     )
     report = engine.run(args.task_yaml, args.config)
     _print_report(report, verbose=args.verbose)

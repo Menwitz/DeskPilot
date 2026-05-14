@@ -171,11 +171,16 @@ class ExecutionEngine:
                     candidate_id=last_candidate_id,
                 )
 
-            action_result = self.actuator.execute(step, target, config)
+            action_result = self.actuator.execute(step, target, observation, config)
+            action_metadata = {
+                "step_id": step.id,
+                "success": action_result.success,
+            }
+            action_metadata.update(action_result.metadata)
             self._record(
                 "execute_action",
                 action_result.message,
-                {"step_id": step.id, "success": action_result.success},
+                action_metadata,
             )
 
             verification = self.verifier.verify(

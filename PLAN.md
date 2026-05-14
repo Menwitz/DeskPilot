@@ -210,19 +210,19 @@
 
 ## 11. Actuation Layer
 
-- [ ] Implement mouse move.
-- [ ] Implement click.
-- [ ] Implement double click.
-- [ ] Implement drag.
-- [ ] Implement scroll.
-- [ ] Implement keyboard typing.
-- [ ] Implement key press and key chord.
-- [ ] Add smooth movement using curved paths and acceleration/deceleration.
-- [ ] Add configurable movement duration.
-- [ ] Add tiny timing variation for natural reliability, not stealth.
-- [ ] Verify target window is still allowed immediately before every action.
-- [ ] Add fake input adapter for tests.
-- [ ] Add comments explaining coordinate conversion and safety checks.
+- [x] Implement mouse move.
+- [x] Implement click.
+- [x] Implement double click.
+- [x] Implement drag.
+- [x] Implement scroll.
+- [x] Implement keyboard typing.
+- [x] Implement key press and key chord.
+- [x] Add smooth movement using curved paths and acceleration/deceleration.
+- [x] Add configurable movement duration.
+- [x] Add tiny timing variation for natural reliability, not stealth.
+- [x] Verify target window is still allowed immediately before every action.
+- [x] Add fake input adapter for tests.
+- [x] Add comments explaining coordinate conversion and safety checks.
 
 ## 12. Planner And Execution Engine
 

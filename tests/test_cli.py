@@ -42,7 +42,7 @@ def test_cli_dry_run_validates_and_reports_success(
     assert "status: passed" in output
 
 
-def test_cli_run_fails_until_actuation_adapter_exists(
+def test_cli_run_fails_when_platform_actuation_is_unavailable(
     tmp_path: Path,
     capsys: CaptureFixture[str],
 ) -> None:
@@ -53,7 +53,7 @@ def test_cli_run_fails_until_actuation_adapter_exists(
 
     output = capsys.readouterr().out
     assert status == 1
-    assert "desktop actuation is not implemented yet" in output
+    assert "desktop actuation is unavailable on this platform" in output
 
 
 class FixtureScreenObserver:
