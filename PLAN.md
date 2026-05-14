@@ -304,14 +304,18 @@
 
 ## 16. Packaging
 
+Current status: implementation assets are complete; executable build and packaged
+runtime verification require Windows because PyInstaller cannot produce a
+Windows desktop executable from this macOS workspace.
+
 - [x] Add PyInstaller config.
-- [ ] Package Windows executable.
+- [ ] Package Windows executable. **Blocked: requires Windows.**
 - [x] Include default config template.
 - [x] Include example tasks.
 - [x] Include troubleshooting docs.
-- [ ] Verify packaged executable can run `--help`.
-- [ ] Verify packaged executable can run `dry-run`.
-- [ ] Verify packaged executable can run demo task on a logged-in Windows desktop.
+- [ ] Verify packaged executable can run `--help`. **Blocked: requires Windows package.**
+- [ ] Verify packaged executable can run `dry-run`. **Blocked: requires Windows package.**
+- [ ] Verify packaged executable can run demo task on a logged-in Windows desktop. **Blocked: requires unlocked Windows desktop.**
 
 ## 17. Testing
 
@@ -332,32 +336,38 @@
 
 ## 18. V1 Acceptance Criteria
 
-- [ ] `desktop-agent run` executes a YAML task end to end.
+Current status: local implementation and local verification are complete. The
+remaining unchecked acceptance items require real desktop input on an unlocked,
+logged-in Windows session.
+
+- [ ] `desktop-agent run` executes a YAML task end to end. **Blocked: requires unlocked Windows desktop.**
 - [x] `desktop-agent dry-run` validates and explains the planned task without actions.
 - [x] `desktop-agent inspect-screen` captures screenshot, OCR, UIA, and candidate data.
-- [ ] Browser demo completes unattended on an unlocked Windows desktop.
-- [ ] Native Windows demo completes unattended on an unlocked Windows desktop.
-- [ ] Mixed demo completes unattended on an unlocked Windows desktop.
-- [ ] Emergency hotkey stops execution within one second.
+- [ ] Browser demo completes unattended on an unlocked Windows desktop. **Blocked: requires unlocked Windows desktop.**
+- [ ] Native Windows demo completes unattended on an unlocked Windows desktop. **Blocked: requires unlocked Windows desktop.**
+- [ ] Mixed demo completes unattended on an unlocked Windows desktop. **Blocked: requires unlocked Windows desktop.**
+- [ ] Emergency hotkey stops execution within one second. **Blocked: requires unlocked Windows desktop.**
 - [x] Failed runs produce useful screenshots, logs, candidates, and abort reason.
 - [x] No cloud service is required.
 - [x] No task can act outside the allowed window whitelist.
 - [x] Documentation is sufficient for a new engineer to install, run, debug, and extend v1.
 
-Windows-only acceptance items remain unchecked until they are verified on an unlocked, logged-in Windows desktop.
+Windows-only acceptance items remain unchecked until they are verified on an unlocked, logged-in Windows desktop. Use `docs/windows-e2e-checklist.md` for the exact commands and expected evidence.
 
 ## 19. Post-v1 Backlog
 
-Post-v1 items are intentionally future work. They are triaged in `docs/post-v1-backlog.md` and should stay unchecked until they are promoted into a scoped implementation plan.
+Post-v1 items are intentionally future work, not unfinished v1 implementation.
+They are triaged in `docs/post-v1-backlog.md` and should be promoted into a new
+scoped implementation plan before becoming checklist tasks.
 
-- [ ] Linux X11 adapter.
-- [ ] Linux Wayland compatibility investigation.
-- [ ] Visual task recorder.
-- [ ] Optional local vision model.
-- [ ] Optional cloud VLM adapter disabled by default.
-- [ ] Redacted trace mode.
-- [ ] Team report server.
-- [ ] Remote worker orchestration.
-- [ ] Rich desktop tray UI.
-- [ ] More advanced recovery planning.
-- [ ] Plugin system for app-specific task libraries.
+- Linux X11 adapter.
+- Linux Wayland compatibility investigation.
+- Visual task recorder.
+- Optional local vision model.
+- Optional cloud VLM adapter disabled by default.
+- Redacted trace mode.
+- Team report server.
+- Remote worker orchestration.
+- Rich desktop tray UI.
+- More advanced recovery planning.
+- Plugin system for app-specific task libraries.

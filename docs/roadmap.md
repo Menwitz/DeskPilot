@@ -29,5 +29,10 @@ That file is updated as each top-level task and subtask is completed.
 Each completed top-level task should be committed separately using the commit
 message structure defined for this repository.
 
-Post-v1 items are tracked in [Post-v1 Backlog](post-v1-backlog.md). They remain
-outside v1 acceptance until they are promoted into a scoped implementation plan.
+Post-v1 items are tracked in [Post-v1 Backlog](post-v1-backlog.md). They are not
+active v1 checklist items and remain outside v1 acceptance until they are
+promoted into a scoped implementation plan.
+
+The only unchecked v1 items left in `PLAN.md` are Windows-only packaging and
+real desktop acceptance checks that require an unlocked, logged-in Windows
+session.
