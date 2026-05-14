@@ -180,15 +180,15 @@
 
 ## 9. Computer Vision Layer
 
-- [ ] Add OpenCV template matching.
-- [ ] Support image templates from `examples/assets/` or task-relative paths.
-- [ ] Return image candidates with bounds and confidence.
-- [ ] Support target region restriction.
-- [ ] Support grayscale matching.
-- [ ] Support scale-tolerant matching as a later v1 enhancement.
-- [ ] Save detection overlays to trace directory.
-- [ ] Add tests for template matching with fixture screenshots.
-- [ ] Document when image matching should be used instead of text/UIA.
+- [x] Add OpenCV template matching.
+- [x] Support image templates from `examples/assets/` or task-relative paths.
+- [x] Return image candidates with bounds and confidence.
+- [x] Support target region restriction.
+- [x] Support grayscale matching.
+- [x] Support scale-tolerant matching as a later v1 enhancement.
+- [x] Save detection overlays to trace directory.
+- [x] Add tests for template matching with fixture screenshots.
+- [x] Document when image matching should be used instead of text/UIA.
 
 ## 10. Candidate Fusion
 

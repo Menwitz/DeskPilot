@@ -31,6 +31,10 @@ ocr = [
     "Pillow>=10.4.0",
     "pytesseract>=0.3.13",
 ]
+cv = [
+    "numpy>=2.0.0",
+    "opencv-python-headless>=4.10.0",
+]
 
 [tool.uv]
 package = true

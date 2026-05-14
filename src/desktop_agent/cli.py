@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from desktop_agent.actuation import DryRunActuator, UnavailableActuator
+from desktop_agent.computer_vision import OpenCvTemplatePerceptionEngine
 from desktop_agent.config import (
     ConfigError,
     ConfigOverrides,
@@ -108,7 +109,12 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
         trace_sink=trace_sink,
         safety_policy=LocalSafetyPolicy(),
         screen_observer=StaticScreenObserver(),
-        perception_engine=CompositePerceptionEngine((OcrPerceptionEngine(),)),
+        perception_engine=CompositePerceptionEngine(
+            (
+                OcrPerceptionEngine(),
+                OpenCvTemplatePerceptionEngine(),
+            ),
+        ),
         target_selector=ConfidenceTargetSelector(),
         actuator=DryRunActuator() if dry_run else UnavailableActuator(),
     )

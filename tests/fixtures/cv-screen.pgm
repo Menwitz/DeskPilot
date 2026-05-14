@@ -1,0 +1,10 @@
+P2
+# 6x6 saved screenshot fixture containing a non-uniform template at x=2,y=2.
+6 6
+255
+0 0 0 0 0 0
+0 0 0 0 0 0
+0 0 10 20 30 0
+0 0 40 50 60 0
+0 0 70 80 90 0
+0 0 0 0 0 0
