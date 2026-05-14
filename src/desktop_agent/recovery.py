@@ -33,8 +33,18 @@ class ConstrainedRecoveryPolicy:
     policy: RecoveryPolicy
     rule: RecoveryRule | None = None
 
+    @property
+    def chosen_action(self) -> str:
+        """Return the concrete recovery action used before retrying."""
+
+        for action in self.policy.actions:
+            if action != "abort_with_trace":
+                return action
+        return "abort_with_trace"
+
     def metadata(self) -> dict[str, object]:
         metadata = self.policy.metadata()
+        metadata["recovery_chosen_action"] = self.chosen_action
         if self.rule is not None:
             metadata["recovery_allowed_actions"] = list(self.rule.actions)
             metadata["recovery_rule_next_step"] = self.rule.next_step

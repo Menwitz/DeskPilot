@@ -538,7 +538,7 @@ class ExecutionEngine:
             )
 
             verification_observation, verification_candidates = (
-                self._verification_observation(step, config)
+                self._verification_observation(step, config, attempt)
             )
             verification = self.verifier.verify(
                 step,
@@ -568,15 +568,26 @@ class ExecutionEngine:
             last_message = verification.message
             if attempt < total_attempts:
                 retry_timing = timing_controller.before_retry()
+                recovery_observation, recovery_candidates = (
+                    self._recovery_observation(
+                        step,
+                        config,
+                        failed_attempt=attempt,
+                        next_attempt=attempt + 1,
+                    )
+                )
                 recovery_policy = recovery_policy_for_action_result(
-                    verification_observation,
-                    verification_candidates,
+                    recovery_observation,
+                    recovery_candidates,
                     action_result,
                     verification.passed,
                 )
                 recover_metadata = _recovery_metadata(
                     step,
                     recovery_policy,
+                    failed_attempt=attempt,
+                    failure_observation_phase="reobserve_after_failure",
+                    recovery_candidate_count=len(recovery_candidates),
                     next_attempt=attempt + 1,
                     retry_reason=last_message,
                     retry_delay_seconds=retry_timing.delay_seconds,
@@ -651,7 +662,9 @@ class ExecutionEngine:
                 _recovery_metadata(
                     step,
                     recovery_policy_for_selection(observation, candidates, target),
+                    failed_attempt=attempts,
                     next_attempt=attempts + 1,
+                    retry_reason=last_message,
                 ),
             )
             self.clock.sleep(
@@ -770,6 +783,7 @@ class ExecutionEngine:
                             "abort_with_trace",
                         ),
                     ),
+                    failed_attempt=attempt,
                     next_attempt=attempt + 1,
                 ),
             )
@@ -839,9 +853,10 @@ class ExecutionEngine:
         self,
         step: TaskStep,
         config: RuntimeConfig,
+        attempt: int,
     ) -> tuple[ScreenObservation, tuple[ElementCandidate, ...]]:
         observation = self.screen_observer.observe(config)
-        observation_metadata = _observation_metadata(step.id, observation, attempt=1)
+        observation_metadata = _observation_metadata(step.id, observation, attempt)
         observation_metadata["step_category"] = step_category(step)
         self._record(
             "observe_after_action",
@@ -855,6 +870,47 @@ class ExecutionEngine:
         metadata = _step_metadata(verify_step, candidate_count=len(candidates))
         metadata.update(candidate_ranking_metadata(verify_step, candidates, config))
         self._record("verify_candidates", "candidate search completed", metadata)
+        return observation, candidates
+
+    def _recovery_observation(
+        self,
+        step: TaskStep,
+        config: RuntimeConfig,
+        *,
+        failed_attempt: int,
+        next_attempt: int,
+    ) -> tuple[ScreenObservation, tuple[ElementCandidate, ...]]:
+        observation = self.screen_observer.observe(config)
+        observation_metadata = _observation_metadata(
+            step.id,
+            observation,
+            failed_attempt,
+        )
+        observation_metadata["step_category"] = step_category(step)
+        observation_metadata["failed_attempt"] = failed_attempt
+        observation_metadata["next_attempt"] = next_attempt
+        self._record(
+            "reobserve_after_failure",
+            "screen re-observed after failed attempt",
+            observation_metadata,
+        )
+        recovery_step = _verification_step(step) if step.verify is not None else step
+        candidates = self.perception_engine.detect(recovery_step, observation, config)
+        metadata = _step_metadata(
+            recovery_step,
+            candidate_count=len(candidates),
+            failed_attempt=failed_attempt,
+            next_attempt=next_attempt,
+            recovery_for_step_id=step.id,
+        )
+        metadata.update(candidate_ranking_metadata(recovery_step, candidates, config))
+        # Recovery re-observation is read-only, but it still runs through the
+        # perception stack so traces show what deep search saw before retrying.
+        self._record(
+            "recover_candidates",
+            "candidate search completed after failed attempt",
+            metadata,
+        )
         return observation, candidates
 
     def _detect_for_step(
@@ -995,8 +1051,80 @@ def _recovery_metadata(
     **metadata: object,
 ) -> dict[str, object]:
     recovery_metadata = _step_metadata(step, **metadata)
-    recovery_metadata.update(constrain_recovery_policy(step, policy).metadata())
+    constrained = constrain_recovery_policy(step, policy)
+    recovery_metadata.update(constrained.metadata())
+    recovery_metadata.update(
+        _recovery_path_metadata(
+            reason=constrained.policy.reason,
+            chosen_action=constrained.chosen_action,
+            failed_attempt=metadata.get("failed_attempt"),
+            next_attempt=metadata.get("next_attempt"),
+            failure_observation_phase=metadata.get("failure_observation_phase"),
+        )
+    )
     return recovery_metadata
+
+
+def _recovery_path_metadata(
+    *,
+    reason: str,
+    chosen_action: str,
+    failed_attempt: object,
+    next_attempt: object,
+    failure_observation_phase: object,
+) -> dict[str, object]:
+    path: list[dict[str, object]] = [
+        {
+            "stage": "classify_failure",
+            "reason": reason,
+            "attempt": failed_attempt,
+        }
+    ]
+    if isinstance(failure_observation_phase, str):
+        path.append(
+            {
+                "stage": "fresh_failure_observation",
+                "phase": failure_observation_phase,
+                "attempt": failed_attempt,
+            }
+        )
+    path.append({"stage": "recovery_action", "action": chosen_action})
+    reobserve_before_retry = (
+        chosen_action != "abort_with_trace" and next_attempt is not None
+    )
+    if reobserve_before_retry:
+        path.extend(
+            [
+                {
+                    "stage": "fresh_retry_observation",
+                    "phase": "observe_screen",
+                    "attempt": next_attempt,
+                },
+                {"stage": "retry_attempt", "attempt": next_attempt},
+            ]
+        )
+    return {
+        "recovery_path": path,
+        "recovery_path_summary": _recovery_path_summary(path),
+        "reobserve_before_retry": reobserve_before_retry,
+    }
+
+
+def _recovery_path_summary(path: list[dict[str, object]]) -> str:
+    parts: list[str] = []
+    for item in path:
+        stage = item["stage"]
+        if stage == "classify_failure":
+            parts.append(f"classify {item['reason']}")
+        elif stage == "fresh_failure_observation":
+            parts.append(f"{item['phase']} attempt {item['attempt']}")
+        elif stage == "recovery_action":
+            parts.append(str(item["action"]))
+        elif stage == "fresh_retry_observation":
+            parts.append(f"{item['phase']} attempt {item['attempt']}")
+        elif stage == "retry_attempt":
+            parts.append(f"retry attempt {item['attempt']}")
+    return " -> ".join(parts)
 
 
 def _task_entropy_metadata(task: TaskDefinition) -> dict[str, object]:

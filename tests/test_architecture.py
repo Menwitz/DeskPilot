@@ -385,6 +385,12 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
         event for event in report.events if event.phase == "execution_timing"
     ]
     recover_event = next(event for event in report.events if event.phase == "recover")
+    reobserve_event = next(
+        event for event in report.events if event.phase == "reobserve_after_failure"
+    )
+    recover_candidates_event = next(
+        event for event in report.events if event.phase == "recover_candidates"
+    )
     assert report.status == "passed"
     assert report.steps[0].attempts == 2
     assert len(timing_events) == 3
@@ -413,11 +419,42 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
     retry_operator_counts = timing_events[1].metadata["klm_operator_counts"]
     assert isinstance(retry_operator_counts, dict)
     assert retry_operator_counts["system_wait"] == 1
+    assert reobserve_event.metadata["attempt"] == 1
+    assert reobserve_event.metadata["next_attempt"] == 2
+    assert recover_candidates_event.metadata["failed_attempt"] == 1
+    assert recover_candidates_event.metadata["candidate_count"] == 1
+    assert recover_candidates_event.metadata["recovery_for_step_id"] == "click-submit"
     assert recover_event.metadata["retry_reason"] == "transient failure"
+    assert recover_event.metadata["failed_attempt"] == 1
+    assert recover_event.metadata["failure_observation_phase"] == (
+        "reobserve_after_failure"
+    )
+    assert recover_event.metadata["recovery_candidate_count"] == 1
     assert recover_event.metadata["recovery_reason"] == "transient_loading"
     assert recover_event.metadata["recovery_policy"] == "wait_for_transient_loading"
+    assert recover_event.metadata["recovery_chosen_action"] == "wait_for_loading"
     assert recover_event.metadata["recovery_actions"] == [
         "wait_for_loading",
         "abort_with_trace",
     ]
     assert recover_event.metadata["recovery_actions_constrained"] is True
+    assert recover_event.metadata["reobserve_before_retry"] is True
+    assert recover_event.metadata["recovery_path"] == [
+        {
+            "stage": "classify_failure",
+            "reason": "transient_loading",
+            "attempt": 1,
+        },
+        {
+            "stage": "fresh_failure_observation",
+            "phase": "reobserve_after_failure",
+            "attempt": 1,
+        },
+        {"stage": "recovery_action", "action": "wait_for_loading"},
+        {
+            "stage": "fresh_retry_observation",
+            "phase": "observe_screen",
+            "attempt": 2,
+        },
+        {"stage": "retry_attempt", "attempt": 2},
+    ]

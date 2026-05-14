@@ -39,4 +39,6 @@ the planned recovery action such as waiting and re-observing, scrolling a search
 region, retrying another candidate on the next attempt, or aborting with trace.
 The recovery policy layer classifies stale observations, missed targets,
 disabled controls, occluded controls, and transient loading states before
-emitting retry metadata.
+emitting retry metadata. Failed action attempts also take a fresh read-only
+screen observation before retrying, run candidate detection against that
+observation, and attach the chosen recovery path to the trace and final report.

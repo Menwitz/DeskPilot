@@ -337,7 +337,11 @@ def _run_report_markdown(report: RunReport) -> str:
         )
     lines.extend(["", "## Events"])
     for event in report.events:
-        lines.append(f"- `{event.phase}`: {event.message}")
+        recovery_summary = event.metadata.get("recovery_path_summary")
+        suffix = (
+            f" - {recovery_summary}" if isinstance(recovery_summary, str) else ""
+        )
+        lines.append(f"- `{event.phase}`: {event.message}{suffix}")
     return "\n".join(lines) + "\n"
 
 

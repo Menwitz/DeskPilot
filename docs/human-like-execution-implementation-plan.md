@@ -81,7 +81,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Add recovery policies for stale observations, missed targets, disabled
   controls, occluded controls, and transient loading states.
 - [x] Add recovery trees to the task DSL with explicit allowed recovery actions.
-- [ ] Re-observe the screen after each failed attempt and explain the chosen
+- [x] Re-observe the screen after each failed attempt and explain the chosen
   recovery path in the trace.
 - [ ] Add backoff strategies that remain inside configured timing and retry
   limits.

@@ -101,4 +101,6 @@ def test_recovery_policy_constrains_actions_from_task_rule() -> None:
     )
 
     assert constrained.policy.actions == ("wait_for_loading", "abort_with_trace")
+    assert constrained.chosen_action == "wait_for_loading"
+    assert constrained.metadata()["recovery_chosen_action"] == "wait_for_loading"
     assert constrained.metadata()["recovery_actions_constrained"] is True

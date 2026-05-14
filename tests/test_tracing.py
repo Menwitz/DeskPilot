@@ -19,7 +19,7 @@ from desktop_agent.task_dsl import (
     TaskStep,
     VerificationDefinition,
 )
-from desktop_agent.tracing import FileTraceSink
+from desktop_agent.tracing import FileTraceSink, TraceEvent
 
 
 class TraceScreenObserver:
@@ -122,3 +122,37 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert any("entropy_budget" in line for line in action_log)
     assert any("step_timeout_budget" in line for line in action_log)
     assert any("observe_after_action" in line for line in action_log)
+
+
+def test_file_trace_sink_includes_recovery_path_summary_in_markdown(
+    tmp_path: Path,
+) -> None:
+    task = TaskDefinition(
+        name="recovery report fixture",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+    )
+    trace_sink = FileTraceSink()
+    trace_sink.prepare_run(
+        task,
+        RuntimeConfig(trace_root=tmp_path / "traces"),
+    )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="recover",
+            message="retrying step",
+            metadata={
+                "recovery_path_summary": (
+                    "classify transient_loading -> wait_for_loading -> "
+                    "observe_screen attempt 2 -> retry attempt 2"
+                ),
+            },
+        )
+    )
+
+    report = trace_sink.write_final_report("failed")
+
+    assert report.trace_dir is not None
+    final_report = (report.trace_dir / "final-report.md").read_text(encoding="utf-8")
+    assert "classify transient_loading" in final_report
