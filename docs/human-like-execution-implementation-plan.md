@@ -155,7 +155,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Add a safety audit report for every execution-profile run.
 - [x] Document that the feature is not for stealth automation, CAPTCHA bypass,
   bot-detection evasion, credential abuse, or abusive third-party automation.
-- [ ] Add tests proving unsafe profile values and unconfirmed sensitive actions
+- [x] Add tests proving unsafe profile values and unconfirmed sensitive actions
   stop before actuation.
 
 ## Phase 11: Documentation And Rollout

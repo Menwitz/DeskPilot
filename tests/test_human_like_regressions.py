@@ -1,8 +1,15 @@
 from pathlib import Path
 from typing import cast
 
+import pytest
+
 from desktop_agent.actuation import ActionResult
-from desktop_agent.config import ExecutionProfile, RuntimeConfig, StaticConfigLoader
+from desktop_agent.config import (
+    ConfigError,
+    ExecutionProfile,
+    RuntimeConfig,
+    StaticConfigLoader,
+)
 from desktop_agent.perception import (
     CompositePerceptionEngine,
     ConfidenceTargetSelector,
@@ -182,6 +189,58 @@ def test_regression_unconfirmed_step_happens_before_timing_and_actuation() -> No
         "step submit-payment requires explicit confirmation"
     )
     assert actuator.calls == 0
+    assert "execution_timing" not in event_phases(report)
+    assert "execute_action" not in event_phases(report)
+
+
+def test_regression_unsafe_profile_values_stop_before_actuation() -> None:
+    actuator = CountingActuator()
+
+    # Invalid timing bounds are rejected while loading config, before actuation exists.
+    with pytest.raises(ConfigError, match=r"execution_profile\.action_delay_seconds"):
+        run_fixture(
+            actuator=actuator,
+            observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+            perception_engine=SingleCandidatePerceptionEngine(),
+            config=RuntimeConfig(
+                confidence_threshold=0.8,
+                execution_profile=ExecutionProfile(
+                    enabled=True,
+                    action_delay_seconds=(0.3, 0.1),
+                ),
+            ),
+        )
+
+    assert actuator.calls == 0
+
+
+def test_regression_operator_approval_stops_sensitive_step_before_observation() -> None:
+    actuator = CountingActuator()
+    task = fixture_task(
+        TaskStep(
+            id="submit-payment",
+            action="click_text",
+            target="Submit",
+            category="submission",
+        ),
+    )
+    report = run_fixture(
+        task=task,
+        actuator=actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            require_operator_approval=True,
+            execution_profile=enabled_profile(),
+        ),
+    )
+
+    assert report.status == "failed"
+    assert report.steps[0].message == "step submit-payment requires operator approval"
+    assert report.steps[0].metadata["failure_category"] == "safety_stop"
+    assert actuator.calls == 0
+    assert "observe_screen" not in event_phases(report)
     assert "execution_timing" not in event_phases(report)
     assert "execute_action" not in event_phases(report)
 
