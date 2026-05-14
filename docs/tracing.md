@@ -58,6 +58,9 @@ Markdown report prints the path summary on recovery rows.
 Retry timing events and recovery events include bounded-backoff metadata:
 `retry_backoff_strategy`, `retry_index`, `retry_budget`,
 `retry_backoff_fraction`, and `retry_limit_respected`.
+Selection recovery uses the same `recover` event contract. Ambiguous duplicated
+labels keep `selection_blocked: confidence_or_ambiguity_gate` and do not emit a
+retry recovery event.
 
 ## Replay
 

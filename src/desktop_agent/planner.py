@@ -64,6 +64,15 @@ TARGETED_ACTIONS: frozenset[str] = frozenset(
     },
 )
 POLL_INTERVAL_SECONDS = 0.1
+RECOVERABLE_SELECTION_REASONS: frozenset[str] = frozenset(
+    {
+        "stale_observation",
+        "missed_target",
+        "disabled_control",
+        "occluded_control",
+        "transient_loading",
+    },
+)
 
 
 @dataclass(frozen=True)
@@ -429,6 +438,7 @@ class ExecutionEngine:
 
             target = self.target_selector.select(step, candidates, config)
             last_candidate_id = target.id if target else None
+            selection_recovery_policy: RecoveryPolicy | None = None
             selection_metadata: dict[str, object] = _step_metadata(
                 step,
                 candidate_id=last_candidate_id,
@@ -436,27 +446,73 @@ class ExecutionEngine:
                 candidate_source=target.source if target else None,
                 candidate_count=len(candidates),
             )
-            if target is None and candidates:
-                selection_metadata["selection_blocked"] = "confidence_or_ambiguity_gate"
             if target is None:
-                selection_metadata.update(
-                    recovery_policy_for_selection(
-                        observation,
-                        candidates,
-                        target,
-                    ).metadata(),
+                selection_recovery_policy = recovery_policy_for_selection(
+                    observation,
+                    candidates,
+                    target,
                 )
+                selection_metadata.update(selection_recovery_policy.metadata())
+                if candidates and not _selection_retryable(
+                    selection_recovery_policy,
+                    candidates,
+                ):
+                    selection_metadata["selection_blocked"] = (
+                        "confidence_or_ambiguity_gate"
+                    )
             self._record(
                 "select_target",
                 "target selected" if target else "no target selected",
                 selection_metadata,
             )
-            if target is None and candidates and step.action in TARGETED_ACTIONS:
+            if target is None and step.action in TARGETED_ACTIONS:
+                if (
+                    selection_recovery_policy is not None
+                    and attempt < total_attempts
+                    and _selection_retryable(selection_recovery_policy, candidates)
+                ):
+                    retry_reason = _selection_retry_reason(
+                        selection_recovery_policy,
+                        candidates,
+                    )
+                    retry_timing = timing_controller.before_retry(
+                        retry_index=attempt,
+                        retry_budget=retry_budget,
+                        backoff_strategy=selection_recovery_policy.backoff_strategy,
+                    )
+                    recover_metadata = _recovery_metadata(
+                        step,
+                        selection_recovery_policy,
+                        failed_attempt=attempt,
+                        next_attempt=attempt + 1,
+                        retry_reason=retry_reason,
+                        retry_delay_seconds=retry_timing.delay_seconds,
+                    )
+                    recover_metadata.update(_retry_backoff_metadata(retry_timing))
+                    self._record(
+                        "recover",
+                        "retrying target selection",
+                        recover_metadata,
+                    )
+                    if config.execution_profile.enabled:
+                        timing_metadata = retry_timing.metadata()
+                        timing_metadata["step_id"] = step.id
+                        timing_metadata["step_category"] = step_category(step)
+                        timing_metadata["next_attempt"] = attempt + 1
+                        self._record(
+                            "execution_timing",
+                            retry_timing.reason,
+                            timing_metadata,
+                        )
+                    continue
                 return StepExecutionOutcome(
                     self._step_failed(
                         step,
                         attempt,
-                        "target selection blocked by confidence or ambiguity gate",
+                        _selection_retry_reason(
+                            selection_recovery_policy,
+                            candidates,
+                        ),
                         None,
                     ),
                 )
@@ -1069,6 +1125,26 @@ def _recovery_metadata(
         )
     )
     return recovery_metadata
+
+
+def _selection_retryable(
+    policy: RecoveryPolicy,
+    candidates: tuple[ElementCandidate, ...],
+) -> bool:
+    if policy.reason not in RECOVERABLE_SELECTION_REASONS:
+        return False
+    return not (policy.reason == "missed_target" and candidates)
+
+
+def _selection_retry_reason(
+    policy: RecoveryPolicy | None,
+    candidates: tuple[ElementCandidate, ...],
+) -> str:
+    if policy is None:
+        return "target selection failed"
+    if policy.reason == "missed_target" and candidates:
+        return "target selection blocked by confidence or ambiguity gate"
+    return f"target selection failed: {policy.reason}"
 
 
 def _recovery_path_metadata(

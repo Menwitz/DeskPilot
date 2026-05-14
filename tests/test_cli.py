@@ -87,7 +87,22 @@ def test_cli_run_fails_when_platform_actuation_is_unavailable(
     capsys: CaptureFixture[str],
 ) -> None:
     task_path = tmp_path / "task.yaml"
-    write_task(task_path)
+    task_path.write_text(
+        "\n".join(
+            [
+                "name: cli-fixture",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "timeout_seconds: 30",
+                "steps:",
+                "  - id: press-enter",
+                "    action: press_key",
+                "    text: enter",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
 
     status = main(["run", str(task_path), "--allowed-window", "DeskPilot Fixture"])
 

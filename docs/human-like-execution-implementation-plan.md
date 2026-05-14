@@ -85,7 +85,7 @@ evasion, or pretending to be a person where automation is not allowed.
   recovery path in the trace.
 - [x] Add backoff strategies that remain inside configured timing and retry
   limits.
-- [ ] Add tests for stale UI, duplicated labels, delayed controls, and
+- [x] Add tests for stale UI, duplicated labels, delayed controls, and
   disappearing targets.
 - [ ] Add failure reports that distinguish perception failure, selection
   ambiguity, safety stop, verification failure, and actuation failure.

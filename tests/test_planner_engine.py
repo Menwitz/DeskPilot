@@ -10,7 +10,12 @@ from desktop_agent.perception import (
 )
 from desktop_agent.planner import ExecutionEngine
 from desktop_agent.safety import LocalSafetyPolicy
-from desktop_agent.screen import Bounds, ScreenObservation, StaticScreenObserver
+from desktop_agent.screen import (
+    Bounds,
+    ScreenObservation,
+    ScreenObserver,
+    StaticScreenObserver,
+)
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
     StaticTaskLoader,
@@ -51,6 +56,36 @@ class SequencePerceptionEngine(PerceptionEngine):
         index = min(self.calls, len(self._responses) - 1)
         self.calls += 1
         return self._responses[index]
+
+
+class SequenceScreenObserver:
+    def __init__(self, observations: tuple[ScreenObservation, ...]) -> None:
+        self._observations = observations
+        self.calls = 0
+
+    def observe(self, config: RuntimeConfig) -> ScreenObservation:
+        _ = config
+        index = min(self.calls, len(self._observations) - 1)
+        self.calls += 1
+        return self._observations[index]
+
+
+class SequenceActuator:
+    def __init__(self, results: tuple[ActionResult, ...]) -> None:
+        self._results = results
+        self.calls = 0
+
+    def execute(
+        self,
+        step: TaskStep,
+        target: ElementCandidate | None,
+        observation: ScreenObservation,
+        config: RuntimeConfig,
+    ) -> ActionResult:
+        _ = step, target, observation, config
+        index = min(self.calls, len(self._results) - 1)
+        self.calls += 1
+        return self._results[index]
 
 
 class AdvancingActuator:
@@ -267,6 +302,160 @@ def test_execution_engine_wait_for_polls_until_candidate_is_visible() -> None:
     assert "recover" in {event.phase for event in report.events}
 
 
+def test_execution_engine_retries_stale_ui_selection_before_action() -> None:
+    task = TaskDefinition(
+        name="stale-ui",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(id="click-submit", action="click_text", target="Submit", retry=1),
+        ),
+    )
+    trace_sink = MemoryTraceSink()
+    actuator = SequenceActuator((ActionResult(True, "clicked"),))
+    engine = _engine(
+        task,
+        perception=SequencePerceptionEngine(((), _candidate_tuple("Submit"))),
+        actuator=actuator,
+        trace_sink=trace_sink,
+        screen_observer=SequenceScreenObserver(
+            (
+                ScreenObservation(
+                    active_window_title="DeskPilot Fixture",
+                    warnings=("stale snapshot",),
+                ),
+                ScreenObservation(active_window_title="DeskPilot Fixture"),
+            ),
+        ),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    recover = next(event for event in report.events if event.phase == "recover")
+    assert report.status == "passed"
+    assert report.steps[0].attempts == 2
+    assert actuator.calls == 1
+    assert recover.metadata["recovery_reason"] == "stale_observation"
+    assert recover.metadata["recovery_chosen_action"] == "reobserve_screen"
+
+
+def test_execution_engine_retries_delayed_disabled_control() -> None:
+    task = TaskDefinition(
+        name="delayed-control",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(id="click-submit", action="click_text", target="Submit", retry=1),
+        ),
+    )
+    trace_sink = MemoryTraceSink()
+    actuator = SequenceActuator((ActionResult(True, "clicked"),))
+    engine = _engine(
+        task,
+        perception=SequencePerceptionEngine(
+            (
+                _candidate_tuple("Submit", enabled=False),
+                _candidate_tuple("Submit"),
+            ),
+        ),
+        actuator=actuator,
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    recover = next(event for event in report.events if event.phase == "recover")
+    assert report.status == "passed"
+    assert report.steps[0].attempts == 2
+    assert actuator.calls == 1
+    assert recover.metadata["recovery_reason"] == "disabled_control"
+    assert recover.metadata["recovery_backoff_strategy"] == "bounded_exponential"
+
+
+def test_execution_engine_reports_duplicated_labels_as_ambiguity_gate() -> None:
+    task = TaskDefinition(
+        name="duplicated-labels",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(id="click-submit", action="click_text", target="Submit", retry=1),
+        ),
+    )
+    trace_sink = MemoryTraceSink()
+    actuator = SequenceActuator((ActionResult(True, "should not execute"),))
+    engine = _engine(
+        task,
+        perception=SequencePerceptionEngine(
+            (
+                (
+                    _candidate("candidate-1", "Submit"),
+                    _candidate("candidate-2", "Submit", x=220, confidence=0.94),
+                ),
+            ),
+        ),
+        actuator=actuator,
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    selection = next(event for event in report.events if event.phase == "select_target")
+    assert report.status == "failed"
+    assert report.steps[0].message == (
+        "target selection blocked by confidence or ambiguity gate"
+    )
+    assert selection.metadata["selection_blocked"] == "confidence_or_ambiguity_gate"
+    assert actuator.calls == 0
+
+
+def test_execution_engine_recovers_when_verification_target_disappears() -> None:
+    task = TaskDefinition(
+        name="disappearing-target",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="click-submit",
+                action="click_text",
+                target="Submit",
+                retry=1,
+                verify=VerificationDefinition(type="visible_text", text="Success"),
+            ),
+        ),
+    )
+    trace_sink = MemoryTraceSink()
+    actuator = SequenceActuator(
+        (
+            ActionResult(True, "clicked"),
+            ActionResult(True, "clicked"),
+        )
+    )
+    engine = _engine(
+        task,
+        perception=SequencePerceptionEngine(
+            (
+                _candidate_tuple("Submit"),
+                (),
+                (),
+                _candidate_tuple("Submit"),
+                _candidate_tuple("Success"),
+            ),
+        ),
+        actuator=actuator,
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    recover = next(event for event in report.events if event.phase == "recover")
+    assert report.status == "passed"
+    assert report.steps[0].attempts == 2
+    assert actuator.calls == 2
+    assert "recover_candidates" in {event.phase for event in report.events}
+    assert recover.metadata["recovery_reason"] == "missed_target"
+    assert recover.metadata["recovery_chosen_action"] == "wait_and_reobserve"
+
+
 def test_execution_engine_scroll_until_scrolls_search_region() -> None:
     task = TaskDefinition(
         name="scroll-until",
@@ -376,6 +565,7 @@ def _engine(
     actuator: Actuator | None = None,
     clock: FakeClock | None = None,
     trace_sink: MemoryTraceSink | None = None,
+    screen_observer: ScreenObserver | None = None,
 ) -> ExecutionEngine:
     return ExecutionEngine(
         config_loader=StaticConfigLoader(
@@ -385,7 +575,8 @@ def _engine(
         task_validator=BasicTaskValidator(),
         trace_sink=trace_sink or MemoryTraceSink(),
         safety_policy=LocalSafetyPolicy(),
-        screen_observer=StaticScreenObserver(
+        screen_observer=screen_observer
+        or StaticScreenObserver(
             ScreenObservation(active_window_title="DeskPilot Fixture"),
         ),
         perception_engine=CompositePerceptionEngine(
@@ -397,13 +588,30 @@ def _engine(
     )
 
 
-def _candidate_tuple(label: str) -> tuple[ElementCandidate, ...]:
-    return (
-        ElementCandidate(
-            id=f"candidate-{label}",
-            source="uia",
-            label=label,
-            bounds=Bounds(x=10, y=20, width=100, height=30),
-            confidence=0.95,
-        ),
+def _candidate_tuple(
+    label: str,
+    *,
+    enabled: bool = True,
+    visible: bool = True,
+) -> tuple[ElementCandidate, ...]:
+    return (_candidate(f"candidate-{label}", label, enabled=enabled, visible=visible),)
+
+
+def _candidate(
+    candidate_id: str,
+    label: str,
+    *,
+    x: int = 10,
+    confidence: float = 0.95,
+    enabled: bool = True,
+    visible: bool = True,
+) -> ElementCandidate:
+    return ElementCandidate(
+        id=candidate_id,
+        source="uia",
+        label=label,
+        bounds=Bounds(x=x, y=20, width=100, height=30),
+        confidence=confidence,
+        enabled=enabled,
+        visible=visible,
     )

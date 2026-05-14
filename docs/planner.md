@@ -44,3 +44,8 @@ screen observation before retrying, run candidate detection against that
 observation, and attach the chosen recovery path to the trace and final report.
 Retry waits use bounded backoff from the recovery reason and are sampled within
 the configured retry delay range and retry budget.
+Target selection failures are split into recoverable UI states and true
+ambiguity. Stale observations, missing targets with no candidates, disabled
+controls, occluded controls, and loading states can retry inside the step retry
+budget. Duplicated visible labels and low-confidence candidates still stop at
+the ambiguity gate before any desktop action.
