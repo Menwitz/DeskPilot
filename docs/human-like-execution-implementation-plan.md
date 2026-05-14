@@ -111,7 +111,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Add a regression test proving unconfirmed sensitive steps stop before
   timing traces and actuation.
 - [x] Add a regression test proving seeded timing decisions are reproducible.
-- [ ] Add regression tests for real elapsed waits once desktop actuation consumes
+- [x] Add regression tests for real elapsed waits once desktop actuation consumes
   timing decisions.
 - [ ] Add regression tests proving pointer paths stay inside allowed window and
   monitor regions.

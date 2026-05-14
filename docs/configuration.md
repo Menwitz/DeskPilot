@@ -99,6 +99,9 @@ text, allowed windows, maximum steps, timeouts, or retry budgets.
 - Enabled action timing is target-aware inside the same bounds: selected target
   distance, selected target size, and action type bias where the sampled delay
   lands between the configured lower and upper limits.
+- Enabled action and retry timing is consumed by the planner clock before
+  desktop actuation and before retry loops continue. Disabled profiles still
+  produce zero-second timing decisions.
 - Enabled action and retry timing also records Keystroke-Level-Model style
   operator metadata for mental pauses, system waits, keying, pointing, and
   homing between keyboard and pointer modes. These operators can bias where a

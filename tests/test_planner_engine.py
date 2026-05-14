@@ -185,6 +185,59 @@ def test_execution_engine_rejects_impossible_step_timing_budget() -> None:
     assert budget_event.metadata["fits_timeout"] is False
 
 
+def test_execution_engine_consumes_profile_timing_delays() -> None:
+    clock = FakeClock()
+    trace_sink = MemoryTraceSink()
+    task = TaskDefinition(
+        name="timing-consumption",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(id="click-submit", action="click_text", target="Submit", retry=1),
+        ),
+    )
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=ExecutionProfile(
+                enabled=True,
+                action_delay_seconds=(0.2, 0.2),
+                retry_delay_seconds=(0.3, 0.3),
+                random_seed=1,
+            ),
+        ),
+        perception=SequencePerceptionEngine(
+            (
+                _candidate_tuple("Submit"),
+                _candidate_tuple("Submit"),
+                _candidate_tuple("Submit"),
+            ),
+        ),
+        actuator=SequenceActuator(
+            (
+                ActionResult(False, "click failed"),
+                ActionResult(True, "clicked"),
+            ),
+        ),
+        clock=clock,
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    timing_events = [
+        event for event in report.events if event.phase == "execution_timing"
+    ]
+    assert report.status == "passed"
+    assert round(clock.now, 2) == 0.7
+    assert [event.metadata["delay_seconds"] for event in timing_events] == [
+        0.2,
+        0.3,
+        0.2,
+    ]
+
+
 def test_execution_engine_selects_safe_action_variant() -> None:
     task = TaskDefinition(
         name="action-variant",

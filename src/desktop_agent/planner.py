@@ -527,6 +527,7 @@ class ExecutionEngine:
                             retry_timing.reason,
                             timing_metadata,
                         )
+                    self._consume_timing_delay(retry_timing)
                     continue
                 return StepExecutionOutcome(
                     self._step_failed(
@@ -583,6 +584,17 @@ class ExecutionEngine:
                 metadata["step_category"] = step_category(step)
                 metadata["attempt"] = attempt
                 self._record("execution_timing", action_timing.reason, metadata)
+            self._consume_timing_delay(action_timing)
+            if self._deadline_expired(step_deadline):
+                return StepExecutionOutcome(
+                    self._step_failed(
+                        step,
+                        attempt,
+                        "step exceeded timeout",
+                        last_candidate_id,
+                        failure_category="timeout",
+                    ),
+                )
 
             action_count += 1
             if action_count > config.max_steps:
@@ -705,6 +717,7 @@ class ExecutionEngine:
                         retry_timing.reason,
                         timing_metadata,
                     )
+                self._consume_timing_delay(retry_timing)
 
         return StepExecutionOutcome(
             self._step_failed(
@@ -867,6 +880,17 @@ class ExecutionEngine:
                 metadata["step_category"] = step_category(step)
                 metadata["attempt"] = attempt
                 self._record("execution_timing", action_timing.reason, metadata)
+            self._consume_timing_delay(action_timing)
+            if self._deadline_expired(step_deadline):
+                return StepExecutionOutcome(
+                    self._step_failed(
+                        step,
+                        attempt,
+                        "scroll_until exceeded timeout",
+                        None,
+                        failure_category="timeout",
+                    ),
+                )
 
             action_result = self.actuator.execute(step, None, observation, config)
             self._record(
@@ -1072,6 +1096,10 @@ class ExecutionEngine:
 
     def _deadline_expired(self, deadline: float) -> bool:
         return self.clock.monotonic() >= deadline
+
+    def _consume_timing_delay(self, decision: TimingDecision) -> None:
+        if decision.delay_seconds > 0:
+            self.clock.sleep(decision.delay_seconds)
 
     def _step_passed(
         self,
