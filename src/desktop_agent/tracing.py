@@ -213,6 +213,9 @@ def _execution_profile_to_dict(profile: ExecutionProfile) -> dict[str, object]:
         "enabled": profile.enabled,
         "action_delay_seconds": list(profile.action_delay_seconds),
         "retry_delay_seconds": list(profile.retry_delay_seconds),
+        "action_delay_distribution": profile.action_delay_distribution,
+        "retry_delay_distribution": profile.retry_delay_distribution,
+        "action_variant_distribution": profile.action_variant_distribution,
         "hesitation_probability": profile.hesitation_probability,
         "movement_smoothness": profile.movement_smoothness,
         "random_seed": profile.random_seed,
@@ -245,6 +248,7 @@ def _step_to_dict(step: TaskStep) -> dict[str, object]:
         "on_failure": step.on_failure,
         "requires_confirmation": step.requires_confirmation,
         "entropy_budget": step.entropy_budget,
+        "safe_action_variants": list(step.safe_action_variants),
     }
 
 

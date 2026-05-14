@@ -136,6 +136,62 @@ def test_task_dsl_rejects_invalid_entropy_budgets(tmp_path: Path) -> None:
         validate_task(task_path)
 
 
+def test_task_dsl_accepts_safe_action_variants_for_equivalent_actions(
+    tmp_path: Path,
+) -> None:
+    task_path = tmp_path / "task.yaml"
+    task_path.write_text(
+        "\n".join(
+            [
+                "name: safe-variant",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "timeout_seconds: 30",
+                "steps:",
+                "  - id: click-submit",
+                "    action: click_text",
+                "    target: Submit",
+                "    safe_action_variants:",
+                "      - click_uia",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    task = YamlTaskLoader().load(task_path)
+    BasicTaskValidator().validate(task, RuntimeConfig())
+
+    assert task.steps[0].safe_action_variants == ("click_uia",)
+
+
+def test_task_dsl_rejects_non_equivalent_safe_action_variants(
+    tmp_path: Path,
+) -> None:
+    task_path = tmp_path / "task.yaml"
+    task_path.write_text(
+        "\n".join(
+            [
+                "name: bad-variant",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "timeout_seconds: 30",
+                "steps:",
+                "  - id: click-submit",
+                "    action: click_text",
+                "    target: Submit",
+                "    safe_action_variants:",
+                "      - type_text",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(TaskValidationError, match="safe_action_variants"):
+        validate_task(task_path)
+
+
 def test_step_category_uses_explicit_or_action_default() -> None:
     assert step_category(TaskStep(id="submit", action="click_text")) == "navigation"
     assert (

@@ -204,6 +204,24 @@ class StepTimingBudget:
         }
 
 
+@dataclass(frozen=True)
+class ActionVariantDecision:
+    """Deterministic choice among task-author-approved equivalent actions."""
+
+    selected_action: str
+    available_actions: tuple[str, ...]
+    distribution: str
+    randomized: bool
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "selected_action": self.selected_action,
+            "available_action_variants": list(self.available_actions),
+            "action_variant_distribution": self.distribution,
+            "action_variant_randomized": self.randomized,
+        }
+
+
 class ExecutionTimingController:
     """Samples safe timing values without changing task intent or action order."""
 
@@ -224,6 +242,23 @@ class ExecutionTimingController:
             self._profile.retry_delay_seconds,
             None,
             (KLMOperator("system_wait", 1, KLM_OPERATOR_SECONDS["system_wait"]),),
+        )
+
+    def select_action_variant(self, step: TaskStep) -> ActionVariantDecision:
+        available_actions = _available_action_variants(step)
+        randomized = self._profile.enabled and len(available_actions) > 1
+        selected_index = 0
+        if randomized:
+            selected_index = self._sampler.index(
+                "action_variant",
+                len(available_actions),
+                self._profile.action_variant_distribution,
+            )
+        return ActionVariantDecision(
+            selected_action=available_actions[selected_index],
+            available_actions=available_actions,
+            distribution=self._profile.action_variant_distribution,
+            randomized=randomized,
         )
 
     def _sample(
@@ -260,7 +295,10 @@ class ExecutionTimingController:
             # range, so the decision never exceeds configured bounds.
             sample_lower = lower + ((upper - lower) / 2)
 
-        random_fraction = self._sampler.random(f"timing.{phase}.fraction")
+        random_fraction = self._sampler.fraction(
+            f"timing.{phase}.fraction",
+            self._distribution_for_phase(phase),
+        )
         timing_fraction = random_fraction
         if phase == "action" and context is not None:
             timing_fraction = _clamp(
@@ -297,6 +335,11 @@ class ExecutionTimingController:
         if context.input_mode is not None:
             self._last_input_mode = context.input_mode
         return operators
+
+    def _distribution_for_phase(self, phase: str) -> str:
+        if phase == "retry":
+            return self._profile.retry_delay_distribution
+        return self._profile.action_delay_distribution
 
 
 def build_action_timing_context(
@@ -373,6 +416,14 @@ def _retry_timing_slots(step: TaskStep, retry_budget: int) -> int:
     if step.action in {"branch_if_visible", "scroll_until", "wait_for"}:
         return 0
     return retry_budget
+
+
+def _available_action_variants(step: TaskStep) -> tuple[str, ...]:
+    variants = [step.action]
+    for variant in step.safe_action_variants:
+        if variant not in variants:
+            variants.append(variant)
+    return tuple(variants)
 
 
 def _build_klm_operators(

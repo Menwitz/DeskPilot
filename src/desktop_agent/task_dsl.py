@@ -71,6 +71,11 @@ DEFAULT_CATEGORY_BY_ACTION: dict[str, str] = {
     "click_uia": "navigation",
 }
 
+SAFE_ACTION_VARIANTS_BY_ACTION: dict[str, frozenset[str]] = {
+    "click_text": frozenset({"click_text", "click_uia"}),
+    "click_uia": frozenset({"click_text", "click_uia"}),
+}
+
 
 @dataclass(frozen=True)
 class VerificationDefinition:
@@ -108,6 +113,7 @@ class TaskStep:
     requires_confirmation: bool = False
     category: str | None = None
     entropy_budget: float | None = None
+    safe_action_variants: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -218,6 +224,7 @@ class BasicTaskValidator(TaskValidator):
                         f"step {step.id} entropy_budget must not be negative"
                     )
                 explicit_step_entropy += step.entropy_budget
+            errors.extend(_validate_safe_action_variants(step))
             if step.retry is not None and step.retry < 0:
                 errors.append(f"step {step.id} retry must not be negative")
             if step.timeout_seconds is not None and step.timeout_seconds <= 0:
@@ -260,6 +267,11 @@ def _step_from_mapping(value: object, task_dir: Path) -> TaskStep:
         requires_confirmation=_optional_bool(data.get("requires_confirmation")),
         category=_optional_str(data.get("category")),
         entropy_budget=_optional_float(data.get("entropy_budget"), "entropy_budget"),
+        safe_action_variants=_optional_string_tuple(
+            data.get("safe_action_variants"),
+            "safe_action_variants",
+        )
+        or (),
     )
 
 
@@ -320,6 +332,24 @@ def _validate_verification_shape(step: TaskStep) -> list[str]:
     return errors
 
 
+def _validate_safe_action_variants(step: TaskStep) -> list[str]:
+    if not step.safe_action_variants:
+        return []
+    allowed = SAFE_ACTION_VARIANTS_BY_ACTION.get(step.action)
+    if allowed is None:
+        return [f"step {step.id} does not support safe_action_variants"]
+    errors: list[str] = []
+    for variant in step.safe_action_variants:
+        if variant not in SUPPORTED_ACTIONS:
+            errors.append(f"unknown safe action variant: {variant}")
+        elif variant not in allowed:
+            errors.append(
+                f"step {step.id} safe_action_variants must be equivalent to "
+                f"{step.action}",
+            )
+    return errors
+
+
 def step_category(step: TaskStep) -> str:
     """Return an explicit step category or a stable action-based default."""
 
@@ -335,12 +365,19 @@ def _mapping(value: object, message: str) -> Mapping[str, object]:
 
 
 def _string_tuple(value: object) -> tuple[str, ...]:
+    return _optional_string_tuple(value, "allowed_windows") or ()
+
+
+def _optional_string_tuple(
+    value: object,
+    field_name: str,
+) -> tuple[str, ...] | None:
     if value in (None, ()):
-        return ()
+        return None
     if not isinstance(value, list):
-        raise TaskValidationError("allowed_windows must be a list of strings")
+        raise TaskValidationError(f"{field_name} must be a list of strings")
     if not all(isinstance(item, str) for item in value):
-        raise TaskValidationError("allowed_windows must be a list of strings")
+        raise TaskValidationError(f"{field_name} must be a list of strings")
     return tuple(value)
 
 

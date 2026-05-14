@@ -58,6 +58,22 @@ class SeededSampler:
         self._record(label, value, lower, upper)
         return value
 
+    def fraction(self, label: str, distribution: str) -> float:
+        if distribution == "uniform":
+            return self.random(label)
+        if distribution == "center_weighted":
+            first = self.random(f"{label}.center_a")
+            second = self.random(f"{label}.center_b")
+            return (first + second) / 2
+        raise ValueError(f"unsupported sampling distribution: {distribution}")
+
+    def index(self, label: str, count: int, distribution: str) -> int:
+        if count <= 0:
+            raise ValueError("sample count must be greater than zero")
+        if count == 1:
+            return 0
+        return min(count - 1, int(self.fraction(label, distribution) * count))
+
     def _record(
         self,
         label: str,

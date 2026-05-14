@@ -159,6 +159,64 @@ def test_execution_persona_biases_timing_inside_configured_bounds() -> None:
     assert cast(float, careful.metadata()["persona_timing_bias"]) > 0
 
 
+def test_distribution_choices_affect_action_and_retry_sampling() -> None:
+    uniform = ExecutionTimingController(
+        ExecutionProfile(
+            enabled=True,
+            action_delay_seconds=(0.1, 0.9),
+            retry_delay_seconds=(0.1, 0.9),
+            action_delay_distribution="uniform",
+            retry_delay_distribution="uniform",
+            hesitation_probability=0.0,
+            random_seed=123,
+        ),
+    )
+    center_weighted = ExecutionTimingController(
+        ExecutionProfile(
+            enabled=True,
+            action_delay_seconds=(0.1, 0.9),
+            retry_delay_seconds=(0.1, 0.9),
+            action_delay_distribution="center_weighted",
+            retry_delay_distribution="center_weighted",
+            hesitation_probability=0.0,
+            random_seed=123,
+        ),
+    )
+
+    uniform_action = uniform.before_action()
+    uniform_retry = uniform.before_retry()
+    center_action = center_weighted.before_action()
+    center_retry = center_weighted.before_retry()
+
+    assert 0.1 <= center_action.delay_seconds <= 0.9
+    assert 0.1 <= center_retry.delay_seconds <= 0.9
+    assert uniform_action.delay_seconds != center_action.delay_seconds
+    assert uniform_retry.delay_seconds != center_retry.delay_seconds
+
+
+def test_action_variant_decision_uses_configured_distribution() -> None:
+    controller = ExecutionTimingController(
+        ExecutionProfile(
+            enabled=True,
+            action_variant_distribution="uniform",
+            random_seed=2,
+        ),
+    )
+
+    decision = controller.select_action_variant(
+        TaskStep(
+            id="click-submit",
+            action="click_text",
+            target="Submit",
+            safe_action_variants=("click_uia",),
+        ),
+    )
+
+    assert decision.selected_action == "click_uia"
+    assert decision.available_actions == ("click_text", "click_uia")
+    assert decision.metadata()["action_variant_randomized"] is True
+
+
 def test_klm_operators_capture_keying_pointing_and_homing() -> None:
     profile = ExecutionProfile(
         enabled=True,

@@ -9,6 +9,7 @@ from typing import Protocol, cast
 import yaml
 
 EXECUTION_PERSONAS: frozenset[str] = frozenset({"careful", "normal", "fast"})
+SAMPLING_DISTRIBUTIONS: frozenset[str] = frozenset({"uniform", "center_weighted"})
 
 
 @dataclass(frozen=True)
@@ -19,6 +20,9 @@ class ExecutionProfile:
     enabled: bool = False
     action_delay_seconds: tuple[float, float] = (0.0, 0.0)
     retry_delay_seconds: tuple[float, float] = (0.0, 0.0)
+    action_delay_distribution: str = "uniform"
+    retry_delay_distribution: str = "uniform"
+    action_variant_distribution: str = "uniform"
     hesitation_probability: float = 0.0
     movement_smoothness: float = 0.0
     random_seed: int | None = None
@@ -301,6 +305,21 @@ def _optional_execution_profile(
             "retry_delay_seconds",
             defaults.retry_delay_seconds,
         ),
+        action_delay_distribution=_optional_str_with_default(
+            profile,
+            "action_delay_distribution",
+            defaults.action_delay_distribution,
+        ),
+        retry_delay_distribution=_optional_str_with_default(
+            profile,
+            "retry_delay_distribution",
+            defaults.retry_delay_distribution,
+        ),
+        action_variant_distribution=_optional_str_with_default(
+            profile,
+            "action_variant_distribution",
+            defaults.action_variant_distribution,
+        ),
         hesitation_probability=_optional_float_with_default(
             profile,
             "hesitation_probability",
@@ -378,6 +397,21 @@ def _validate_execution_profile(profile: ExecutionProfile) -> list[str]:
     errors: list[str] = []
     if profile.persona not in EXECUTION_PERSONAS:
         errors.append("execution_profile.persona must be careful, normal, or fast")
+    if profile.action_delay_distribution not in SAMPLING_DISTRIBUTIONS:
+        errors.append(
+            "execution_profile.action_delay_distribution must be uniform "
+            "or center_weighted",
+        )
+    if profile.retry_delay_distribution not in SAMPLING_DISTRIBUTIONS:
+        errors.append(
+            "execution_profile.retry_delay_distribution must be uniform "
+            "or center_weighted",
+        )
+    if profile.action_variant_distribution not in SAMPLING_DISTRIBUTIONS:
+        errors.append(
+            "execution_profile.action_variant_distribution must be uniform "
+            "or center_weighted",
+        )
     errors.extend(
         _validate_seconds_pair(
             profile.action_delay_seconds,

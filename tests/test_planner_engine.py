@@ -150,6 +150,48 @@ def test_execution_engine_rejects_impossible_step_timing_budget() -> None:
     assert budget_event.metadata["fits_timeout"] is False
 
 
+def test_execution_engine_selects_safe_action_variant() -> None:
+    task = TaskDefinition(
+        name="action-variant",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="click-submit",
+                action="click_text",
+                target="Submit",
+                safe_action_variants=("click_uia",),
+            ),
+        ),
+    )
+    trace_sink = MemoryTraceSink()
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=ExecutionProfile(
+                enabled=True,
+                action_variant_distribution="uniform",
+                random_seed=2,
+            ),
+        ),
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    variant_event = next(
+        event for event in trace_sink.events if event.phase == "action_variant"
+    )
+    assert report.status == "passed"
+    assert report.steps[0].action == "click_uia"
+    assert variant_event.metadata["selected_action"] == "click_uia"
+    assert variant_event.metadata["available_action_variants"] == [
+        "click_text",
+        "click_uia",
+    ]
+
+
 def test_execution_engine_enforces_task_level_timeout() -> None:
     clock = FakeClock()
     task = TaskDefinition(

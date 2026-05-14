@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Protocol
 
@@ -333,6 +333,16 @@ class ExecutionEngine:
                     None,
                 ),
             )
+
+        variant_decision = timing_controller.select_action_variant(step)
+        if step.safe_action_variants:
+            self._record(
+                "action_variant",
+                "safe action variant selected",
+                _step_metadata(step, **variant_decision.metadata()),
+            )
+        if variant_decision.selected_action != step.action:
+            step = replace(step, action=variant_decision.selected_action)
 
         if step.action == "wait_for":
             return self._execute_wait_for(step, config, task_deadline)

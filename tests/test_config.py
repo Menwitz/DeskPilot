@@ -32,6 +32,9 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
                 "  enabled: true",
                 "  action_delay_seconds: [0.1, 0.3]",
                 "  retry_delay_seconds: [0.5, 1.5]",
+                "  action_delay_distribution: center_weighted",
+                "  retry_delay_distribution: uniform",
+                "  action_variant_distribution: center_weighted",
                 "  hesitation_probability: 0.25",
                 "  movement_smoothness: 0.7",
                 "  random_seed: 7",
@@ -63,6 +66,9 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
     assert resolved.execution_profile.enabled is True
     assert resolved.execution_profile.action_delay_seconds == (0.1, 0.3)
     assert resolved.execution_profile.retry_delay_seconds == (0.5, 1.5)
+    assert resolved.execution_profile.action_delay_distribution == "center_weighted"
+    assert resolved.execution_profile.retry_delay_distribution == "uniform"
+    assert resolved.execution_profile.action_variant_distribution == "center_weighted"
     assert resolved.execution_profile.hesitation_probability == 0.25
     assert resolved.execution_profile.movement_smoothness == 0.7
     assert resolved.execution_profile.random_seed == 7
@@ -133,6 +139,14 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
                 execution_profile=ExecutionProfile(persona="reckless"),
             ),
             "execution_profile.persona",
+        ),
+        (
+            ConfigOverrides(
+                execution_profile=ExecutionProfile(
+                    action_delay_distribution="random_walk",
+                ),
+            ),
+            "execution_profile.action_delay_distribution",
         ),
     ],
 )

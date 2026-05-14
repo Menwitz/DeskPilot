@@ -31,6 +31,9 @@ execution_profile:
   enabled: false
   action_delay_seconds: [0.0, 0.0]
   retry_delay_seconds: [0.0, 0.0]
+  action_delay_distribution: uniform
+  retry_delay_distribution: uniform
+  action_variant_distribution: uniform
   hesitation_probability: 0.0
   movement_smoothness: 0.0
   random_seed: null
@@ -55,6 +58,9 @@ config:
     enabled: true
     action_delay_seconds: [0.05, 0.25]
     retry_delay_seconds: [0.25, 1.0]
+    action_delay_distribution: center_weighted
+    retry_delay_distribution: uniform
+    action_variant_distribution: uniform
     hesitation_probability: 0.1
     movement_smoothness: 0.6
 steps:
@@ -77,6 +83,10 @@ text, allowed windows, maximum steps, timeouts, or retry budgets.
   pre-action timing decision.
 - `retry_delay_seconds` sets the inclusive lower and upper bounds for retry
   pacing.
+- `action_delay_distribution`, `retry_delay_distribution`, and
+  `action_variant_distribution` can be `uniform` or `center_weighted`.
+  Distribution choices only affect where a sampled timing value or approved
+  safe action variant lands inside an already validated option set.
 - Per-step timeout budgeting uses the upper action and retry delay bounds, the
   step retry budget, and the step timeout. DeskPilot fails a step before
   desktop action when the configured timeout cannot fit the planned waits.

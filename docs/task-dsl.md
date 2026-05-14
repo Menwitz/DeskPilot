@@ -24,6 +24,8 @@ steps:
     target: "Submit"
     category: submission
     entropy_budget: 0.5
+    safe_action_variants:
+      - click_uia
     requires_confirmation: true
     verify:
       type: visible_text
@@ -81,6 +83,9 @@ Supported verification types:
 - `retry` overrides the per-step retry budget.
 - `entropy_budget` reserves part of the task's bounded randomness budget for
   this step. Later entropy-controlled runtime work consumes this checked value.
+- `safe_action_variants` lists task-author-approved equivalent actions that may
+  be selected by the execution profile. Today this is limited to the conservative
+  `click_text` / `click_uia` equivalence class.
 - `on_failure` names a future recovery or branch target.
 - `requires_confirmation` blocks the step unless its ID is explicitly confirmed
   in runtime configuration or with `--confirm-step`.
@@ -138,6 +143,8 @@ steps:
     target: Submit
     category: submission
     entropy_budget: 1.0
+    safe_action_variants:
+      - click_uia
     requires_confirmation: true
     verify:
       type: visible_text

@@ -58,3 +58,5 @@ changing the task's selected actions. Entropy budget events record task-level
 and step-level randomness allocations before later sampling logic can consume
 them. Bounded random decisions flow through a shared seeded sampler so timing
 and actuation choices can be replayed deterministically when a seed is set.
+Distribution choices are constrained to timing/retry sampling and explicitly
+approved safe action variants.
