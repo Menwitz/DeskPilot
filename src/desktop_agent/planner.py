@@ -12,6 +12,7 @@ from desktop_agent.perception import (
     ElementCandidate,
     PerceptionEngine,
     TargetSelector,
+    candidate_ranking_metadata,
 )
 from desktop_agent.safety import SafetyPolicy
 from desktop_agent.screen import ScreenObservation, ScreenObserver
@@ -138,10 +139,17 @@ class ExecutionEngine:
             )
 
             candidates = self.perception_engine.detect(step, observation, config)
+            detection_metadata = {
+                "step_id": step.id,
+                "candidate_count": len(candidates),
+            }
+            detection_metadata.update(
+                candidate_ranking_metadata(step, candidates, config),
+            )
             self._record(
                 "detect_candidates",
                 "candidate search completed",
-                {"step_id": step.id, "candidate_count": len(candidates)},
+                detection_metadata,
             )
 
             target = self.target_selector.select(step, candidates, config)

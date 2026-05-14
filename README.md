@@ -60,6 +60,7 @@ until real actuation adapters are implemented.
 
 - [Project definition](docs/project-definition.md)
 - [Architecture](docs/architecture.md)
+- [Candidate Fusion](docs/candidate-fusion.md)
 - [Computer Vision](docs/computer-vision.md)
 - [Configuration](docs/configuration.md)
 - [OCR](docs/ocr.md)

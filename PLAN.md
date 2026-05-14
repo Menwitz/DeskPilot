@@ -192,21 +192,21 @@
 
 ## 10. Candidate Fusion
 
-- [ ] Define shared candidate model:
-  - [ ] `id`
-  - [ ] `source`
-  - [ ] `label`
-  - [ ] `bounds`
-  - [ ] `confidence`
-  - [ ] `visible`
-  - [ ] `enabled`
-  - [ ] `metadata`
-- [ ] Merge candidates from UIA, OCR, and template matching.
-- [ ] Deduplicate overlapping candidates.
-- [ ] Rank candidates by source reliability, confidence, visibility, and target match quality.
-- [ ] Reject ambiguous candidates unless the task provides a region or selector.
-- [ ] Include candidate ranking in trace logs.
-- [ ] Add unit tests for candidate ranking, deduplication, and ambiguity rejection.
+- [x] Define shared candidate model:
+  - [x] `id`
+  - [x] `source`
+  - [x] `label`
+  - [x] `bounds`
+  - [x] `confidence`
+  - [x] `visible`
+  - [x] `enabled`
+  - [x] `metadata`
+- [x] Merge candidates from UIA, OCR, and template matching.
+- [x] Deduplicate overlapping candidates.
+- [x] Rank candidates by source reliability, confidence, visibility, and target match quality.
+- [x] Reject ambiguous candidates unless the task provides a region or selector.
+- [x] Include candidate ranking in trace logs.
+- [x] Add unit tests for candidate ranking, deduplication, and ambiguity rejection.
 
 ## 11. Actuation Layer
 
