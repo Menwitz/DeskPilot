@@ -265,8 +265,16 @@ def _run_benchmark(args: argparse.Namespace) -> int:
     print(f"iterations: {len(report.runs)}")
     print(f"metrics: {report.metrics_path}")
     print(f"variance: {report.variance_report_path}")
+    print(f"acceptance: {report.acceptance.status}")
+    for failure in report.acceptance.failures:
+        print(f"acceptance failure: {failure}")
     print(f"report: {report.report_path}")
-    return 0 if all(run.status == "passed" for run in report.runs) else 1
+    return (
+        0
+        if all(run.status == "passed" for run in report.runs)
+        and report.acceptance.passed
+        else 1
+    )
 
 
 def _collect_ocr_blocks(

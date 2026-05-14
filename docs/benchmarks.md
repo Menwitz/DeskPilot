@@ -14,6 +14,8 @@ The source of truth is `desktop_agent.benchmarks`. Each benchmark task declares:
 - Trace phases that must appear in monitoring output.
 - Final report fields that must be available to later analysis.
 - Metrics expected from the future repeated-run harness.
+- Acceptance thresholds that decide whether a repeated run is good enough to
+  count as an implementation improvement.
 
 ## Built-In Suites
 
@@ -43,7 +45,7 @@ The harness writes:
 
 - `runs.jsonl` with one per-run metrics record per line.
 - `benchmark-report.json` with the task path, output paths, iteration count,
-  aggregate summary metrics, and per-run metrics.
+  aggregate summary metrics, acceptance status, and per-run metrics.
 - `variance-report.json` with run-to-run distribution values.
 - Per-iteration trace directories under `<output>/traces/`.
 
@@ -58,3 +60,24 @@ operator intervention rate.
 Variance reports include minimum, maximum, mean, and population standard
 deviation for task time, step count, action count, retry count, ambiguity count,
 recovery count, and operator intervention count.
+
+## Acceptance Thresholds
+
+Each built-in benchmark task has explicit thresholds in
+`desktop_agent.benchmarks`. The repeated-run harness evaluates those thresholds
+after summary and variance metrics are computed, then stores the result in
+`benchmark-report.json` under `acceptance`.
+
+Current acceptance gates cover:
+
+- Minimum success rate.
+- Maximum median task time.
+- Maximum task time for any single run.
+- Maximum per-run step, action, and retry counts.
+- Maximum ambiguity, recovery, and operator-intervention rates.
+
+The CLI prints `acceptance: passed`, `acceptance: failed`, or
+`acceptance: not_configured`. Built-in benchmark task files must pass acceptance
+before a behavior change should be treated as an improvement. Ad hoc task files
+can still use the harness, but their report is marked `not_configured` until a
+task spec adds thresholds.

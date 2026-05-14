@@ -35,7 +35,7 @@ evasion, or pretending to be a person where automation is not allowed.
   evaluated instead of guessed.
 - [x] Add a fixture app with intentionally moving, delayed, disabled, and
   duplicated controls.
-- [ ] Add acceptance thresholds for each benchmark task before behavior is
+- [x] Add acceptance thresholds for each benchmark task before behavior is
   considered an improvement.
 
 ## Phase 2: Human Motor Timing Model

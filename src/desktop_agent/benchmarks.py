@@ -48,6 +48,21 @@ REPORT_FIELDS: tuple[str, ...] = (
 
 
 @dataclass(frozen=True)
+class BenchmarkAcceptanceThresholds:
+    """Pass/fail gates for considering a benchmark run acceptable."""
+
+    min_success_rate: float
+    max_median_task_time_seconds: float
+    max_task_time_seconds_per_run: float
+    max_step_count_per_run: int
+    max_action_count_per_run: int
+    max_retry_count_per_run: int
+    max_ambiguity_rate: float
+    max_recovery_rate: float
+    max_operator_intervention_rate: float
+
+
+@dataclass(frozen=True)
 class BenchmarkTaskSpec:
     """One benchmark task and the observability contract it must produce."""
 
@@ -61,6 +76,7 @@ class BenchmarkTaskSpec:
     required_trace_phases: tuple[str, ...]
     required_report_fields: tuple[str, ...]
     required_metrics: tuple[str, ...]
+    acceptance_thresholds: BenchmarkAcceptanceThresholds
     description: str
 
 
@@ -73,6 +89,55 @@ class BenchmarkSuite:
     name: str
     description: str
     tasks: tuple[BenchmarkTaskSpec, ...]
+
+
+BROWSER_FIXTURE_ACCEPTANCE = BenchmarkAcceptanceThresholds(
+    min_success_rate=1.0,
+    max_median_task_time_seconds=30.0,
+    max_task_time_seconds_per_run=60.0,
+    max_step_count_per_run=4,
+    max_action_count_per_run=4,
+    max_retry_count_per_run=0,
+    max_ambiguity_rate=0.0,
+    max_recovery_rate=0.0,
+    max_operator_intervention_rate=0.0,
+)
+
+ADVERSARIAL_FIXTURE_ACCEPTANCE = BenchmarkAcceptanceThresholds(
+    min_success_rate=1.0,
+    max_median_task_time_seconds=30.0,
+    max_task_time_seconds_per_run=60.0,
+    max_step_count_per_run=3,
+    max_action_count_per_run=3,
+    max_retry_count_per_run=0,
+    max_ambiguity_rate=0.0,
+    max_recovery_rate=0.0,
+    max_operator_intervention_rate=0.0,
+)
+
+NATIVE_FIXTURE_ACCEPTANCE = BenchmarkAcceptanceThresholds(
+    min_success_rate=1.0,
+    max_median_task_time_seconds=30.0,
+    max_task_time_seconds_per_run=60.0,
+    max_step_count_per_run=4,
+    max_action_count_per_run=4,
+    max_retry_count_per_run=0,
+    max_ambiguity_rate=0.0,
+    max_recovery_rate=0.0,
+    max_operator_intervention_rate=0.0,
+)
+
+MIXED_FIXTURE_ACCEPTANCE = BenchmarkAcceptanceThresholds(
+    min_success_rate=1.0,
+    max_median_task_time_seconds=45.0,
+    max_task_time_seconds_per_run=90.0,
+    max_step_count_per_run=8,
+    max_action_count_per_run=8,
+    max_retry_count_per_run=0,
+    max_ambiguity_rate=0.0,
+    max_recovery_rate=0.0,
+    max_operator_intervention_rate=0.0,
+)
 
 
 DEFAULT_BENCHMARK_SUITES: tuple[BenchmarkSuite, ...] = (
@@ -93,6 +158,7 @@ DEFAULT_BENCHMARK_SUITES: tuple[BenchmarkSuite, ...] = (
                 required_trace_phases=TRACE_MONITORING_PHASES,
                 required_report_fields=REPORT_FIELDS,
                 required_metrics=BENCHMARK_METRICS,
+                acceptance_thresholds=BROWSER_FIXTURE_ACCEPTANCE,
                 description=(
                     "Completes the browser fixture and records candidate search,"
                     " scroll recovery, verification, and final report data."
@@ -109,6 +175,7 @@ DEFAULT_BENCHMARK_SUITES: tuple[BenchmarkSuite, ...] = (
                 required_trace_phases=TRACE_MONITORING_PHASES,
                 required_report_fields=REPORT_FIELDS,
                 required_metrics=BENCHMARK_METRICS,
+                acceptance_thresholds=ADVERSARIAL_FIXTURE_ACCEPTANCE,
                 description=(
                     "Exercises duplicated labels, a disabled delayed control,"
                     " and a moving target with traceable candidate selection."
@@ -133,6 +200,7 @@ DEFAULT_BENCHMARK_SUITES: tuple[BenchmarkSuite, ...] = (
                 required_trace_phases=TRACE_MONITORING_PHASES,
                 required_report_fields=REPORT_FIELDS,
                 required_metrics=BENCHMARK_METRICS,
+                acceptance_thresholds=NATIVE_FIXTURE_ACCEPTANCE,
                 description=(
                     "Completes the native fixture and records candidate search,"
                     " text entry, UI state verification, and final report data."
@@ -163,6 +231,7 @@ DEFAULT_BENCHMARK_SUITES: tuple[BenchmarkSuite, ...] = (
                 required_trace_phases=TRACE_MONITORING_PHASES,
                 required_report_fields=REPORT_FIELDS,
                 required_metrics=BENCHMARK_METRICS,
+                acceptance_thresholds=MIXED_FIXTURE_ACCEPTANCE,
                 description=(
                     "Completes a browser step sequence, switches windows, and"
                     " completes native UI work with traceable handoff evidence."
@@ -192,6 +261,19 @@ def benchmark_suite_by_id(suite_id: str) -> BenchmarkSuite:
         if suite.id == suite_id:
             return suite
     raise KeyError(f"unknown benchmark suite: {suite_id}")
+
+
+def benchmark_task_by_path(
+    task_path: Path,
+    root: Path = Path("."),
+) -> BenchmarkTaskSpec | None:
+    """Look up a built-in benchmark task by absolute or root-relative path."""
+
+    normalized_task_path = _normalized_path(task_path, root)
+    for task in all_benchmark_tasks():
+        if _normalized_path(task.task_path, root) == normalized_task_path:
+            return task
+    return None
 
 
 def validate_benchmark_suites(root: Path = Path(".")) -> tuple[str, ...]:
@@ -224,3 +306,11 @@ def validate_benchmark_suites(root: Path = Path(".")) -> tuple[str, ...]:
             errors.append(f"benchmark allowed windows missing from task: {windows}")
 
     return tuple(errors)
+
+
+def _normalized_path(path: Path, root: Path) -> Path:
+    """Normalize task paths without requiring generated files to exist."""
+
+    if path.is_absolute():
+        return path.resolve()
+    return (root / path).resolve()

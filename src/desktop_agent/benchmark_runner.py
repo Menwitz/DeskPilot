@@ -8,8 +8,13 @@ import time
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from desktop_agent.actuation import DryRunActuator
+from desktop_agent.benchmarks import (
+    BenchmarkAcceptanceThresholds,
+    benchmark_task_by_path,
+)
 from desktop_agent.config import (
     ConfigOverrides,
     RuntimeConfig,
@@ -32,6 +37,8 @@ from desktop_agent.task_dsl import (
     YamlTaskLoader,
 )
 from desktop_agent.tracing import FileTraceSink, RunReport, RunStatus
+
+BenchmarkAcceptanceStatus = Literal["passed", "failed", "not_configured"]
 
 
 @dataclass(frozen=True)
@@ -90,6 +97,17 @@ class BenchmarkVarianceReport:
 
 
 @dataclass(frozen=True)
+class BenchmarkAcceptanceResult:
+    """Threshold evaluation result for a repeated benchmark invocation."""
+
+    configured: bool
+    passed: bool
+    status: BenchmarkAcceptanceStatus
+    failures: tuple[str, ...]
+    thresholds: BenchmarkAcceptanceThresholds | None
+
+
+@dataclass(frozen=True)
 class BenchmarkRunReport:
     """Machine-readable report for one repeated benchmark invocation."""
 
@@ -101,6 +119,7 @@ class BenchmarkRunReport:
     runs: tuple[BenchmarkRunMetrics, ...]
     summary: BenchmarkSummaryMetrics
     variance: BenchmarkVarianceReport
+    acceptance: BenchmarkAcceptanceResult
 
 
 class BenchmarkRunHarness:
@@ -137,6 +156,9 @@ class BenchmarkRunHarness:
         )
         summary = _summary_from_runs(runs)
         variance = _variance_from_runs(runs)
+        task_spec = benchmark_task_by_path(task_path)
+        thresholds = task_spec.acceptance_thresholds if task_spec else None
+        acceptance = evaluate_benchmark_acceptance(runs, summary, thresholds)
         metrics_path = output_dir / "runs.jsonl"
         report_path = output_dir / "benchmark-report.json"
         variance_report_path = output_dir / "variance-report.json"
@@ -150,6 +172,7 @@ class BenchmarkRunHarness:
             variance_report_path,
             runs,
             summary,
+            acceptance,
         )
         return BenchmarkRunReport(
             task_path=task_path,
@@ -160,6 +183,7 @@ class BenchmarkRunHarness:
             runs=runs,
             summary=summary,
             variance=variance,
+            acceptance=acceptance,
         )
 
     def _run_once(
@@ -220,6 +244,94 @@ def _metrics_from_report(
     )
 
 
+def evaluate_benchmark_acceptance(
+    runs: tuple[BenchmarkRunMetrics, ...],
+    summary: BenchmarkSummaryMetrics,
+    thresholds: BenchmarkAcceptanceThresholds | None,
+) -> BenchmarkAcceptanceResult:
+    """Evaluate repeated-run metrics against the built-in benchmark thresholds."""
+
+    if thresholds is None:
+        # Ad hoc tasks can still use the harness, but only built-in benchmarks
+        # carry threshold gates that define whether behavior improved.
+        return BenchmarkAcceptanceResult(
+            configured=False,
+            passed=True,
+            status="not_configured",
+            failures=(),
+            thresholds=None,
+        )
+
+    failures: list[str] = []
+    max_task_time = max(run.task_time_seconds for run in runs)
+    max_step_count = max(run.step_count for run in runs)
+    max_action_count = max(run.action_count for run in runs)
+    max_retry_count = max(run.retry_count for run in runs)
+
+    if summary.success_rate < thresholds.min_success_rate:
+        failures.append(
+            "min_success_rate missed: "
+            f"{summary.success_rate:.3f} < {thresholds.min_success_rate:.3f}"
+        )
+    if (
+        summary.median_task_time_seconds
+        > thresholds.max_median_task_time_seconds
+    ):
+        failures.append(
+            "max_median_task_time_seconds exceeded: "
+            f"{summary.median_task_time_seconds:.3f} > "
+            f"{thresholds.max_median_task_time_seconds:.3f}"
+        )
+    if max_task_time > thresholds.max_task_time_seconds_per_run:
+        failures.append(
+            "max_task_time_seconds_per_run exceeded: "
+            f"{max_task_time:.3f} > {thresholds.max_task_time_seconds_per_run:.3f}"
+        )
+    if max_step_count > thresholds.max_step_count_per_run:
+        failures.append(
+            "max_step_count_per_run exceeded: "
+            f"{max_step_count} > {thresholds.max_step_count_per_run}"
+        )
+    if max_action_count > thresholds.max_action_count_per_run:
+        failures.append(
+            "max_action_count_per_run exceeded: "
+            f"{max_action_count} > {thresholds.max_action_count_per_run}"
+        )
+    if max_retry_count > thresholds.max_retry_count_per_run:
+        failures.append(
+            "max_retry_count_per_run exceeded: "
+            f"{max_retry_count} > {thresholds.max_retry_count_per_run}"
+        )
+    if summary.ambiguity_rate > thresholds.max_ambiguity_rate:
+        failures.append(
+            "max_ambiguity_rate exceeded: "
+            f"{summary.ambiguity_rate:.3f} > {thresholds.max_ambiguity_rate:.3f}"
+        )
+    if summary.recovery_rate > thresholds.max_recovery_rate:
+        failures.append(
+            "max_recovery_rate exceeded: "
+            f"{summary.recovery_rate:.3f} > {thresholds.max_recovery_rate:.3f}"
+        )
+    if (
+        summary.operator_intervention_rate
+        > thresholds.max_operator_intervention_rate
+    ):
+        failures.append(
+            "max_operator_intervention_rate exceeded: "
+            f"{summary.operator_intervention_rate:.3f} > "
+            f"{thresholds.max_operator_intervention_rate:.3f}"
+        )
+
+    passed = not failures
+    return BenchmarkAcceptanceResult(
+        configured=True,
+        passed=passed,
+        status="passed" if passed else "failed",
+        failures=tuple(failures),
+        thresholds=thresholds,
+    )
+
+
 def _write_metrics(path: Path, runs: tuple[BenchmarkRunMetrics, ...]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = (json.dumps(_metrics_to_dict(run), sort_keys=True) + "\n" for run in runs)
@@ -234,6 +346,7 @@ def _write_report(
     variance_report_path: Path,
     runs: tuple[BenchmarkRunMetrics, ...],
     summary: BenchmarkSummaryMetrics,
+    acceptance: BenchmarkAcceptanceResult,
 ) -> None:
     payload = {
         "task_path": str(task_path),
@@ -242,6 +355,7 @@ def _write_report(
         "variance_report_path": str(variance_report_path),
         "iterations": len(runs),
         "summary": _summary_to_dict(summary),
+        "acceptance": _acceptance_to_dict(acceptance),
         "runs": [_metrics_to_dict(run) for run in runs],
     }
     path.write_text(
@@ -350,6 +464,34 @@ def _variance_to_dict(variance: MetricVariance) -> dict[str, float]:
         "maximum": variance.maximum,
         "mean": variance.mean,
         "population_stdev": variance.population_stdev,
+    }
+
+
+def _acceptance_to_dict(acceptance: BenchmarkAcceptanceResult) -> dict[str, object]:
+    return {
+        "configured": acceptance.configured,
+        "passed": acceptance.passed,
+        "status": acceptance.status,
+        "failures": list(acceptance.failures),
+        "thresholds": _thresholds_to_dict(acceptance.thresholds)
+        if acceptance.thresholds
+        else None,
+    }
+
+
+def _thresholds_to_dict(
+    thresholds: BenchmarkAcceptanceThresholds,
+) -> dict[str, object]:
+    return {
+        "min_success_rate": thresholds.min_success_rate,
+        "max_median_task_time_seconds": thresholds.max_median_task_time_seconds,
+        "max_task_time_seconds_per_run": thresholds.max_task_time_seconds_per_run,
+        "max_step_count_per_run": thresholds.max_step_count_per_run,
+        "max_action_count_per_run": thresholds.max_action_count_per_run,
+        "max_retry_count_per_run": thresholds.max_retry_count_per_run,
+        "max_ambiguity_rate": thresholds.max_ambiguity_rate,
+        "max_recovery_rate": thresholds.max_recovery_rate,
+        "max_operator_intervention_rate": thresholds.max_operator_intervention_rate,
     }
 
 
