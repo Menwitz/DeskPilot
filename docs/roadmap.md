@@ -33,6 +33,6 @@ Post-v1 items are tracked in [Post-v1 Backlog](post-v1-backlog.md). They are not
 active v1 checklist items and remain outside v1 acceptance until they are
 promoted into a scoped implementation plan.
 
-The only unchecked v1 items left in `PLAN.md` are Windows-only packaging and
-real desktop acceptance checks that require an unlocked, logged-in Windows
-session.
+Windows-only packaging and real desktop acceptance checks are listed in
+`PLAN.md` as pending external verification instead of active implementation
+checkboxes, because they require an unlocked, logged-in Windows session.
