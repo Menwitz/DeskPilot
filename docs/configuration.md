@@ -74,6 +74,9 @@ text, allowed windows, maximum steps, timeouts, or retry budgets.
   pacing.
 - `hesitation_probability` chooses the upper half of the configured action
   delay range with that probability.
+- Enabled action timing is target-aware inside the same bounds: selected target
+  distance, selected target size, and action type bias where the sampled delay
+  lands between the configured lower and upper limits.
 - `movement_smoothness` is reserved for future real pointer actuation adapters.
 - `random_seed` makes timing decisions reproducible for tests and diagnostics.
 

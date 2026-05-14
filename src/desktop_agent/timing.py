@@ -2,10 +2,66 @@
 
 from __future__ import annotations
 
+import math
 import random
 from dataclasses import dataclass
 
 from desktop_agent.config import ExecutionProfile
+from desktop_agent.perception import ElementCandidate
+from desktop_agent.screen import Bounds, ScreenObservation
+from desktop_agent.task_dsl import TaskStep
+
+ACTION_COMPLEXITY_BY_TYPE: dict[str, float] = {
+    "branch_if_visible": 0.2,
+    "assert_visible": 0.2,
+    "wait_for": 0.2,
+    "press_key": 0.3,
+    "type_text": 0.45,
+    "click_uia": 0.5,
+    "click_text": 0.6,
+    "click_image": 0.65,
+    "scroll": 0.7,
+    "scroll_until": 0.75,
+    "drag": 0.9,
+}
+DEFAULT_ACTION_COMPLEXITY = 0.5
+RANDOM_TIMING_WEIGHT = 0.6
+TARGET_TIMING_WEIGHT = 0.4
+
+
+@dataclass(frozen=True)
+class ActionTimingContext:
+    """Target and action features used to bias action timing safely."""
+
+    action_type: str
+    target_id: str | None = None
+    distance_pixels: float | None = None
+    normalized_distance: float | None = None
+    target_width_pixels: int | None = None
+    target_height_pixels: int | None = None
+    normalized_target_size: float | None = None
+    action_complexity: float = DEFAULT_ACTION_COMPLEXITY
+    target_complexity: float = DEFAULT_ACTION_COMPLEXITY
+
+    def metadata(self) -> dict[str, object]:
+        metadata: dict[str, object] = {
+            "action_type": self.action_type,
+            "action_complexity": self.action_complexity,
+            "target_complexity": self.target_complexity,
+        }
+        if self.target_id is not None:
+            metadata["target_id"] = self.target_id
+        if self.distance_pixels is not None:
+            metadata["distance_pixels"] = self.distance_pixels
+        if self.normalized_distance is not None:
+            metadata["normalized_distance"] = self.normalized_distance
+        if self.target_width_pixels is not None:
+            metadata["target_width_pixels"] = self.target_width_pixels
+        if self.target_height_pixels is not None:
+            metadata["target_height_pixels"] = self.target_height_pixels
+        if self.normalized_target_size is not None:
+            metadata["normalized_target_size"] = self.normalized_target_size
+        return metadata
 
 
 @dataclass(frozen=True)
@@ -19,16 +75,23 @@ class TimingDecision:
     hesitation_applied: bool
     movement_smoothness: float
     reason: str
+    action_context: ActionTimingContext | None = None
 
     def metadata(self) -> dict[str, object]:
-        return {
+        metadata: dict[str, object] = {
             "timing_phase": self.phase,
+            "timing_model": "target_aware"
+            if self.action_context is not None
+            else "profile_bounds",
             "delay_seconds": self.delay_seconds,
             "lower_bound_seconds": self.lower_bound_seconds,
             "upper_bound_seconds": self.upper_bound_seconds,
             "hesitation_applied": self.hesitation_applied,
             "movement_smoothness": self.movement_smoothness,
         }
+        if self.action_context is not None:
+            metadata.update(self.action_context.metadata())
+        return metadata
 
 
 class ExecutionTimingController:
@@ -38,16 +101,20 @@ class ExecutionTimingController:
         self._profile = profile
         self._rng = random.Random(profile.random_seed)
 
-    def before_action(self) -> TimingDecision:
-        return self._sample("action", self._profile.action_delay_seconds)
+    def before_action(
+        self,
+        context: ActionTimingContext | None = None,
+    ) -> TimingDecision:
+        return self._sample("action", self._profile.action_delay_seconds, context)
 
     def before_retry(self) -> TimingDecision:
-        return self._sample("retry", self._profile.retry_delay_seconds)
+        return self._sample("retry", self._profile.retry_delay_seconds, None)
 
     def _sample(
         self,
         phase: str,
         bounds: tuple[float, float],
+        context: ActionTimingContext | None,
     ) -> TimingDecision:
         lower, upper = bounds
         if not self._profile.enabled:
@@ -59,6 +126,7 @@ class ExecutionTimingController:
                 hesitation_applied=False,
                 movement_smoothness=0.0,
                 reason="execution profile disabled",
+                action_context=context,
             )
 
         hesitation_applied = phase == "action" and (
@@ -70,12 +138,131 @@ class ExecutionTimingController:
             # range, so the decision never exceeds configured bounds.
             sample_lower = lower + ((upper - lower) / 2)
 
+        random_fraction = self._rng.random()
+        timing_fraction = random_fraction
+        if phase == "action" and context is not None:
+            timing_fraction = _clamp(
+                (random_fraction * RANDOM_TIMING_WEIGHT)
+                + (context.target_complexity * TARGET_TIMING_WEIGHT)
+            )
+
         return TimingDecision(
             phase=phase,
-            delay_seconds=self._rng.uniform(sample_lower, upper),
+            delay_seconds=sample_lower + ((upper - sample_lower) * timing_fraction),
             lower_bound_seconds=lower,
             upper_bound_seconds=upper,
             hesitation_applied=hesitation_applied,
             movement_smoothness=self._profile.movement_smoothness,
-            reason=f"{phase} timing decided",
+            reason="target-aware action timing decided"
+            if phase == "action" and context is not None
+            else f"{phase} timing decided",
+            action_context=context,
         )
+
+
+def build_action_timing_context(
+    step: TaskStep,
+    target: ElementCandidate | None,
+    observation: ScreenObservation,
+) -> ActionTimingContext:
+    """Build target-aware timing context from the selected UI candidate."""
+
+    bounds = target.bounds if target is not None else _region_bounds(step)
+    distance_pixels, normalized_distance = _distance_features(bounds, observation)
+    normalized_target_size = _normalized_target_size(bounds, observation)
+    action_complexity = _action_complexity(step.action)
+    target_complexity = _target_complexity(
+        has_bounds=bounds is not None,
+        normalized_distance=normalized_distance,
+        normalized_target_size=normalized_target_size,
+        action_complexity=action_complexity,
+    )
+    return ActionTimingContext(
+        action_type=step.action,
+        target_id=target.id if target else None,
+        distance_pixels=distance_pixels,
+        normalized_distance=normalized_distance,
+        target_width_pixels=bounds.width if bounds else None,
+        target_height_pixels=bounds.height if bounds else None,
+        normalized_target_size=normalized_target_size,
+        action_complexity=action_complexity,
+        target_complexity=target_complexity,
+    )
+
+
+def _region_bounds(step: TaskStep) -> Bounds | None:
+    if step.region is None:
+        return None
+    return Bounds(
+        x=step.region.x,
+        y=step.region.y,
+        width=step.region.width,
+        height=step.region.height,
+    )
+
+
+def _distance_features(
+    bounds: Bounds | None,
+    observation: ScreenObservation,
+) -> tuple[float | None, float | None]:
+    if bounds is None or observation.size[0] <= 0 or observation.size[1] <= 0:
+        return None, None
+
+    target_x, target_y = bounds.center
+    screen_width, screen_height = observation.size
+    screen_center_x = screen_width / 2
+    screen_center_y = screen_height / 2
+    distance_pixels = math.hypot(
+        target_x - screen_center_x,
+        target_y - screen_center_y,
+    )
+    screen_diagonal = math.hypot(screen_width, screen_height)
+    if screen_diagonal <= 0:
+        return distance_pixels, None
+    return distance_pixels, _clamp(distance_pixels / screen_diagonal)
+
+
+def _normalized_target_size(
+    bounds: Bounds | None,
+    observation: ScreenObservation,
+) -> float | None:
+    if bounds is None or observation.size[0] <= 0 or observation.size[1] <= 0:
+        return None
+    target_diagonal = math.hypot(bounds.width, bounds.height)
+    screen_diagonal = math.hypot(observation.size[0], observation.size[1])
+    if screen_diagonal <= 0:
+        return None
+    return _clamp(target_diagonal / screen_diagonal)
+
+
+def _action_complexity(action_type: str) -> float:
+    return ACTION_COMPLEXITY_BY_TYPE.get(action_type, DEFAULT_ACTION_COMPLEXITY)
+
+
+def _target_complexity(
+    *,
+    has_bounds: bool,
+    normalized_distance: float | None,
+    normalized_target_size: float | None,
+    action_complexity: float,
+) -> float:
+    if not has_bounds:
+        return action_complexity
+
+    # Farther targets and smaller targets bias timing toward the upper bound,
+    # while the configured bounds still define the hard safety envelope.
+    distance_component = normalized_distance if normalized_distance is not None else 0.5
+    size_component = (
+        1.0 - normalized_target_size
+        if normalized_target_size is not None
+        else 0.5
+    )
+    return _clamp(
+        (distance_component * 0.45)
+        + (size_component * 0.35)
+        + (action_complexity * 0.20)
+    )
+
+
+def _clamp(value: float) -> float:
+    return max(0.0, min(1.0, value))

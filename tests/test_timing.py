@@ -1,5 +1,11 @@
 from desktop_agent.config import ExecutionProfile
-from desktop_agent.timing import ExecutionTimingController
+from desktop_agent.perception import ElementCandidate
+from desktop_agent.screen import Bounds, ScreenObservation
+from desktop_agent.task_dsl import TaskStep
+from desktop_agent.timing import (
+    ExecutionTimingController,
+    build_action_timing_context,
+)
 
 
 def test_execution_timing_samples_stay_inside_configured_bounds() -> None:
@@ -30,3 +36,70 @@ def test_execution_timing_is_zero_when_profile_is_disabled() -> None:
 
     assert decision.delay_seconds == 0
     assert decision.reason == "execution profile disabled"
+
+
+def test_target_aware_timing_biases_harder_targets_later_inside_bounds() -> None:
+    profile = ExecutionProfile(
+        enabled=True,
+        action_delay_seconds=(0.1, 0.5),
+        hesitation_probability=0.0,
+        random_seed=123,
+    )
+    observation = ScreenObservation(size=(1000, 1000))
+    easy_context = build_action_timing_context(
+        TaskStep(id="near-large", action="click_text", target="Submit"),
+        ElementCandidate(
+            id="easy",
+            source="uia",
+            label="Submit",
+            bounds=Bounds(x=420, y=420, width=200, height=200),
+            confidence=0.95,
+        ),
+        observation,
+    )
+    hard_context = build_action_timing_context(
+        TaskStep(id="far-small", action="click_text", target="Submit"),
+        ElementCandidate(
+            id="hard",
+            source="uia",
+            label="Submit",
+            bounds=Bounds(x=900, y=900, width=10, height=10),
+            confidence=0.95,
+        ),
+        observation,
+    )
+
+    easy_decision = ExecutionTimingController(profile).before_action(easy_context)
+    hard_decision = ExecutionTimingController(profile).before_action(hard_context)
+
+    assert easy_context.target_complexity < hard_context.target_complexity
+    assert 0.1 <= easy_decision.delay_seconds <= 0.5
+    assert 0.1 <= hard_decision.delay_seconds <= 0.5
+    assert hard_decision.delay_seconds > easy_decision.delay_seconds
+    assert hard_decision.metadata()["timing_model"] == "target_aware"
+    assert hard_decision.metadata()["target_id"] == "hard"
+
+
+def test_action_type_contributes_to_timing_complexity() -> None:
+    observation = ScreenObservation(size=(1000, 1000))
+    target = ElementCandidate(
+        id="tile",
+        source="uia",
+        label="Tile",
+        bounds=Bounds(x=500, y=500, width=40, height=40),
+        confidence=0.95,
+    )
+
+    click_context = build_action_timing_context(
+        TaskStep(id="click-tile", action="click_text", target="Tile"),
+        target,
+        observation,
+    )
+    drag_context = build_action_timing_context(
+        TaskStep(id="drag-tile", action="drag", target="Tile"),
+        target,
+        observation,
+    )
+
+    assert drag_context.action_complexity > click_context.action_complexity
+    assert drag_context.target_complexity > click_context.target_complexity

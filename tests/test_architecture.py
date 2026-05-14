@@ -351,7 +351,10 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
         trace_sink=trace_sink,
         safety_policy=LocalSafetyPolicy(),
         screen_observer=StaticScreenObserver(
-            ScreenObservation(active_window_title="DeskPilot Fixture"),
+            ScreenObservation(
+                active_window_title="DeskPilot Fixture",
+                size=(800, 600),
+            ),
         ),
         perception_engine=CompositePerceptionEngine((FixturePerceptionEngine(),)),
         target_selector=ConfidenceTargetSelector(),
@@ -373,4 +376,10 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
     assert isinstance(retry_delay, float)
     assert 0.1 <= action_delay <= 0.2
     assert 0.3 <= retry_delay <= 0.4
+    assert timing_events[0].metadata["timing_model"] == "target_aware"
+    assert timing_events[0].metadata["action_type"] == "click_text"
+    assert timing_events[0].metadata["target_id"] == "candidate-1"
+    assert "distance_pixels" in timing_events[0].metadata
+    assert timing_events[0].metadata["target_width_pixels"] == 100
+    assert timing_events[1].metadata["timing_model"] == "profile_bounds"
     assert recover_event.metadata["retry_reason"] == "transient failure"

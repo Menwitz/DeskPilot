@@ -40,7 +40,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 ## Phase 2: Human Motor Timing Model
 
-- [ ] Implement target-aware action timing based on distance, target size, and
+- [x] Implement target-aware action timing based on distance, target size, and
   action type.
 - [ ] Add a Fitts' Law-inspired pointer timing model behind a local interface.
 - [ ] Add minimum-jerk or spline-based pointer paths for real mouse movement.

@@ -58,6 +58,9 @@ hide that automation is running.
 Invalid execution profile bounds fail configuration validation before any
 desktop action can run. Timing decisions are recorded in traces so failed runs
 can be diagnosed without guessing why the planner waited or retried.
+Target-aware timing can use selected target geometry and action type to choose
+where a delay falls inside the configured bounds, but it does not pick new
+targets, bypass confidence checks, or expand allowed timing limits.
 
 Sensitive task steps can declare `requires_confirmation: true`. The planner
 stops before the action unless the operator confirms the step ID through runtime

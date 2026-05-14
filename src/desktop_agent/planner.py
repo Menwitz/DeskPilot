@@ -22,7 +22,10 @@ from desktop_agent.safety import (
 )
 from desktop_agent.screen import ScreenObservation, ScreenObserver
 from desktop_agent.task_dsl import TaskDefinition, TaskLoader, TaskStep, TaskValidator
-from desktop_agent.timing import ExecutionTimingController
+from desktop_agent.timing import (
+    ExecutionTimingController,
+    build_action_timing_context,
+)
 from desktop_agent.tracing import (
     RunReport,
     RunStatus,
@@ -412,7 +415,9 @@ class ExecutionEngine:
 
             if self.emergency_stop_monitor.is_triggered(config):
                 return self._emergency_stop_outcome(step, attempt, last_candidate_id)
-            action_timing = timing_controller.before_action()
+            action_timing = timing_controller.before_action(
+                build_action_timing_context(step, target, observation),
+            )
             if config.execution_profile.enabled:
                 metadata = action_timing.metadata()
                 metadata["step_id"] = step.id
@@ -654,7 +659,9 @@ class ExecutionEngine:
                     ),
                 )
 
-            action_timing = timing_controller.before_action()
+            action_timing = timing_controller.before_action(
+                build_action_timing_context(step, None, observation),
+            )
             if config.execution_profile.enabled:
                 metadata = action_timing.metadata()
                 metadata["step_id"] = step.id
