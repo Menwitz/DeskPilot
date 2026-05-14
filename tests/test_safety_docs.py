@@ -17,3 +17,18 @@ def test_execution_profile_docs_preserve_unsupported_use_boundary() -> None:
         "abusive third-party automation",
     ):
         assert phrase in documentation
+
+
+def test_operator_guidance_documents_timing_budget_and_report_checks() -> None:
+    documentation = Path("docs/configuration.md").read_text(encoding="utf-8")
+
+    for phrase in (
+        "Choosing Delay Bounds",
+        "Choosing Entropy Budgets",
+        "dry-run preview",
+        "action-log.jsonl",
+        "safety-audit.md",
+        "benchmark-report.json",
+        "variance-report.json",
+    ):
+        assert phrase in documentation

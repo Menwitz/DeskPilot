@@ -129,6 +129,82 @@ automation.
 - `random_seed` makes timing decisions reproducible through the shared seeded
   sampler used by bounded runtime randomness.
 
+## Operator Guidance
+
+Choose delay bounds and entropy budgets from measured local behavior, not from a
+goal of appearing indistinguishable from a person. Start with `dry-run`, inspect
+the preview and reports, then use `benchmark-run` when a task is important
+enough to compare repeated executions.
+
+### Choosing Delay Bounds
+
+Use the smallest bounds that make the workflow reliable and readable in traces:
+
+| Workflow risk | Suggested profile | Starting bounds |
+| --- | --- | --- |
+| Stable owned fixture, high confidence | `fast` | `action_delay_seconds: [0.01, 0.05]`, `retry_delay_seconds: [0.08, 0.25]` |
+| Routine personal automation | `normal` | `action_delay_seconds: [0.05, 0.18]`, `retry_delay_seconds: [0.2, 0.6]` |
+| Sensitive QA or flaky UI | `careful` | `action_delay_seconds: [0.15, 0.45]`, `retry_delay_seconds: [0.5, 1.2]` |
+
+Checklist:
+
+- Keep the upper action and retry bounds comfortably inside each step timeout.
+  The dry-run preview shows the worst-case planned wait and the planner stops
+  before input when waits cannot fit.
+- Make retry bounds larger than action bounds so recovery waits are visibly
+  separate from routine pacing in `action-log.jsonl` and `final-report.md`.
+- Use `center_weighted` for normal and careful work when most waits should land
+  near the middle of the range. Use `uniform` only when the full configured
+  range is equally acceptable.
+- Keep `keyboard_interval_seconds` low enough that long text fields do not
+  dominate runtime. It changes typing cadence only, never text content.
+- Keep `scroll_interval_seconds` low enough that long pages still fit task
+  timeouts. It changes wheel pacing only, never total scroll distance.
+- Prefer `random_seed` while tuning so repeated traces can be compared. Remove
+  it only after benchmark variance is understood.
+
+### Choosing Entropy Budgets
+
+Use `entropy_budget` to document where bounded variability is allowed, then let
+the planner reject budgets that exceed runtime capacity.
+
+| Budget | Use when | Typical placement |
+| --- | --- | --- |
+| `0.0` or omitted | The step should be deterministic. | Submissions, irreversible actions, exact data entry. |
+| `0.25` to `0.5` | A small timing or equivalent-action choice is acceptable. | Simple navigation, one safe `click_text` / `click_uia` variant. |
+| `1.0` | A retry or recovery path may be needed. | `scroll_until`, delayed controls, transient loading. |
+| `2.0+` | A multi-step fixture has several safe variability points. | Whole task budgets after benchmark evidence supports them. |
+
+Checklist:
+
+- Set the task-level `entropy_budget` at or above the sum of explicit step
+  budgets, but below what max steps, retries, and timeouts can support.
+- Put step budgets on recognition, navigation, and recovery-heavy steps before
+  putting them on data-entry or submission steps.
+- Pair any entropy-bearing submission with `checkpoint`, `verify`,
+  `requires_confirmation`, and a policy preset that matches the run.
+- Check the `entropy_budget` trace event, `task.json`, and step metadata in the
+  final report to confirm the budget was accepted and attributed to the intended
+  steps.
+- If `benchmark-report.json` shows higher ambiguity, recovery, retry, or
+  intervention rates after adding entropy, reduce the budget or return to a
+  deterministic profile.
+
+### Report Review
+
+After tuning a profile, inspect these artifacts before treating it as safe:
+
+- `dry-run` preview for timing bounds, worst-case waits, and recovery paths.
+- `action-log.jsonl` for `execution_timing`, `input_wait`,
+  `action_variant`, `recover`, and `entropy_budget` events.
+- `final-report.md` for failed-step categories, selected candidates, timing
+  delay rows, keyboard cadence, scroll cadence, and final actuator guard stops.
+- `safety-audit.md` for policy preset, operator approval, allowed windows,
+  sensitive steps, checkpoint coverage, and findings.
+- `benchmark-report.json` and `variance-report.json` for repeated-run success
+  rate, median task time, grounding accuracy, ambiguity rate, recovery rate,
+  retry count, and operator intervention rate.
+
 ## Policy Presets
 
 `policy_preset` chooses the operator-control boundary used by the safety policy:
