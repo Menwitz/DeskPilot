@@ -47,7 +47,7 @@ class SeededSampler:
 
     def random(self, label: str) -> float:
         value = self._random.random()
-        self._record(label, value)
+        self._record(label, value, 0.0, 1.0)
         return value
 
     def probability(self, label: str, probability: float) -> bool:

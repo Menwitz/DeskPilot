@@ -26,7 +26,7 @@ from desktop_agent.task_dsl import (
     TaskStep,
 )
 from desktop_agent.timing import ExecutionTimingController
-from desktop_agent.tracing import MemoryTraceSink, RunReport
+from desktop_agent.tracing import MemoryTraceSink, RunReport, TraceEvent
 
 
 class CountingActuator:
@@ -286,6 +286,51 @@ def test_regression_seeded_runs_reproduce_trace_random_samples() -> None:
     assert timing_sample_records(first) == timing_sample_records(second)
 
 
+def test_acceptance_randomness_records_are_bounded_traceable_and_seeded() -> None:
+    first_actuator = CountingActuator()
+    second_actuator = CountingActuator()
+    task = fixture_task(
+        TaskStep(
+            id="click-submit",
+            action="click_text",
+            target="Submit",
+            safe_action_variants=("click_uia",),
+        ),
+    )
+    config = RuntimeConfig(
+        confidence_threshold=0.8,
+        execution_profile=enabled_profile(),
+    )
+
+    first = run_fixture(
+        task=task,
+        actuator=first_actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=config,
+    )
+    second = run_fixture(
+        task=task,
+        actuator=second_actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=config,
+    )
+
+    first_events = events_with_sample_records(first)
+    assert first.status == second.status == "passed"
+    assert first_events
+    assert sample_record_batches(first) == sample_record_batches(second)
+    assert all(event.metadata["random_seed"] == 7 for event in first_events)
+    assert any(event.phase == "action_variant" for event in first_events)
+    assert any(event.phase == "execution_timing" for event in first_events)
+    for event in first_events:
+        records = event.metadata["sample_records"]
+        assert isinstance(records, list)
+        for record in records:
+            assert_sample_record_is_bounded(record)
+
+
 def test_regression_unseeded_runs_remain_inside_timing_and_safety_bounds() -> None:
     reports: list[RunReport] = []
     actuators: list[CountingActuator] = []
@@ -496,6 +541,32 @@ def timing_persona(report: RunReport) -> str:
 def timing_sample_records(report: RunReport) -> object:
     event = next(event for event in report.events if event.phase == "execution_timing")
     return event.metadata["sample_records"]
+
+
+def events_with_sample_records(report: RunReport) -> tuple[TraceEvent, ...]:
+    return tuple(
+        event
+        for event in report.events
+        if isinstance(event.metadata.get("sample_records"), list)
+        and event.metadata["sample_records"]
+    )
+
+
+def sample_record_batches(report: RunReport) -> tuple[object, ...]:
+    return tuple(
+        event.metadata["sample_records"] for event in events_with_sample_records(report)
+    )
+
+
+def assert_sample_record_is_bounded(record: object) -> None:
+    assert isinstance(record, dict)
+    value = record["sample_value"]
+    lower_bound = record["sample_lower_bound"]
+    upper_bound = record["sample_upper_bound"]
+    assert isinstance(value, float)
+    assert isinstance(lower_bound, float)
+    assert isinstance(upper_bound, float)
+    assert lower_bound <= value <= upper_bound
 
 
 def selected_candidate_id(report: RunReport) -> str:

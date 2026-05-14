@@ -30,7 +30,9 @@ data-entry, verification, and submission work. Enabled `execution_timing` events
 also include `execution_persona`, `persona_timing_bias`, `klm_operators`,
 `klm_operator_counts`, `klm_total_seconds`, and input-mode metadata for the
 bounded cognitive timing model. Timing events include `random_seed` and
-`sample_records` entries for every sampled value used in the decision.
+`sample_records` entries for every sampled value used in the decision. Each
+sample record includes its label, value, and lower and upper bounds so seeded
+randomness can be replayed and checked against the configured range.
 The active `policy_preset` is stored in `config.json` and the `load_config`
 event so report review can tell whether the run used strict QA, personal
 automation, or exploratory-testing safety behavior.
