@@ -29,6 +29,7 @@ TRACE_MONITORING_PHASES: tuple[str, ...] = (
     "load_config",
     "load_task",
     "validate_task",
+    "compile_task",
     "prepare_trace",
     "safety",
     "observe_screen",

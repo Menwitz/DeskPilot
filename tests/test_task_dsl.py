@@ -5,6 +5,7 @@ import pytest
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
+    ExpectedStateTransition,
     TaskStep,
     TaskValidationError,
     YamlTaskLoader,
@@ -63,6 +64,44 @@ def test_task_dsl_accepts_complete_task_with_region_and_verification(
     assert task.steps[0].requires_confirmation is True
     assert task.steps[0].category == "submission"
     assert task.steps[0].entropy_budget == 1.0
+
+
+def test_task_dsl_loads_dependencies_and_expected_state(tmp_path: Path) -> None:
+    task_path = tmp_path / "task.yaml"
+    task_path.write_text(
+        "\n".join(
+            [
+                "name: stateful-task",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "timeout_seconds: 30",
+                "steps:",
+                "  - id: open-editor",
+                "    action: click_text",
+                "    target: Edit",
+                "    expected_state:",
+                "      after: editor-open",
+                "  - id: type-title",
+                "    action: type_text",
+                "    text: Draft",
+                "    depends_on:",
+                "      - open-editor",
+                "    expected_state:",
+                "      before: editor-open",
+                "      after: title-entered",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    task = YamlTaskLoader().load(task_path)
+
+    assert task.steps[1].depends_on == ("open-editor",)
+    assert task.steps[1].expected_state == ExpectedStateTransition(
+        before="editor-open",
+        after="title-entered",
+    )
 
 
 def test_task_dsl_rejects_unknown_action(tmp_path: Path) -> None:

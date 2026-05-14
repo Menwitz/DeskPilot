@@ -4,6 +4,13 @@ The execution engine runs validated YAML tasks as a bounded state machine. It
 keeps the loop platform-neutral and delegates screen capture, perception,
 safety, actuation, and trace writing through interfaces.
 
+Before safety checks or runtime observation, the engine compiles the validated
+task into a static execution plan. The compiler rejects missing, duplicate,
+self-referential, or forward `depends_on` references and checks authored
+`expected_state` transitions for contradictions. Successful compilation emits a
+`compile_task` trace event with step order, dependency, and state-transition
+metadata for monitoring and reports.
+
 ## Runtime Controls
 
 - Task timeout is the lower of `task.timeout_seconds` and

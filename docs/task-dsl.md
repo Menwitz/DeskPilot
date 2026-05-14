@@ -18,6 +18,11 @@ steps:
     target: "Email"
   - id: type-email
     action: type_text
+    depends_on:
+      - enter-email
+    expected_state:
+      before: email-focused
+      after: email-entered
     text: "qa@example.test"
   - id: submit
     action: click_text
@@ -44,6 +49,10 @@ steps:
 - Unknown actions and verification types fail validation before execution.
 - Duplicate step IDs fail validation before execution.
 - Image templates must resolve before execution starts.
+- Explicit `depends_on` references must point to earlier steps, which prevents
+  impossible dependency graphs before any screen observation or desktop input.
+- Adjacent `expected_state` declarations must form a coherent UI state
+  transition chain when authored.
 - Step `category` values must be one of `navigation`, `recognition`,
   `data_entry`, `verification`, or `submission` when provided.
 - Task and step `entropy_budget` values must be non-negative. When a task-level
@@ -93,6 +102,11 @@ Supported verification types:
 - `safe_action_variants` lists task-author-approved equivalent actions that may
   be selected by the execution profile. Today this is limited to the conservative
   `click_text` / `click_uia` equivalence class.
+- `depends_on` lists prior step IDs that must be part of the compiled execution
+  plan before this step can run.
+- `expected_state` declares an optional `{before, after}` UI state boundary for
+  a step. The compiler checks that adjacent authored states do not contradict
+  each other.
 - `recovery` declares explicit allowed recovery actions for a recovery reason.
   Supported reasons include `stale_observation`, `missed_target`,
   `disabled_control`, `occluded_control`, `transient_loading`, and

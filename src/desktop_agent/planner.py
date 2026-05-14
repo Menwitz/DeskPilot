@@ -32,6 +32,7 @@ from desktop_agent.safety import (
     SafetyPolicy,
 )
 from desktop_agent.screen import ScreenObservation, ScreenObserver
+from desktop_agent.task_compiler import TaskCompiler
 from desktop_agent.task_dsl import (
     TaskDefinition,
     TaskLoader,
@@ -211,6 +212,7 @@ class ExecutionEngine:
     emergency_stop_monitor: EmergencyStopMonitor = field(
         default_factory=NoopEmergencyStopMonitor,
     )
+    task_compiler: TaskCompiler = field(default_factory=TaskCompiler)
 
     def run(self, task_path: Path, config_path: Path | None = None) -> RunReport:
         config = self.config_loader.load(config_path)
@@ -229,6 +231,12 @@ class ExecutionEngine:
             )
             self.task_validator.validate(task, config)
             self._record("validate_task", "task validated")
+            compiled_task = self.task_compiler.compile(task)
+            self._record(
+                "compile_task",
+                "task compiled",
+                compiled_task.metadata(),
+            )
             validate_entropy_budget_constraints(task, config)
             self._record(
                 "entropy_budget",

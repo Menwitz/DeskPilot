@@ -29,6 +29,11 @@ also include `execution_persona`, `persona_timing_bias`, `klm_operators`,
 bounded cognitive timing model. Timing events include `random_seed` and
 `sample_records` entries for every sampled value used in the decision.
 
+The `compile_task` event records static step order, dependency edges, and
+expected UI state transitions before the planner observes the screen or attempts
+input. Task JSON also stores each step's `depends_on` and `expected_state`
+contracts for report review.
+
 Each executed step also emits `step_timeout_budget` metadata with the planned
 action wait, retry wait, total planned wait, remaining timeout, and whether the
 budget fits before any desktop action is attempted.

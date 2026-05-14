@@ -29,6 +29,9 @@ The source of truth is `desktop_agent.benchmarks`. Each benchmark task declares:
 
 These definitions do not execute the benchmarks yet. They provide stable inputs
 for the repeated-run harness, monitoring, and report aggregation phases.
+The monitoring contract includes the `compile_task` phase so dependency and
+expected-state compiler checks are present before perception, deep-search, and
+actuation phases are evaluated.
 
 ## Repeated Dry-Run Harness
 

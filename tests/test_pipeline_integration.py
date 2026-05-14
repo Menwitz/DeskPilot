@@ -113,6 +113,42 @@ def test_invalid_task_failure_is_reported_before_fake_input_is_used() -> None:
     assert backend.events == []
 
 
+def test_task_compilation_failure_stops_before_fake_screen_or_input() -> None:
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    screen_observer = SequenceScreenObserver((_observation("unused.png"),))
+    task = TaskDefinition(
+        name="invalid compiled graph",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="click-submit",
+                action="click_text",
+                target="Submit",
+                depends_on=("missing-step",),
+            ),
+        ),
+    )
+    trace_sink = MemoryTraceSink()
+    engine = _engine(
+        task,
+        screen_observer=screen_observer,
+        actuator=DesktopActuator(backend, _instant_profile()),
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    phases = {event.phase for event in report.events}
+    assert report.status == "failed"
+    assert report.abort_reason == "step click-submit dependency target does not exist"
+    assert "validate_task" in phases
+    assert "observe_screen" not in phases
+    assert "execute_action" not in phases
+    assert screen_observer.calls == 0
+    assert backend.events == []
+
+
 def _engine(
     task: TaskDefinition,
     *,

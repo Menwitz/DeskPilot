@@ -11,6 +11,7 @@ from typing import Literal, Protocol
 
 from desktop_agent.config import ExecutionProfile, RuntimeConfig
 from desktop_agent.task_dsl import (
+    ExpectedStateTransition,
     RecoveryRule,
     TaskDefinition,
     TaskRegion,
@@ -251,6 +252,19 @@ def _step_to_dict(step: TaskStep) -> dict[str, object]:
         "entropy_budget": step.entropy_budget,
         "safe_action_variants": list(step.safe_action_variants),
         "recovery": [_recovery_rule_to_dict(rule) for rule in step.recovery],
+        "depends_on": list(step.depends_on),
+        "expected_state": _expected_state_to_dict(step.expected_state),
+    }
+
+
+def _expected_state_to_dict(
+    expected_state: ExpectedStateTransition | None,
+) -> dict[str, object] | None:
+    if expected_state is None:
+        return None
+    return {
+        "before": expected_state.before,
+        "after": expected_state.after,
     }
 
 

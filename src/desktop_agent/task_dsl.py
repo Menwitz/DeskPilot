@@ -129,6 +129,14 @@ class RecoveryRule:
 
 
 @dataclass(frozen=True)
+class ExpectedStateTransition:
+    """Author-declared UI state expected before or after a step runs."""
+
+    before: str | None = None
+    after: str | None = None
+
+
+@dataclass(frozen=True)
 class TaskStep:
     """Single deterministic action in a DeskPilot task."""
 
@@ -147,6 +155,8 @@ class TaskStep:
     entropy_budget: float | None = None
     safe_action_variants: tuple[str, ...] = ()
     recovery: tuple[RecoveryRule, ...] = ()
+    depends_on: tuple[str, ...] = ()
+    expected_state: ExpectedStateTransition | None = None
 
 
 @dataclass(frozen=True)
@@ -307,6 +317,8 @@ def _step_from_mapping(value: object, task_dir: Path) -> TaskStep:
         )
         or (),
         recovery=_recovery_rules_from_value(data.get("recovery")),
+        depends_on=_optional_string_tuple(data.get("depends_on"), "depends_on") or (),
+        expected_state=_expected_state_from_value(data.get("expected_state")),
     )
 
 
@@ -486,6 +498,16 @@ def _recovery_rule_from_mapping(value: object) -> RecoveryRule:
         reason=str(data.get("reason", data.get("on", ""))),
         actions=_optional_string_tuple(data.get("actions"), "recovery.actions") or (),
         next_step=_optional_str(data.get("next_step")),
+    )
+
+
+def _expected_state_from_value(value: object) -> ExpectedStateTransition | None:
+    if value is None:
+        return None
+    data = _mapping(value, "expected_state must be a mapping")
+    return ExpectedStateTransition(
+        before=_optional_str(data.get("before")),
+        after=_optional_str(data.get("after")),
     )
 
 

@@ -121,6 +121,9 @@ def test_execution_engine_runs_pipeline_and_reports_success() -> None:
     assert report.steps[0].candidate_id == "candidate-1"
     assert report.steps[0].metadata["step_category"] == "submission"
     assert "detect_candidates" in {event.phase for event in report.events}
+    compile_event = next(
+        event for event in report.events if event.phase == "compile_task"
+    )
     selection = next(event for event in report.events if event.phase == "select_target")
     snapshot = next(
         event for event in report.events if event.phase == "ui_state_snapshot"
@@ -129,6 +132,7 @@ def test_execution_engine_runs_pipeline_and_reports_success() -> None:
         event for event in report.events if event.phase == "detect_candidates"
     )
     rankings = detection.metadata["candidate_rankings"]
+    assert compile_event.metadata["step_order"] == ["click-submit"]
     assert selection.metadata["step_category"] == "submission"
     assert detection.metadata["step_category"] == "submission"
     assert selection.metadata["candidate_confidence"] == 0.95
