@@ -1,3 +1,5 @@
+from typing import cast
+
 from desktop_agent.config import ExecutionProfile
 from desktop_agent.perception import ElementCandidate
 from desktop_agent.screen import Bounds, ScreenObservation
@@ -103,3 +105,66 @@ def test_action_type_contributes_to_timing_complexity() -> None:
 
     assert drag_context.action_complexity > click_context.action_complexity
     assert drag_context.target_complexity > click_context.target_complexity
+
+
+def test_klm_operators_capture_keying_pointing_and_homing() -> None:
+    profile = ExecutionProfile(
+        enabled=True,
+        action_delay_seconds=(0.1, 0.5),
+        hesitation_probability=0.0,
+        random_seed=123,
+    )
+    controller = ExecutionTimingController(profile)
+    observation = ScreenObservation(size=(1000, 1000))
+    type_context = build_action_timing_context(
+        TaskStep(id="type-email", action="type_text", text="abc"),
+        None,
+        observation,
+    )
+    click_context = build_action_timing_context(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        ElementCandidate(
+            id="submit",
+            source="uia",
+            label="Submit",
+            bounds=Bounds(x=500, y=500, width=120, height=40),
+            confidence=0.95,
+        ),
+        observation,
+    )
+
+    type_metadata = controller.before_action(type_context).metadata()
+    click_metadata = controller.before_action(click_context).metadata()
+
+    type_counts = cast(dict[str, int], type_metadata["klm_operator_counts"])
+    click_counts = cast(dict[str, int], click_metadata["klm_operator_counts"])
+    assert type_metadata["input_mode"] == "keyboard"
+    assert type_metadata["keypress_count"] == 3
+    assert type_counts["mental"] == 1
+    assert type_counts["keying"] == 3
+    assert "pointing" not in type_counts
+    assert click_metadata["input_mode"] == "pointer"
+    assert click_counts["mental"] == 1
+    assert click_counts["pointing"] == 1
+    assert click_counts["homing"] == 1
+    assert cast(float, click_metadata["klm_total_seconds"]) > cast(
+        float,
+        type_metadata["klm_total_seconds"],
+    )
+
+
+def test_retry_timing_reports_system_wait_operator() -> None:
+    controller = ExecutionTimingController(
+        ExecutionProfile(
+            enabled=True,
+            retry_delay_seconds=(0.3, 0.4),
+            random_seed=123,
+        ),
+    )
+
+    metadata = controller.before_retry().metadata()
+
+    counts = cast(dict[str, int], metadata["klm_operator_counts"])
+    assert metadata["timing_model"] == "profile_bounds"
+    assert counts == {"system_wait": 1}
+    assert 0.3 <= cast(float, metadata["delay_seconds"]) <= 0.4

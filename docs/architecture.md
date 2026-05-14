@@ -50,4 +50,7 @@ reporting.
 Every runtime phase should leave enough local trace data to diagnose a failed
 run without rerunning the desktop action. Reports should include the final
 status, abort reason, step timings, selected candidates, confidence values, and
-paths to any saved screenshots or OCR artifacts.
+paths to any saved screenshots or OCR artifacts. Timing events include the
+bounded operator breakdown used for cognitive timing so reports can explain
+mental pauses, system waits, keying, pointing, and homing without changing the
+task's selected actions.

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from desktop_agent.config import ExecutionProfile
 from desktop_agent.perception import ElementCandidate
 from desktop_agent.screen import Bounds, ScreenObservation
-from desktop_agent.task_dsl import TaskStep
+from desktop_agent.task_dsl import TaskStep, step_category
 
 ACTION_COMPLEXITY_BY_TYPE: dict[str, float] = {
     "branch_if_visible": 0.2,
@@ -25,8 +25,57 @@ ACTION_COMPLEXITY_BY_TYPE: dict[str, float] = {
     "drag": 0.9,
 }
 DEFAULT_ACTION_COMPLEXITY = 0.5
-RANDOM_TIMING_WEIGHT = 0.6
-TARGET_TIMING_WEIGHT = 0.4
+RANDOM_TIMING_WEIGHT = 0.5
+TARGET_TIMING_WEIGHT = 0.35
+KLM_TIMING_WEIGHT = 0.15
+
+KLM_OPERATOR_SECONDS: dict[str, float] = {
+    "mental": 1.35,
+    "system_wait": 0.7,
+    "keying": 0.2,
+    "pointing": 1.1,
+    "homing": 0.4,
+}
+
+POINTER_ACTIONS: frozenset[str] = frozenset(
+    {
+        "click_text",
+        "click_image",
+        "click_uia",
+        "drag",
+        "scroll",
+        "scroll_until",
+    },
+)
+KEYBOARD_ACTIONS: frozenset[str] = frozenset({"press_key", "type_text"})
+MENTAL_OPERATOR_COUNT_BY_CATEGORY: dict[str, int] = {
+    "navigation": 1,
+    "recognition": 1,
+    "data_entry": 1,
+    "verification": 1,
+    "submission": 2,
+}
+
+
+@dataclass(frozen=True)
+class KLMOperator:
+    """Traceable Keystroke-Level-Model style operator used for timing analysis."""
+
+    name: str
+    count: int
+    seconds_per_unit: float
+
+    @property
+    def total_seconds(self) -> float:
+        return self.count * self.seconds_per_unit
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "name": self.name,
+            "count": self.count,
+            "seconds_per_unit": self.seconds_per_unit,
+            "total_seconds": self.total_seconds,
+        }
 
 
 @dataclass(frozen=True)
@@ -34,6 +83,7 @@ class ActionTimingContext:
     """Target and action features used to bias action timing safely."""
 
     action_type: str
+    step_category: str
     target_id: str | None = None
     distance_pixels: float | None = None
     normalized_distance: float | None = None
@@ -42,13 +92,19 @@ class ActionTimingContext:
     normalized_target_size: float | None = None
     action_complexity: float = DEFAULT_ACTION_COMPLEXITY
     target_complexity: float = DEFAULT_ACTION_COMPLEXITY
+    input_mode: str | None = None
+    keypress_count: int = 0
 
     def metadata(self) -> dict[str, object]:
         metadata: dict[str, object] = {
             "action_type": self.action_type,
+            "step_category": self.step_category,
             "action_complexity": self.action_complexity,
             "target_complexity": self.target_complexity,
+            "keypress_count": self.keypress_count,
         }
+        if self.input_mode is not None:
+            metadata["input_mode"] = self.input_mode
         if self.target_id is not None:
             metadata["target_id"] = self.target_id
         if self.distance_pixels is not None:
@@ -76,6 +132,7 @@ class TimingDecision:
     movement_smoothness: float
     reason: str
     action_context: ActionTimingContext | None = None
+    klm_operators: tuple[KLMOperator, ...] = ()
 
     def metadata(self) -> dict[str, object]:
         metadata: dict[str, object] = {
@@ -91,6 +148,14 @@ class TimingDecision:
         }
         if self.action_context is not None:
             metadata.update(self.action_context.metadata())
+        if self.klm_operators:
+            metadata["klm_operators"] = [
+                operator.metadata() for operator in self.klm_operators
+            ]
+            metadata["klm_operator_counts"] = _klm_operator_counts(
+                self.klm_operators,
+            )
+            metadata["klm_total_seconds"] = _klm_total_seconds(self.klm_operators)
         return metadata
 
 
@@ -100,6 +165,7 @@ class ExecutionTimingController:
     def __init__(self, profile: ExecutionProfile) -> None:
         self._profile = profile
         self._rng = random.Random(profile.random_seed)
+        self._last_input_mode: str | None = None
 
     def before_action(
         self,
@@ -108,14 +174,22 @@ class ExecutionTimingController:
         return self._sample("action", self._profile.action_delay_seconds, context)
 
     def before_retry(self) -> TimingDecision:
-        return self._sample("retry", self._profile.retry_delay_seconds, None)
+        return self._sample(
+            "retry",
+            self._profile.retry_delay_seconds,
+            None,
+            (KLMOperator("system_wait", 1, KLM_OPERATOR_SECONDS["system_wait"]),),
+        )
 
     def _sample(
         self,
         phase: str,
         bounds: tuple[float, float],
         context: ActionTimingContext | None,
+        klm_operators: tuple[KLMOperator, ...] | None = None,
     ) -> TimingDecision:
+        if klm_operators is None:
+            klm_operators = self._klm_operators_for_action(context)
         lower, upper = bounds
         if not self._profile.enabled:
             return TimingDecision(
@@ -127,6 +201,7 @@ class ExecutionTimingController:
                 movement_smoothness=0.0,
                 reason="execution profile disabled",
                 action_context=context,
+                klm_operators=klm_operators,
             )
 
         hesitation_applied = phase == "action" and (
@@ -144,6 +219,7 @@ class ExecutionTimingController:
             timing_fraction = _clamp(
                 (random_fraction * RANDOM_TIMING_WEIGHT)
                 + (context.target_complexity * TARGET_TIMING_WEIGHT)
+                + (_klm_complexity(klm_operators) * KLM_TIMING_WEIGHT)
             )
 
         return TimingDecision(
@@ -157,7 +233,19 @@ class ExecutionTimingController:
             if phase == "action" and context is not None
             else f"{phase} timing decided",
             action_context=context,
+            klm_operators=klm_operators,
         )
+
+    def _klm_operators_for_action(
+        self,
+        context: ActionTimingContext | None,
+    ) -> tuple[KLMOperator, ...]:
+        if context is None:
+            return ()
+        operators = _build_klm_operators(context, self._last_input_mode)
+        if context.input_mode is not None:
+            self._last_input_mode = context.input_mode
+        return operators
 
 
 def build_action_timing_context(
@@ -179,6 +267,7 @@ def build_action_timing_context(
     )
     return ActionTimingContext(
         action_type=step.action,
+        step_category=step_category(step),
         target_id=target.id if target else None,
         distance_pixels=distance_pixels,
         normalized_distance=normalized_distance,
@@ -187,7 +276,61 @@ def build_action_timing_context(
         normalized_target_size=normalized_target_size,
         action_complexity=action_complexity,
         target_complexity=target_complexity,
+        input_mode=_input_mode(step.action),
+        keypress_count=_keypress_count(step),
     )
+
+
+def _build_klm_operators(
+    context: ActionTimingContext,
+    previous_input_mode: str | None,
+) -> tuple[KLMOperator, ...]:
+    operators: list[KLMOperator] = []
+    mental_count = MENTAL_OPERATOR_COUNT_BY_CATEGORY.get(context.step_category, 1)
+    if mental_count > 0:
+        operators.append(
+            KLMOperator("mental", mental_count, KLM_OPERATOR_SECONDS["mental"]),
+        )
+    if context.input_mode == "keyboard" and context.keypress_count > 0:
+        operators.append(
+            KLMOperator(
+                "keying",
+                context.keypress_count,
+                KLM_OPERATOR_SECONDS["keying"],
+            ),
+        )
+    if context.input_mode == "pointer":
+        operators.append(
+            KLMOperator("pointing", 1, KLM_OPERATOR_SECONDS["pointing"]),
+        )
+    if (
+        previous_input_mode is not None
+        and context.input_mode in {"keyboard", "pointer"}
+        and previous_input_mode in {"keyboard", "pointer"}
+        and context.input_mode != previous_input_mode
+    ):
+        # Homing is only recorded after the controller has observed a prior
+        # input mode, which keeps the first action from getting a fake switch.
+        operators.append(
+            KLMOperator("homing", 1, KLM_OPERATOR_SECONDS["homing"]),
+        )
+    return tuple(operators)
+
+
+def _input_mode(action_type: str) -> str | None:
+    if action_type in POINTER_ACTIONS:
+        return "pointer"
+    if action_type in KEYBOARD_ACTIONS:
+        return "keyboard"
+    return None
+
+
+def _keypress_count(step: TaskStep) -> int:
+    if step.action == "type_text":
+        return len(step.text or "")
+    if step.action == "press_key":
+        return 1
+    return 0
 
 
 def _region_bounds(step: TaskStep) -> Bounds | None:
@@ -262,6 +405,23 @@ def _target_complexity(
         + (size_component * 0.35)
         + (action_complexity * 0.20)
     )
+
+
+def _klm_operator_counts(operators: tuple[KLMOperator, ...]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for operator in operators:
+        counts[operator.name] = counts.get(operator.name, 0) + operator.count
+    return counts
+
+
+def _klm_total_seconds(operators: tuple[KLMOperator, ...]) -> float:
+    return sum(operator.total_seconds for operator in operators)
+
+
+def _klm_complexity(operators: tuple[KLMOperator, ...]) -> float:
+    # The KLM estimate biases the sampled point within configured bounds; it
+    # never expands the actual lower or upper delay limits.
+    return _clamp(_klm_total_seconds(operators) / 6.0)
 
 
 def _clamp(value: float) -> float:

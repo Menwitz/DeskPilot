@@ -23,7 +23,9 @@ present, step reports, selected candidate IDs, event metadata, candidate
 rankings, confidence values, screenshot paths, timing decisions, and the trace
 directory. Step reports and step-related trace events include `step_category`
 metadata so benchmark and timing analysis can group navigation, recognition,
-data-entry, verification, and submission work.
+data-entry, verification, and submission work. Enabled `execution_timing` events
+also include `klm_operators`, `klm_operator_counts`, `klm_total_seconds`, and
+input-mode metadata for the bounded KLM-style timing model.
 
 ## Replay
 

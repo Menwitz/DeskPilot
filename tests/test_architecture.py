@@ -389,7 +389,14 @@ def test_execution_engine_traces_timing_and_recovery_metadata() -> None:
     assert timing_events[0].metadata["timing_model"] == "target_aware"
     assert timing_events[0].metadata["action_type"] == "click_text"
     assert timing_events[0].metadata["target_id"] == "candidate-1"
+    operator_counts = timing_events[0].metadata["klm_operator_counts"]
+    assert isinstance(operator_counts, dict)
+    assert operator_counts["mental"] == 1
+    assert operator_counts["pointing"] == 1
     assert "distance_pixels" in timing_events[0].metadata
     assert timing_events[0].metadata["target_width_pixels"] == 100
     assert timing_events[1].metadata["timing_model"] == "profile_bounds"
+    retry_operator_counts = timing_events[1].metadata["klm_operator_counts"]
+    assert isinstance(retry_operator_counts, dict)
+    assert retry_operator_counts["system_wait"] == 1
     assert recover_event.metadata["retry_reason"] == "transient failure"

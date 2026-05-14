@@ -169,6 +169,30 @@ def test_regression_seeded_timing_decisions_are_reproducible() -> None:
     assert timing_sequence(profile) == timing_sequence(profile)
 
 
+def test_regression_klm_metadata_is_trace_only_after_safety_gates() -> None:
+    actuator = CountingActuator()
+    report = run_fixture(
+        actuator=actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=enabled_profile(),
+        ),
+    )
+
+    timing_event = next(
+        event for event in report.events if event.phase == "execution_timing"
+    )
+    operator_counts = timing_event.metadata["klm_operator_counts"]
+    assert isinstance(operator_counts, dict)
+    assert report.status == "passed"
+    assert actuator.calls == 1
+    assert operator_counts["mental"] == 1
+    assert operator_counts["pointing"] == 1
+    assert "execute_action" in event_phases(report)
+
+
 def run_fixture(
     *,
     actuator: CountingActuator,

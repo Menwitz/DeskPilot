@@ -77,8 +77,9 @@ Supported verification types:
 - `on_failure` names a future recovery or branch target.
 - `requires_confirmation` blocks the step unless its ID is explicitly confirmed
   in runtime configuration or with `--confirm-step`.
-- `category` labels the step for timing, reporting, and later cognitive-model
-  logic. If omitted, DeskPilot records a stable action-based default category.
+- `category` labels the step for timing, reporting, and cognitive timing
+  operators. If omitted, DeskPilot records a stable action-based default
+  category.
 
 ## Task-Level Configuration
 

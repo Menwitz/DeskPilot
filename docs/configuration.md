@@ -77,6 +77,11 @@ text, allowed windows, maximum steps, timeouts, or retry budgets.
 - Enabled action timing is target-aware inside the same bounds: selected target
   distance, selected target size, and action type bias where the sampled delay
   lands between the configured lower and upper limits.
+- Enabled action and retry timing also records Keystroke-Level-Model style
+  operator metadata for mental pauses, system waits, keying, pointing, and
+  homing between keyboard and pointer modes. These operators can bias where a
+  sampled delay lands inside the configured bounds, but they never expand those
+  bounds or change the selected action.
 - `movement_smoothness` is reserved for future real pointer actuation adapters.
 - `random_seed` makes timing decisions reproducible for tests and diagnostics.
 

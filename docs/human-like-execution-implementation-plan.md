@@ -55,7 +55,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 - [x] Add task-step categories such as navigation, recognition, data entry,
   verification, and submission.
-- [ ] Add Keystroke-Level-Model style timing operators for mental pauses,
+- [x] Add Keystroke-Level-Model style timing operators for mental pauses,
   system waits, keying, pointing, and homing between input modes.
 - [ ] Let task authors choose an execution persona such as careful, normal, or
   fast while keeping all values inside safe bounds.
