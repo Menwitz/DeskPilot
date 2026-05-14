@@ -32,9 +32,21 @@ uv run mypy
 uv build
 ```
 
-The command-line runtime is planned in the CLI roadmap phase. Until then, the
-bootstrap package verifies that the project installs, imports, and passes the
-quality pipeline.
+The package verifies that the project installs, imports, exposes the CLI entry
+point, and passes the quality pipeline.
+
+## CLI
+
+```bash
+desktop-agent dry-run examples/task.yaml --allowed-window "DeskPilot Fixture"
+desktop-agent run examples/task.yaml --allowed-window "DeskPilot Fixture"
+desktop-agent inspect-screen --output traces/manual-inspection
+desktop-agent replay traces/example-run
+```
+
+`dry-run` validates and plans through the local execution pipeline without
+desktop input. `run` is wired into the same pipeline but intentionally fails
+until real actuation adapters are implemented.
 
 ## Project Layout
 

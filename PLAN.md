@@ -62,17 +62,17 @@
 
 ## 3. CLI
 
-- [ ] Add command: `desktop-agent run <task.yaml> --config <config.yaml>`.
-- [ ] Add command: `desktop-agent dry-run <task.yaml> --config <config.yaml>`.
-- [ ] Add command: `desktop-agent inspect-screen --output <trace-dir>`.
-- [ ] Add command: `desktop-agent replay <trace-dir>`.
-- [ ] Add `--verbose`.
-- [ ] Add `--no-screenshots`.
-- [ ] Add `--max-runtime-seconds`.
-- [ ] Add `--confidence-threshold`.
-- [ ] Add `--allowed-window`.
-- [ ] Ensure CLI exits with nonzero status on failed task execution.
-- [ ] Ensure every CLI failure prints a clear human-readable reason.
+- [x] Add command: `desktop-agent run <task.yaml> --config <config.yaml>`.
+- [x] Add command: `desktop-agent dry-run <task.yaml> --config <config.yaml>`.
+- [x] Add command: `desktop-agent inspect-screen --output <trace-dir>`.
+- [x] Add command: `desktop-agent replay <trace-dir>`.
+- [x] Add `--verbose`.
+- [x] Add `--no-screenshots`.
+- [x] Add `--max-runtime-seconds`.
+- [x] Add `--confidence-threshold`.
+- [x] Add `--allowed-window`.
+- [x] Ensure CLI exits with nonzero status on failed task execution.
+- [x] Ensure every CLI failure prints a clear human-readable reason.
 
 ## 4. Configuration
 

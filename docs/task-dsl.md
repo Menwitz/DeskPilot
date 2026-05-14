@@ -35,3 +35,9 @@ steps:
 - Image templates must resolve before execution starts.
 
 Complete examples will be added as the task DSL implementation lands.
+
+## CLI Support
+
+The current CLI accepts this basic YAML shape for `dry-run` planning. Later DSL
+work will add strict action and verification schemas, image-template validation,
+branching, and richer failure messages.

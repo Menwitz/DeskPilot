@@ -8,7 +8,12 @@ version = "0.1.0"
 description = "Windows-first local desktop automation framework for owned QA workflows."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "PyYAML>=6.0.2",
+]
+
+[project.scripts]
+desktop-agent = "desktop_agent.cli:main"
 
 [project.optional-dependencies]
 dev = [
@@ -16,6 +21,7 @@ dev = [
     "mypy>=1.13.0",
     "pytest>=8.3.0",
     "ruff>=0.8.0",
+    "types-PyYAML>=6.0.12",
 ]
 
 [tool.uv]

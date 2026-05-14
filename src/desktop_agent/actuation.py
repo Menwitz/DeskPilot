@@ -40,3 +40,19 @@ class DryRunActuator(Actuator):
     ) -> ActionResult:
         _ = target, config
         return ActionResult(success=True, message=f"planned {step.action}")
+
+
+class UnavailableActuator(Actuator):
+    """Adapter used by `run` until real desktop input is implemented."""
+
+    def execute(
+        self,
+        step: TaskStep,
+        target: ElementCandidate | None,
+        config: RuntimeConfig,
+    ) -> ActionResult:
+        _ = step, target, config
+        return ActionResult(
+            success=False,
+            message="desktop actuation is not implemented yet; use dry-run",
+        )
