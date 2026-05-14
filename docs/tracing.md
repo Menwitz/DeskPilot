@@ -34,11 +34,13 @@ expected UI state transitions before the planner observes the screen or attempts
 input. Task JSON also stores each step's `depends_on` and `expected_state`
 contracts for report review.
 
-The `execution_path` event records whether an action attempt uses the standard
-path or the fast path. Fast-path timing events include the original sampled
-delay, the reduced lower-bound delay, the reduction amount, the target
-confidence, and `safety_checks_required: true` so reports can confirm speedups
-did not remove safety checks.
+The `execution_path` event records whether an action attempt uses the standard,
+fast, or careful path. Fast-path timing events include the original sampled
+delay, the reduced lower-bound delay, and the reduction amount. Careful-path
+timing events include the original sampled delay, the upper-bound delay, and the
+extension amount. Both paths include target confidence and
+`safety_checks_required: true` so reports can confirm path selection did not
+remove safety checks.
 
 Each executed step also emits `step_timeout_budget` metadata with the planned
 action wait, retry wait, total planned wait, remaining timeout, and whether the

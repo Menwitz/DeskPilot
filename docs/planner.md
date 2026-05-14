@@ -15,9 +15,10 @@ After target selection and before timing, the engine chooses an execution path.
 Stable first-attempt actions with exactly one visible, enabled, high-confidence
 target can use the `fast` path, which consumes the lower bound of the configured
 action delay. Careful persona runs, sensitive submission steps,
-confirmation-gated steps, retries, low-confidence targets, unstable candidates,
-and unsupported actions stay on the standard path. The planner still runs safety
-checks before choosing the path.
+confirmation-gated steps, retries, low-confidence selected targets, unstable
+candidates, multiple visible candidates, and risky unsupported actions use the
+`careful` path, which consumes the upper bound of the configured action delay.
+The planner still runs safety checks before choosing the path.
 
 ## Runtime Controls
 

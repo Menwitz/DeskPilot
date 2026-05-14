@@ -606,6 +606,12 @@ class ExecutionEngine:
                     delay_seconds=action_timing.lower_bound_seconds,
                     reason="fast-path action timing decided",
                 )
+            elif execution_path.careful:
+                action_timing = replace(
+                    action_timing,
+                    delay_seconds=action_timing.upper_bound_seconds,
+                    reason="careful-path action timing decided",
+                )
             if config.execution_profile.enabled:
                 metadata = action_timing.metadata()
                 metadata["step_id"] = step.id
@@ -616,6 +622,12 @@ class ExecutionEngine:
                     metadata["original_delay_seconds"] = original_delay_seconds
                     metadata["delay_reduction_seconds"] = max(
                         original_delay_seconds - action_timing.delay_seconds,
+                        0.0,
+                    )
+                elif execution_path.careful:
+                    metadata["original_delay_seconds"] = original_delay_seconds
+                    metadata["delay_extension_seconds"] = max(
+                        action_timing.delay_seconds - original_delay_seconds,
                         0.0,
                     )
                 self._record("execution_timing", action_timing.reason, metadata)

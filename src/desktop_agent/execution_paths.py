@@ -9,7 +9,7 @@ from desktop_agent.config import RuntimeConfig
 from desktop_agent.perception import ElementCandidate
 from desktop_agent.task_dsl import TaskStep, step_category
 
-ExecutionPathMode = Literal["fast", "standard"]
+ExecutionPathMode = Literal["fast", "standard", "careful"]
 
 FAST_PATH_ACTIONS: frozenset[str] = frozenset(
     {
@@ -40,17 +40,25 @@ class ExecutionPathDecision:
     def fast(self) -> bool:
         return self.mode == "fast"
 
+    @property
+    def careful(self) -> bool:
+        return self.mode == "careful"
+
     def metadata(self) -> dict[str, object]:
+        timing_policy = "profile_sample"
+        if self.fast:
+            timing_policy = "lower_bound"
+        elif self.careful:
+            timing_policy = "upper_bound"
         return {
             "execution_path": self.mode,
             "execution_path_reason": self.reason,
+            "execution_path_timing_policy": timing_policy,
             "fast_path_required_confidence": self.required_confidence,
             "fast_path_target_confidence": self.target_confidence,
             "fast_path_candidate_count": self.candidate_count,
             "fast_path_attempt": self.attempt,
-            "fast_path_timing_policy": "lower_bound"
-            if self.fast
-            else "profile_sample",
+            "fast_path_timing_policy": timing_policy,
             "safety_checks_required": True,
         }
 
@@ -69,7 +77,7 @@ def choose_execution_path(
     candidate_count = len(candidates)
 
     if attempt != 1:
-        return _standard(
+        return _careful(
             "retry_attempt",
             required_confidence,
             target_confidence,
@@ -80,7 +88,7 @@ def choose_execution_path(
         config.execution_profile.enabled
         and config.execution_profile.persona == "careful"
     ):
-        return _standard(
+        return _careful(
             "careful_persona",
             required_confidence,
             target_confidence,
@@ -88,7 +96,7 @@ def choose_execution_path(
             attempt,
         )
     if step.requires_confirmation:
-        return _standard(
+        return _careful(
             "confirmation_required",
             required_confidence,
             target_confidence,
@@ -96,16 +104,8 @@ def choose_execution_path(
             attempt,
         )
     if step_category(step) == "submission":
-        return _standard(
+        return _careful(
             "submission_requires_checkpoint",
-            required_confidence,
-            target_confidence,
-            candidate_count,
-            attempt,
-        )
-    if step.action not in FAST_PATH_ACTIONS:
-        return _standard(
-            "unsupported_action",
             required_confidence,
             target_confidence,
             candidate_count,
@@ -119,8 +119,16 @@ def choose_execution_path(
             candidate_count,
             attempt,
         )
+    if step.action not in FAST_PATH_ACTIONS:
+        return _careful(
+            "risky_or_unsupported_action",
+            required_confidence,
+            target_confidence,
+            candidate_count,
+            attempt,
+        )
     if not target.visible or not target.enabled:
-        return _standard(
+        return _careful(
             "target_not_visible_or_enabled",
             required_confidence,
             target_confidence,
@@ -128,7 +136,7 @@ def choose_execution_path(
             attempt,
         )
     if _candidate_state(target) in UNSTABLE_CANDIDATE_STATES:
-        return _standard(
+        return _careful(
             "unstable_candidate_state",
             required_confidence,
             target_confidence,
@@ -136,16 +144,16 @@ def choose_execution_path(
             attempt,
         )
     if target.confidence < required_confidence:
-        return _standard(
-            "target_below_fast_path_confidence",
+        return _careful(
+            "low_confidence_selected_target",
             required_confidence,
             target_confidence,
             candidate_count,
             attempt,
         )
     if _visible_enabled_candidate_count(candidates) != 1:
-        return _standard(
-            "not_single_visible_enabled_candidate",
+        return _careful(
+            "multiple_visible_enabled_candidates",
             required_confidence,
             target_confidence,
             candidate_count,
@@ -170,6 +178,23 @@ def _standard(
 ) -> ExecutionPathDecision:
     return ExecutionPathDecision(
         mode="standard",
+        reason=reason,
+        required_confidence=required_confidence,
+        target_confidence=target_confidence,
+        candidate_count=candidate_count,
+        attempt=attempt,
+    )
+
+
+def _careful(
+    reason: str,
+    required_confidence: float,
+    target_confidence: float | None,
+    candidate_count: int,
+    attempt: int,
+) -> ExecutionPathDecision:
+    return ExecutionPathDecision(
+        mode="careful",
         reason=reason,
         required_confidence=required_confidence,
         target_confidence=target_confidence,

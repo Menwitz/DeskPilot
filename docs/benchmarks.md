@@ -33,7 +33,8 @@ The monitoring contract includes the `compile_task` phase so dependency and
 expected-state compiler checks are present before perception, deep-search, and
 actuation phases are evaluated.
 It also includes the `execution_path` phase so benchmark traces can separate
-standard actions from fast-path high-confidence segments.
+standard actions from fast-path high-confidence segments and careful-path risky
+segments.
 
 ## Repeated Dry-Run Harness
 

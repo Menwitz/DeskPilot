@@ -55,7 +55,7 @@ def test_fast_path_rejects_sensitive_or_unstable_segments() -> None:
             RuntimeConfig(confidence_threshold=0.8),
             attempt=1,
         ).reason
-        == "target_below_fast_path_confidence"
+        == "low_confidence_selected_target"
     )
     assert (
         choose_execution_path(
@@ -77,6 +77,21 @@ def test_fast_path_rejects_sensitive_or_unstable_segments() -> None:
         ).reason
         == "careful_persona"
     )
+
+
+def test_careful_path_records_upper_bound_timing_policy() -> None:
+    candidate = _candidate(confidence=0.9)
+    decision = choose_execution_path(
+        TaskStep(id="review", action="click_text", target="Review"),
+        (candidate,),
+        candidate,
+        RuntimeConfig(confidence_threshold=0.8),
+        attempt=1,
+    )
+
+    assert decision.careful
+    assert decision.metadata()["execution_path"] == "careful"
+    assert decision.metadata()["execution_path_timing_policy"] == "upper_bound"
 
 
 def _candidate(confidence: float, *, state: str | None = None) -> ElementCandidate:

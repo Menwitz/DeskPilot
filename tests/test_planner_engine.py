@@ -333,6 +333,55 @@ def test_execution_engine_fast_path_uses_lower_bound_timing() -> None:
     assert round(clock.now, 3) == 0.2
 
 
+def test_execution_engine_careful_path_uses_upper_bound_timing() -> None:
+    clock = FakeClock()
+    task = TaskDefinition(
+        name="careful-path",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-review", action="click_text", target="Review"),),
+    )
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=ExecutionProfile(
+                enabled=True,
+                action_delay_seconds=(0.2, 0.8),
+                hesitation_probability=0.0,
+                random_seed=3,
+            ),
+        ),
+        perception=SequencePerceptionEngine(
+            (_candidate_tuple("Review", confidence=0.9),),
+        ),
+        clock=clock,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    path_event = next(
+        event for event in report.events if event.phase == "execution_path"
+    )
+    timing_event = next(
+        event for event in report.events if event.phase == "execution_timing"
+    )
+    original_delay = timing_event.metadata["original_delay_seconds"]
+    delay_extension = timing_event.metadata["delay_extension_seconds"]
+    assert report.status == "passed"
+    assert path_event.metadata["execution_path"] == "careful"
+    assert path_event.metadata["execution_path_reason"] == (
+        "low_confidence_selected_target"
+    )
+    assert timing_event.metadata["execution_path"] == "careful"
+    assert timing_event.metadata["delay_seconds"] == 0.8
+    assert isinstance(original_delay, float)
+    assert isinstance(delay_extension, float)
+    assert original_delay < 0.8
+    assert delay_extension > 0
+    assert round(clock.now, 3) == 0.8
+
+
 def test_execution_engine_rejects_entropy_budget_before_observation() -> None:
     perception = SequencePerceptionEngine((_candidate_tuple("Submit"),))
     task = TaskDefinition(
