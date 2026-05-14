@@ -163,6 +163,80 @@ def test_desktop_actuator_blocks_disallowed_active_window() -> None:
     assert backend.events == []
 
 
+def test_pointer_path_is_not_emitted_for_disallowed_active_window() -> None:
+    backend = FakeInputBackend(active_window_title="Unexpected Window")
+    actuator = DesktopActuator(
+        backend,
+        ActuationProfile(
+            movement_duration_seconds=(0.0, 0.0),
+            timing_variation_seconds=(0.0, 0.0),
+            movement_steps=4,
+            movement_smoothness=0.0,
+            overshoot_probability=1.0,
+            overshoot_pixels=(8.0, 8.0),
+            random_seed=1,
+        ),
+    )
+    target = ElementCandidate(
+        id="target-1",
+        source="uia",
+        label="Submit",
+        bounds=Bounds(x=10, y=20, width=30, height=10),
+        confidence=0.9,
+    )
+
+    result = actuator.execute(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        target,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    assert result.success is False
+    assert all(event.kind != "move" for event in backend.events)
+
+
+def test_pointer_path_stays_inside_allowed_monitor_bounds() -> None:
+    monitor = MonitorInfo(left=100, top=100, width=800, height=600)
+    backend = FakeInputBackend(
+        start_position=(120, 250),
+        active_window_title="DeskPilot Fixture",
+    )
+    actuator = DesktopActuator(
+        backend,
+        ActuationProfile(
+            movement_duration_seconds=(0.0, 0.0),
+            timing_variation_seconds=(0.0, 0.0),
+            movement_steps=8,
+            movement_smoothness=0.0,
+            overshoot_probability=1.0,
+            overshoot_pixels=(40.0, 40.0),
+            random_seed=1,
+        ),
+    )
+    target = ElementCandidate(
+        id="target-1",
+        source="uia",
+        label="Submit",
+        bounds=Bounds(x=760, y=130, width=30, height=30),
+        confidence=0.9,
+    )
+
+    result = actuator.execute(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        target,
+        ScreenObservation(monitor=monitor),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    move_points = [event.point for event in backend.events if event.kind == "move"]
+    assert result.success is True
+    assert move_points
+    assert all(point is not None for point in move_points)
+    assert all(100 <= point[0] <= 900 for point in move_points if point)
+    assert all(100 <= point[1] <= 700 for point in move_points if point)
+
+
 def test_smooth_movement_planner_uses_eased_multi_point_path() -> None:
     planner = SmoothMovementPlanner(
         ActuationProfile(
@@ -248,6 +322,7 @@ def test_movement_planner_clamps_overshoot_inside_target_width() -> None:
     plan = planner.plan((0, 0), (120, 0), target_size_pixels=(20, 20))
 
     assert plan.overshoot_point == (129, 0)
+    assert 110 <= plan.overshoot_point[0] <= 130
     assert max(point[0] for point in plan.points) <= 129
     assert plan.points[-1] == (120, 0)
 
