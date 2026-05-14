@@ -315,20 +315,20 @@
 
 ## 17. Testing
 
-- [ ] Add unit tests for config precedence.
-- [ ] Add unit tests for YAML validation.
-- [ ] Add unit tests for invalid task failures.
-- [ ] Add unit tests for candidate ranking.
-- [ ] Add unit tests for retry policy.
-- [ ] Add unit tests for timeout handling.
-- [ ] Add unit tests for safety aborts.
-- [ ] Add unit tests for coordinate normalization.
-- [ ] Add OCR fixture tests.
-- [ ] Add template matching fixture tests.
-- [ ] Add fake-screen integration tests.
-- [ ] Add fake-input integration tests.
-- [ ] Add planner integration tests without real mouse movement.
-- [ ] Add manual Windows e2e checklist for real desktop execution.
+- [x] Add unit tests for config precedence.
+- [x] Add unit tests for YAML validation.
+- [x] Add unit tests for invalid task failures.
+- [x] Add unit tests for candidate ranking.
+- [x] Add unit tests for retry policy.
+- [x] Add unit tests for timeout handling.
+- [x] Add unit tests for safety aborts.
+- [x] Add unit tests for coordinate normalization.
+- [x] Add OCR fixture tests.
+- [x] Add template matching fixture tests.
+- [x] Add fake-screen integration tests.
+- [x] Add fake-input integration tests.
+- [x] Add planner integration tests without real mouse movement.
+- [x] Add manual Windows e2e checklist for real desktop execution.
 
 ## 18. V1 Acceptance Criteria
 

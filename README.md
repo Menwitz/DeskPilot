@@ -73,5 +73,6 @@ clear unavailable message on unsupported platforms.
 - [Safety](docs/safety.md)
 - [Tracing](docs/tracing.md)
 - [Troubleshooting](docs/troubleshooting.md)
+- [Windows E2E Checklist](docs/windows-e2e-checklist.md)
 - [Windows UI Automation](docs/windows-uia.md)
 - [Roadmap](docs/roadmap.md)
