@@ -11,6 +11,7 @@ from desktop_agent.actuation import DryRunActuator, UnavailableActuator
 from desktop_agent.config import (
     ConfigError,
     ConfigOverrides,
+    RuntimeConfig,
     StaticConfigLoader,
     YamlConfigLoader,
     resolve_runtime_config,
@@ -18,7 +19,11 @@ from desktop_agent.config import (
 from desktop_agent.perception import ConfidenceTargetSelector, EmptyPerceptionEngine
 from desktop_agent.planner import ExecutionEngine
 from desktop_agent.safety import LocalSafetyPolicy
-from desktop_agent.screen import StaticScreenObserver
+from desktop_agent.screen import (
+    MssScreenObserver,
+    ScreenUnavailableError,
+    StaticScreenObserver,
+)
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
     StaticTaskLoader,
@@ -120,14 +125,29 @@ def _cli_overrides_from_args(args: argparse.Namespace) -> ConfigOverrides:
 def _inspect_screen(args: argparse.Namespace) -> int:
     args.output.mkdir(parents=True, exist_ok=True)
     output_path = args.output / "inspect-screen.json"
+    config = RuntimeConfig(trace_root=args.output, save_screenshots=True)
+    try:
+        observation = MssScreenObserver().observe(config)
+    except ScreenUnavailableError as exc:
+        payload: dict[str, object] = {"status": "failed", "reason": str(exc)}
+        output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        print(f"error: {payload['reason']}")
+        print(f"inspection report: {output_path}")
+        return 1
+
     payload = {
-        "status": "failed",
-        "reason": "real screen inspection is not implemented yet",
+        "status": "passed",
+        "screenshot_path": str(observation.screenshot_path)
+        if observation.screenshot_path
+        else None,
+        "size": list(observation.size),
+        "warnings": list(observation.warnings),
+        "metadata": observation.metadata,
     }
     output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    print(f"error: {payload['reason']}")
+    print("status: passed")
     print(f"inspection report: {output_path}")
-    return 1
+    return 0
 
 
 def _replay(args: argparse.Namespace) -> int:

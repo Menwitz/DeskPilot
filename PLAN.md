@@ -142,16 +142,16 @@
 
 ## 6. Screen Layer
 
-- [ ] Implement screenshot capture using `mss`.
-- [ ] Capture full primary monitor.
-- [ ] Capture active window region.
-- [ ] Save raw screenshots to trace directory when enabled.
-- [ ] Detect monitor dimensions.
-- [ ] Detect Windows DPI scaling.
-- [ ] Normalize coordinates between screenshot space and physical mouse space.
-- [ ] Add a clear warning when multiple monitors are detected but v1 is using primary monitor only.
-- [ ] Detect locked or unavailable desktop session and abort cleanly.
-- [ ] Add tests for coordinate normalization using synthetic monitor data.
+- [x] Implement screenshot capture using `mss`.
+- [x] Capture full primary monitor.
+- [x] Capture active window region.
+- [x] Save raw screenshots to trace directory when enabled.
+- [x] Detect monitor dimensions.
+- [x] Detect Windows DPI scaling.
+- [x] Normalize coordinates between screenshot space and physical mouse space.
+- [x] Add a clear warning when multiple monitors are detected but v1 is using primary monitor only.
+- [x] Detect locked or unavailable desktop session and abort cleanly.
+- [x] Add tests for coordinate normalization using synthetic monitor data.
 
 ## 7. Windows UI Automation Layer
 
