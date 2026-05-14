@@ -148,6 +148,44 @@ def test_confidence_selector_allows_ambiguous_candidates_with_region() -> None:
     assert selected.id == "candidate-1"
 
 
+def test_confidence_selector_uses_region_to_disambiguate_repeated_labels() -> None:
+    selected = ConfidenceTargetSelector().select(
+        TaskStep(
+            id="click-submit",
+            action="click_text",
+            target="Submit",
+            region=TaskRegion(x=180, y=0, width=180, height=80),
+        ),
+        (
+            candidate("outside", "uia", 0.99, x=0),
+            candidate("inside", "uia", 0.91, x=220),
+        ),
+        RuntimeConfig(confidence_threshold=0.8),
+    )
+
+    assert selected is not None
+    assert selected.id == "inside"
+
+
+def test_confidence_selector_uses_region_to_disambiguate_repeated_icons() -> None:
+    selected = ConfidenceTargetSelector().select(
+        TaskStep(
+            id="click-icon",
+            action="click_image",
+            target="settings-icon.png",
+            region=TaskRegion(x=180, y=0, width=180, height=80),
+        ),
+        (
+            candidate("icon-outside", "image", 0.98, x=0, label="settings-icon.png"),
+            candidate("icon-inside", "image", 0.90, x=220, label="settings-icon.png"),
+        ),
+        RuntimeConfig(confidence_threshold=0.8),
+    )
+
+    assert selected is not None
+    assert selected.id == "icon-inside"
+
+
 def test_candidate_ranking_metadata_is_trace_ready() -> None:
     metadata = candidate_ranking_metadata(
         TaskStep(id="click-submit", action="click_text", target="Submit"),
@@ -161,6 +199,7 @@ def test_candidate_ranking_metadata_is_trace_ready() -> None:
     assert rankings[0]["rank"] == 1
     assert "fusion_score" in rankings[0]
     assert "source_support_score" in rankings[0]
+    assert "region_match_score" in rankings[0]
 
 
 def test_dry_run_perception_emits_synthetic_planning_candidate() -> None:

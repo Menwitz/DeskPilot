@@ -33,6 +33,8 @@ Ranking metadata includes a score breakdown for monitoring and reports:
   unknown-source evidence.
 - `confidence_score`: the source confidence value.
 - `target_match_score`: text or label match against the task target.
+- `region_match_score`: whether the candidate is inside the task's declared
+  region, or how much of the candidate overlaps it.
 - `visibility_score`: whether the candidate is visible and enabled.
 
 ## Deduplication
@@ -50,3 +52,9 @@ If two top candidates from the same source priority have nearly identical scores
 and the task did not provide a `region`, target selection returns no candidate.
 The planner records the ranking list in `detect_candidates` trace metadata so
 the task author can add a region or more specific selector.
+
+When a task provides a `region`, candidates outside the region are filtered from
+target selection. Candidates whose center falls inside the region receive a full
+region score; partial overlaps receive proportional credit. This lets repeated
+labels and repeated image-template icon matches resolve to the intended part of
+the screen without disabling confidence checks.

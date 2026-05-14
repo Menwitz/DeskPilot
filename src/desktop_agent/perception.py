@@ -57,6 +57,7 @@ class RankedCandidate:
     score: float
     source_priority: int
     target_match_score: float
+    region_match_score: float
     source_reliability_score: float
     source_support_score: float
     confidence_score: float
@@ -180,6 +181,7 @@ class ConfidenceTargetSelector(TargetSelector):
             and ranked_candidate.candidate.visible
             and ranked_candidate.candidate.confidence >= config.confidence_threshold
             and ranked_candidate.target_match_score > 0
+            and _candidate_matches_region(step, ranked_candidate)
         ]
         if not ranked:
             return None
@@ -260,6 +262,7 @@ def candidate_ranking_metadata(
                 "source_support_score": ranked.source_support_score,
                 "confidence_score": ranked.confidence_score,
                 "target_match_score": ranked.target_match_score,
+                "region_match_score": ranked.region_match_score,
                 "visibility_score": ranked.visibility_score,
             }
             for ranked in rank_candidates(step, candidates, config)
@@ -278,6 +281,7 @@ def _with_rank_metadata(ranked: RankedCandidate) -> ElementCandidate:
         "source_support_score": ranked.source_support_score,
         "confidence_score": ranked.confidence_score,
         "target_match_score": ranked.target_match_score,
+        "region_match_score": ranked.region_match_score,
         "visibility_score": ranked.visibility_score,
     }
     return replace(ranked.candidate, metadata=metadata)
@@ -288,24 +292,56 @@ def _ranked_candidate(step: TaskStep, candidate: ElementCandidate) -> RankedCand
     source_reliability_score = _source_reliability_score(candidate)
     source_support_score = _source_support_score(candidate)
     target_score = _target_match_score(step.target, candidate.label)
-    score = (
+    region_score = _region_match_score(step, candidate)
+    base_score = (
         (source_reliability_score * 0.25)
         + (candidate.confidence * 0.25)
         + (target_score * 0.25)
         + (source_support_score * 0.15)
         + (visibility_score * 0.1)
     )
+    score = base_score
+    if step.region is not None:
+        # Region is a task-authored disambiguation hint, so it carries enough
+        # weight to separate repeated labels without bypassing confidence gates.
+        score = (base_score * 0.75) + (region_score * 0.25)
     return RankedCandidate(
         candidate=candidate,
         rank=0,
         score=score,
         source_priority=SOURCE_PRIORITY[candidate.source],
         target_match_score=target_score,
+        region_match_score=region_score,
         source_reliability_score=source_reliability_score,
         source_support_score=source_support_score,
         confidence_score=candidate.confidence,
         visibility_score=visibility_score,
     )
+
+
+def _candidate_matches_region(
+    step: TaskStep,
+    ranked_candidate: RankedCandidate,
+) -> bool:
+    return step.region is None or ranked_candidate.region_match_score > 0
+
+
+def _region_match_score(step: TaskStep, candidate: ElementCandidate) -> float:
+    if step.region is None:
+        return 1.0
+    region = Bounds(
+        x=step.region.x,
+        y=step.region.y,
+        width=step.region.width,
+        height=step.region.height,
+    )
+    if _bounds_center_inside(candidate.bounds, region):
+        return 1.0
+    candidate_area = candidate.bounds.width * candidate.bounds.height
+    if candidate_area <= 0:
+        return 0.0
+    intersection_area = _intersection_area(candidate.bounds, region)
+    return intersection_area / candidate_area
 
 
 def _source_reliability_score(candidate: ElementCandidate) -> float:
@@ -396,6 +432,16 @@ def _metadata_tuple(
 
 
 def _intersection_over_union(first: Bounds, second: Bounds) -> float:
+    intersection = _intersection_area(first, second)
+    if intersection == 0:
+        return 0.0
+
+    first_area = first.width * first.height
+    second_area = second.width * second.height
+    return intersection / (first_area + second_area - intersection)
+
+
+def _intersection_area(first: Bounds, second: Bounds) -> int:
     first_right = first.x + first.width
     first_bottom = first.y + first.height
     second_right = second.x + second.width
@@ -408,13 +454,16 @@ def _intersection_over_union(first: Bounds, second: Bounds) -> float:
 
     intersection_width = max(0, intersection_right - intersection_left)
     intersection_height = max(0, intersection_bottom - intersection_top)
-    intersection = intersection_width * intersection_height
-    if intersection == 0:
-        return 0.0
+    return intersection_width * intersection_height
 
-    first_area = first.width * first.height
-    second_area = second.width * second.height
-    return intersection / (first_area + second_area - intersection)
+
+def _bounds_center_inside(bounds: Bounds, region: Bounds) -> bool:
+    center_x = bounds.x + (bounds.width / 2)
+    center_y = bounds.y + (bounds.height / 2)
+    return (
+        region.x <= center_x <= region.x + region.width
+        and region.y <= center_y <= region.y + region.height
+    )
 
 
 def _is_ambiguous(
