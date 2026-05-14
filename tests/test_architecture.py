@@ -88,7 +88,14 @@ def test_execution_engine_runs_pipeline_and_reports_success() -> None:
         name="fixture",
         allowed_windows=("DeskPilot Fixture",),
         timeout_seconds=30,
-        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+        steps=(
+            TaskStep(
+                id="click-submit",
+                action="click_text",
+                target="Submit",
+                category="submission",
+            ),
+        ),
     )
     trace_sink = MemoryTraceSink()
     engine = ExecutionEngine(
@@ -111,12 +118,15 @@ def test_execution_engine_runs_pipeline_and_reports_success() -> None:
     assert report.task_name == "fixture"
     assert [step.step_id for step in report.steps] == ["click-submit"]
     assert report.steps[0].candidate_id == "candidate-1"
+    assert report.steps[0].metadata["step_category"] == "submission"
     assert "detect_candidates" in {event.phase for event in report.events}
     selection = next(event for event in report.events if event.phase == "select_target")
     detection = next(
         event for event in report.events if event.phase == "detect_candidates"
     )
     rankings = detection.metadata["candidate_rankings"]
+    assert selection.metadata["step_category"] == "submission"
+    assert detection.metadata["step_category"] == "submission"
     assert selection.metadata["candidate_confidence"] == 0.95
     assert isinstance(rankings, list)
     first_ranking = rankings[0]

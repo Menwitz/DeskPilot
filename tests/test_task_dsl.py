@@ -5,8 +5,10 @@ import pytest
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
+    TaskStep,
     TaskValidationError,
     YamlTaskLoader,
+    step_category,
 )
 
 
@@ -31,6 +33,7 @@ def test_task_dsl_accepts_complete_task_with_region_and_verification(
                 "steps:",
                 "  - id: click-submit-image",
                 "    action: click_image",
+                "    category: submission",
                 "    image: submit.png",
                 "    region:",
                 "      x: 0",
@@ -55,6 +58,7 @@ def test_task_dsl_accepts_complete_task_with_region_and_verification(
     assert task.steps[0].verify is not None
     assert task.steps[0].verify.text == "Success"
     assert task.steps[0].requires_confirmation is True
+    assert task.steps[0].category == "submission"
 
 
 def test_task_dsl_rejects_unknown_action(tmp_path: Path) -> None:
@@ -77,6 +81,41 @@ def test_task_dsl_rejects_unknown_action(tmp_path: Path) -> None:
 
     with pytest.raises(TaskValidationError, match="unknown action"):
         validate_task(task_path)
+
+
+def test_task_dsl_rejects_unknown_step_category(tmp_path: Path) -> None:
+    task_path = tmp_path / "task.yaml"
+    task_path.write_text(
+        "\n".join(
+            [
+                "name: bad-category",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "timeout_seconds: 30",
+                "steps:",
+                "  - id: click-submit",
+                "    action: click_text",
+                "    target: Submit",
+                "    category: improvisation",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(TaskValidationError, match="unknown step category"):
+        validate_task(task_path)
+
+
+def test_step_category_uses_explicit_or_action_default() -> None:
+    assert step_category(TaskStep(id="submit", action="click_text")) == "navigation"
+    assert (
+        step_category(
+            TaskStep(id="submit", action="click_text", category="submission")
+        )
+        == "submission"
+    )
+    assert step_category(TaskStep(id="type", action="type_text")) == "data_entry"
 
 
 def test_task_dsl_rejects_unknown_verification_type(tmp_path: Path) -> None:

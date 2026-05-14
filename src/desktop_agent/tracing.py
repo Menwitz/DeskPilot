@@ -15,6 +15,7 @@ from desktop_agent.task_dsl import (
     TaskRegion,
     TaskStep,
     VerificationDefinition,
+    step_category,
 )
 
 RunStatus = Literal["passed", "failed", "aborted", "emergency_stopped"]
@@ -230,6 +231,8 @@ def _step_to_dict(step: TaskStep) -> dict[str, object]:
     return {
         "id": step.id,
         "action": step.action,
+        "category": step.category,
+        "resolved_category": step_category(step),
         "target": step.target,
         "text": step.text,
         "image": str(step.image) if step.image else None,

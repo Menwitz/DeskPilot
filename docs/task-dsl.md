@@ -21,6 +21,7 @@ steps:
   - id: submit
     action: click_text
     target: "Submit"
+    category: submission
     requires_confirmation: true
     verify:
       type: visible_text
@@ -34,6 +35,8 @@ steps:
 - Unknown actions and verification types fail validation before execution.
 - Duplicate step IDs fail validation before execution.
 - Image templates must resolve before execution starts.
+- Step `category` values must be one of `navigation`, `recognition`,
+  `data_entry`, `verification`, or `submission` when provided.
 
 ## Actions
 
@@ -74,6 +77,8 @@ Supported verification types:
 - `on_failure` names a future recovery or branch target.
 - `requires_confirmation` blocks the step unless its ID is explicitly confirmed
   in runtime configuration or with `--confirm-step`.
+- `category` labels the step for timing, reporting, and later cognitive-model
+  logic. If omitted, DeskPilot records a stable action-based default category.
 
 ## Task-Level Configuration
 
@@ -101,20 +106,24 @@ steps:
   - id: click-email
     action: click_text
     target: Email
+    category: navigation
     timeout_seconds: 10
 
   - id: type-email
     action: type_text
     text: qa@example.test
+    category: data_entry
 
   - id: find-submit
     action: scroll_until
     target: Submit
+    category: recognition
     retry: 3
 
   - id: click-submit
     action: click_text
     target: Submit
+    category: submission
     requires_confirmation: true
     verify:
       type: visible_text

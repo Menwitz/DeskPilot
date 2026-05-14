@@ -47,6 +47,30 @@ SUPPORTED_VERIFICATION_TYPES: frozenset[str] = frozenset(
     },
 )
 
+TASK_STEP_CATEGORIES: frozenset[str] = frozenset(
+    {
+        "navigation",
+        "recognition",
+        "data_entry",
+        "verification",
+        "submission",
+    },
+)
+
+DEFAULT_CATEGORY_BY_ACTION: dict[str, str] = {
+    "type_text": "data_entry",
+    "wait_for": "recognition",
+    "assert_visible": "recognition",
+    "branch_if_visible": "recognition",
+    "press_key": "navigation",
+    "scroll": "navigation",
+    "scroll_until": "navigation",
+    "drag": "navigation",
+    "click_text": "navigation",
+    "click_image": "navigation",
+    "click_uia": "navigation",
+}
+
 
 @dataclass(frozen=True)
 class VerificationDefinition:
@@ -82,6 +106,7 @@ class TaskStep:
     retry: int | None = None
     on_failure: str | None = None
     requires_confirmation: bool = False
+    category: str | None = None
 
 
 @dataclass(frozen=True)
@@ -176,6 +201,8 @@ class BasicTaskValidator(TaskValidator):
                 errors.append(f"step {step.id} action is required")
             elif step.action not in SUPPORTED_ACTIONS:
                 errors.append(f"unknown action: {step.action}")
+            if step.category is not None and step.category not in TASK_STEP_CATEGORIES:
+                errors.append(f"unknown step category: {step.category}")
             if step.retry is not None and step.retry < 0:
                 errors.append(f"step {step.id} retry must not be negative")
             if step.timeout_seconds is not None and step.timeout_seconds <= 0:
@@ -210,6 +237,7 @@ def _step_from_mapping(value: object, task_dir: Path) -> TaskStep:
         retry=_optional_int(data.get("retry")),
         on_failure=_optional_str(data.get("on_failure")),
         requires_confirmation=_optional_bool(data.get("requires_confirmation")),
+        category=_optional_str(data.get("category")),
     )
 
 
@@ -268,6 +296,14 @@ def _validate_verification_shape(step: TaskStep) -> list[str]:
     if step.verify.type == "window_title_contains" and not step.verify.text:
         errors.append(f"step {step.id} verify.text is required")
     return errors
+
+
+def step_category(step: TaskStep) -> str:
+    """Return an explicit step category or a stable action-based default."""
+
+    if step.category is not None:
+        return step.category
+    return DEFAULT_CATEGORY_BY_ACTION.get(step.action, "navigation")
 
 
 def _mapping(value: object, message: str) -> Mapping[str, object]:

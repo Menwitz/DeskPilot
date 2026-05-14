@@ -21,7 +21,13 @@ from desktop_agent.safety import (
     SafetyPolicy,
 )
 from desktop_agent.screen import ScreenObservation, ScreenObserver
-from desktop_agent.task_dsl import TaskDefinition, TaskLoader, TaskStep, TaskValidator
+from desktop_agent.task_dsl import (
+    TaskDefinition,
+    TaskLoader,
+    TaskStep,
+    TaskValidator,
+    step_category,
+)
 from desktop_agent.timing import (
     ExecutionTimingController,
     build_action_timing_context,
@@ -254,7 +260,7 @@ class ExecutionEngine:
                         if outcome.stop_status == "emergency_stopped"
                         else "abort",
                         outcome.abort_reason,
-                        {"step_id": step.id},
+                        _step_metadata(step),
                     )
                     return self.trace_sink.write_final_report(
                         outcome.stop_status or "aborted",
@@ -268,12 +274,12 @@ class ExecutionEngine:
                 if outcome.next_step_id is not None:
                     if outcome.next_step_id not in step_by_id:
                         reason = f"branch target not found: {outcome.next_step_id}"
-                        self._record("failure", reason, {"step_id": step.id})
+                        self._record("failure", reason, _step_metadata(step))
                         return self.trace_sink.write_final_report("failed", reason)
                     self._record(
                         "branch",
                         "jumping to branch target",
-                        {"step_id": step.id, "next_step_id": outcome.next_step_id},
+                        _step_metadata(step, next_step_id=outcome.next_step_id),
                     )
                     step_index = step_by_id[outcome.next_step_id]
                     continue
@@ -331,10 +337,12 @@ class ExecutionEngine:
                     ),
                 )
             observation = self.screen_observer.observe(config)
+            observation_metadata = _observation_metadata(step.id, observation, attempt)
+            observation_metadata["step_category"] = step_category(step)
             self._record(
                 "observe_screen",
                 "screen observed",
-                _observation_metadata(step.id, observation, attempt),
+                observation_metadata,
             )
 
             candidates = self.perception_engine.detect(step, observation, config)
@@ -347,10 +355,10 @@ class ExecutionEngine:
                         last_candidate_id,
                     ),
                 )
-            detection_metadata = {
-                "step_id": step.id,
-                "candidate_count": len(candidates),
-            }
+            detection_metadata = _step_metadata(
+                step,
+                candidate_count=len(candidates),
+            )
             detection_metadata.update(
                 candidate_ranking_metadata(step, candidates, config),
             )
@@ -362,13 +370,13 @@ class ExecutionEngine:
 
             target = self.target_selector.select(step, candidates, config)
             last_candidate_id = target.id if target else None
-            selection_metadata: dict[str, object] = {
-                "step_id": step.id,
-                "candidate_id": last_candidate_id,
-                "candidate_confidence": target.confidence if target else None,
-                "candidate_source": target.source if target else None,
-                "candidate_count": len(candidates),
-            }
+            selection_metadata: dict[str, object] = _step_metadata(
+                step,
+                candidate_id=last_candidate_id,
+                candidate_confidence=target.confidence if target else None,
+                candidate_source=target.source if target else None,
+                candidate_count=len(candidates),
+            )
             if target is None and candidates:
                 selection_metadata["selection_blocked"] = "confidence_or_ambiguity_gate"
             self._record(
@@ -396,13 +404,13 @@ class ExecutionEngine:
                 self._record(
                     "recover",
                     "aborting with trace after safety rejection",
-                    {
-                        "step_id": step.id,
-                        "recovery_actions": [
+                    _step_metadata(
+                        step,
+                        recovery_actions=[
                             "refocus_allowed_window",
                             "abort_with_trace",
                         ],
-                    },
+                    ),
                 )
                 return StepExecutionOutcome(
                     self._step_failed(
@@ -421,6 +429,7 @@ class ExecutionEngine:
             if config.execution_profile.enabled:
                 metadata = action_timing.metadata()
                 metadata["step_id"] = step.id
+                metadata["step_category"] = step_category(step)
                 metadata["attempt"] = attempt
                 self._record("execution_timing", action_timing.reason, metadata)
 
@@ -454,10 +463,7 @@ class ExecutionEngine:
                         last_candidate_id,
                     ),
                 )
-            action_metadata = {
-                "step_id": step.id,
-                "success": action_result.success,
-            }
+            action_metadata = _step_metadata(step, success=action_result.success)
             action_metadata.update(action_result.metadata)
             self._record(
                 "execute_action",
@@ -479,7 +485,7 @@ class ExecutionEngine:
             self._record(
                 "verify_result",
                 verification.message,
-                {"step_id": step.id, "passed": verification.passed},
+                _step_metadata(step, passed=verification.passed),
             )
 
             if action_result.success and verification.passed:
@@ -496,17 +502,17 @@ class ExecutionEngine:
             last_message = verification.message
             if attempt < total_attempts:
                 retry_timing = timing_controller.before_retry()
-                recover_metadata = {
-                    "step_id": step.id,
-                    "next_attempt": attempt + 1,
-                    "retry_reason": last_message,
-                    "retry_delay_seconds": retry_timing.delay_seconds,
-                    "recovery_actions": [
+                recover_metadata = _step_metadata(
+                    step,
+                    next_attempt=attempt + 1,
+                    retry_reason=last_message,
+                    retry_delay_seconds=retry_timing.delay_seconds,
+                    recovery_actions=[
                         "wait_and_reobserve",
                         "retry_alternate_candidate",
                         "abort_with_trace",
                     ],
-                }
+                )
                 self._record(
                     "recover",
                     "retrying step",
@@ -515,6 +521,7 @@ class ExecutionEngine:
                 if config.execution_profile.enabled:
                     timing_metadata = retry_timing.metadata()
                     timing_metadata["step_id"] = step.id
+                    timing_metadata["step_category"] = step_category(step)
                     timing_metadata["next_attempt"] = attempt + 1
                     self._record(
                         "execution_timing",
@@ -557,7 +564,7 @@ class ExecutionEngine:
             self._record(
                 "verify_result",
                 verification.message,
-                {"step_id": step.id, "passed": verification.passed},
+                _step_metadata(step, passed=verification.passed),
             )
             if verification.passed:
                 return StepExecutionOutcome(
@@ -573,11 +580,11 @@ class ExecutionEngine:
             self._record(
                 "recover",
                 "waiting and re-observing",
-                {
-                    "step_id": step.id,
-                    "next_attempt": attempts + 1,
-                    "recovery_actions": ["wait_and_reobserve", "abort_with_trace"],
-                },
+                _step_metadata(
+                    step,
+                    next_attempt=attempts + 1,
+                    recovery_actions=["wait_and_reobserve", "abort_with_trace"],
+                ),
             )
             self.clock.sleep(
                 min(
@@ -665,6 +672,7 @@ class ExecutionEngine:
             if config.execution_profile.enabled:
                 metadata = action_timing.metadata()
                 metadata["step_id"] = step.id
+                metadata["step_category"] = step_category(step)
                 metadata["attempt"] = attempt
                 self._record("execution_timing", action_timing.reason, metadata)
 
@@ -673,8 +681,7 @@ class ExecutionEngine:
                 "execute_action",
                 action_result.message,
                 {
-                    "step_id": step.id,
-                    "success": action_result.success,
+                    **_step_metadata(step, success=action_result.success),
                     **action_result.metadata,
                 },
             )
@@ -684,15 +691,15 @@ class ExecutionEngine:
             self._record(
                 "recover",
                 "scrolling search region and re-observing",
-                {
-                    "step_id": step.id,
-                    "next_attempt": attempt + 1,
-                    "recovery_actions": [
+                _step_metadata(
+                    step,
+                    next_attempt=attempt + 1,
+                    recovery_actions=[
                         "scroll_search_region",
                         "wait_and_reobserve",
                         "abort_with_trace",
                     ],
-                },
+                ),
             )
 
         return StepExecutionOutcome(
@@ -725,7 +732,7 @@ class ExecutionEngine:
         self._record(
             "verify_result",
             verification.message,
-            {"step_id": step.id, "passed": verification.passed},
+            _step_metadata(step, passed=verification.passed),
         )
         if verification.passed:
             return StepExecutionOutcome(
@@ -762,16 +769,18 @@ class ExecutionEngine:
         config: RuntimeConfig,
     ) -> tuple[ScreenObservation, tuple[ElementCandidate, ...]]:
         observation = self.screen_observer.observe(config)
+        observation_metadata = _observation_metadata(step.id, observation, attempt=1)
+        observation_metadata["step_category"] = step_category(step)
         self._record(
             "observe_after_action",
             "screen observed after action",
-            _observation_metadata(step.id, observation, attempt=1),
+            observation_metadata,
         )
         if step.verify is None:
             return observation, ()
         verify_step = _verification_step(step)
         candidates = self.perception_engine.detect(verify_step, observation, config)
-        metadata = {"step_id": verify_step.id, "candidate_count": len(candidates)}
+        metadata = _step_metadata(verify_step, candidate_count=len(candidates))
         metadata.update(candidate_ranking_metadata(verify_step, candidates, config))
         self._record("verify_candidates", "candidate search completed", metadata)
         return observation, candidates
@@ -785,13 +794,15 @@ class ExecutionEngine:
         phase: str = "detect_candidates",
     ) -> tuple[ScreenObservation, tuple[ElementCandidate, ...]]:
         observation = self.screen_observer.observe(config)
+        observation_metadata = _observation_metadata(step.id, observation, attempt)
+        observation_metadata["step_category"] = step_category(step)
         self._record(
             "observe_screen",
             "screen observed",
-            _observation_metadata(step.id, observation, attempt),
+            observation_metadata,
         )
         candidates = self.perception_engine.detect(step, observation, config)
-        metadata = {"step_id": step.id, "candidate_count": len(candidates)}
+        metadata = _step_metadata(step, candidate_count=len(candidates))
         metadata.update(candidate_ranking_metadata(step, candidates, config))
         self._record(phase, "candidate search completed", metadata)
         return observation, candidates
@@ -817,6 +828,7 @@ class ExecutionEngine:
         action_count: int | None,
     ) -> StepReport:
         metadata: dict[str, object] = {}
+        metadata["step_category"] = step_category(step)
         if action_count is not None:
             metadata["action_count"] = action_count
         return StepReport(
@@ -839,7 +851,7 @@ class ExecutionEngine:
         self._record(
             "failure",
             message,
-            {"step_id": step.id, "candidate_id": candidate_id},
+            _step_metadata(step, candidate_id=candidate_id),
         )
         return StepReport(
             step_id=step.id,
@@ -848,6 +860,7 @@ class ExecutionEngine:
             attempts=max(attempts, 1),
             message=message,
             candidate_id=candidate_id,
+            metadata={"step_category": step_category(step)},
         )
 
     def _emergency_stop_outcome(
@@ -890,7 +903,16 @@ def _verification_step(step: TaskStep) -> TaskStep:
         target=target,
         image=step.verify.image,
         region=step.region,
+        category="verification",
     )
+
+
+def _step_metadata(step: TaskStep, **metadata: object) -> dict[str, object]:
+    return {
+        "step_id": step.id,
+        "step_category": step_category(step),
+        **metadata,
+    }
 
 
 def _observation_metadata(

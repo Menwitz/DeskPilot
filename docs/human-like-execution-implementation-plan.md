@@ -53,7 +53,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 ## Phase 3: Task-Level Cognitive Timing
 
-- [ ] Add task-step categories such as navigation, recognition, data entry,
+- [x] Add task-step categories such as navigation, recognition, data entry,
   verification, and submission.
 - [ ] Add Keystroke-Level-Model style timing operators for mental pauses,
   system waits, keying, pointing, and homing between input modes.

@@ -21,7 +21,9 @@ the execution pipeline as the active `config.trace_root`.
 The final report includes the task name, final status, abort reason when
 present, step reports, selected candidate IDs, event metadata, candidate
 rankings, confidence values, screenshot paths, timing decisions, and the trace
-directory.
+directory. Step reports and step-related trace events include `step_category`
+metadata so benchmark and timing analysis can group navigation, recognition,
+data-entry, verification, and submission work.
 
 ## Replay
 
