@@ -5,8 +5,9 @@ logged-in Windows desktop session.
 
 ## Verified Locally
 
-- `desktop-agent dry-run` validates YAML tasks, runs the planner with a dry-run
-  actuator, prints planned step results, and does not send input.
+- `desktop-agent dry-run` validates YAML tasks, prints a preview of timing
+  bounds and recovery paths, runs the planner with a dry-run actuator, prints
+  planned step results, and does not send input.
 - `desktop-agent inspect-screen` writes `inspect-screen.json` with screenshot
   metadata, OCR blocks, UIA tree/candidates when available, fused candidates,
   and candidate rankings.

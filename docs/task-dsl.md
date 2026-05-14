@@ -197,6 +197,8 @@ steps:
 
 ## CLI Support
 
-The current CLI accepts this basic YAML shape for `dry-run` planning. Later DSL
-work will add strict action and verification schemas, image-template validation,
-branching, and richer failure messages.
+The current CLI accepts this YAML shape for `dry-run` planning. Dry-run output
+starts with a preview of each step's timing bounds, worst-case planned wait
+against timeout, and recovery paths before running the safe planner pipeline.
+Later DSL work will add strict action and verification schemas,
+image-template validation, branching, and richer failure messages.

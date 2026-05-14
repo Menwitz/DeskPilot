@@ -40,8 +40,51 @@ def test_cli_dry_run_validates_and_reports_success(
 
     output = capsys.readouterr().out
     assert status == 0
+    assert "dry-run preview:" in output
     assert "task: cli-fixture" in output
     assert "status: passed" in output
+
+
+def test_cli_dry_run_preview_shows_timing_bounds_and_recovery_paths(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    task_path = tmp_path / "task.yaml"
+    task_path.write_text(
+        "\n".join(
+            [
+                "name: preview-cli",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "timeout_seconds: 30",
+                "config:",
+                "  execution_profile:",
+                "    enabled: true",
+                "    action_delay_seconds: [0.05, 0.25]",
+                "    retry_delay_seconds: [0.10, 0.30]",
+                "steps:",
+                "  - id: click-submit",
+                "    action: click_text",
+                "    target: Submit",
+                "    recovery:",
+                "      - reason: missed_target",
+                "        actions:",
+                "          - wait_and_reobserve",
+                "          - abort_with_trace",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    status = main(["dry-run", str(task_path), "--allowed-window", "DeskPilot Fixture"])
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "timing: action 0.050-0.250s x2" in output
+    assert "retry 0.100-0.300s x1" in output
+    assert "recovery: missed_target -> wait_and_reobserve -> abort_with_trace" in output
+    assert "chosen wait_and_reobserve constrained" in output
 
 
 def test_cli_dry_run_plans_scroll_until_without_live_screen(

@@ -45,6 +45,7 @@ from desktop_agent.platforms.windows.uia import (
     WindowsUiaUnavailableError,
     write_uia_tree_snapshot,
 )
+from desktop_agent.preview import build_dry_run_preview, render_dry_run_preview
 from desktop_agent.safety import (
     LocalSafetyPolicy,
     NoopEmergencyStopMonitor,
@@ -163,6 +164,8 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
         if dry_run
         else create_platform_emergency_stop_monitor()
     )
+    if dry_run:
+        print(render_dry_run_preview(build_dry_run_preview(task, config)))
     engine = ExecutionEngine(
         config_loader=StaticConfigLoader(config),
         task_loader=StaticTaskLoader(task),
