@@ -147,6 +147,7 @@ class MovementPlan:
     points: tuple[tuple[int, int], ...]
     duration_seconds: float
     timing_estimate: PointerTimingEstimate | None = None
+    path_model: str = "minimum_jerk_quadratic_bezier"
 
     @property
     def step_delay_seconds(self) -> float:
@@ -288,7 +289,7 @@ class SmoothMovementPlanner:
                 start,
                 control,
                 end,
-                _ease_in_out(index / self._profile.movement_steps),
+                _minimum_jerk(index / self._profile.movement_steps),
             )
             for index in range(1, self._profile.movement_steps + 1)
         )
@@ -790,6 +791,7 @@ def _input_metadata(
         "point": list(point),
         "movement_points": len(plan.points),
         "movement_duration_seconds": plan.duration_seconds,
+        "pointer_path_model": plan.path_model,
         "candidate_id": target.id if target else None,
     }
     if plan.timing_estimate is not None:
@@ -818,8 +820,8 @@ def _quadratic_bezier(
     return (round(x), round(y))
 
 
-def _ease_in_out(t: float) -> float:
-    return t * t * (3 - 2 * t)
+def _minimum_jerk(t: float) -> float:
+    return (10 * t**3) - (15 * t**4) + (6 * t**5)
 
 
 def _clamp_seconds(value: float, bounds: tuple[float, float]) -> float:

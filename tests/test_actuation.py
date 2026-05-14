@@ -47,6 +47,7 @@ def test_desktop_actuator_clicks_converted_target_center() -> None:
     assert result.metadata["point"] == [150, 250]
     assert result.metadata["pointer_timing_model"] == "fitts_law"
     assert result.metadata["pointer_effective_target_width_pixels"] == 20.0
+    assert result.metadata["pointer_path_model"] == "minimum_jerk_quadratic_bezier"
     assert backend.events[-2].kind == "mouse_down"
     assert backend.events[-2].point == (150, 250)
     assert backend.events[-1].kind == "mouse_up"
@@ -180,6 +181,30 @@ def test_smooth_movement_planner_uses_eased_multi_point_path() -> None:
     assert plan.points[0][0] < plan.points[1][0] < plan.points[2][0]
     assert plan.timing_estimate is not None
     assert plan.timing_estimate.model == "fitts_law"
+    assert plan.path_model == "minimum_jerk_quadratic_bezier"
+
+
+def test_movement_planner_uses_minimum_jerk_progression() -> None:
+    planner = SmoothMovementPlanner(
+        ActuationProfile(
+            movement_duration_seconds=(0.2, 0.2),
+            timing_variation_seconds=(0.0, 0.0),
+            movement_steps=6,
+            movement_smoothness=0.0,
+            random_seed=3,
+        ),
+    )
+
+    plan = planner.plan((0, 0), (120, 0), target_size_pixels=(20, 20))
+    x_positions = [0, *(point[0] for point in plan.points)]
+    deltas = [
+        x_positions[index + 1] - x_positions[index]
+        for index in range(len(x_positions) - 1)
+    ]
+
+    assert plan.points[-1] == (120, 0)
+    assert deltas[0] < max(deltas)
+    assert deltas[-1] < max(deltas)
 
 
 def test_fitts_law_pointer_timing_increases_for_far_small_targets() -> None:

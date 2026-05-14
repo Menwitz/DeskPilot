@@ -28,10 +28,11 @@ as already physical. Tests use this fallback for deterministic fixtures.
 
 ## Movement Profile
 
-Mouse movement uses a bounded eased path with a small optional curve. The
-`ActuationProfile` controls movement duration, timing variation, path step
-count, smoothness, and deterministic random seed. The tiny variation is for
-local reliability around UI latency, not for stealth or bot-evasion behavior.
+Mouse movement uses a bounded minimum-jerk path over a small optional curved
+Bezier trajectory. The `ActuationProfile` controls movement duration, timing
+variation, path step count, smoothness, and deterministic random seed. The tiny
+variation is for local reliability around UI latency, not for stealth or
+bot-evasion behavior.
 
 Movement duration is estimated behind a local `PointerTimingModel` interface.
 The default `FittsLawPointerTimingModel` uses pointer distance and effective
@@ -39,6 +40,8 @@ target width to estimate movement time, then clamps the estimate inside
 `ActuationProfile.movement_duration_seconds`. Action metadata includes the
 pointer timing model, distance, effective target width, index of difficulty, and
 bounded model duration for trace and report inspection.
+Movement metadata also records the pointer path model used for the emitted
+physical points.
 
 ## Safety
 
