@@ -22,6 +22,10 @@ steps:
   - id: browser-submit
     action: click_text
     target: Submit Browser Fixture
+    category: submission
+    checkpoint:
+      type: visible_text
+      text: Submit Browser Fixture
     verify:
       type: visible_text
       text: Browser fixture success
@@ -37,6 +41,10 @@ steps:
   - id: native-submit
     action: click_text
     target: Submit Native Fixture
+    category: submission
+    checkpoint:
+      type: visible_text
+      text: Submit Native Fixture
     verify:
       type: visible_text
       text: Native fixture success

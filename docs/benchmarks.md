@@ -35,6 +35,8 @@ actuation phases are evaluated.
 It also includes the `execution_path` phase so benchmark traces can separate
 standard actions from fast-path high-confidence segments and careful-path risky
 segments.
+Built-in submission fixture tasks declare pre-action checkpoints, so benchmark
+reports also cover `verification_checkpoint` evidence before final actions.
 
 ## Repeated Dry-Run Harness
 

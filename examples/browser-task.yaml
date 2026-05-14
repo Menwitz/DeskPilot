@@ -21,6 +21,10 @@ steps:
   - id: click-submit
     action: click_text
     target: Submit Browser Fixture
+    category: submission
+    checkpoint:
+      type: visible_text
+      text: Submit Browser Fixture
     verify:
       type: visible_text
       text: Browser fixture success

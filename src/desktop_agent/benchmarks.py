@@ -36,6 +36,7 @@ TRACE_MONITORING_PHASES: tuple[str, ...] = (
     "detect_candidates",
     "select_target",
     "execution_path",
+    "verification_checkpoint",
     "execute_action",
     "verify_result",
 )

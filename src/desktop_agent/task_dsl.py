@@ -147,6 +147,7 @@ class TaskStep:
     image: Path | None = None
     region: TaskRegion | None = None
     verify: VerificationDefinition | None = None
+    checkpoint: VerificationDefinition | None = None
     timeout_seconds: float | None = None
     retry: int | None = None
     on_failure: str | None = None
@@ -279,6 +280,7 @@ class BasicTaskValidator(TaskValidator):
             errors.extend(_validate_recovery_rules(step, all_step_ids))
             errors.extend(_validate_action_shape(step))
             errors.extend(_validate_verification_shape(step))
+            errors.extend(_validate_checkpoint_shape(step))
 
         if (
             task.entropy_budget is not None
@@ -296,6 +298,10 @@ def _step_from_mapping(value: object, task_dir: Path) -> TaskStep:
     verify = None
     if verify_value is not None:
         verify = _verification_from_mapping(verify_value, task_dir)
+    checkpoint_value = data.get("checkpoint")
+    checkpoint = None
+    if checkpoint_value is not None:
+        checkpoint = _verification_from_mapping(checkpoint_value, task_dir)
 
     return TaskStep(
         id=str(data.get("id", "")),
@@ -305,6 +311,7 @@ def _step_from_mapping(value: object, task_dir: Path) -> TaskStep:
         image=_optional_image(data.get("image"), task_dir),
         region=_optional_region(data.get("region")),
         verify=verify,
+        checkpoint=checkpoint,
         timeout_seconds=_optional_float(data.get("timeout_seconds")),
         retry=_optional_int(data.get("retry")),
         on_failure=_optional_str(data.get("on_failure")),
@@ -363,19 +370,29 @@ def _validate_action_shape(step: TaskStep) -> list[str]:
 def _validate_verification_shape(step: TaskStep) -> list[str]:
     if step.verify is None:
         return []
+    return _validate_verification_definition(step, step.verify, "verify")
 
+
+def _validate_checkpoint_shape(step: TaskStep) -> list[str]:
+    if step.checkpoint is None:
+        return []
+    return _validate_verification_definition(step, step.checkpoint, "checkpoint")
+
+
+def _validate_verification_definition(
+    step: TaskStep,
+    verify: VerificationDefinition,
+    field_name: str,
+) -> list[str]:
     errors: list[str] = []
-    if step.verify.type not in SUPPORTED_VERIFICATION_TYPES:
-        errors.append(f"unknown verification type: {step.verify.type}")
-    if (
-        step.verify.type in {"visible_text", "not_visible_text"}
-        and not step.verify.text
-    ):
-        errors.append(f"step {step.id} verify.text is required")
-    if step.verify.type == "visible_image" and step.verify.image is None:
-        errors.append(f"step {step.id} verify.image is required")
-    if step.verify.type == "window_title_contains" and not step.verify.text:
-        errors.append(f"step {step.id} verify.text is required")
+    if verify.type not in SUPPORTED_VERIFICATION_TYPES:
+        errors.append(f"unknown verification type: {verify.type}")
+    if verify.type in {"visible_text", "not_visible_text"} and not verify.text:
+        errors.append(f"step {step.id} {field_name}.text is required")
+    if verify.type == "visible_image" and verify.image is None:
+        errors.append(f"step {step.id} {field_name}.image is required")
+    if verify.type == "window_title_contains" and not verify.text:
+        errors.append(f"step {step.id} {field_name}.text is required")
     return errors
 
 

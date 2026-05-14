@@ -12,6 +12,10 @@ steps:
   - id: click-native-submit
     action: click_text
     target: Submit Native Fixture
+    category: submission
+    checkpoint:
+      type: visible_text
+      text: Submit Native Fixture
     verify:
       type: visible_text
       text: Native fixture success

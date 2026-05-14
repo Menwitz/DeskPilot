@@ -46,6 +46,9 @@ def test_task_dsl_accepts_complete_task_with_region_and_verification(
                 "    verify:",
                 "      type: visible_text",
                 "      text: Success",
+                "    checkpoint:",
+                "      type: visible_text",
+                "      text: Submit",
                 "    requires_confirmation: true",
                 "",
             ],
@@ -61,6 +64,8 @@ def test_task_dsl_accepts_complete_task_with_region_and_verification(
     assert task.steps[0].region is not None
     assert task.steps[0].verify is not None
     assert task.steps[0].verify.text == "Success"
+    assert task.steps[0].checkpoint is not None
+    assert task.steps[0].checkpoint.text == "Submit"
     assert task.steps[0].requires_confirmation is True
     assert task.steps[0].category == "submission"
     assert task.steps[0].entropy_budget == 1.0

@@ -382,6 +382,96 @@ def test_execution_engine_careful_path_uses_upper_bound_timing() -> None:
     assert round(clock.now, 3) == 0.8
 
 
+def test_execution_engine_runs_checkpoint_before_irreversible_action() -> None:
+    task = TaskDefinition(
+        name="checkpoint-pass",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="submit",
+                action="click_text",
+                target="Submit",
+                category="submission",
+                checkpoint=VerificationDefinition(
+                    type="visible_text",
+                    text="Ready",
+                ),
+            ),
+        ),
+    )
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=ExecutionProfile(
+                enabled=True,
+                action_delay_seconds=(0.1, 0.1),
+            ),
+        ),
+        perception=SequencePerceptionEngine(
+            (_candidate_tuple("Submit"), _candidate_tuple("Ready")),
+        ),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    phases = [event.phase for event in report.events]
+    checkpoint = next(
+        event for event in report.events if event.phase == "verification_checkpoint"
+    )
+    assert report.status == "passed"
+    assert checkpoint.metadata["passed"] is True
+    assert checkpoint.metadata["irreversible_action"] is True
+    assert phases.index("verification_checkpoint") < phases.index("execution_timing")
+    assert phases.index("verification_checkpoint") < phases.index("execute_action")
+
+
+def test_execution_engine_stops_when_checkpoint_fails_before_action() -> None:
+    actuator = SequenceActuator((ActionResult(True, "should not run"),))
+    task = TaskDefinition(
+        name="checkpoint-fail",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="submit",
+                action="click_text",
+                target="Submit",
+                category="submission",
+                checkpoint=VerificationDefinition(
+                    type="visible_text",
+                    text="Ready",
+                ),
+            ),
+        ),
+    )
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=ExecutionProfile(
+                enabled=True,
+                action_delay_seconds=(0.1, 0.1),
+            ),
+        ),
+        perception=SequencePerceptionEngine((_candidate_tuple("Submit"), ())),
+        actuator=actuator,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    phases = {event.phase for event in report.events}
+    assert report.status == "failed"
+    assert report.steps[0].metadata["failure_category"] == "verification_checkpoint"
+    assert report.steps[0].message == (
+        "verification checkpoint failed: text is not visible"
+    )
+    assert "execution_timing" not in phases
+    assert "execute_action" not in phases
+    assert actuator.calls == 0
+
+
 def test_execution_engine_rejects_entropy_budget_before_observation() -> None:
     perception = SequencePerceptionEngine((_candidate_tuple("Submit"),))
     task = TaskDefinition(

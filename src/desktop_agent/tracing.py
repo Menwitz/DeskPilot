@@ -245,6 +245,7 @@ def _step_to_dict(step: TaskStep) -> dict[str, object]:
         "image": str(step.image) if step.image else None,
         "region": _region_to_dict(step.region),
         "verify": _verification_to_dict(step.verify),
+        "checkpoint": _verification_to_dict(step.checkpoint),
         "timeout_seconds": step.timeout_seconds,
         "retry": step.retry,
         "on_failure": step.on_failure,

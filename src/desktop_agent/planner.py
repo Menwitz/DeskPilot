@@ -596,6 +596,22 @@ class ExecutionEngine:
                 "execution path selected",
                 _step_metadata(step, **execution_path.metadata()),
             )
+            if step.checkpoint is not None:
+                checkpoint = self._run_verification_checkpoint(
+                    step,
+                    config,
+                    attempt,
+                )
+                if not checkpoint.passed:
+                    return StepExecutionOutcome(
+                        self._step_failed(
+                            step,
+                            attempt,
+                            f"verification checkpoint failed: {checkpoint.message}",
+                            last_candidate_id,
+                            failure_category="verification_checkpoint",
+                        ),
+                    )
             action_timing = timing_controller.before_action(
                 build_action_timing_context(step, target, observation),
             )
@@ -1069,6 +1085,51 @@ class ExecutionEngine:
         self._record("verify_candidates", "candidate search completed", metadata)
         return observation, candidates
 
+    def _run_verification_checkpoint(
+        self,
+        step: TaskStep,
+        config: RuntimeConfig,
+        attempt: int,
+    ) -> VerificationResult:
+        observation = self.screen_observer.observe(config)
+        observation_metadata = _observation_metadata(step.id, observation, attempt)
+        observation_metadata["step_category"] = step_category(step)
+        self._record(
+            "observe_checkpoint",
+            "screen observed for verification checkpoint",
+            observation_metadata,
+        )
+        checkpoint_step = _checkpoint_step(step)
+        candidates = self.perception_engine.detect(checkpoint_step, observation, config)
+        metadata = _step_metadata(
+            checkpoint_step,
+            candidate_count=len(candidates),
+            checkpoint_for_step_id=step.id,
+        )
+        metadata.update(candidate_ranking_metadata(checkpoint_step, candidates, config))
+        self._record("checkpoint_candidates", "candidate search completed", metadata)
+        target = self.target_selector.select(checkpoint_step, candidates, config)
+        checkpoint = self.verifier.verify(
+            checkpoint_step,
+            observation,
+            target,
+            ActionResult(True, "checkpoint checked"),
+            config,
+            candidates,
+        )
+        self._record(
+            "verification_checkpoint",
+            checkpoint.message,
+            _step_metadata(
+                step,
+                checkpoint_type=step.checkpoint.type if step.checkpoint else None,
+                checkpoint_target_id=target.id if target else None,
+                irreversible_action=_irreversible_action(step),
+                passed=checkpoint.passed,
+            ),
+        )
+        return checkpoint
+
     def _recovery_observation(
         self,
         step: TaskStep,
@@ -1248,6 +1309,31 @@ def _verification_step(step: TaskStep) -> TaskStep:
         region=step.region,
         category="verification",
     )
+
+
+def _checkpoint_step(step: TaskStep) -> TaskStep:
+    if step.checkpoint is None:
+        return step
+    target = step.target
+    if step.checkpoint.type in {
+        "visible_text",
+        "not_visible_text",
+        "uia_element_exists",
+    }:
+        target = step.checkpoint.text
+    return TaskStep(
+        id=f"{step.id}-checkpoint",
+        action="assert_visible",
+        target=target,
+        image=step.checkpoint.image,
+        region=step.region,
+        verify=step.checkpoint,
+        category="verification",
+    )
+
+
+def _irreversible_action(step: TaskStep) -> bool:
+    return step.requires_confirmation or step_category(step) == "submission"
 
 
 def _step_metadata(step: TaskStep, **metadata: object) -> dict[str, object]:

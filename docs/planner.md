@@ -20,6 +20,12 @@ candidates, multiple visible candidates, and risky unsupported actions use the
 `careful` path, which consumes the upper bound of the configured action delay.
 The planner still runs safety checks before choosing the path.
 
+If a step declares `checkpoint`, the planner performs that read-only
+verification after path selection but before action timing and actuation. A
+failed checkpoint records `verification_checkpoint` and fails the step without
+sending input, which lets submissions verify the expected UI state immediately
+before the irreversible action.
+
 ## Runtime Controls
 
 - Task timeout is the lower of `task.timeout_seconds` and

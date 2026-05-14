@@ -42,6 +42,11 @@ extension amount. Both paths include target confidence and
 `safety_checks_required: true` so reports can confirm path selection did not
 remove safety checks.
 
+For steps with `checkpoint`, traces include `observe_checkpoint`,
+`checkpoint_candidates`, and `verification_checkpoint` before any action timing
+or actuation event. Failed checkpoints are categorized as
+`verification_checkpoint` failures in the final report.
+
 Each executed step also emits `step_timeout_budget` metadata with the planned
 action wait, retry wait, total planned wait, remaining timeout, and whether the
 budget fits before any desktop action is attempted.

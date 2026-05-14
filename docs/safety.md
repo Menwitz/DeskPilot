@@ -65,3 +65,5 @@ targets, bypass confidence checks, or expand allowed timing limits.
 Sensitive task steps can declare `requires_confirmation: true`. The planner
 stops before the action unless the operator confirms the step ID through runtime
 configuration or `--confirm-step`.
+Sensitive or irreversible steps can also declare `checkpoint`; the planner must
+pass that read-only verification before timing or action execution.
