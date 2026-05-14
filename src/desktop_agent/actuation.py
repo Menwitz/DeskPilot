@@ -170,6 +170,7 @@ class MovementPlan:
 
     points: tuple[tuple[int, int], ...]
     duration_seconds: float
+    movement_smoothness: float = 0.0
     timing_estimate: PointerTimingEstimate | None = None
     path_model: str = "minimum_jerk_quadratic_bezier"
     overshoot_applied: bool = False
@@ -375,6 +376,7 @@ class SmoothMovementPlanner:
             return MovementPlan(
                 points=(end,),
                 duration_seconds=duration,
+                movement_smoothness=self._profile.movement_smoothness,
                 timing_estimate=estimate,
                 settle_duration_seconds=settle_duration,
                 random_seed=self._sampler.seed,
@@ -391,6 +393,7 @@ class SmoothMovementPlanner:
         return MovementPlan(
             points=points,
             duration_seconds=duration,
+            movement_smoothness=self._profile.movement_smoothness,
             timing_estimate=estimate,
             path_model=path_model,
             overshoot_applied=overshoot_point is not None,
@@ -598,6 +601,7 @@ class DesktopActuator(Actuator):
         return MovementPlan(
             points=plan.points + drag_plan.points,
             duration_seconds=plan.duration_seconds + drag_plan.duration_seconds,
+            movement_smoothness=self._profile.movement_smoothness,
             path_model="combined_drag",
             overshoot_applied=plan.overshoot_applied or drag_plan.overshoot_applied,
             overshoot_point=drag_plan.overshoot_point or plan.overshoot_point,
@@ -1129,6 +1133,7 @@ def _input_metadata(
         "point": list(point),
         "movement_points": len(plan.points),
         "movement_duration_seconds": plan.duration_seconds,
+        "movement_smoothness": plan.movement_smoothness,
         "pointer_path_model": plan.path_model,
         "overshoot_applied": plan.overshoot_applied,
         "overshoot_point": list(plan.overshoot_point)

@@ -1,7 +1,12 @@
 from pathlib import Path
 
-from desktop_agent.actuation import ActuationProfile, DesktopActuator, FakeInputBackend
-from desktop_agent.config import RuntimeConfig, StaticConfigLoader
+from desktop_agent.actuation import (
+    ActuationProfile,
+    DesktopActuator,
+    FakeInputBackend,
+    actuation_profile_from_runtime_config,
+)
+from desktop_agent.config import ExecutionProfile, RuntimeConfig, StaticConfigLoader
 from desktop_agent.perception import (
     CompositePerceptionEngine,
     ConfidenceTargetSelector,
@@ -196,6 +201,75 @@ def test_pipeline_records_keyboard_cadence_in_execute_action_monitoring() -> Non
     assert execute_action.metadata["keyboard_interval_count"] == 2
 
 
+def test_pipeline_consumes_execution_profile_for_pointer_and_keyboard() -> None:
+    backend = FakeInputBackend(
+        start_position=(0, 0),
+        active_window_title="DeskPilot Fixture",
+    )
+    config = RuntimeConfig(
+        confidence_threshold=0.8,
+        execution_profile=ExecutionProfile(
+            enabled=True,
+            movement_smoothness=0.75,
+            keyboard_interval_seconds=(0.01, 0.01),
+            random_seed=5,
+        ),
+    )
+    actuator_profile = actuation_profile_from_runtime_config(
+        config,
+        ActuationProfile(
+            movement_duration_seconds=(0.0, 0.0),
+            timing_variation_seconds=(0.0, 0.0),
+            movement_steps=3,
+            movement_smoothness=0.0,
+            random_seed=5,
+        ),
+    )
+    task = TaskDefinition(
+        name="profile actuation pipeline",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(id="click-submit", action="click_text", target="Submit"),
+            TaskStep(id="type-code", action="type_text", text="ab"),
+        ),
+    )
+    engine = _engine(
+        task,
+        screen_observer=SequenceScreenObserver(
+            (
+                _observation("click.png"),
+                _observation("type.png"),
+            ),
+        ),
+        actuator=DesktopActuator(backend, actuator_profile),
+        config=config,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    action_events = {
+        event.metadata["step_id"]: event
+        for event in report.events
+        if event.phase == "execute_action"
+    }
+    typed_text = [
+        event.text for event in backend.events if event.kind == "type_text"
+    ]
+    sleep_durations = [
+        event.duration_seconds
+        for event in backend.events
+        if event.kind == "sleep"
+    ]
+    assert report.status == "passed"
+    assert action_events["click-submit"].metadata["movement_smoothness"] == 0.75
+    assert action_events["click-submit"].metadata["input_action"] == "click"
+    assert action_events["type-code"].metadata["keyboard_cadence_applied"] is True
+    assert action_events["type-code"].metadata["keyboard_interval_seconds"] == [0.01]
+    assert typed_text == ["a", "b"]
+    assert 0.01 in sleep_durations
+
+
 def test_pipeline_records_scroll_cadence_in_execute_action_monitoring() -> None:
     backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
     task = TaskDefinition(
@@ -281,9 +355,12 @@ def _engine(
     screen_observer: SequenceScreenObserver,
     actuator: DesktopActuator,
     trace_sink: MemoryTraceSink | None = None,
+    config: RuntimeConfig | None = None,
 ) -> ExecutionEngine:
     return ExecutionEngine(
-        config_loader=StaticConfigLoader(RuntimeConfig(confidence_threshold=0.8)),
+        config_loader=StaticConfigLoader(
+            config or RuntimeConfig(confidence_threshold=0.8)
+        ),
         task_loader=StaticTaskLoader(task),
         task_validator=BasicTaskValidator(),
         trace_sink=trace_sink or MemoryTraceSink(),

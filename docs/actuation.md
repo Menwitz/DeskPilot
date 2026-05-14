@@ -39,6 +39,8 @@ metadata records the seed and sample records for the sampled actuation values.
 For real desktop runs, enabled `RuntimeConfig.execution_profile.movement_smoothness`
 is copied into the platform actuation profile before the `DesktopActuator` is
 created, so the planner's configured smoothness reaches real pointer paths.
+Click, drag, and scroll metadata include `movement_smoothness`, making report
+review able to confirm the real actuator consumed the execution profile.
 
 Movement duration is estimated behind a local `PointerTimingModel` interface.
 The default `FittsLawPointerTimingModel` uses pointer distance and effective
