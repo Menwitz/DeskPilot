@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from desktop_agent.actuation import DryRunActuator, create_platform_actuator
+from desktop_agent.benchmark_runner import BenchmarkRunHarness
 from desktop_agent.computer_vision import OpenCvTemplatePerceptionEngine
 from desktop_agent.config import (
     ConfigError,
@@ -70,6 +71,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_task(args, dry_run=True)
         if args.command == "inspect-screen":
             return _inspect_screen(args)
+        if args.command == "benchmark-run":
+            return _run_benchmark(args)
         if args.command == "replay":
             return _replay(args)
         parser.print_help()
@@ -102,6 +105,17 @@ def _build_parser() -> argparse.ArgumentParser:
     replay_parser = subparsers.add_parser("replay", help="summarize a trace directory")
     replay_parser.add_argument("trace_dir", type=Path)
     replay_parser.add_argument("--verbose", action="store_true")
+
+    benchmark_parser = subparsers.add_parser(
+        "benchmark-run",
+        help="run one task repeatedly through the dry-run benchmark harness",
+    )
+    benchmark_parser.add_argument("task_yaml", type=Path)
+    benchmark_parser.add_argument("--output", required=True, type=Path)
+    benchmark_parser.add_argument("--iterations", required=True, type=int)
+    benchmark_parser.add_argument("--config", type=Path)
+    benchmark_parser.add_argument("--confidence-threshold", type=float)
+    benchmark_parser.add_argument("--allowed-window", action="append", default=[])
     return parser
 
 
@@ -232,6 +246,26 @@ def _collect_screen_inspection(
             config,
         )["candidate_rankings"],
     }
+
+
+def _run_benchmark(args: argparse.Namespace) -> int:
+    report = BenchmarkRunHarness().run_task(
+        args.task_yaml,
+        iterations=args.iterations,
+        output_dir=args.output,
+        config_path=args.config,
+        cli_overrides=ConfigOverrides(
+            confidence_threshold=args.confidence_threshold,
+            allowed_windows=tuple(args.allowed_window)
+            if args.allowed_window
+            else None,
+        ),
+    )
+    print(f"benchmark: {args.task_yaml}")
+    print(f"iterations: {len(report.runs)}")
+    print(f"metrics: {report.metrics_path}")
+    print(f"report: {report.report_path}")
+    return 0 if all(run.status == "passed" for run in report.runs) else 1
 
 
 def _collect_ocr_blocks(

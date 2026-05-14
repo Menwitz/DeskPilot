@@ -27,7 +27,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 - [x] Define benchmark task suites for browser, native Windows, and mixed
   workflows.
-- [ ] Add a repeated-run harness that executes the same task many times and
+- [x] Add a repeated-run harness that executes the same task many times and
   stores per-run metrics.
 - [ ] Track success rate, median task time, step count, action count, retry
   count, ambiguity rate, recovery rate, and operator intervention rate.

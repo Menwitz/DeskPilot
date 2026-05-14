@@ -1,0 +1,37 @@
+import json
+from pathlib import Path
+
+from desktop_agent.benchmark_runner import BenchmarkRunHarness
+
+
+def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
+    output_dir = tmp_path / "benchmark"
+
+    report = BenchmarkRunHarness().run_task(
+        Path("examples/browser-task.yaml"),
+        iterations=2,
+        output_dir=output_dir,
+    )
+
+    metrics_lines = report.metrics_path.read_text(encoding="utf-8").splitlines()
+    report_payload = json.loads(report.report_path.read_text(encoding="utf-8"))
+    assert len(report.runs) == 2
+    assert len(metrics_lines) == 2
+    assert report_payload["iterations"] == 2
+    assert report_payload["runs"][0]["status"] == "passed"
+    assert report_payload["runs"][0]["step_count"] > 0
+    assert report_payload["runs"][0]["action_count"] > 0
+    assert Path(report_payload["runs"][0]["trace_dir"]).exists()
+
+
+def test_benchmark_run_harness_rejects_empty_iterations(tmp_path: Path) -> None:
+    try:
+        BenchmarkRunHarness().run_task(
+            Path("examples/browser-task.yaml"),
+            iterations=0,
+            output_dir=tmp_path / "benchmark",
+        )
+    except ValueError as exc:
+        assert str(exc) == "iterations must be greater than zero"
+    else:
+        raise AssertionError("expected iterations validation failure")

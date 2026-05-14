@@ -207,3 +207,32 @@ def test_cli_replay_summarizes_final_report(
     assert status == 0
     assert "status: failed" in output
     assert "reason: fixture" in output
+
+
+def test_cli_benchmark_run_writes_metrics_and_report(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    task_path = tmp_path / "task.yaml"
+    output_dir = tmp_path / "benchmark"
+    write_task(task_path)
+
+    status = main(
+        [
+            "benchmark-run",
+            str(task_path),
+            "--iterations",
+            "2",
+            "--output",
+            str(output_dir),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    report = json.loads((output_dir / "benchmark-report.json").read_text())
+    metrics = (output_dir / "runs.jsonl").read_text().splitlines()
+    assert status == 0
+    assert report["iterations"] == 2
+    assert len(metrics) == 2
+    assert "metrics:" in output
+    assert "report:" in output

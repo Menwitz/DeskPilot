@@ -25,3 +25,25 @@ The source of truth is `desktop_agent.benchmarks`. Each benchmark task declares:
 
 These definitions do not execute the benchmarks yet. They provide stable inputs
 for the repeated-run harness, monitoring, and report aggregation phases.
+
+## Repeated Dry-Run Harness
+
+Use `desktop-agent benchmark-run` to execute one task repeatedly through the
+safe dry-run pipeline:
+
+```bash
+desktop-agent benchmark-run examples/browser-task.yaml \
+  --iterations 5 \
+  --output traces/benchmarks/browser-fixture
+```
+
+The harness writes:
+
+- `runs.jsonl` with one per-run metrics record per line.
+- `benchmark-report.json` with the task path, output paths, iteration count,
+  and per-run metrics.
+- Per-iteration trace directories under `<output>/traces/`.
+
+Per-run metrics currently include status, elapsed task time, step count, action
+count, retry count, ambiguity count, recovery count, operator intervention
+count, trace directory, and abort reason.
