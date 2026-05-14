@@ -164,7 +164,7 @@ evasion, or pretending to be a person where automation is not allowed.
   rejected unsafe approaches.
 - [x] Add complete example tasks for each execution profile.
 - [x] Add operator guidance for choosing delay bounds and entropy budgets.
-- [ ] Add troubleshooting docs for ambiguity gates, recovery stops, and safety
+- [x] Add troubleshooting docs for ambiguity gates, recovery stops, and safety
   stops.
 - [ ] Add release notes that explain the difference between natural execution
   and deceptive human impersonation.
