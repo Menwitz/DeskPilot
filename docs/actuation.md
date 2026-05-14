@@ -43,6 +43,13 @@ bounded model duration for trace and report inspection.
 Movement metadata also records the pointer path model used for the emitted
 physical points.
 
+Overshoot, correction, and settle behavior are configurable through
+`ActuationProfile.overshoot_probability`, `overshoot_pixels`, and
+`settle_duration_seconds`. Overshoot is disabled by default. When enabled, it is
+clamped by the effective target width, followed by a correction path back to the
+target center, and then an optional settle wait. Metadata records whether
+overshoot happened, the overshoot point, and settle duration.
+
 ## Safety
 
 The execution engine checks task safety before calling the actuator. The

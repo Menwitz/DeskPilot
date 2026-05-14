@@ -48,6 +48,7 @@ def test_desktop_actuator_clicks_converted_target_center() -> None:
     assert result.metadata["pointer_timing_model"] == "fitts_law"
     assert result.metadata["pointer_effective_target_width_pixels"] == 20.0
     assert result.metadata["pointer_path_model"] == "minimum_jerk_quadratic_bezier"
+    assert result.metadata["overshoot_applied"] is False
     assert backend.events[-2].kind == "mouse_down"
     assert backend.events[-2].point == (150, 250)
     assert backend.events[-1].kind == "mouse_up"
@@ -207,6 +208,50 @@ def test_movement_planner_uses_minimum_jerk_progression() -> None:
     assert deltas[-1] < max(deltas)
 
 
+def test_movement_planner_applies_bounded_overshoot_correction_and_settle() -> None:
+    planner = SmoothMovementPlanner(
+        ActuationProfile(
+            movement_duration_seconds=(0.2, 0.2),
+            timing_variation_seconds=(0.0, 0.0),
+            movement_steps=6,
+            movement_smoothness=0.0,
+            overshoot_probability=1.0,
+            overshoot_pixels=(6.0, 6.0),
+            settle_duration_seconds=(0.03, 0.03),
+            random_seed=3,
+        ),
+    )
+
+    plan = planner.plan((0, 0), (120, 0), target_size_pixels=(20, 20))
+
+    assert plan.overshoot_applied is True
+    assert plan.overshoot_point == (126, 0)
+    assert plan.points[-1] == (120, 0)
+    assert plan.path_model == "minimum_jerk_quadratic_bezier_with_correction"
+    assert plan.settle_duration_seconds == 0.03
+    assert round(plan.duration_seconds, 2) == 0.23
+
+
+def test_movement_planner_clamps_overshoot_inside_target_width() -> None:
+    planner = SmoothMovementPlanner(
+        ActuationProfile(
+            movement_duration_seconds=(0.2, 0.2),
+            timing_variation_seconds=(0.0, 0.0),
+            movement_steps=4,
+            movement_smoothness=0.0,
+            overshoot_probability=1.0,
+            overshoot_pixels=(100.0, 100.0),
+            random_seed=3,
+        ),
+    )
+
+    plan = planner.plan((0, 0), (120, 0), target_size_pixels=(20, 20))
+
+    assert plan.overshoot_point == (129, 0)
+    assert max(point[0] for point in plan.points) <= 129
+    assert plan.points[-1] == (120, 0)
+
+
 def test_fitts_law_pointer_timing_increases_for_far_small_targets() -> None:
     model = FittsLawPointerTimingModel(intercept_seconds=0.1, slope_seconds=0.2)
 
@@ -249,6 +294,22 @@ def test_movement_planner_clamps_fitts_duration_inside_profile_bounds() -> None:
     assert large_target.duration_seconds >= 0.05
     assert small_target.duration_seconds <= 0.5
     assert small_target.duration_seconds > large_target.duration_seconds
+
+
+def test_actuation_profile_rejects_invalid_overshoot_settings() -> None:
+    try:
+        ActuationProfile(overshoot_probability=1.5)
+    except ValueError as exc:
+        assert str(exc) == "overshoot_probability must be between 0 and 1"
+    else:
+        raise AssertionError("expected overshoot probability validation failure")
+
+    try:
+        ActuationProfile(overshoot_pixels=(2.0, 1.0))
+    except ValueError as exc:
+        assert str(exc) == "overshoot_pixels lower bound must not exceed upper bound"
+    else:
+        raise AssertionError("expected overshoot pixel validation failure")
 
 
 def _instant_profile() -> ActuationProfile:

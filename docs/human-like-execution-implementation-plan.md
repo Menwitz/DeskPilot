@@ -44,7 +44,7 @@ evasion, or pretending to be a person where automation is not allowed.
   action type.
 - [x] Add a Fitts' Law-inspired pointer timing model behind a local interface.
 - [x] Add minimum-jerk or spline-based pointer paths for real mouse movement.
-- [ ] Add configurable overshoot, correction, and settle behavior within safe
+- [x] Add configurable overshoot, correction, and settle behavior within safe
   bounds.
 - [ ] Add tests proving pointer paths stay inside the target window and never
   cross disallowed monitor or window regions.

@@ -45,6 +45,9 @@ class ActuationProfile:
     timing_variation_seconds: tuple[float, float] = (0.0, 0.03)
     movement_steps: int = 12
     movement_smoothness: float = 0.65
+    overshoot_probability: float = 0.0
+    overshoot_pixels: tuple[float, float] = (0.0, 0.0)
+    settle_duration_seconds: tuple[float, float] = (0.0, 0.0)
     random_seed: int | None = None
 
     def __post_init__(self) -> None:
@@ -56,10 +59,20 @@ class ActuationProfile:
             self.timing_variation_seconds,
             "timing_variation_seconds",
         )
+        _validate_seconds_pair(
+            self.overshoot_pixels,
+            "overshoot_pixels",
+        )
+        _validate_seconds_pair(
+            self.settle_duration_seconds,
+            "settle_duration_seconds",
+        )
         if self.movement_steps <= 0:
             raise ValueError("movement_steps must be greater than zero")
         if self.movement_smoothness < 0 or self.movement_smoothness > 1:
             raise ValueError("movement_smoothness must be between 0 and 1")
+        if self.overshoot_probability < 0 or self.overshoot_probability > 1:
+            raise ValueError("overshoot_probability must be between 0 and 1")
 
 
 @dataclass(frozen=True)
@@ -148,12 +161,19 @@ class MovementPlan:
     duration_seconds: float
     timing_estimate: PointerTimingEstimate | None = None
     path_model: str = "minimum_jerk_quadratic_bezier"
+    overshoot_applied: bool = False
+    overshoot_point: tuple[int, int] | None = None
+    settle_duration_seconds: float = 0.0
 
     @property
     def step_delay_seconds(self) -> float:
         if len(self.points) <= 1:
             return 0.0
-        return self.duration_seconds / len(self.points)
+        return self.movement_duration_seconds / len(self.points)
+
+    @property
+    def movement_duration_seconds(self) -> float:
+        return max(0.0, self.duration_seconds - self.settle_duration_seconds)
 
 
 @dataclass(frozen=True)
@@ -273,30 +293,35 @@ class SmoothMovementPlanner:
             self._profile.movement_duration_seconds,
         )
         estimate = replace(estimate, duration_seconds=bounded_duration)
-        duration = bounded_duration + self._sample_seconds(
-            self._profile.timing_variation_seconds
+        settle_duration = self._sample_seconds(self._profile.settle_duration_seconds)
+        duration = (
+            bounded_duration
+            + self._sample_seconds(self._profile.timing_variation_seconds)
+            + settle_duration
         )
         if start == end:
             return MovementPlan(
                 points=(end,),
                 duration_seconds=duration,
                 timing_estimate=estimate,
+                settle_duration_seconds=settle_duration,
             )
 
-        control = self._control_point(start, end)
-        points = tuple(
-            _quadratic_bezier(
-                start,
-                control,
-                end,
-                _minimum_jerk(index / self._profile.movement_steps),
-            )
-            for index in range(1, self._profile.movement_steps + 1)
-        )
+        overshoot_point = self._overshoot_point(start, end, target_size_pixels)
+        points = self._path_points(start, overshoot_point or end)
+        path_model = "minimum_jerk_quadratic_bezier"
+        if overshoot_point is not None:
+            correction_steps = max(2, self._profile.movement_steps // 3)
+            points += self._path_points(overshoot_point, end, correction_steps)
+            path_model = "minimum_jerk_quadratic_bezier_with_correction"
         return MovementPlan(
             points=points,
             duration_seconds=duration,
             timing_estimate=estimate,
+            path_model=path_model,
+            overshoot_applied=overshoot_point is not None,
+            overshoot_point=overshoot_point,
+            settle_duration_seconds=settle_duration,
         )
 
     def _sample_seconds(self, bounds: tuple[float, float]) -> float:
@@ -327,6 +352,56 @@ class SmoothMovementPlanner:
         return (
             mid_x + normal_x * bend * direction,
             mid_y + normal_y * bend * direction,
+        )
+
+    def _path_points(
+        self,
+        start: tuple[int, int],
+        end: tuple[int, int],
+        steps: int | None = None,
+    ) -> tuple[tuple[int, int], ...]:
+        step_count = steps or self._profile.movement_steps
+        control = self._control_point(start, end)
+        return tuple(
+            _quadratic_bezier(
+                start,
+                control,
+                end,
+                _minimum_jerk(index / step_count),
+            )
+            for index in range(1, step_count + 1)
+        )
+
+    def _overshoot_point(
+        self,
+        start: tuple[int, int],
+        end: tuple[int, int],
+        target_size_pixels: tuple[float, float] | None,
+    ) -> tuple[int, int] | None:
+        if (
+            target_size_pixels is None
+            or self._profile.overshoot_probability <= 0
+            or self._random.random() >= self._profile.overshoot_probability
+        ):
+            return None
+
+        distance = math.hypot(end[0] - start[0], end[1] - start[1])
+        if distance == 0:
+            return None
+
+        safe_limit = max(0.0, (min(target_size_pixels) / 2) - 1)
+        overshoot_pixels = min(
+            self._sample_seconds(self._profile.overshoot_pixels),
+            safe_limit,
+        )
+        if overshoot_pixels <= 0:
+            return None
+
+        unit_x = (end[0] - start[0]) / distance
+        unit_y = (end[1] - start[1]) / distance
+        return (
+            round(end[0] + (unit_x * overshoot_pixels)),
+            round(end[1] + (unit_y * overshoot_pixels)),
         )
 
 
@@ -381,6 +456,8 @@ class DesktopActuator(Actuator):
             self._backend.move_to(path_point)
             if plan.step_delay_seconds > 0:
                 self._backend.sleep(plan.step_delay_seconds)
+        if plan.settle_duration_seconds > 0:
+            self._backend.sleep(plan.settle_duration_seconds)
         return plan
 
     def click(
@@ -424,6 +501,12 @@ class DesktopActuator(Actuator):
         return MovementPlan(
             points=plan.points + drag_plan.points,
             duration_seconds=plan.duration_seconds + drag_plan.duration_seconds,
+            path_model="combined_drag",
+            overshoot_applied=plan.overshoot_applied or drag_plan.overshoot_applied,
+            overshoot_point=drag_plan.overshoot_point or plan.overshoot_point,
+            settle_duration_seconds=(
+                plan.settle_duration_seconds + drag_plan.settle_duration_seconds
+            ),
         )
 
     def scroll(
@@ -792,6 +875,11 @@ def _input_metadata(
         "movement_points": len(plan.points),
         "movement_duration_seconds": plan.duration_seconds,
         "pointer_path_model": plan.path_model,
+        "overshoot_applied": plan.overshoot_applied,
+        "overshoot_point": list(plan.overshoot_point)
+        if plan.overshoot_point
+        else None,
+        "settle_duration_seconds": plan.settle_duration_seconds,
         "candidate_id": target.id if target else None,
     }
     if plan.timing_estimate is not None:
