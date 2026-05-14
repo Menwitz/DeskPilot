@@ -100,7 +100,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Add a calibration command that shows why a target was selected or rejected.
 - [x] Add tests for conflicting perception sources and low-confidence candidate
   sets.
-- [ ] Add benchmark metrics for grounding accuracy and ambiguity rate.
+- [x] Add benchmark metrics for grounding accuracy and ambiguity rate.
 
 ## Phase 7: Regression Test Matrix
 

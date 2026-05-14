@@ -450,6 +450,7 @@ class ExecutionEngine:
                 candidate_confidence=target.confidence if target else None,
                 candidate_source=target.source if target else None,
                 candidate_count=len(candidates),
+                step_action=step.action,
             )
             if target is None:
                 selection_recovery_policy = recovery_policy_for_selection(

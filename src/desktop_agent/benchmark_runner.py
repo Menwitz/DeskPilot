@@ -56,6 +56,17 @@ DEFAULT_POINTER_TIMING_PROFILE = ActuationProfile(
     random_seed=1,
 )
 DEFAULT_BASELINE_POINTER_DURATION_SECONDS = 0.2
+TARGET_GROUNDING_ACTIONS: frozenset[str] = frozenset(
+    {
+        "click_text",
+        "click_image",
+        "click_uia",
+        "scroll_until",
+        "wait_for",
+        "assert_visible",
+        "drag",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -68,6 +79,9 @@ class BenchmarkRunMetrics:
     step_count: int
     action_count: int
     retry_count: int
+    grounding_attempt_count: int
+    grounded_selection_count: int
+    grounding_accuracy: float
     ambiguity_count: int
     recovery_count: int
     operator_intervention_count: int
@@ -85,6 +99,7 @@ class BenchmarkSummaryMetrics:
     step_count: int
     action_count: int
     retry_count: int
+    grounding_accuracy: float
     ambiguity_rate: float
     recovery_rate: float
     operator_intervention_rate: float
@@ -108,6 +123,7 @@ class BenchmarkVarianceReport:
     step_count: MetricVariance
     action_count: MetricVariance
     retry_count: MetricVariance
+    grounding_accuracy: MetricVariance
     ambiguity_count: MetricVariance
     recovery_count: MetricVariance
     operator_intervention_count: MetricVariance
@@ -301,6 +317,16 @@ def _metrics_from_report(
     report: RunReport,
     task_time_seconds: float,
 ) -> BenchmarkRunMetrics:
+    selection_events = tuple(
+        event
+        for event in report.events
+        if event.phase == "select_target"
+        and event.metadata.get("step_action") in TARGET_GROUNDING_ACTIONS
+    )
+    grounded_selection_count = sum(
+        1 for event in selection_events if event.metadata.get("candidate_id")
+    )
+    grounding_attempt_count = len(selection_events)
     return BenchmarkRunMetrics(
         iteration=iteration,
         status=report.status,
@@ -310,6 +336,12 @@ def _metrics_from_report(
             1 for event in report.events if event.phase == "execute_action"
         ),
         retry_count=sum(max(step.attempts - 1, 0) for step in report.steps),
+        grounding_attempt_count=grounding_attempt_count,
+        grounded_selection_count=grounded_selection_count,
+        grounding_accuracy=_grounding_accuracy(
+            grounded_selection_count,
+            grounding_attempt_count,
+        ),
         ambiguity_count=sum(
             1
             for event in report.events
@@ -519,6 +551,10 @@ def _summary_from_runs(
         step_count=sum(run.step_count for run in runs),
         action_count=sum(run.action_count for run in runs),
         retry_count=sum(run.retry_count for run in runs),
+        grounding_accuracy=_grounding_accuracy(
+            sum(run.grounded_selection_count for run in runs),
+            sum(run.grounding_attempt_count for run in runs),
+        ),
         ambiguity_rate=_nonzero_rate(run.ambiguity_count for run in runs),
         recovery_rate=_nonzero_rate(run.recovery_count for run in runs),
         operator_intervention_rate=_nonzero_rate(
@@ -534,6 +570,12 @@ def _nonzero_rate(values: Iterable[int]) -> float:
     return sum(1 for value in counts if value > 0) / len(counts)
 
 
+def _grounding_accuracy(grounded_count: int, attempt_count: int) -> float:
+    if attempt_count == 0:
+        return 1.0
+    return grounded_count / attempt_count
+
+
 def _variance_from_runs(
     runs: tuple[BenchmarkRunMetrics, ...],
 ) -> BenchmarkVarianceReport:
@@ -542,6 +584,7 @@ def _variance_from_runs(
         step_count=_metric_variance(float(run.step_count) for run in runs),
         action_count=_metric_variance(float(run.action_count) for run in runs),
         retry_count=_metric_variance(float(run.retry_count) for run in runs),
+        grounding_accuracy=_metric_variance(run.grounding_accuracy for run in runs),
         ambiguity_count=_metric_variance(float(run.ambiguity_count) for run in runs),
         recovery_count=_metric_variance(float(run.recovery_count) for run in runs),
         operator_intervention_count=_metric_variance(
@@ -568,6 +611,7 @@ def _summary_to_dict(summary: BenchmarkSummaryMetrics) -> dict[str, object]:
         "step_count": summary.step_count,
         "action_count": summary.action_count,
         "retry_count": summary.retry_count,
+        "grounding_accuracy": summary.grounding_accuracy,
         "ambiguity_rate": summary.ambiguity_rate,
         "recovery_rate": summary.recovery_rate,
         "operator_intervention_rate": summary.operator_intervention_rate,
@@ -580,6 +624,7 @@ def _variance_report_to_dict(report: BenchmarkVarianceReport) -> dict[str, objec
         "step_count": _variance_to_dict(report.step_count),
         "action_count": _variance_to_dict(report.action_count),
         "retry_count": _variance_to_dict(report.retry_count),
+        "grounding_accuracy": _variance_to_dict(report.grounding_accuracy),
         "ambiguity_count": _variance_to_dict(report.ambiguity_count),
         "recovery_count": _variance_to_dict(report.recovery_count),
         "operator_intervention_count": _variance_to_dict(
@@ -659,6 +704,9 @@ def _metrics_to_dict(metrics: BenchmarkRunMetrics) -> dict[str, object]:
         "step_count": metrics.step_count,
         "action_count": metrics.action_count,
         "retry_count": metrics.retry_count,
+        "grounding_attempt_count": metrics.grounding_attempt_count,
+        "grounded_selection_count": metrics.grounded_selection_count,
+        "grounding_accuracy": metrics.grounding_accuracy,
         "ambiguity_count": metrics.ambiguity_count,
         "recovery_count": metrics.recovery_count,
         "operator_intervention_count": metrics.operator_intervention_count,

@@ -52,16 +52,17 @@ The harness writes:
 - Per-iteration trace directories under `<output>/traces/`.
 
 Per-run metrics currently include status, elapsed task time, step count, action
-count, retry count, ambiguity count, recovery count, operator intervention
-count, trace directory, and abort reason.
+count, retry count, grounding attempt count, grounded selection count, grounding
+accuracy, ambiguity count, recovery count, operator intervention count, trace
+directory, and abort reason.
 
 Summary metrics currently include success rate, median task time, total step
-count, total action count, total retry count, ambiguity rate, recovery rate, and
-operator intervention rate.
+count, total action count, total retry count, grounding accuracy, ambiguity
+rate, recovery rate, and operator intervention rate.
 
 Variance reports include minimum, maximum, mean, and population standard
-deviation for task time, step count, action count, retry count, ambiguity count,
-recovery count, and operator intervention count.
+deviation for task time, step count, action count, retry count, grounding
+accuracy, ambiguity count, recovery count, and operator intervention count.
 
 Pointer timing comparison reports compare the current `FittsLawPointerTimingModel`
 against a fixed deterministic baseline. The harness records baseline duration,

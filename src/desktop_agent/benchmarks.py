@@ -19,6 +19,7 @@ BENCHMARK_METRICS: tuple[str, ...] = (
     "step_count",
     "action_count",
     "retry_count",
+    "grounding_accuracy",
     "ambiguity_rate",
     "recovery_rate",
     "operator_intervention_rate",

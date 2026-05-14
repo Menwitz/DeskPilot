@@ -50,6 +50,7 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert report_payload["summary"]["step_count"] > 0
     assert report_payload["summary"]["action_count"] > 0
     assert report_payload["summary"]["retry_count"] >= 0
+    assert report_payload["summary"]["grounding_accuracy"] == 1.0
     assert report_payload["summary"]["ambiguity_rate"] == 0
     assert report_payload["summary"]["recovery_rate"] >= 0
     assert report_payload["summary"]["operator_intervention_rate"] == 0
@@ -60,9 +61,13 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert report_payload["runs"][0]["status"] == "passed"
     assert report_payload["runs"][0]["step_count"] > 0
     assert report_payload["runs"][0]["action_count"] > 0
+    assert report_payload["runs"][0]["grounding_attempt_count"] > 0
+    assert report_payload["runs"][0]["grounded_selection_count"] > 0
+    assert report_payload["runs"][0]["grounding_accuracy"] == 1.0
     assert Path(report_payload["runs"][0]["trace_dir"]).exists()
     assert variance_payload["task_time_seconds"]["minimum"] >= 0
     assert variance_payload["step_count"]["maximum"] > 0
+    assert variance_payload["grounding_accuracy"]["minimum"] == 1.0
     assert variance_payload["recovery_count"]["population_stdev"] >= 0
     assert pointer_timing_payload["comparison_model"] == "fitts_law"
     assert pointer_timing_payload["samples"][0]["scenario"] == "near-large-target"
@@ -109,6 +114,9 @@ def test_benchmark_acceptance_records_threshold_failures() -> None:
             step_count=2,
             action_count=3,
             retry_count=1,
+            grounding_attempt_count=2,
+            grounded_selection_count=1,
+            grounding_accuracy=0.5,
             ambiguity_count=1,
             recovery_count=0,
             operator_intervention_count=0,
@@ -123,6 +131,7 @@ def test_benchmark_acceptance_records_threshold_failures() -> None:
         step_count=2,
         action_count=3,
         retry_count=1,
+        grounding_accuracy=0.5,
         ambiguity_rate=1.0,
         recovery_rate=0.0,
         operator_intervention_rate=0.0,
@@ -155,6 +164,9 @@ def test_benchmark_acceptance_is_not_configured_for_ad_hoc_tasks() -> None:
             step_count=1,
             action_count=1,
             retry_count=0,
+            grounding_attempt_count=1,
+            grounded_selection_count=1,
+            grounding_accuracy=1.0,
             ambiguity_count=0,
             recovery_count=0,
             operator_intervention_count=0,
@@ -169,6 +181,7 @@ def test_benchmark_acceptance_is_not_configured_for_ad_hoc_tasks() -> None:
         step_count=1,
         action_count=1,
         retry_count=0,
+        grounding_accuracy=1.0,
         ambiguity_rate=0.0,
         recovery_rate=0.0,
         operator_intervention_rate=0.0,
