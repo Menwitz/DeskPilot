@@ -14,22 +14,22 @@
 
 ## 1. Repository Bootstrap
 
-- [ ] Add `README.md` with project purpose, constraints, quickstart, and safety boundaries.
-- [ ] Add `pyproject.toml` configured for Python 3.12.
-- [ ] Add `src/desktop_agent/` package.
-- [ ] Add `tests/` directory.
-- [ ] Add `examples/` directory.
-- [ ] Add `docs/architecture.md`.
-- [ ] Add `docs/task-dsl.md`.
-- [ ] Add `docs/safety.md`.
-- [ ] Add `docs/roadmap.md`.
-- [ ] Add `.gitignore` for Python caches, traces, screenshots, packaged builds, virtualenvs, and local config.
-- [ ] Configure `uv` for dependency management.
-- [ ] Configure `pytest`.
-- [ ] Configure `ruff` for linting and formatting.
-- [ ] Configure `mypy` for type checking.
-- [ ] Configure GitHub Actions for lint, type check, and tests.
-- [ ] Add comments only where code behavior is non-obvious, especially around safety, retries, coordinate transforms, and perception fusion.
+- [x] Add `README.md` with project purpose, constraints, quickstart, and safety boundaries.
+- [x] Add `pyproject.toml` configured for Python 3.12.
+- [x] Add `src/desktop_agent/` package.
+- [x] Add `tests/` directory.
+- [x] Add `examples/` directory.
+- [x] Add `docs/architecture.md`.
+- [x] Add `docs/task-dsl.md`.
+- [x] Add `docs/safety.md`.
+- [x] Add `docs/roadmap.md`.
+- [x] Add `.gitignore` for Python caches, traces, screenshots, packaged builds, virtualenvs, and local config.
+- [x] Configure `uv` for dependency management.
+- [x] Configure `pytest`.
+- [x] Configure `ruff` for linting and formatting.
+- [x] Configure `mypy` for type checking.
+- [x] Configure GitHub Actions for lint, type check, and tests.
+- [x] Add comments only where code behavior is non-obvious, especially around safety, retries, coordinate transforms, and perception fusion.
 
 ## 2. Target Architecture
 
