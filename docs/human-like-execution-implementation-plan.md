@@ -175,6 +175,9 @@ evasion, or pretending to be a person where automation is not allowed.
 - 2026-05-14: Phase 11 landed with the research brief, profile examples,
   operator guidance, troubleshooting guidance, and release notes checked above.
   The remaining unchecked items are the final acceptance gates below.
+- 2026-05-14: Final acceptance gates landed with benchmark baseline comparison,
+  bounded seeded randomness evidence, real-actuation handoff coverage, recovery
+  report checks, stop-before-actuation coverage, and documentation coverage.
 
 ## Acceptance Criteria
 
@@ -185,5 +188,5 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Recovery decisions are explicit, test-covered, and visible in reports.
 - [x] Safety stops happen before actuation for disallowed windows, unsafe
   profiles, ambiguous targets, and unconfirmed sensitive actions.
-- [ ] Documentation explains what the system does, what it does not do, and how
+- [x] Documentation explains what the system does, what it does not do, and how
   operators should configure it safely.

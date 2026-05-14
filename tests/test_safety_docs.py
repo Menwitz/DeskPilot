@@ -65,3 +65,28 @@ def test_release_notes_distinguish_natural_execution_from_impersonation() -> Non
         "benchmark-run",
     ):
         assert phrase in documentation
+
+
+def test_documentation_set_covers_behavior_boundary_and_safe_configuration() -> None:
+    documentation = "\n".join(
+        [
+            Path("docs/configuration.md").read_text(encoding="utf-8"),
+            Path("docs/safety.md").read_text(encoding="utf-8"),
+            Path("docs/examples.md").read_text(encoding="utf-8"),
+            Path("docs/troubleshooting.md").read_text(encoding="utf-8"),
+            Path("docs/release-notes.md").read_text(encoding="utf-8"),
+        ]
+    )
+
+    for phrase in (
+        "execution_profile",
+        "Operator Guidance",
+        "Explicitly Unsupported Uses",
+        "Execution Profile Examples",
+        "Ambiguity Gate Stops",
+        "Natural execution",
+        "Not Human Impersonation",
+        "benchmark-report.json",
+        "safety-audit.md",
+    ):
+        assert phrase in documentation
