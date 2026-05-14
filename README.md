@@ -69,5 +69,6 @@ clear unavailable message on unsupported platforms.
 - [Screen layer](docs/screen.md)
 - [Task DSL](docs/task-dsl.md)
 - [Safety](docs/safety.md)
+- [Tracing](docs/tracing.md)
 - [Windows UI Automation](docs/windows-uia.md)
 - [Roadmap](docs/roadmap.md)

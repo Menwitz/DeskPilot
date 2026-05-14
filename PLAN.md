@@ -260,23 +260,23 @@
 
 ## 14. Tracing And Reports
 
-- [ ] Create one trace directory per run.
-- [ ] Save normalized task config.
-- [ ] Save action log as JSONL.
-- [ ] Save final report as JSON.
-- [ ] Save human-readable report as HTML or Markdown.
-- [ ] Save screenshots before and after each step when enabled.
-- [ ] Save OCR output when enabled.
-- [ ] Save candidate overlays when enabled.
-- [ ] Include final status:
-  - [ ] passed;
-  - [ ] failed;
-  - [ ] aborted;
-  - [ ] emergency_stopped.
-- [ ] Include abort reason.
-- [ ] Include step timings.
-- [ ] Include candidate confidence values.
-- [ ] Implement `replay` command that summarizes a trace without rerunning actions.
+- [x] Create one trace directory per run.
+- [x] Save normalized task config.
+- [x] Save action log as JSONL.
+- [x] Save final report as JSON.
+- [x] Save human-readable report as HTML or Markdown.
+- [x] Save screenshots before and after each step when enabled.
+- [x] Save OCR output when enabled.
+- [x] Save candidate overlays when enabled.
+- [x] Include final status:
+  - [x] passed;
+  - [x] failed;
+  - [x] aborted;
+  - [x] emergency_stopped.
+- [x] Include abort reason.
+- [x] Include step timings.
+- [x] Include candidate confidence values.
+- [x] Implement `replay` command that summarizes a trace without rerunning actions.
 
 ## 15. Example Workflows
 

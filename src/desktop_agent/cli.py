@@ -39,7 +39,7 @@ from desktop_agent.task_dsl import (
     TaskValidationError,
     YamlTaskLoader,
 )
-from desktop_agent.tracing import MemoryTraceSink, RunReport
+from desktop_agent.tracing import FileTraceSink, RunReport
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -106,7 +106,7 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
         task_overrides=task.config_overrides,
         cli_overrides=_cli_overrides_from_args(args),
     )
-    trace_sink = MemoryTraceSink()
+    trace_sink = FileTraceSink()
     engine = ExecutionEngine(
         config_loader=StaticConfigLoader(config),
         task_loader=StaticTaskLoader(task),
@@ -181,6 +181,8 @@ def _replay(args: argparse.Namespace) -> int:
         return 1
 
     print(f"trace: {args.trace_dir}")
+    if report.get("task_name"):
+        print(f"task: {report['task_name']}")
     print(f"status: {report.get('status', 'unknown')}")
     if report.get("abort_reason"):
         print(f"reason: {report['abort_reason']}")
@@ -194,6 +196,8 @@ def _print_report(report: RunReport, *, verbose: bool) -> None:
     print(f"status: {report.status}")
     if report.abort_reason:
         print(f"reason: {report.abort_reason}")
+    if report.trace_dir:
+        print(f"trace: {report.trace_dir}")
     for step in report.steps:
         print(f"step {step.step_id}: {step.status} ({step.message})")
     if verbose:

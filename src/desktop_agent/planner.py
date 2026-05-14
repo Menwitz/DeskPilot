@@ -184,7 +184,7 @@ class ExecutionEngine:
     def run(self, task_path: Path, config_path: Path | None = None) -> RunReport:
         config = self.config_loader.load(config_path)
         task = self.task_loader.load(task_path)
-        self.trace_sink.prepare_run(task, config)
+        config = self.trace_sink.prepare_run(task, config)
 
         try:
             self._record("load_config", "configuration loaded")
@@ -331,7 +331,7 @@ class ExecutionEngine:
             self._record(
                 "observe_screen",
                 "screen observed",
-                {"step_id": step.id, "attempt": attempt},
+                _observation_metadata(step.id, observation, attempt),
             )
 
             candidates = self.perception_engine.detect(step, observation, config)
@@ -754,10 +754,20 @@ class ExecutionEngine:
         step: TaskStep,
         config: RuntimeConfig,
     ) -> tuple[ScreenObservation, tuple[ElementCandidate, ...]]:
+        observation = self.screen_observer.observe(config)
+        self._record(
+            "observe_after_action",
+            "screen observed after action",
+            _observation_metadata(step.id, observation, attempt=1),
+        )
         if step.verify is None:
-            return ScreenObservation(), ()
+            return observation, ()
         verify_step = _verification_step(step)
-        return self._detect_for_step(verify_step, config, 1, phase="verify_candidates")
+        candidates = self.perception_engine.detect(verify_step, observation, config)
+        metadata = {"step_id": verify_step.id, "candidate_count": len(candidates)}
+        metadata.update(candidate_ranking_metadata(verify_step, candidates, config))
+        self._record("verify_candidates", "candidate search completed", metadata)
+        return observation, candidates
 
     def _detect_for_step(
         self,
@@ -771,7 +781,7 @@ class ExecutionEngine:
         self._record(
             "observe_screen",
             "screen observed",
-            {"step_id": step.id, "attempt": attempt},
+            _observation_metadata(step.id, observation, attempt),
         )
         candidates = self.perception_engine.detect(step, observation, config)
         metadata = {"step_id": step.id, "candidate_count": len(candidates)}
@@ -874,6 +884,23 @@ def _verification_step(step: TaskStep) -> TaskStep:
         image=step.verify.image,
         region=step.region,
     )
+
+
+def _observation_metadata(
+    step_id: str,
+    observation: ScreenObservation,
+    attempt: int,
+) -> dict[str, object]:
+    return {
+        "step_id": step_id,
+        "attempt": attempt,
+        "screenshot_path": str(observation.screenshot_path)
+        if observation.screenshot_path
+        else None,
+        "size": list(observation.size),
+        "active_window_title": observation.active_window_title,
+        "warnings": list(observation.warnings),
+    }
 
 
 def _verify_candidate_presence(
