@@ -66,7 +66,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 ## Phase 4: Entropy And Controlled Randomness
 
-- [ ] Define an entropy budget per task and per step.
+- [x] Define an entropy budget per task and per step.
 - [ ] Add deterministic seeded sampling for every random decision.
 - [ ] Add distribution choices for timing, retry spacing, and equivalent safe
   action variants.

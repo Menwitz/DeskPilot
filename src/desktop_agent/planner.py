@@ -198,9 +198,21 @@ class ExecutionEngine:
 
         try:
             self._record("load_config", "configuration loaded")
-            self._record("load_task", "task loaded", {"task": task.name})
+            self._record(
+                "load_task",
+                "task loaded",
+                {
+                    "task": task.name,
+                    "task_entropy_budget": task.entropy_budget,
+                },
+            )
             self.task_validator.validate(task, config)
             self._record("validate_task", "task validated")
+            self._record(
+                "entropy_budget",
+                "entropy budget defined",
+                _task_entropy_metadata(task),
+            )
             self._record("prepare_trace", "trace sink prepared")
             timing_controller = ExecutionTimingController(config.execution_profile)
 
@@ -849,8 +861,7 @@ class ExecutionEngine:
         candidate_id: str | None,
         action_count: int | None,
     ) -> StepReport:
-        metadata: dict[str, object] = {}
-        metadata["step_category"] = step_category(step)
+        metadata = _step_report_metadata(step)
         if action_count is not None:
             metadata["action_count"] = action_count
         return StepReport(
@@ -882,7 +893,7 @@ class ExecutionEngine:
             attempts=max(attempts, 1),
             message=message,
             candidate_id=candidate_id,
-            metadata={"step_category": step_category(step)},
+            metadata=_step_report_metadata(step),
         )
 
     def _emergency_stop_outcome(
@@ -930,11 +941,32 @@ def _verification_step(step: TaskStep) -> TaskStep:
 
 
 def _step_metadata(step: TaskStep, **metadata: object) -> dict[str, object]:
-    return {
+    step_metadata: dict[str, object] = {
         "step_id": step.id,
         "step_category": step_category(step),
         **metadata,
     }
+    if step.entropy_budget is not None:
+        step_metadata["step_entropy_budget"] = step.entropy_budget
+    return step_metadata
+
+
+def _task_entropy_metadata(task: TaskDefinition) -> dict[str, object]:
+    return {
+        "task_entropy_budget": task.entropy_budget,
+        "step_entropy_budgets": {
+            step.id: step.entropy_budget
+            for step in task.steps
+            if step.entropy_budget is not None
+        },
+    }
+
+
+def _step_report_metadata(step: TaskStep) -> dict[str, object]:
+    metadata: dict[str, object] = {"step_category": step_category(step)}
+    if step.entropy_budget is not None:
+        metadata["step_entropy_budget"] = step.entropy_budget
+    return metadata
 
 
 def _observation_metadata(

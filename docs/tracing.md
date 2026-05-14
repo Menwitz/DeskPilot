@@ -32,6 +32,11 @@ Each executed step also emits `step_timeout_budget` metadata with the planned
 action wait, retry wait, total planned wait, remaining timeout, and whether the
 budget fits before any desktop action is attempted.
 
+Task artifacts include task-level and step-level `entropy_budget` values, and
+step-related trace events include explicit `step_entropy_budget` metadata when a
+step has one. The planner also emits an `entropy_budget` event that summarizes
+the checked task and step allocations.
+
 ## Replay
 
 `desktop-agent replay <trace-dir>` reads `final-report.json` and prints a

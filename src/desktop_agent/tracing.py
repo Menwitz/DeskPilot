@@ -224,6 +224,7 @@ def _task_to_dict(task: TaskDefinition) -> dict[str, object]:
         "name": task.name,
         "allowed_windows": list(task.allowed_windows),
         "timeout_seconds": task.timeout_seconds,
+        "entropy_budget": task.entropy_budget,
         "steps": [_step_to_dict(step) for step in task.steps],
     }
 
@@ -243,6 +244,7 @@ def _step_to_dict(step: TaskStep) -> dict[str, object]:
         "retry": step.retry,
         "on_failure": step.on_failure,
         "requires_confirmation": step.requires_confirmation,
+        "entropy_budget": step.entropy_budget,
     }
 
 

@@ -11,6 +11,7 @@ name: browser-login-fixture
 allowed_windows:
   - "DeskPilot Browser Fixture"
 timeout_seconds: 120
+entropy_budget: 2.0
 steps:
   - id: enter-email
     action: click_text
@@ -22,6 +23,7 @@ steps:
     action: click_text
     target: "Submit"
     category: submission
+    entropy_budget: 0.5
     requires_confirmation: true
     verify:
       type: visible_text
@@ -37,6 +39,8 @@ steps:
 - Image templates must resolve before execution starts.
 - Step `category` values must be one of `navigation`, `recognition`,
   `data_entry`, `verification`, or `submission` when provided.
+- Task and step `entropy_budget` values must be non-negative. When a task-level
+  budget is set, the total of explicit step budgets must not exceed it.
 
 ## Actions
 
@@ -75,6 +79,8 @@ Supported verification types:
 - `timeout_seconds` overrides the step timeout. Enabled execution profiles
   budget planned action and retry waits against this value before desktop input.
 - `retry` overrides the per-step retry budget.
+- `entropy_budget` reserves part of the task's bounded randomness budget for
+  this step. Later entropy-controlled runtime work consumes this checked value.
 - `on_failure` names a future recovery or branch target.
 - `requires_confirmation` blocks the step unless its ID is explicitly confirmed
   in runtime configuration or with `--confirm-step`.
@@ -95,6 +101,7 @@ name: browser-fixture-submit
 allowed_windows:
   - DeskPilot Browser Fixture
 timeout_seconds: 120
+entropy_budget: 4.0
 config:
   confidence_threshold: 0.85
   max_retries_per_step: 2
@@ -110,23 +117,27 @@ steps:
     action: click_text
     target: Email
     category: navigation
+    entropy_budget: 0.5
     timeout_seconds: 10
 
   - id: type-email
     action: type_text
     text: qa@example.test
     category: data_entry
+    entropy_budget: 0.5
 
   - id: find-submit
     action: scroll_until
     target: Submit
     category: recognition
+    entropy_budget: 1.0
     retry: 3
 
   - id: click-submit
     action: click_text
     target: Submit
     category: submission
+    entropy_budget: 1.0
     requires_confirmation: true
     verify:
       type: visible_text

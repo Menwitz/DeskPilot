@@ -30,10 +30,12 @@ def test_task_dsl_accepts_complete_task_with_region_and_verification(
                 "allowed_windows:",
                 "  - DeskPilot Fixture",
                 "timeout_seconds: 30",
+                "entropy_budget: 2.5",
                 "steps:",
                 "  - id: click-submit-image",
                 "    action: click_image",
                 "    category: submission",
+                "    entropy_budget: 1.0",
                 "    image: submit.png",
                 "    region:",
                 "      x: 0",
@@ -54,11 +56,13 @@ def test_task_dsl_accepts_complete_task_with_region_and_verification(
     BasicTaskValidator().validate(task, RuntimeConfig())
 
     assert task.steps[0].image == image_path
+    assert task.entropy_budget == 2.5
     assert task.steps[0].region is not None
     assert task.steps[0].verify is not None
     assert task.steps[0].verify.text == "Success"
     assert task.steps[0].requires_confirmation is True
     assert task.steps[0].category == "submission"
+    assert task.steps[0].entropy_budget == 1.0
 
 
 def test_task_dsl_rejects_unknown_action(tmp_path: Path) -> None:
@@ -104,6 +108,31 @@ def test_task_dsl_rejects_unknown_step_category(tmp_path: Path) -> None:
     )
 
     with pytest.raises(TaskValidationError, match="unknown step category"):
+        validate_task(task_path)
+
+
+def test_task_dsl_rejects_invalid_entropy_budgets(tmp_path: Path) -> None:
+    task_path = tmp_path / "task.yaml"
+    task_path.write_text(
+        "\n".join(
+            [
+                "name: bad-entropy",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "timeout_seconds: 30",
+                "entropy_budget: 0.5",
+                "steps:",
+                "  - id: click-submit",
+                "    action: click_text",
+                "    target: Submit",
+                "    entropy_budget: 0.75",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(TaskValidationError, match="step entropy_budget total"):
         validate_task(task_path)
 
 

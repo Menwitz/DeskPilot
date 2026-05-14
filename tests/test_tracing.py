@@ -69,9 +69,11 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
                 action="click_text",
                 target="Submit",
                 category="submission",
+                entropy_budget=1.0,
                 verify=VerificationDefinition(type="visible_text", text="Success"),
             ),
         ),
+        entropy_budget=2.0,
     )
     trace_sink = FileTraceSink()
     engine = ExecutionEngine(
@@ -109,10 +111,14 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert final_report["abort_reason"] is None
     assert final_report["steps"][0]["candidate_id"] == "candidate-Submit"
     assert final_report["steps"][0]["metadata"]["step_category"] == "submission"
+    assert final_report["steps"][0]["metadata"]["step_entropy_budget"] == 1.0
     assert config_payload["execution_profile"]["persona"] == "normal"
+    assert task_payload["entropy_budget"] == 2.0
     assert task_payload["steps"][0]["category"] == "submission"
+    assert task_payload["steps"][0]["entropy_budget"] == 1.0
     assert task_payload["steps"][0]["resolved_category"] == "submission"
     assert any("candidate_rankings" in line for line in action_log)
     assert any('"step_category": "submission"' in line for line in action_log)
+    assert any("entropy_budget" in line for line in action_log)
     assert any("step_timeout_budget" in line for line in action_log)
     assert any("observe_after_action" in line for line in action_log)

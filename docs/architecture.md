@@ -54,4 +54,6 @@ paths to any saved screenshots or OCR artifacts. Step timeout budget events
 record planned action and retry waits before desktop input, and timing events
 include the bounded operator breakdown used for cognitive timing so reports can
 explain mental pauses, system waits, keying, pointing, and homing without
-changing the task's selected actions.
+changing the task's selected actions. Entropy budget events record task-level
+and step-level randomness allocations before later sampling logic can consume
+them.

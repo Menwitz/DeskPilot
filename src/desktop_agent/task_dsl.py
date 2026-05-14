@@ -107,6 +107,7 @@ class TaskStep:
     on_failure: str | None = None
     requires_confirmation: bool = False
     category: str | None = None
+    entropy_budget: float | None = None
 
 
 @dataclass(frozen=True)
@@ -118,6 +119,7 @@ class TaskDefinition:
     timeout_seconds: float
     steps: tuple[TaskStep, ...]
     config_overrides: ConfigOverrides = field(default_factory=ConfigOverrides)
+    entropy_budget: float | None = None
 
 
 class TaskLoader(Protocol):
@@ -163,6 +165,10 @@ class YamlTaskLoader(TaskLoader):
                 _step_from_mapping(item, task_path.parent) for item in steps_value
             ),
             config_overrides=config_overrides,
+            entropy_budget=_optional_float(
+                data.get("entropy_budget"),
+                "entropy_budget",
+            ),
         )
 
 
@@ -183,12 +189,15 @@ class BasicTaskValidator(TaskValidator):
             errors.append("allowed_windows is required")
         if task.timeout_seconds <= 0:
             errors.append("timeout_seconds must be greater than zero")
+        if task.entropy_budget is not None and task.entropy_budget < 0:
+            errors.append("entropy_budget must not be negative")
         if not task.steps:
             errors.append("steps is required")
         if len(task.steps) > config.max_steps:
             errors.append("task exceeds max_steps")
 
         all_step_ids = {step.id for step in task.steps if step.id}
+        explicit_step_entropy = 0.0
         step_ids: set[str] = set()
         for step in task.steps:
             if not step.id:
@@ -203,6 +212,12 @@ class BasicTaskValidator(TaskValidator):
                 errors.append(f"unknown action: {step.action}")
             if step.category is not None and step.category not in TASK_STEP_CATEGORIES:
                 errors.append(f"unknown step category: {step.category}")
+            if step.entropy_budget is not None:
+                if step.entropy_budget < 0:
+                    errors.append(
+                        f"step {step.id} entropy_budget must not be negative"
+                    )
+                explicit_step_entropy += step.entropy_budget
             if step.retry is not None and step.retry < 0:
                 errors.append(f"step {step.id} retry must not be negative")
             if step.timeout_seconds is not None and step.timeout_seconds <= 0:
@@ -213,6 +228,12 @@ class BasicTaskValidator(TaskValidator):
                 errors.append(f"step {step.id} on_failure target does not exist")
             errors.extend(_validate_action_shape(step))
             errors.extend(_validate_verification_shape(step))
+
+        if (
+            task.entropy_budget is not None
+            and explicit_step_entropy > task.entropy_budget
+        ):
+            errors.append("step entropy_budget total exceeds task entropy_budget")
 
         if errors:
             raise TaskValidationError("; ".join(errors))
@@ -238,6 +259,7 @@ def _step_from_mapping(value: object, task_dir: Path) -> TaskStep:
         on_failure=_optional_str(data.get("on_failure")),
         requires_confirmation=_optional_bool(data.get("requires_confirmation")),
         category=_optional_str(data.get("category")),
+        entropy_budget=_optional_float(data.get("entropy_budget"), "entropy_budget"),
     )
 
 
@@ -328,11 +350,11 @@ def _float_value(value: object) -> float:
     return float(value)
 
 
-def _optional_float(value: object) -> float | None:
+def _optional_float(value: object, field_name: str = "timeout_seconds") -> float | None:
     if value is None:
         return None
     if isinstance(value, bool) or not isinstance(value, int | float):
-        raise TaskValidationError("timeout_seconds must be a number")
+        raise TaskValidationError(f"{field_name} must be a number")
     return float(value)
 
 
