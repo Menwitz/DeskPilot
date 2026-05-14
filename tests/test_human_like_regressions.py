@@ -10,7 +10,7 @@ from desktop_agent.perception import (
     PerceptionEngine,
 )
 from desktop_agent.planner import ExecutionEngine
-from desktop_agent.safety import LocalSafetyPolicy
+from desktop_agent.safety import LocalSafetyPolicy, SafetyDecision, SafetyPolicy
 from desktop_agent.screen import Bounds, ScreenObservation, StaticScreenObserver
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
@@ -80,6 +80,35 @@ class AmbiguousCandidatePerceptionEngine(PerceptionEngine):
                 bounds=Bounds(x=220, y=20, width=100, height=30),
                 confidence=0.94,
             ),
+        )
+
+
+class CountingSafetyPolicy:
+    def __init__(self) -> None:
+        self.precondition_calls = 0
+        self.before_action_calls = 0
+
+    def check_preconditions(
+        self,
+        task: TaskDefinition,
+        config: RuntimeConfig,
+    ) -> SafetyDecision:
+        self.precondition_calls += 1
+        return LocalSafetyPolicy().check_preconditions(task, config)
+
+    def check_before_action(
+        self,
+        task: TaskDefinition,
+        step: TaskStep,
+        config: RuntimeConfig,
+        observation: ScreenObservation | None = None,
+    ) -> SafetyDecision:
+        self.before_action_calls += 1
+        return LocalSafetyPolicy().check_before_action(
+            task,
+            step,
+            config,
+            observation,
         )
 
 
@@ -284,6 +313,43 @@ def test_regression_persona_changes_timing_only_not_outcome_or_target() -> None:
     assert timing_persona(careful_report) == "careful"
 
 
+def test_regression_fast_path_reduces_wait_after_safety_check() -> None:
+    actuator = CountingActuator()
+    safety_policy = CountingSafetyPolicy()
+
+    report = run_fixture(
+        actuator=actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=ExecutionProfile(
+                enabled=True,
+                action_delay_seconds=(0.1, 0.9),
+                retry_delay_seconds=(0.3, 0.4),
+                hesitation_probability=0.0,
+                random_seed=7,
+            ),
+        ),
+        safety_policy=safety_policy,
+    )
+
+    timing_event = next(
+        event for event in report.events if event.phase == "execution_timing"
+    )
+    original_delay = timing_event.metadata["original_delay_seconds"]
+    reduced_delay = timing_event.metadata["delay_seconds"]
+    assert isinstance(original_delay, float)
+    assert isinstance(reduced_delay, float)
+    assert report.status == "passed"
+    assert actuator.calls == 1
+    assert safety_policy.precondition_calls == 1
+    assert safety_policy.before_action_calls == 1
+    assert timing_event.metadata["execution_path"] == "fast"
+    assert reduced_delay == 0.1
+    assert original_delay > reduced_delay
+
+
 def run_fixture(
     *,
     actuator: CountingActuator,
@@ -291,6 +357,7 @@ def run_fixture(
     perception_engine: PerceptionEngine,
     config: RuntimeConfig,
     task: TaskDefinition | None = None,
+    safety_policy: SafetyPolicy | None = None,
 ) -> RunReport:
     engine = ExecutionEngine(
         config_loader=StaticConfigLoader(config),
@@ -302,7 +369,7 @@ def run_fixture(
         ),
         task_validator=BasicTaskValidator(),
         trace_sink=MemoryTraceSink(),
-        safety_policy=LocalSafetyPolicy(),
+        safety_policy=safety_policy or LocalSafetyPolicy(),
         screen_observer=StaticScreenObserver(observation),
         perception_engine=CompositePerceptionEngine((perception_engine,)),
         target_selector=ConfidenceTargetSelector(),

@@ -132,7 +132,7 @@ evasion, or pretending to be a person where automation is not allowed.
 - [x] Add explicit verification checkpoints before irreversible actions.
 - [x] Add local task-state tracking so the planner knows what it believes has
   already happened.
-- [ ] Add tests proving sharp execution reduces unnecessary waits without
+- [x] Add tests proving sharp execution reduces unnecessary waits without
   reducing safety checks.
 
 ## Phase 9: Real Actuation Integration
