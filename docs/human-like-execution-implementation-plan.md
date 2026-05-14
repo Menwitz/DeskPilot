@@ -168,7 +168,13 @@ evasion, or pretending to be a person where automation is not allowed.
   stops.
 - [x] Add release notes that explain the difference between natural execution
   and deceptive human impersonation.
-- [ ] Keep this roadmap updated as each phase lands.
+- [x] Keep this roadmap updated as each phase lands.
+
+## Roadmap Maintenance Log
+
+- 2026-05-14: Phase 11 landed with the research brief, profile examples,
+  operator guidance, troubleshooting guidance, and release notes checked above.
+  The remaining unchecked items are the final acceptance gates below.
 
 ## Acceptance Criteria
 
