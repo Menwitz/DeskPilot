@@ -25,7 +25,7 @@ evasion, or pretending to be a person where automation is not allowed.
 
 ## Phase 1: Research-Backed Evaluation Harness
 
-- [ ] Define benchmark task suites for browser, native Windows, and mixed
+- [x] Define benchmark task suites for browser, native Windows, and mixed
   workflows.
 - [ ] Add a repeated-run harness that executes the same task many times and
   stores per-run metrics.

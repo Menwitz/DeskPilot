@@ -1,0 +1,27 @@
+# Benchmarks
+
+DeskPilot benchmark suites define the task fixtures used to evaluate
+human-like execution changes. They are local-only and cover browser, native
+Windows, and mixed browser-to-native workflows.
+
+The source of truth is `desktop_agent.benchmarks`. Each benchmark task declares:
+
+- Task YAML path.
+- Fixture files that must exist before the task runs.
+- Allowed window titles.
+- Pipeline modes to evaluate: `dry_run` and `run`.
+- Deep-search sources to monitor: UIA, OCR, image, and dry-run candidates.
+- Trace phases that must appear in monitoring output.
+- Final report fields that must be available to later analysis.
+- Metrics expected from the future repeated-run harness.
+
+## Built-In Suites
+
+- `browser-fixture-suite` uses `examples/browser-task.yaml` and
+  `examples/browser_fixture.html`.
+- `native-windows-fixture-suite` uses `examples/native-task.yaml` and
+  `examples/native_fixture.py`.
+- `mixed-fixture-suite` uses `examples/mixed-task.yaml` plus both fixture files.
+
+These definitions do not execute the benchmarks yet. They provide stable inputs
+for the repeated-run harness, monitoring, and report aggregation phases.
