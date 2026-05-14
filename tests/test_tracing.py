@@ -151,7 +151,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert any("observe_after_action" in line for line in action_log)
 
 
-def test_file_trace_sink_includes_recovery_path_summary_in_markdown(
+def test_file_trace_sink_includes_recovery_decision_metadata_in_reports(
     tmp_path: Path,
 ) -> None:
     task = TaskDefinition(
@@ -170,10 +170,14 @@ def test_file_trace_sink_includes_recovery_path_summary_in_markdown(
             phase="recover",
             message="retrying step",
             metadata={
+                "recovery_policy": "wait_for_transient_loading",
+                "recovery_reason": "transient_loading",
+                "recovery_chosen_action": "wait_for_loading",
                 "recovery_path_summary": (
                     "classify transient_loading -> wait_for_loading -> "
                     "observe_screen attempt 2 -> retry attempt 2"
                 ),
+                "retry_limit_respected": True,
             },
         )
     )
@@ -182,7 +186,17 @@ def test_file_trace_sink_includes_recovery_path_summary_in_markdown(
 
     assert report.trace_dir is not None
     final_report = (report.trace_dir / "final-report.md").read_text(encoding="utf-8")
+    final_report_json = json.loads(
+        (report.trace_dir / "final-report.json").read_text(encoding="utf-8")
+    )
+    recover_event = final_report_json["events"][0]
     assert "classify transient_loading" in final_report
+    assert recover_event["metadata"]["recovery_policy"] == (
+        "wait_for_transient_loading"
+    )
+    assert recover_event["metadata"]["recovery_reason"] == "transient_loading"
+    assert recover_event["metadata"]["recovery_chosen_action"] == "wait_for_loading"
+    assert recover_event["metadata"]["retry_limit_respected"] is True
 
 
 def test_file_trace_sink_includes_failure_category_in_markdown(

@@ -182,7 +182,7 @@ evasion, or pretending to be a person where automation is not allowed.
   deterministic baseline without reducing safety.
 - [x] All randomness is bounded, traceable, and reproducible when seeded.
 - [x] Real pointer and keyboard actuation consume the execution profile safely.
-- [ ] Recovery decisions are explicit, test-covered, and visible in reports.
+- [x] Recovery decisions are explicit, test-covered, and visible in reports.
 - [ ] Safety stops happen before actuation for disallowed windows, unsafe
   profiles, ambiguous targets, and unconfirmed sensitive actions.
 - [ ] Documentation explains what the system does, what it does not do, and how
