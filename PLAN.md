@@ -304,11 +304,11 @@
 
 ## 16. Packaging
 
-- [ ] Add PyInstaller config.
+- [x] Add PyInstaller config.
 - [ ] Package Windows executable.
-- [ ] Include default config template.
-- [ ] Include example tasks.
-- [ ] Include troubleshooting docs.
+- [x] Include default config template.
+- [x] Include example tasks.
+- [x] Include troubleshooting docs.
 - [ ] Verify packaged executable can run `--help`.
 - [ ] Verify packaged executable can run `dry-run`.
 - [ ] Verify packaged executable can run demo task on a logged-in Windows desktop.

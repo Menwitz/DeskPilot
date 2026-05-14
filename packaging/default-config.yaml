@@ -1,0 +1,19 @@
+default_timeout_seconds: 30
+confidence_threshold: 0.8
+max_steps: 100
+max_retries_per_step: 1
+max_runtime_seconds: 600
+trace_root: traces
+save_screenshots: true
+save_ocr_text: true
+allowed_windows: []
+emergency_stop_hotkey: ctrl+alt+esc
+primary_monitor_only: true
+confirmed_steps: []
+execution_profile:
+  enabled: false
+  action_delay_seconds: [0.0, 0.0]
+  retry_delay_seconds: [0.0, 0.0]
+  hesitation_probability: 0.0
+  movement_smoothness: 0.0
+  random_seed: null
