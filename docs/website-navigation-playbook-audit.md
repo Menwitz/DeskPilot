@@ -395,3 +395,14 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` landmark-reference
     validation and `tests/test_site_playbooks.py` missing-landmark test.
+
+### Task 35/122: Validate unsupported actions fail before execution
+
+- Status: complete.
+- Evidence:
+  - `_validate_landmarks` rejects landmark actions not in `SUPPORTED_ACTIONS`.
+  - `_validate_flow` rejects flow-step actions not in `SUPPORTED_ACTIONS`.
+  - Regression tests cover unknown actions.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` action validation and
+    `tests/test_site_playbooks.py` unknown-action test.
