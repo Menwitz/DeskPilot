@@ -74,6 +74,8 @@ agree on the same safety language.
   or payment-adjacent account changes.
 - `delete`: deleting, removing, hiding, archiving, or retracting user or
   account content.
+- `account_settings`: changing account, privacy, notification, security,
+  billing, identity, or permission settings.
 
 ## Safety Controls Planned For v1
 
