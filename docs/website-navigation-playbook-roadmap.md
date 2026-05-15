@@ -280,7 +280,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Compiled flows pass the existing task validator.
 - [x] Normal CI remains deterministic and does not depend on live public sites.
 - [x] Opt-in live smoke tests can be run manually for the seed sites.
-- [ ] Failed site runs produce clear local traces and final reports.
+- [x] Failed site runs produce clear local traces and final reports.
 
 ## Phase 9: Approval Manifests For Sensitive Site Runs
 

@@ -2661,3 +2661,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `env DESKPILOT_LIVE_SITE_SMOKE=1 .venv/bin/pytest
     tests/test_site_playbook_live_smoke.py`: 10 passed.
+
+### Task 195/211: Failed site runs produce clear local traces and final reports
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_tracing.py::test_blocked_state_reason_appears_in_final_report`
+    verifies failed blocked-state site runs carry the reason in
+    `final-report.json`.
+  - `tests/test_site_playbook_tracing.py::test_blocked_state_check_outcome_appears_in_trace`
+    verifies the trace action log records the blocked-state check outcome.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "blocked_state_reason_appears_in_final_report or blocked_state_check_outcome_appears_in_trace"`:
+    2 passed, 8 deselected.
