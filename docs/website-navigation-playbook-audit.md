@@ -1138,3 +1138,18 @@ checking layout, domain, flow, and blocked-state coverage.
     "compiled_task_metadata_includes_site_domains"`: 1 passed, 34 deselected.
   - `.venv/bin/ruff check tests/test_site_playbooks.py`: all checks passed.
   - `.venv/bin/mypy tests/test_site_playbooks.py`: no issues found.
+
+### Task 91/122: Add sensitive step ID metadata
+
+- Status: complete.
+- Evidence:
+  - Compiled task metadata includes `site_sensitive_step_ids`, derived from
+    compiled steps where `requires_confirmation` is true.
+  - Added dedicated regression coverage that compiles a sensitive publish flow
+    and asserts the metadata contains `publish-post`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "compiled_task_metadata_includes_sensitive_step_ids"`: 1 passed,
+    35 deselected.
+  - `.venv/bin/ruff check tests/test_site_playbooks.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_site_playbooks.py`: no issues found.

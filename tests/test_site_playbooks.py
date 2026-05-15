@@ -302,6 +302,18 @@ def test_compiled_task_metadata_includes_site_domains(tmp_path: Path) -> None:
     assert task.metadata["site_domains"] == ["example.com"]
 
 
+def test_compiled_task_metadata_includes_sensitive_step_ids(
+    tmp_path: Path,
+) -> None:
+    playbook = load_site_playbook(
+        _write_playbook(tmp_path, _sensitive_playbook("publish")),
+    )
+
+    task = SiteTaskCompiler().compile(playbook, "publish-post")
+
+    assert task.metadata["site_sensitive_step_ids"] == ["publish-post"]
+
+
 def test_sensitive_steps_preserve_confirmation(tmp_path: Path) -> None:
     playbook = load_site_playbook(
         _write_playbook(tmp_path, _sensitive_playbook("publish")),
