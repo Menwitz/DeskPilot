@@ -705,3 +705,17 @@ checking layout, domain, flow, and blocked-state coverage.
     notification, security, or billing change.
 - Verification:
   - Loaded all seed playbooks and confirmed each contains `open-settings`.
+
+### Task 59/122: Define composer, upload, or editor flows without final submission
+
+- Status: complete.
+- Evidence:
+  - LinkedIn, X/Twitter, Instagram, and Facebook define `open-composer`.
+  - Medium defines `open-editor`.
+  - YouTube and TikTok define `open-upload`.
+  - Flow descriptions explicitly stop before publishing, posting, or submitting,
+    preserving the public-site safety boundary for later runtime, monitoring,
+    deep-search, and reporting work.
+- Verification:
+  - Loaded all seed playbooks and filtered flows to `open-composer`,
+    `open-editor`, or `open-upload`.

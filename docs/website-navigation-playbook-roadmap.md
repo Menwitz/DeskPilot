@@ -105,7 +105,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Open notifications.
   - [x] Open messages when the site has messages.
   - [x] Open settings.
-  - [ ] Open composer, upload, or editor surface without final submission.
+  - [x] Open composer, upload, or editor surface without final submission.
 - [ ] For each seed playbook, define blocked states:
   - [ ] Logged out.
   - [ ] Consent or cookie interstitial.
