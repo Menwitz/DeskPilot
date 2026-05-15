@@ -2179,3 +2179,16 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
     "sensitive_blocked_step_appears_in_trace_metadata"`: 1 passed,
     9 deselected.
+
+### Task 163/211: Blocked-state reason appears in final report
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_tracing.py::test_blocked_state_reason_appears_in_final_report`
+    dry-runs a site task that stops on a configured blocked state.
+  - The assertions verify `final-report.json` carries the blocked-state reason
+    for monitoring and report consumers.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "blocked_state_reason_appears_in_final_report"`: 1 passed,
+    9 deselected.

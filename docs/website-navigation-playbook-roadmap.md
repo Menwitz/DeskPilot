@@ -235,7 +235,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Final report includes site ID and flow ID for site runs.
 - [x] Action log includes selected playbook version.
 - [x] Sensitive blocked step appears in trace metadata.
-- [ ] Blocked-state reason appears in final report.
+- [x] Blocked-state reason appears in final report.
 - [ ] Replay prints site and flow fields when available.
 
 ### Opt-In Live Smoke Tests
