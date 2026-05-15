@@ -384,3 +384,14 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` sensitive-step validation and
     `tests/test_site_playbooks.py` sensitive confirmation test.
+
+### Task 34/122: Validate landmark references resolve
+
+- Status: complete.
+- Evidence:
+  - `_validate_flow` checks each non-empty step landmark against the set of
+    declared landmark IDs.
+  - Regression tests cover missing landmark references.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` landmark-reference
+    validation and `tests/test_site_playbooks.py` missing-landmark test.
