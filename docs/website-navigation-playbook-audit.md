@@ -165,3 +165,12 @@ website safety claim before the corresponding roadmap item is checked.
     forwarding, or otherwise changing direct or private messages.
 - Verification:
   - Reviewed `docs/safety.md` lines 72-73.
+
+### Task 15/122: Define transaction and application actions as sensitive
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` defines `transaction` as applying, purchasing, accepting
+    offers, marketplace actions, or payment-adjacent account changes.
+- Verification:
+  - Reviewed `docs/safety.md` lines 74-75.
