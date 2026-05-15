@@ -371,3 +371,16 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` flow-step ID validation and
     `tests/test_site_playbooks.py` duplicate-step test.
+
+### Task 33/122: Validate sensitive steps require confirmation
+
+- Status: complete.
+- Evidence:
+  - `_validate_flow` checks `sensitive_category` and rejects sensitive steps
+    that do not set `requires_confirmation`.
+  - The validation block has an inline safety comment explaining why this is
+    enforced before compilation.
+  - Regression tests cover sensitive steps without confirmation.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` sensitive-step validation and
+    `tests/test_site_playbooks.py` sensitive confirmation test.
