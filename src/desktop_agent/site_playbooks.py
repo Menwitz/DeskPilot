@@ -74,6 +74,7 @@ class SiteFlowStep:
     sensitive_category: str | None = None
     timeout_seconds: float | None = None
     retry: int | None = None
+    on_failure: str | None = None
 
 
 @dataclass(frozen=True)
@@ -273,6 +274,7 @@ def _flow_step_from_mapping(value: object) -> SiteFlowStep:
         sensitive_category=_optional_str(data.get("sensitive_category")),
         timeout_seconds=_optional_float(data.get("timeout_seconds")),
         retry=_optional_int(data.get("retry")),
+        on_failure=_optional_str(data.get("on_failure")),
     )
 
 
@@ -302,6 +304,7 @@ def _compile_site_step(
         region=flow.search_region,
         timeout_seconds=site_step.timeout_seconds,
         retry=site_step.retry if site_step.retry is not None else flow.retry,
+        on_failure=site_step.on_failure,
         requires_confirmation=site_step.requires_confirmation,
         category=_site_step_category(site_step),
         metadata={

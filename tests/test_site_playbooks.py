@@ -173,6 +173,83 @@ def test_domain_and_title_rules_compile_to_allowed_windows(tmp_path: Path) -> No
     assert task.allowed_windows == ("Example", "example.com")
 
 
+@pytest.mark.parametrize(
+    ("action", "step_body", "flow_body", "extra_steps", "expected"),
+    [
+        ("click_text", "        target: Search\n", "", "", {"target": "Search"}),
+        (
+            "click_image",
+            "        image: button.png\n",
+            "",
+            "",
+            {"image": Path("button.png")},
+        ),
+        ("click_uia", "        target: SearchBox\n", "", "", {"target": "SearchBox"}),
+        (
+            "type_text",
+            "        text: example query\n",
+            "",
+            "",
+            {"text": "example query"},
+        ),
+        ("press_key", "        text: Enter\n", "", "", {"text": "Enter"}),
+        ("scroll", "", "", "", {}),
+        (
+            "scroll_until",
+            "",
+            """    search_region:
+      x: 10
+      y: 20
+      width: 200
+      height: 100
+""",
+            "",
+            {},
+        ),
+        ("wait_for", "        target: Results\n", "", "", {"target": "Results"}),
+        ("assert_visible", "        target: Results\n", "", "", {"target": "Results"}),
+        (
+            "branch_if_visible",
+            """        target: Empty state
+        on_failure: fallback
+""",
+            "",
+            """      - id: fallback
+        action: wait_for
+        target: Results
+""",
+            {"target": "Empty state", "on_failure": "fallback"},
+        ),
+    ],
+)
+def test_site_steps_compile_supported_task_actions(
+    tmp_path: Path,
+    action: str,
+    step_body: str,
+    flow_body: str,
+    extra_steps: str,
+    expected: dict[str, object],
+) -> None:
+    playbook = load_site_playbook(
+        _write_playbook(
+            tmp_path,
+            _action_playbook(action, step_body, flow_body, extra_steps),
+        ),
+    )
+
+    task = SiteTaskCompiler().compile(playbook, "action-flow")
+
+    BasicTaskValidator().validate(task, RuntimeConfig())
+    compiled_step = task.steps[0]
+    assert compiled_step.id == "action-step"
+    assert compiled_step.action == action
+    for field_name, expected_value in expected.items():
+        assert getattr(compiled_step, field_name) == expected_value
+    if action == "scroll_until":
+        assert compiled_step.region is not None
+        assert compiled_step.region.width == 200
+
+
 def test_flow_timeout_compiles_to_task_timeout(tmp_path: Path) -> None:
     playbook = load_site_playbook(
         _write_playbook(
@@ -330,3 +407,30 @@ def _sensitive_playbook(category: str) -> str:
         requires_confirmation: true
         sensitive_category: {category}""",
     )
+
+
+def _action_playbook(
+    action: str,
+    step_body: str,
+    flow_body: str,
+    extra_steps: str,
+) -> str:
+    return f"""site_id: example-site
+version: "1"
+domains:
+  - host: example.com
+    include_subdomains: true
+allowed_window_titles:
+  - Example
+flows:
+  - id: action-flow
+    timeout_seconds: 30
+    retry: 1
+{flow_body}    steps:
+      - id: action-step
+        action: {action}
+{step_body}{extra_steps}blocked_states:
+  - id: logged-out
+    detector: "visible_text:Sign in"
+    reason: Sign in manually before running this flow.
+"""

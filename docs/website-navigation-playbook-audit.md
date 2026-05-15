@@ -861,3 +861,20 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Compiled one flow for every seed playbook and printed each task's
     `allowed_windows`.
+
+### Task 69/122: Compile playbook steps into existing task actions
+
+- Status: complete.
+- Evidence:
+  - `SiteTaskCompiler` compiles site steps into `TaskStep` objects using the
+    same action names as the existing task DSL.
+  - Added `SiteFlowStep.on_failure` parsing and compiler handoff so
+    `branch_if_visible` can produce a valid DSL step with a fallback target.
+  - Added a regression matrix that compiles and validates the roadmap action
+    set through `BasicTaskValidator`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py`: 33 passed.
+  - `.venv/bin/ruff check src/desktop_agent/site_playbooks.py
+    tests/test_site_playbooks.py`: all checks passed.
+  - `.venv/bin/mypy src/desktop_agent/site_playbooks.py
+    tests/test_site_playbooks.py`: no issues found.
