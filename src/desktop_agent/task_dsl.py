@@ -220,6 +220,7 @@ class YamlTaskLoader(TaskLoader):
                 data.get("entropy_budget"),
                 "entropy_budget",
             ),
+            metadata=dict(_optional_mapping(data.get("metadata")) or {}),
         )
 
 
@@ -445,6 +446,12 @@ def _mapping(value: object, message: str) -> Mapping[str, object]:
     if not isinstance(value, Mapping):
         raise TaskValidationError(message)
     return cast(Mapping[str, object], value)
+
+
+def _optional_mapping(value: object) -> Mapping[str, object] | None:
+    if value is None:
+        return None
+    return _mapping(value, "metadata must be a mapping")
 
 
 def _string_tuple(value: object) -> tuple[str, ...]:

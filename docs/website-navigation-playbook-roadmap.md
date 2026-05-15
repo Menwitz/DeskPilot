@@ -145,24 +145,24 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ## Phase 4: CLI Commands
 
-- [ ] Add `desktop-agent list-sites`.
-- [ ] Add `desktop-agent list-flows <site>`.
-- [ ] Add `desktop-agent compile-site <site> <flow> --output <task.yaml>`.
-- [ ] Add `desktop-agent run-site <site> <flow>`.
-- [ ] Add `desktop-agent dry-run-site <site> <flow>`.
-- [ ] Support existing runtime safety flags:
-  - [ ] `--config`.
-  - [ ] `--verbose`.
-  - [ ] `--no-screenshots`.
-  - [ ] `--max-runtime-seconds`.
-  - [ ] `--confidence-threshold`.
-  - [ ] `--allowed-window`.
-  - [ ] `--confirm-step`.
-- [ ] Ensure CLI failures explain:
-  - [ ] Unknown site.
-  - [ ] Unknown flow.
-  - [ ] Invalid playbook.
-  - [ ] Missing confirmation.
+- [x] Add `desktop-agent list-sites`.
+- [x] Add `desktop-agent list-flows <site>`.
+- [x] Add `desktop-agent compile-site <site> <flow> --output <task.yaml>`.
+- [x] Add `desktop-agent run-site <site> <flow>`.
+- [x] Add `desktop-agent dry-run-site <site> <flow>`.
+- [x] Support existing runtime safety flags:
+  - [x] `--config`.
+  - [x] `--verbose`.
+  - [x] `--no-screenshots`.
+  - [x] `--max-runtime-seconds`.
+  - [x] `--confidence-threshold`.
+  - [x] `--allowed-window`.
+  - [x] `--confirm-step`.
+- [x] Ensure CLI failures explain:
+  - [x] Unknown site.
+  - [x] Unknown flow.
+  - [x] Invalid playbook.
+  - [x] Missing confirmation.
   - [ ] Blocked state detected.
   - [ ] Unsupported live-site state.
 

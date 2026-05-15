@@ -8,6 +8,8 @@ from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
 
+import yaml
+
 from desktop_agent.actuation import (
     DryRunActuator,
     actuation_profile_from_runtime_config,
@@ -58,12 +60,21 @@ from desktop_agent.screen import (
     ScreenUnavailableError,
     StaticScreenObserver,
 )
+from desktop_agent.site_playbooks import (
+    SitePlaybook,
+    SitePlaybookValidationError,
+    SiteTaskCompiler,
+    load_site_playbook,
+    load_site_playbooks,
+    resolve_site_flow,
+)
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
     StaticTaskLoader,
     TaskDefinition,
     TaskStep,
     TaskValidationError,
+    VerificationDefinition,
     YamlTaskLoader,
     step_category,
 )
@@ -78,6 +89,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_task(args, dry_run=False)
         if args.command == "dry-run":
             return _run_task(args, dry_run=True)
+        if args.command == "list-sites":
+            return _list_sites(args)
+        if args.command == "list-flows":
+            return _list_flows(args)
+        if args.command == "compile-site":
+            return _compile_site(args)
+        if args.command == "run-site":
+            return _run_site_task(args, dry_run=False)
+        if args.command == "dry-run-site":
+            return _run_site_task(args, dry_run=True)
         if args.command == "inspect-screen":
             return _inspect_screen(args)
         if args.command == "calibrate-target":
@@ -88,7 +109,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _replay(args)
         parser.print_help()
         return 2
-    except (ConfigError, TaskValidationError, OSError, ValueError) as exc:
+    except (
+        ConfigError,
+        SitePlaybookValidationError,
+        TaskValidationError,
+        OSError,
+        ValueError,
+    ) as exc:
         print(f"error: {exc}")
         return 2
 
@@ -105,6 +132,40 @@ def _build_parser() -> argparse.ArgumentParser:
         help="validate and plan a YAML task without desktop input",
     )
     _add_task_options(dry_run_parser)
+
+    list_sites_parser = subparsers.add_parser(
+        "list-sites",
+        help="list available website playbook sites",
+    )
+    _add_site_catalog_options(list_sites_parser)
+
+    list_flows_parser = subparsers.add_parser(
+        "list-flows",
+        help="list flows for one website playbook site",
+    )
+    list_flows_parser.add_argument("site")
+    _add_site_catalog_options(list_flows_parser)
+
+    compile_site_parser = subparsers.add_parser(
+        "compile-site",
+        help="compile one website playbook flow into a task YAML",
+    )
+    compile_site_parser.add_argument("site")
+    compile_site_parser.add_argument("flow")
+    compile_site_parser.add_argument("--output", required=True, type=Path)
+    _add_site_catalog_options(compile_site_parser)
+
+    run_site_parser = subparsers.add_parser(
+        "run-site",
+        help="execute a website playbook flow",
+    )
+    _add_site_run_options(run_site_parser)
+
+    dry_run_site_parser = subparsers.add_parser(
+        "dry-run-site",
+        help="validate and plan a website playbook flow without desktop input",
+    )
+    _add_site_run_options(dry_run_site_parser)
 
     inspect_parser = subparsers.add_parser(
         "inspect-screen",
@@ -143,6 +204,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def _add_task_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("task_yaml", type=Path)
+    _add_runtime_options(parser)
+
+
+def _add_runtime_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--config", type=Path)
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--no-screenshots", action="store_true")
@@ -152,8 +217,33 @@ def _add_task_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--confirm-step", action="append", default=[])
 
 
+def _add_site_catalog_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--playbook-dir",
+        default=Path("navigation_playbooks"),
+        type=Path,
+    )
+
+
+def _add_site_run_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("site")
+    parser.add_argument("flow")
+    _add_site_catalog_options(parser)
+    _add_runtime_options(parser)
+
+
 def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
     task = YamlTaskLoader().load(args.task_yaml)
+    return _run_loaded_task(args, task, args.task_yaml, dry_run=dry_run)
+
+
+def _run_loaded_task(
+    args: argparse.Namespace,
+    task: TaskDefinition,
+    task_path: Path,
+    *,
+    dry_run: bool,
+) -> int:
     file_config = YamlConfigLoader().load(args.config)
     config = resolve_runtime_config(
         file_config,
@@ -187,9 +277,69 @@ def _run_task(args: argparse.Namespace, *, dry_run: bool) -> int:
         ),
         emergency_stop_monitor=emergency_stop_monitor,
     )
-    report = engine.run(args.task_yaml, args.config)
+    report = engine.run(task_path, args.config)
     _print_report(report, verbose=args.verbose)
     return 0 if report.status == "passed" else 1
+
+
+def _list_sites(args: argparse.Namespace) -> int:
+    for playbook in load_site_playbooks(args.playbook_dir):
+        print(playbook.site_id)
+    return 0
+
+
+def _list_flows(args: argparse.Namespace) -> int:
+    playbook = _load_named_site(args.playbook_dir, args.site)
+    for flow in playbook.flows:
+        if flow.description:
+            print(f"{flow.id}\t{flow.description}")
+        else:
+            print(flow.id)
+    return 0
+
+
+def _compile_site(args: argparse.Namespace) -> int:
+    task = _compile_site_flow(args.playbook_dir, args.site, args.flow)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        yaml.safe_dump(_task_to_yaml_dict(task), sort_keys=False),
+        encoding="utf-8",
+    )
+    print(f"compiled: {args.site} {args.flow}")
+    print(f"task: {args.output}")
+    return 0
+
+
+def _run_site_task(args: argparse.Namespace, *, dry_run: bool) -> int:
+    task = _compile_site_flow(args.playbook_dir, args.site, args.flow)
+    return _run_loaded_task(
+        args,
+        task,
+        Path(f"site-{args.site}-{args.flow}.yaml"),
+        dry_run=dry_run,
+    )
+
+
+def _compile_site_flow(
+    playbook_dir: Path,
+    site_id: str,
+    flow_id: str,
+) -> TaskDefinition:
+    playbook = _load_named_site(playbook_dir, site_id)
+    resolve_site_flow(playbook, flow_id)
+    return SiteTaskCompiler().compile(playbook, flow_id)
+
+
+def _load_named_site(playbook_dir: Path, site_id: str) -> SitePlaybook:
+    site_path = playbook_dir / f"{site_id}.yaml"
+    if site_path.exists():
+        return load_site_playbook(site_path)
+    available = {
+        playbook.site_id: playbook for playbook in load_site_playbooks(playbook_dir)
+    }
+    if site_id not in available:
+        raise SitePlaybookValidationError(f"unknown site: {site_id}")
+    return available[site_id]
 
 
 def _config_with_operator_approvals(
@@ -248,6 +398,69 @@ def _cli_overrides_from_args(args: argparse.Namespace) -> ConfigOverrides:
         allowed_windows=tuple(args.allowed_window) if args.allowed_window else None,
         confirmed_steps=tuple(args.confirm_step) if args.confirm_step else None,
     )
+
+
+def _task_to_yaml_dict(task: TaskDefinition) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "name": task.name,
+        "allowed_windows": list(task.allowed_windows),
+        "timeout_seconds": task.timeout_seconds,
+        "steps": [_task_step_to_yaml_dict(step) for step in task.steps],
+    }
+    if task.config_overrides.confidence_threshold is not None:
+        payload["config"] = {
+            "confidence_threshold": task.config_overrides.confidence_threshold,
+        }
+    if task.metadata:
+        payload["metadata"] = task.metadata
+    return payload
+
+
+def _task_step_to_yaml_dict(step: TaskStep) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "id": step.id,
+        "action": step.action,
+    }
+    _put_optional(payload, "target", step.target)
+    _put_optional(payload, "text", step.text)
+    _put_optional(payload, "image", str(step.image) if step.image else None)
+    if step.region is not None:
+        payload["region"] = {
+            "x": step.region.x,
+            "y": step.region.y,
+            "width": step.region.width,
+            "height": step.region.height,
+        }
+    if step.verify is not None:
+        payload["verify"] = _verification_to_yaml_dict(step.verify)
+    _put_optional(payload, "timeout_seconds", step.timeout_seconds)
+    _put_optional(payload, "retry", step.retry)
+    if step.requires_confirmation:
+        payload["requires_confirmation"] = True
+    _put_optional(payload, "category", step.category)
+    return payload
+
+
+def _verification_to_yaml_dict(
+    verification: VerificationDefinition,
+) -> dict[str, object]:
+    payload: dict[str, object] = {"type": verification.type}
+    _put_optional(payload, "text", verification.text)
+    _put_optional(
+        payload,
+        "image",
+        str(verification.image) if verification.image else None,
+    )
+    return payload
+
+
+def _put_optional(
+    payload: dict[str, object],
+    key: str,
+    value: object | None,
+) -> None:
+    if value is not None:
+        payload[key] = value
 
 
 def _inspect_screen(args: argparse.Namespace) -> int:
