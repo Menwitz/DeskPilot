@@ -2880,3 +2880,12 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `git log --oneline --grep="^test: cover website playbook validation$"`:
     matched `c5ce1c3`.
+
+### Task 209/211: Commit plan includes site flow compilation tests commit
+
+- Status: complete.
+- Evidence:
+  - `d112b2d test: cover site flow compilation`
+- Verification:
+  - `git log --oneline --grep="^test: cover site flow compilation$"`:
+    matched `d112b2d`.
