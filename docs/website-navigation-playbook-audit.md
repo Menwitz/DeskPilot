@@ -174,3 +174,12 @@ website safety claim before the corresponding roadmap item is checked.
     offers, marketplace actions, or payment-adjacent account changes.
 - Verification:
   - Reviewed `docs/safety.md` lines 74-75.
+
+### Task 16/122: Define deleting content as sensitive
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` defines `delete` as deleting, removing, hiding, archiving,
+    or retracting user or account content.
+- Verification:
+  - Reviewed `docs/safety.md` lines 76-77.

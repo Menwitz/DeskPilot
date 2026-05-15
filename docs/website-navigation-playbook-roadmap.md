@@ -56,7 +56,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Comment or reply.
   - [x] Message or send.
   - [x] Apply, purchase, marketplace action, or payment-adjacent action.
-  - [ ] Delete content.
+  - [x] Delete content.
   - [ ] Change account, privacy, notification, security, or billing settings.
 
 ## Phase 1: Playbook Schema
