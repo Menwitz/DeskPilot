@@ -1227,3 +1227,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "compile_site_writes_valid_task_yaml"`: 1 passed, 6 deselected.
+
+### Task 96/122: Add `desktop-agent run-site <site> <flow>`
+
+- Status: complete.
+- Evidence:
+  - The CLI parser registers `run-site` with site and flow arguments.
+  - `_run_site_task()` compiles the site flow and routes it through the existing
+    task runtime with `site_run=True`.
+  - Regression coverage confirms `run-site` returns nonzero with a clear message
+    when platform actuation is unavailable.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "run_site_returns_nonzero_when_platform_actuation_is_unavailable"`:
+    1 passed, 6 deselected.
