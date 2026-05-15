@@ -598,3 +598,19 @@ checking layout, domain, flow, and blocked-state coverage.
     report code can explain why the host is allowed.
 - Verification:
   - Loaded all seed playbooks and printed domains where `purpose != "primary"`.
+
+### Task 51/122: Define account or auth domains only when needed
+
+- Status: complete.
+- Evidence:
+  - `instagram.yaml` includes `accountscenter.instagram.com` with
+    `purpose: account-settings` because Instagram settings can hand off to the
+    account center surface.
+  - The other seed playbooks do not add account or auth-only domains because
+    their current navigation flows are recognized through primary or documented
+    alternate surfaces.
+  - This keeps allowed-window scope narrow for later compile, monitoring, and
+    report output.
+- Verification:
+  - Loaded all seed playbooks and filtered domains whose purpose contains
+    `account` or `auth`.
