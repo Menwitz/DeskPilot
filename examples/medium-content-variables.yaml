@@ -1,4 +1,4 @@
-# Example content payload for a future Medium publish-capable site flow.
+# Example content payload for the Medium publish-story site flow.
 variables:
   article_title: "Local-first automation for approved ops workflows"
   article_subtitle: "How DeskPilot uses YAML, approvals, and local traces."

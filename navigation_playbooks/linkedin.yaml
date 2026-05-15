@@ -91,6 +91,26 @@ flows:
       - id: open-composer
         action: click_text
         landmark: composer
+  - id: publish-post
+    description: Fill the LinkedIn composer with approved content and publish.
+    timeout_seconds: 60
+    retry: 1
+    confidence_threshold: 0.85
+    steps:
+      - id: open-composer
+        action: click_text
+        landmark: composer
+      - id: fill-post
+        action: type_text
+        text: "{{post_text}}\n\n{{post_url}}\n\n{{post_tags}}"
+      - id: publish-post
+        action: click_text
+        target: Post
+        requires_confirmation: true
+        sensitive_category: publish
+        checkpoint:
+          type: visible_text
+          text: "{{post_text}}"
 blocked_states:
   - id: logged-out
     detector: "visible_text:Sign in"

@@ -476,6 +476,8 @@ def _task_step_to_yaml_dict(step: TaskStep) -> dict[str, object]:
         }
     if step.verify is not None:
         payload["verify"] = _verification_to_yaml_dict(step.verify)
+    if step.checkpoint is not None:
+        payload["checkpoint"] = _verification_to_yaml_dict(step.checkpoint)
     _put_optional(payload, "timeout_seconds", step.timeout_seconds)
     _put_optional(payload, "retry", step.retry)
     if step.requires_confirmation:

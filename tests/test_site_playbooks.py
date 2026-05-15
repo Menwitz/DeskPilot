@@ -353,6 +353,21 @@ def test_site_flow_rejects_missing_content_variables(tmp_path: Path) -> None:
         )
 
 
+def test_site_flow_resolves_checkpoint_content_variables(tmp_path: Path) -> None:
+    playbook = load_site_playbook(
+        _write_playbook(tmp_path, _checkpoint_variable_playbook()),
+    )
+
+    task = SiteTaskCompiler(
+        ContentVariables({"post_text": "Reviewed launch note"}),
+    ).compile(playbook, "publish-post")
+
+    publish_step = task.steps[-1]
+    assert publish_step.checkpoint is not None
+    assert publish_step.checkpoint.text == "Reviewed launch note"
+    assert publish_step.metadata["content_variable_names"] == ["post_text"]
+
+
 def test_sensitive_steps_preserve_confirmation(tmp_path: Path) -> None:
     playbook = load_site_playbook(
         _write_playbook(tmp_path, _sensitive_playbook("publish")),
@@ -421,8 +436,72 @@ def test_seed_sensitive_actions_require_confirmation() -> None:
                     assert step.requires_confirmation is True
 
 
+def test_only_linkedin_and_medium_seed_playbooks_have_publish_flows() -> None:
+    publish_sites = {
+        playbook.site_id
+        for playbook in load_site_playbooks()
+        for flow in playbook.flows
+        if any(
+            step.sensitive_category == "publish" for step in flow.steps
+        )
+    }
+
+    assert publish_sites == {"linkedin", "medium"}
+
+
+def test_seed_linkedin_publish_flow_uses_variables_and_checkpoint() -> None:
+    playbook = load_site_playbook(Path("navigation_playbooks/linkedin.yaml"))
+
+    task = SiteTaskCompiler(_seed_content_variables()).compile(
+        playbook,
+        "publish-post",
+    )
+
+    fill_step = next(step for step in task.steps if step.id == "fill-post")
+    publish_step = task.steps[-1]
+    assert "DeskPilot launch note" in (fill_step.text or "")
+    assert "https://example.test/launch" in (fill_step.text or "")
+    assert publish_step.id == "publish-post"
+    assert publish_step.requires_confirmation is True
+    assert publish_step.checkpoint is not None
+    assert publish_step.checkpoint.text == "DeskPilot launch note"
+    blocked_checks = {step.id for step in task.steps if step.id.startswith("blocked-")}
+    assert blocked_checks == {
+        f"blocked-state-{state.id}-before-publish-post"
+        for state in playbook.blocked_states
+        if state.detector.startswith("visible_text:")
+    }
+    assert task.metadata["content_variables_redacted"] is True
+
+
+def test_seed_medium_publish_flow_uses_variables_and_checkpoint() -> None:
+    playbook = load_site_playbook(Path("navigation_playbooks/medium.yaml"))
+
+    task = SiteTaskCompiler(_seed_content_variables()).compile(
+        playbook,
+        "publish-story",
+    )
+
+    title_step = next(step for step in task.steps if step.id == "type-title")
+    body_step = next(step for step in task.steps if step.id == "type-body")
+    publish_step = task.steps[-1]
+    assert title_step.text == "Medium launch note"
+    assert "Reviewed Medium article body" in (body_step.text or "")
+    assert publish_step.id == "publish-story"
+    assert publish_step.requires_confirmation is True
+    assert publish_step.checkpoint is not None
+    assert publish_step.checkpoint.text == "Medium launch note"
+    blocked_checks = {step.id for step in task.steps if step.id.startswith("blocked-")}
+    assert blocked_checks == {
+        f"blocked-state-{state.id}-before-publish-story"
+        for state in playbook.blocked_states
+        if state.detector.startswith("visible_text:")
+    }
+    assert task.metadata["content_variables_redacted"] is True
+
+
 def test_all_seed_flows_compile_and_validate() -> None:
-    compiler = SiteTaskCompiler()
+    compiler = SiteTaskCompiler(_seed_content_variables())
     validator = BasicTaskValidator()
 
     for playbook in load_site_playbooks():
@@ -510,6 +589,46 @@ blocked_states:
     detector: "visible_text:Sign in"
     reason: Sign in manually before running this flow.
 """
+
+
+def _checkpoint_variable_playbook() -> str:
+    return """site_id: example-site
+version: "1"
+domains:
+  - host: example.com
+allowed_window_titles:
+  - Example
+flows:
+  - id: publish-post
+    timeout_seconds: 30
+    steps:
+      - id: publish-post
+        action: press_key
+        text: enter
+        requires_confirmation: true
+        sensitive_category: publish
+        checkpoint:
+          type: visible_text
+          text: "{{post_text}}"
+blocked_states:
+  - id: logged-out
+    detector: "visible_text:Sign in"
+    reason: Sign in manually before running this flow.
+"""
+
+
+def _seed_content_variables() -> ContentVariables:
+    return ContentVariables(
+        {
+            "post_text": "DeskPilot launch note",
+            "post_url": "https://example.test/launch",
+            "post_tags": "#ops #automation",
+            "article_title": "Medium launch note",
+            "article_subtitle": "Approved ops update",
+            "article_body": "Reviewed Medium article body",
+            "canonical_url": "https://example.test/medium",
+        },
+    )
 
 
 def _action_playbook(

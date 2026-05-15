@@ -26,7 +26,7 @@ teams running approved content workflows.
 - [x] Site playbook compile and dry-run work.
 - [x] Benchmark harness runs locally.
 - [x] Product docs identify the revised ops-team content-automation vision.
-- [ ] Seed playbooks support publish-capable LinkedIn and Medium workflows.
+- [x] Seed playbooks support publish-capable LinkedIn and Medium workflows.
 - [x] Real run path includes Windows UIA perception.
 - [x] Active-window safety is consistently enforced in real runs.
 - [x] Approval manifest exists for ops-team preapproval.
@@ -41,10 +41,10 @@ teams running approved content workflows.
 - [x] Add local approval manifest support via `--approval-manifest <path>`.
 - [x] Require approval manifests for sensitive `run-site` flows.
 - [x] Add YAML variable support for content payloads.
-- [ ] Add LinkedIn publish-capable flow using YAML variables.
-- [ ] Add Medium publish-capable flow using YAML variables.
-- [ ] Add checkpoints before externally visible publish actions.
-- [ ] Keep all other seed sites read-only/open-surface until promoted.
+- [x] Add LinkedIn publish-capable flow using YAML variables.
+- [x] Add Medium publish-capable flow using YAML variables.
+- [x] Add checkpoints before externally visible publish actions.
+- [x] Keep all other seed sites read-only/open-surface until promoted.
 - [x] Wire Windows UIA into non-dry-run perception.
 - [x] Fix active-window allowlist enforcement for real runs.
 - [ ] Pass Windows package verification.
@@ -53,9 +53,9 @@ teams running approved content workflows.
 
 ## P1 Product Alignment
 
-- [ ] Update `docs/website-playbooks.md` to distinguish read-only, draft, and
+- [x] Update `docs/website-playbooks.md` to distinguish read-only, draft, and
   publish-capable flows.
-- [ ] Update `navigation_playbooks/README.md` with promotion criteria for
+- [x] Update `navigation_playbooks/README.md` with promotion criteria for
   publish-capable sites.
 - [x] Document the approval manifest schema.
 - [x] Document YAML variable schema for content payloads.
@@ -77,7 +77,7 @@ teams running approved content workflows.
   allowlist.
 - [x] Add regression test: sensitive site action fails without approval
   manifest.
-- [ ] Add regression test: manifest scope mismatch fails before input.
+- [x] Add regression test: manifest scope mismatch fails before input.
 
 ## P2 Evidence And Ops Readiness
 
@@ -95,9 +95,9 @@ teams running approved content workflows.
 
 ## Acceptance Criteria
 
-- [ ] `desktop-agent dry-run-site linkedin <publish-flow>` validates variables
+- [x] `desktop-agent dry-run-site linkedin <publish-flow>` validates variables
   and approval requirements.
-- [ ] `desktop-agent dry-run-site medium <publish-flow>` validates variables and
+- [x] `desktop-agent dry-run-site medium <publish-flow>` validates variables and
   approval requirements.
 - [x] Sensitive site flow without approval manifest exits nonzero with a clear
   message.
@@ -105,7 +105,7 @@ teams running approved content workflows.
   exits nonzero.
 - [x] Real run uses UIA, OCR, and CV candidate fusion.
 - [x] Real run cannot act outside task/config allowed windows.
-- [ ] LinkedIn and Medium publish flows stop on logged-out, consent, CAPTCHA,
+- [x] LinkedIn and Medium publish flows stop on logged-out, consent, CAPTCHA,
   permission, unsupported-layout, or ambiguous-target states.
 - [ ] All artifacts remain local by default.
 - [ ] Full local quality gate passes.

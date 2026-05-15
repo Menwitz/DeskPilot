@@ -11,7 +11,7 @@ from desktop_agent.perception import (
     ui_state_snapshot_metadata,
 )
 from desktop_agent.screen import Bounds, ScreenObservation
-from desktop_agent.task_dsl import TaskRegion, TaskStep
+from desktop_agent.task_dsl import TaskRegion, TaskStep, VerificationDefinition
 
 
 def candidate(
@@ -288,3 +288,17 @@ def test_dry_run_perception_emits_synthetic_planning_candidate() -> None:
     assert candidates[0].id == "dry-run-scroll-submit"
     assert candidates[0].label == "Submit"
     assert candidates[0].metadata["dry_run"] is True
+
+
+def test_dry_run_perception_does_not_fabricate_negative_visibility_text() -> None:
+    candidates = DryRunPerceptionEngine().detect(
+        TaskStep(
+            id="blocked-state",
+            action="wait_for",
+            verify=VerificationDefinition(type="not_visible_text", text="Sign in"),
+        ),
+        ScreenObservation(),
+        config=RuntimeConfig(),
+    )
+
+    assert candidates == ()

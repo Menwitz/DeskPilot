@@ -98,6 +98,10 @@ class DryRunPerceptionEngine(PerceptionEngine):
         config: RuntimeConfig,
     ) -> tuple[ElementCandidate, ...]:
         _ = observation, config
+        if step.verify is not None and step.verify.type == "not_visible_text":
+            # Dry-run cannot prove absence from a live screen, so it avoids
+            # fabricating the blocked text that negative checks are excluding.
+            return ()
         label = _dry_run_label(step)
         if label is None:
             return ()

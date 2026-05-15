@@ -14,6 +14,7 @@ from desktop_agent.config import ConfigOverrides
 from desktop_agent.content_variables import ContentVariables, load_content_variables
 from desktop_agent.task_dsl import (
     SUPPORTED_ACTIONS,
+    SUPPORTED_VERIFICATION_TYPES,
     TaskDefinition,
     TaskRegion,
     TaskStep,
@@ -73,9 +74,18 @@ class SiteFlowStep:
     image: str | None = None
     requires_confirmation: bool = False
     sensitive_category: str | None = None
+    checkpoint: VerificationDefinition | None = None
     timeout_seconds: float | None = None
     retry: int | None = None
     on_failure: str | None = None
+
+
+@dataclass(frozen=True)
+class ResolvedSiteVerification:
+    """Compiled site verification plus content variables used by it."""
+
+    definition: VerificationDefinition | None = None
+    variable_names: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -286,6 +296,7 @@ def _flow_step_from_mapping(value: object) -> SiteFlowStep:
         image=_optional_str(data.get("image")),
         requires_confirmation=_optional_bool(data.get("requires_confirmation"), False),
         sensitive_category=_optional_str(data.get("sensitive_category")),
+        checkpoint=_optional_verification(data.get("checkpoint"), "checkpoint"),
         timeout_seconds=_optional_float(data.get("timeout_seconds")),
         retry=_optional_int(data.get("retry")),
         on_failure=_optional_str(data.get("on_failure")),
@@ -314,6 +325,7 @@ def _compile_site_step(
     image_template = variables.resolve(
         site_step.image or (landmark.image if landmark else None),
     )
+    checkpoint = _compile_site_verification(site_step.checkpoint, variables)
     image = image_template.value
     variable_names = tuple(
         dict.fromkeys(
@@ -321,6 +333,7 @@ def _compile_site_step(
                 *target.variable_names,
                 *text.variable_names,
                 *image_template.variable_names,
+                *checkpoint.variable_names,
             )
         )
     )
@@ -345,6 +358,7 @@ def _compile_site_step(
         text=text.value,
         image=Path(image) if image else None,
         region=flow.search_region,
+        checkpoint=checkpoint.definition,
         timeout_seconds=site_step.timeout_seconds,
         retry=site_step.retry if site_step.retry is not None else flow.retry,
         on_failure=site_step.on_failure,
@@ -376,6 +390,30 @@ def _site_step_category(site_step: SiteFlowStep) -> str | None:
     if site_step.sensitive_category is None:
         return None
     return "submission"
+
+
+def _compile_site_verification(
+    verification: VerificationDefinition | None,
+    variables: ContentVariables,
+) -> ResolvedSiteVerification:
+    if verification is None:
+        return ResolvedSiteVerification()
+    text = variables.resolve(verification.text)
+    image_template = variables.resolve(
+        str(verification.image) if verification.image else None,
+    )
+    variable_names = tuple(
+        dict.fromkeys((*text.variable_names, *image_template.variable_names))
+    )
+    image = image_template.value
+    return ResolvedSiteVerification(
+        VerificationDefinition(
+            type=verification.type,
+            text=text.value,
+            image=Path(image) if image else None,
+        ),
+        variable_names,
+    )
 
 
 def _blocked_state_checks(
@@ -503,6 +541,7 @@ def _validate_flow(
             errors.append(f"step {step.id} retry must not be negative")
         if step.timeout_seconds is not None and step.timeout_seconds <= 0:
             errors.append(f"step {step.id} timeout_seconds must be greater than zero")
+        errors.extend(_validate_site_verification(step, step.checkpoint, "checkpoint"))
         # A sensitive category is an author-declared safety intent; validation
         # must enforce confirmation even before the compiler sees the step.
         if step.sensitive_category is not None:
@@ -512,6 +551,27 @@ def _validate_flow(
                 errors.append(
                     f"step {step.id} sensitive steps require confirmation",
                 )
+    return errors
+
+
+def _validate_site_verification(
+    step: SiteFlowStep,
+    verification: VerificationDefinition | None,
+    field_name: str,
+) -> list[str]:
+    if verification is None:
+        return []
+    errors: list[str] = []
+    if verification.type not in SUPPORTED_VERIFICATION_TYPES:
+        errors.append(f"unknown verification type: {verification.type}")
+    if verification.type in {"visible_text", "not_visible_text"} and not (
+        verification.text
+    ):
+        errors.append(f"step {step.id} {field_name}.text is required")
+    if verification.type == "visible_image" and verification.image is None:
+        errors.append(f"step {step.id} {field_name}.image is required")
+    if verification.type == "window_title_contains" and not verification.text:
+        errors.append(f"step {step.id} {field_name}.text is required")
     return errors
 
 
@@ -530,6 +590,21 @@ def _optional_region(value: object) -> TaskRegion | None:
             "search_region width and height must be greater than zero",
         )
     return region
+
+
+def _optional_verification(
+    value: object,
+    field_name: str,
+) -> VerificationDefinition | None:
+    if value is None:
+        return None
+    data = _mapping(value, f"{field_name} must be a mapping")
+    image = _optional_str(data.get("image"))
+    return VerificationDefinition(
+        type=str(data.get("type", "")),
+        text=_optional_str(data.get("text")),
+        image=Path(image) if image else None,
+    )
 
 
 def _required_int(data: Mapping[str, object], key: str) -> int:

@@ -72,6 +72,14 @@ blocked_states: []
   flow is read-only and still skipped unless `DESKPILOT_LIVE_SITE_SMOKE=1`.
 - Run normal CI without live-site dependencies.
 
+## Examples
+
+The examples below are minimal snippets that show the supported public-site
+patterns: read-only navigation, search, composer/editor opening, confirmed
+sensitive actions, and blocked-state detection. Keep examples small enough to
+copy into tests, then validate the compiled task and generated trace/report
+metadata before using them as live-site playbooks.
+
 ## Read-Only Navigation Flow
 
 ```yaml
@@ -201,6 +209,17 @@ desktop-agent run-site example-site publish-post \
   --variables content.yaml \
   --approval-manifest approval.yaml
 ```
+
+## V1 Publish-Capable Seed Flows
+
+Only `linkedin/publish-post` and `medium/publish-story` are publish-capable seed
+flows in v1. Both flows use local YAML content variables, run blocked-state
+checks before the final publish action, require confirmation on that final
+action, and declare a checkpoint that must pass before input is sent. Real
+`run-site` execution also requires a matching approval manifest.
+
+All other seed sites remain limited to read-only navigation or opening a
+composer/editor surface without submitting content.
 
 ## Blocked-State Detection
 

@@ -28,6 +28,12 @@ landmarks:
   - id: composer
     action: click_text
     target: Write
+  - id: title-field
+    action: click_text
+    target: Title
+  - id: body-field
+    action: click_text
+    target: Tell your story
 flows:
   - id: open-home
     description: Open the Medium home feed.
@@ -77,6 +83,38 @@ flows:
       - id: open-editor
         action: click_text
         landmark: composer
+  - id: publish-story
+    description: Fill the Medium editor with approved content and publish.
+    timeout_seconds: 90
+    retry: 1
+    confidence_threshold: 0.85
+    steps:
+      - id: open-editor
+        action: click_text
+        landmark: composer
+      - id: focus-title
+        action: click_text
+        landmark: title-field
+      - id: type-title
+        action: type_text
+        text: "{{article_title}}"
+      - id: focus-body
+        action: click_text
+        landmark: body-field
+      - id: type-body
+        action: type_text
+        text: "{{article_subtitle}}\n\n{{article_body}}\n\n{{canonical_url}}"
+      - id: open-publish-menu
+        action: click_text
+        target: Publish
+      - id: publish-story
+        action: click_text
+        target: Publish now
+        requires_confirmation: true
+        sensitive_category: publish
+        checkpoint:
+          type: visible_text
+          text: "{{article_title}}"
 blocked_states:
   - id: logged-out
     detector: "visible_text:Sign in"

@@ -34,6 +34,12 @@ editor surface that stops before final submission. Sites with direct-message
 surfaces also include an `open-messages` flow that opens the surface without
 sending content.
 
+For v1, only LinkedIn and Medium include publish-capable content workflows.
+Those flows require local content variables, blocked-state checks, a checkpoint
+before the externally visible publish action, and an approval manifest for real
+`run-site` execution. Other seed playbooks must remain read-only or
+open-surface until they are explicitly promoted with the same safeguards.
+
 ## Blocked State Coverage
 
 Every seed playbook includes blocked-state detectors for logged-out sessions,
