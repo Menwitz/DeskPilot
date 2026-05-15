@@ -53,7 +53,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Login.
   - [x] Post, publish, upload, or submit.
   - [x] Like, react, clap, repost, subscribe, follow, friend, connect, or join.
-  - [ ] Comment or reply.
+  - [x] Comment or reply.
   - [ ] Message or send.
   - [ ] Apply, purchase, marketplace action, or payment-adjacent action.
   - [ ] Delete content.

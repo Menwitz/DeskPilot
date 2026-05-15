@@ -147,3 +147,12 @@ website safety claim before the corresponding roadmap item is checked.
     similar account-visible engagement.
 - Verification:
   - Reviewed `docs/safety.md` lines 68-69.
+
+### Task 13/122: Define comment or reply as sensitive
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` defines `comment` as commenting, replying, reviewing,
+    annotating, or otherwise adding visible text to another surface.
+- Verification:
+  - Reviewed `docs/safety.md` lines 70-71.
