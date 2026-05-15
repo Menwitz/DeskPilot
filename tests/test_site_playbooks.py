@@ -294,6 +294,14 @@ def test_flow_confidence_threshold_compiles_to_config_override(
     assert task.config_overrides.confidence_threshold == 0.84
 
 
+def test_compiled_task_metadata_includes_site_domains(tmp_path: Path) -> None:
+    playbook = load_site_playbook(_write_playbook(tmp_path, _valid_playbook()))
+
+    task = SiteTaskCompiler().compile(playbook, "open-search")
+
+    assert task.metadata["site_domains"] == ["example.com"]
+
+
 def test_sensitive_steps_preserve_confirmation(tmp_path: Path) -> None:
     playbook = load_site_playbook(
         _write_playbook(tmp_path, _sensitive_playbook("publish")),

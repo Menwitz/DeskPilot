@@ -1124,3 +1124,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
     "final_report_includes_site_id_and_flow_id"`: 1 passed, 4 deselected.
+
+### Task 90/122: Add domain metadata
+
+- Status: complete.
+- Evidence:
+  - Compiled task metadata includes `site_domains`, populated from the validated
+    playbook domain hosts.
+  - Added dedicated regression coverage that compiles a playbook with
+    `example.com` and asserts `site_domains == ["example.com"]`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "compiled_task_metadata_includes_site_domains"`: 1 passed, 34 deselected.
+  - `.venv/bin/ruff check tests/test_site_playbooks.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_site_playbooks.py`: no issues found.
