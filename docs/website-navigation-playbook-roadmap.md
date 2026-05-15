@@ -207,7 +207,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Flow retry defaults compile into step retry values.
 - [x] Sensitive steps preserve `requires_confirmation`.
 - [x] Blocked-state checks compile before sensitive final actions.
-- [ ] Unknown site flow fails before task execution.
+- [x] Unknown site flow fails before task execution.
 
 ### CLI Regression Tests
 

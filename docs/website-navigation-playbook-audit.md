@@ -1946,3 +1946,15 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "blocked_state_checks_compile_before_sensitive_final_actions"`: 1 passed,
     35 deselected.
+
+### Task 144/211: Unknown site flow fails before task execution
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_unknown_site_flow_fails_before_task_execution`
+    compiles a valid playbook with missing flow ID `missing-flow`.
+  - The assertion verifies `SitePlaybookValidationError` is raised before any
+    task execution path can run.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "unknown_site_flow_fails_before_task_execution"`: 1 passed, 35 deselected.
