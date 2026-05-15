@@ -834,3 +834,16 @@ checking layout, domain, flow, and blocked-state coverage.
     checks, and seed-flow validation.
   - Phase 3 roadmap items are still unchecked, so each item will be verified,
     tested, documented here, checked in the roadmap, and committed separately.
+
+### Task 67/122: Add `SiteTaskCompiler`
+
+- Status: complete.
+- Evidence:
+  - `SiteTaskCompiler` is implemented in `src/desktop_agent/site_playbooks.py`.
+  - The compiler validates a `SitePlaybook`, resolves the requested flow, and
+    returns a `TaskDefinition` named as `<site_id>:<flow_id>`.
+  - This keeps site navigation integrated with the existing task pipeline rather
+    than introducing a parallel runtime.
+- Verification:
+  - Imported `SiteTaskCompiler`, compiled `linkedin:open-search`, and confirmed
+    the result is a `TaskDefinition`.

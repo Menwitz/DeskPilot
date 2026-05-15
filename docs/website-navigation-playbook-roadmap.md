@@ -116,7 +116,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ## Phase 3: Compiler Into Existing Task DSL
 
-- [ ] Add `SiteTaskCompiler`.
+- [x] Add `SiteTaskCompiler`.
 - [ ] Compile site domains and window-title patterns into task `allowed_windows`.
 - [ ] Compile playbook steps into existing task actions:
   - [ ] `click_text`.
