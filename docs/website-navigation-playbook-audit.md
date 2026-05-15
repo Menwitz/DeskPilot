@@ -1772,3 +1772,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "invalid_site_id_is_rejected"`: 1 passed, 35 deselected.
+
+### Task 129/211: Empty domains are rejected
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_empty_domains_are_rejected` writes a
+    playbook with `domains: []`.
+  - The assertion verifies `SitePlaybookValidationError` mentions the domain
+    requirement.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "empty_domains_are_rejected"`: 1 passed, 35 deselected.
