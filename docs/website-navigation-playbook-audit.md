@@ -2527,3 +2527,18 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `rg -n "Website Playbooks Compile Into Tasks|Do not add runtime behavior|final reports"
     docs/task-dsl.md`: matched the compile-to-DSL contract.
+
+### Task 187/211: Update safety docs with third-party website guardrails
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` documents public website automation scope, unsupported
+    CAPTCHA/bot/credential behaviors, sensitive action categories, approval
+    manifest requirements, and local traces/final reports.
+  - The guardrails now explicitly state that normal CI uses deterministic schema,
+    compiler, dry-run, safety, tracing, and reporting regressions, while live-site
+    smoke checks require `DESKPILOT_LIVE_SITE_SMOKE=1` and remain read-only unless
+    an approval manifest authorizes a sensitive flow.
+- Verification:
+  - `rg -n "DESKPILOT_LIVE_SITE_SMOKE|schema, compiler, dry-run|CAPTCHA bypass"
+    docs/safety.md`: matched the third-party website guardrails.

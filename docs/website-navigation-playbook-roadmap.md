@@ -267,7 +267,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Update `docs/architecture.md` with the playbook layer.
 - [x] Update `docs/task-dsl.md` to explain that playbooks compile into existing
   tasks rather than replacing the DSL.
-- [ ] Update `docs/safety.md` with third-party website guardrails.
+- [x] Update `docs/safety.md` with third-party website guardrails.
 
 ## Phase 8: Acceptance Criteria
 

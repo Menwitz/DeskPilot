@@ -38,6 +38,10 @@ account, organization, and target site's terms permit the intended automation.
 DeskPilot playbooks must be treated as navigation aids for authorized sessions,
 not a way to create access, ignore site restrictions, or automate behavior that
 the site or account owner does not permit.
+Normal CI must rely on schema, compiler, dry-run, safety, tracing, and reporting
+regressions rather than live public websites. Live-site smoke checks are
+manual-only, require `DESKPILOT_LIVE_SITE_SMOKE=1`, and must stay read-only
+unless a separate approval manifest explicitly authorizes a sensitive site flow.
 
 ## Public Site Unsupported Behaviors
 
