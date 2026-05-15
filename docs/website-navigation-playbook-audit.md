@@ -818,3 +818,19 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check .`: all checks passed.
   - `.venv/bin/mypy`: no issues in 67 source files.
   - `.venv/bin/python -m build`: built source distribution and wheel.
+
+## Phase 3 Pre-Implementation Audit
+
+- Status: ready to verify task-by-task.
+- Scope:
+  - Phase 3 covers compiling validated site playbooks into the existing
+    `TaskDefinition` and `TaskStep` DSL used by runtime pipelines, safety gates,
+    tracing, monitoring, and reports.
+- Findings:
+  - `src/desktop_agent/site_playbooks.py` already contains a `SiteTaskCompiler`
+    implementation.
+  - `tests/test_site_playbooks.py` already contains compiler-focused regression
+    tests for task creation, allowed windows, defaults, confirmations, blocked
+    checks, and seed-flow validation.
+  - Phase 3 roadmap items are still unchecked, so each item will be verified,
+    tested, documented here, checked in the roadmap, and committed separately.
