@@ -1316,3 +1316,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
+
+### Task 103/122: Support `--confidence-threshold`
+
+- Status: complete.
+- Evidence:
+  - `--confidence-threshold` is registered through `_add_runtime_options()`.
+  - `_cli_overrides_from_args()` maps it to `confidence_threshold`.
+  - The runtime-flag regression passes `--confidence-threshold 0.75`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
