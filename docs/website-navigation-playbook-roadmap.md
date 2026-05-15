@@ -92,7 +92,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] `navigation_playbooks/instagram.yaml`.
   - [x] `navigation_playbooks/facebook.yaml`.
   - [x] `navigation_playbooks/medium.yaml`.
-  - [ ] `navigation_playbooks/youtube.yaml`.
+  - [x] `navigation_playbooks/youtube.yaml`.
   - [ ] `navigation_playbooks/tiktok.yaml`.
 - [ ] For each seed playbook, define domains:
   - [ ] Primary domain.

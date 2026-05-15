@@ -533,3 +533,15 @@ checking layout, domain, flow, and blocked-state coverage.
     standard direct-message navigation surface in this catalog scope.
 - Verification:
   - Loaded `navigation_playbooks/medium.yaml` with `load_site_playbook`.
+
+### Task 46/122: Add `navigation_playbooks/youtube.yaml`
+
+- Status: complete.
+- Evidence:
+  - `navigation_playbooks/youtube.yaml` exists.
+  - It validates through `load_site_playbook`.
+  - It defines the `youtube` site ID, three domains, six flows, and six blocked
+    states. The seed includes the creator-studio domain for upload navigation
+    recognition while stopping before any submit action.
+- Verification:
+  - Loaded `navigation_playbooks/youtube.yaml` with `load_site_playbook`.
