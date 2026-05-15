@@ -914,3 +914,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and click_uia"`: 1 passed, 32 deselected.
+
+### Task 73/122: Compile `type_text`
+
+- Status: complete.
+- Evidence:
+  - The action regression matrix includes a `type_text` site step with text.
+  - `SiteTaskCompiler` preserves the text payload in the compiled `TaskStep`,
+    and `BasicTaskValidator` accepts the result.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
+    and type_text"`: 1 passed, 32 deselected.
