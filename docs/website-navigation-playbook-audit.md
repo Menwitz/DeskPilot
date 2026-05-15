@@ -24,3 +24,18 @@ website safety claim before the corresponding roadmap item is checked.
     stops, and local reports.
 - Verification:
   - Reviewed `docs/safety.md` lines 21-40.
+
+### Task 2/122: Document third-party website authorization and rule compliance
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` states that public-site playbooks are limited to websites
+    where automation is allowed by the operator's account, organization, and
+    the target site's rules.
+  - `docs/safety.md` states that the operator is responsible for confirming
+    that the account, organization, and site terms permit the intended
+    automation.
+  - The same section frames playbooks as navigation aids for authorized
+    sessions, not a way to create access or ignore site restrictions.
+- Verification:
+  - Reviewed `docs/safety.md` lines 23-25 and 36-40.
