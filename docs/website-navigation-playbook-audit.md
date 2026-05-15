@@ -1899,3 +1899,14 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "domain_and_title_rules_compile_to_allowed_windows"`: 1 passed,
     35 deselected.
+
+### Task 140/211: Flow timeout compiles into task timeout
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_flow_timeout_compiles_to_task_timeout`
+    changes the flow timeout to `45`.
+  - The assertion verifies the compiled task timeout is `45`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "flow_timeout_compiles_to_task_timeout"`: 1 passed, 35 deselected.
