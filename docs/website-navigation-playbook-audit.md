@@ -119,3 +119,12 @@ website safety claim before the corresponding roadmap item is checked.
     reports so the pipeline uses consistent safety language.
 - Verification:
   - Reviewed `docs/safety.md` lines 58-79.
+
+### Task 10/122: Define login as a sensitive category
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` defines `login` as entering credentials, opening an
+    authentication flow, approving sign-in, or switching accounts.
+- Verification:
+  - Reviewed `docs/safety.md` lines 64-65.
