@@ -300,7 +300,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ## Commit Plan
 
-- [ ] `docs: add website navigation playbook roadmap`
+- [x] `docs: add website navigation playbook roadmap`
 - [ ] `feat: add site playbook schema`
 - [ ] `feat: compile site playbooks into tasks`
 - [ ] `feat: add site playbook cli commands`

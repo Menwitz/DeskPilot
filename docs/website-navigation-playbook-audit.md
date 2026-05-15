@@ -2825,3 +2825,12 @@ checking layout, domain, flow, and blocked-state coverage.
 - Audit decision:
   - Check each commit-plan item only against a concrete commit hash or exact
     equivalent implementation commit in history.
+
+### Task 203/211: Commit plan includes roadmap commit
+
+- Status: complete.
+- Evidence:
+  - `db55fac docs: add website navigation playbook roadmap`
+- Verification:
+  - `git log --oneline --grep="^docs: add website navigation playbook roadmap$"`:
+    matched `db55fac`.
