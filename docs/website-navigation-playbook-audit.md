@@ -326,3 +326,14 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` site ID validation and
     `tests/test_site_playbooks.py` site ID tests.
+
+### Task 29/122: Validate at least one domain is required
+
+- Status: complete.
+- Evidence:
+  - `validate_site_playbook` rejects playbooks with no domains.
+  - The same validation path rejects domain entries with blank hosts.
+  - Regression tests cover empty domain lists.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` domain validation and
+    `tests/test_site_playbooks.py` domain validation test.

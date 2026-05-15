@@ -72,7 +72,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Add a YAML loader for `navigation_playbooks/*.yaml`.
 - [x] Add schema validation:
   - [x] Site ID is required and slug-safe.
-  - [ ] At least one domain is required.
+  - [x] At least one domain is required.
   - [ ] At least one allowed window-title pattern is required.
   - [ ] Flow IDs are unique.
   - [ ] Step IDs are unique within each flow.
