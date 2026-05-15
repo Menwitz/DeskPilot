@@ -89,7 +89,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Add seed playbooks:
   - [x] `navigation_playbooks/linkedin.yaml`.
   - [x] `navigation_playbooks/x-twitter.yaml`.
-  - [ ] `navigation_playbooks/instagram.yaml`.
+  - [x] `navigation_playbooks/instagram.yaml`.
   - [ ] `navigation_playbooks/facebook.yaml`.
   - [ ] `navigation_playbooks/medium.yaml`.
   - [ ] `navigation_playbooks/youtube.yaml`.
