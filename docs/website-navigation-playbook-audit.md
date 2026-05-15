@@ -756,3 +756,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and printed the `consent` detector and reason for
     each site.
+
+### Task 63/122: Define CAPTCHA or suspicious-activity blocked states
+
+- Status: complete.
+- Evidence:
+  - Every seed playbook defines `captcha`.
+  - Detectors cover site-specific challenge language such as security
+    verification, suspicious activity, challenge, verification, security check,
+    and unusual traffic.
+  - Every reason states that CAPTCHA or suspicious-activity challenges are not
+    automated.
+- Verification:
+  - Loaded all seed playbooks and printed the `captcha` detector and reason for
+    each site.

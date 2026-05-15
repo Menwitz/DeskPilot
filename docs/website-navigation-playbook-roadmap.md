@@ -109,7 +109,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] For each seed playbook, define blocked states:
   - [x] Logged out.
   - [x] Consent or cookie interstitial.
-  - [ ] CAPTCHA or suspicious-activity challenge.
+  - [x] CAPTCHA or suspicious-activity challenge.
   - [ ] Permission or account restriction.
   - [ ] Unsupported layout.
   - [ ] Ambiguous target.
