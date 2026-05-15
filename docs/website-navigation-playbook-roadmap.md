@@ -137,7 +137,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Optional search region.
 - [x] Add blocked-state checks before irreversible actions.
 - [x] Add task metadata for trace readability:
-  - [ ] Site ID.
+  - [x] Site ID.
   - [ ] Flow ID.
   - [ ] Domain.
   - [ ] Sensitive step IDs.

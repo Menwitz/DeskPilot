@@ -1100,3 +1100,15 @@ checking layout, domain, flow, and blocked-state coverage.
     context at both task and action levels.
 - Verification:
   - Compiled `linkedin:open-search` and printed the resulting task metadata.
+
+### Task 88/122: Add site ID metadata
+
+- Status: complete.
+- Evidence:
+  - Compiled task metadata includes `site_id`.
+  - Compiled step metadata also includes `site_id`.
+  - Tracing/report coverage verifies site ID is present in final report
+    metadata for site-playbook runs.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "final_report_includes_site_id_and_flow_id"`: 1 passed, 4 deselected.
