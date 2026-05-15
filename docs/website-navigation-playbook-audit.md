@@ -994,3 +994,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and branch_if_visible"`: 1 passed, 32 deselected.
+
+### Task 80/122: Preserve confirmation requirements for sensitive steps
+
+- Status: complete.
+- Evidence:
+  - `SiteTaskCompiler` copies `SiteFlowStep.requires_confirmation` into the
+    compiled `TaskStep`.
+  - Compiled step metadata also records `site_requires_confirmation` for trace,
+    monitoring, and report consumers.
+  - Regression coverage asserts a sensitive publish step remains confirmed and
+    categorized as a submission after compilation.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "sensitive_steps_preserve_confirmation"`: 1 passed, 32 deselected.
