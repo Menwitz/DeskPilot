@@ -32,6 +32,12 @@ blocked states such as logged-out sessions, consent dialogs, CAPTCHA
 challenges, permission restrictions, unsupported layouts, or ambiguous targets
 must stop execution with a local report.
 
+For third-party websites, the operator is responsible for confirming that the
+account, organization, and target site's terms permit the intended automation.
+DeskPilot playbooks must be treated as navigation aids for authorized sessions,
+not a way to create access, ignore site restrictions, or automate behavior that
+the site or account owner does not permit.
+
 ## Safety Controls Planned For v1
 
 - Active-window allowlist checks before every action, with a final actuator
