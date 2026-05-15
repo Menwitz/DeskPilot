@@ -2006,3 +2006,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_validates_without_desktop_input"`: 1 passed, 10 deselected.
+
+### Task 149/211: `run-site` returns nonzero when platform actuation is unavailable
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_cli.py::test_run_site_returns_nonzero_when_platform_actuation_is_unavailable`
+    runs a temporary `run-site` flow using a keypress action.
+  - The assertions verify status `1` and the platform actuation unavailable
+    message.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "run_site_returns_nonzero_when_platform_actuation_is_unavailable"`:
+    1 passed, 10 deselected.
