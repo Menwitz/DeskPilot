@@ -248,7 +248,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] LinkedIn: open search or profile surface.
   - [x] X/Twitter: open search or notifications surface.
   - [x] Instagram: open search or profile surface.
-  - [ ] Facebook: open search or notifications surface.
+  - [x] Facebook: open search or notifications surface.
   - [ ] Medium: open search or editor surface without publishing.
   - [ ] YouTube: open search or channel surface.
   - [ ] TikTok: open search or profile surface.
