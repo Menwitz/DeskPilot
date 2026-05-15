@@ -1,23 +1,34 @@
 # Project Definition
 
-DeskPilot v1 is a Windows-first local desktop automation framework for owned
-QA workflows and personal automation on an unlocked, logged-in desktop session.
+DeskPilot v1 is a Windows-first local desktop automation system for ops teams
+running approved content workflows and controlled desktop tasks on an unlocked,
+logged-in desktop session.
 
 The v1 implementation language is Python 3.12. Task authors write deterministic
-automation tasks in YAML, and the runtime combines task execution with local
-screen capture, computer vision, OCR, and Windows UI Automation.
+automation tasks, site playbooks, approval records, and content variables in
+YAML. The runtime combines task execution with local screen capture, computer
+vision, OCR, and Windows UI Automation.
 
 ## Safety Boundary
 
-DeskPilot is intended for controlled environments where the operator owns the
-desktop session, the applications under automation, or the QA scope. The project
-does not support stealth automation, CAPTCHA bypass, bot-detection evasion,
-credential abuse, or abusive third-party automation.
+DeskPilot is intended for controlled environments where the operator owns or is
+authorized to automate the desktop session, target account, application, or
+content workflow. Sensitive public-site actions require explicit run
+preapproval and local trace evidence. The project does not support stealth
+automation, CAPTCHA bypass, bot-detection evasion, credential abuse, or abusive
+third-party automation.
 
 ## Local-First Data Policy
 
 Screenshots, OCR output, traces, and reports stay local by default. v1 has no
 cloud AI dependency, and external services are not required for core execution.
+
+## Product Scope
+
+The v1 product is YAML/CLI first. LinkedIn and Medium are the initial
+publish-capable content playbooks; other seed site playbooks stay read-only or
+open-surface until they are promoted with approval, variables, blocked-state,
+and live-smoke evidence.
 
 ## Platform Scope
 

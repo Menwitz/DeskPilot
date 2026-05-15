@@ -1,19 +1,20 @@
 # DeskPilot
 
-DeskPilot is a Windows-first local desktop automation framework for owned QA
-workflows and personal automation.
+DeskPilot is a Windows-first local desktop automation system for ops teams
+running approved content workflows and controlled desktop tasks.
 
-The v1 goal is deterministic task execution on an unlocked, logged-in Windows
-desktop session using YAML tasks, local screen capture, OCR, computer vision,
-and Windows UI Automation. Screenshots, OCR output, traces, and reports stay
-local by default.
+The v1 goal is deterministic YAML/CLI execution on an unlocked, logged-in
+Windows desktop session. The runtime combines local screen capture, OCR,
+computer vision, and Windows UI Automation so approved site playbooks and local
+desktop tasks can run with local evidence. Approval records, screenshots, OCR
+output, traces, and reports stay local by default.
 
 ## Safety Boundaries
 
-DeskPilot is for controlled environments where the operator owns the desktop
-session, the application under test, or the internal QA scope. v1 does not
-support stealth automation, CAPTCHA bypass, bot-detection evasion, credential
-abuse, or abusive third-party automation.
+DeskPilot is for controlled environments where the operator owns or is
+authorized to automate the desktop session, target account, application, or
+content workflow. v1 does not support stealth automation, CAPTCHA bypass,
+bot-detection evasion, credential abuse, or abusive third-party automation.
 
 ## Requirements
 
@@ -21,6 +22,8 @@ abuse, or abusive third-party automation.
 - Windows for real desktop automation in v1.
 - An unlocked, logged-in desktop session for any task that moves the mouse,
   sends keys, reads windows, or captures the screen.
+- YAML-authored tasks, site playbooks, approval records, and content variables
+  for repeatable ops-team workflows.
 
 ## Quickstart
 
@@ -40,13 +43,14 @@ point, and passes the quality pipeline.
 ```bash
 desktop-agent dry-run examples/task.yaml --allowed-window "DeskPilot Fixture"
 desktop-agent run examples/task.yaml --allowed-window "DeskPilot Fixture"
+desktop-agent dry-run-site linkedin open-search
 desktop-agent inspect-screen --output traces/manual-inspection
 desktop-agent replay traces/example-run
 ```
 
 `dry-run` validates and plans through the local execution pipeline without
-desktop input. `run` uses the platform actuator on Windows and fails with a
-clear unavailable message on unsupported platforms.
+desktop input. `run` and `run-site` use the platform actuator on Windows and
+fail with a clear unavailable message on unsupported platforms.
 
 ## Project Layout
 
@@ -55,6 +59,8 @@ clear unavailable message on unsupported platforms.
 - `examples/` contains safe deterministic sample workflows and fixtures.
 - `docs/` contains architecture, task DSL, safety, and roadmap documentation.
 - `PLAN.md` is the implementation checklist updated as tasks are completed.
+- `docs/vision-alignment-action-plan.md` tracks the ops content workflow
+  alignment work.
 
 ## Documentation
 
@@ -75,6 +81,7 @@ clear unavailable message on unsupported platforms.
 - [Website Navigation Playbook Roadmap](docs/website-navigation-playbook-roadmap.md)
 - [Website Playbooks](docs/website-playbooks.md)
 - [Website Playbook Capability Demo](docs/website-playbook-demo.md)
+- [Vision Alignment Action Plan](docs/vision-alignment-action-plan.md)
 - [Safety](docs/safety.md)
 - [Tracing](docs/tracing.md)
 - [Troubleshooting](docs/troubleshooting.md)

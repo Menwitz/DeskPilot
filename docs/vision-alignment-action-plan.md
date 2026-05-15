@@ -1,0 +1,123 @@
+# DeskPilot Vision Alignment Action Plan
+
+This file tracks the work to align DeskPilot v1 with the current product
+direction: Windows-first, local-only, deterministic YAML/CLI automation for ops
+teams running approved content workflows.
+
+## Target Vision
+
+- [x] Ops-team content automation is the primary v1 product direction.
+- [x] Real execution is Windows-first.
+- [x] Approvals, traces, screenshots, OCR output, and reports stay local by
+  default.
+- [x] Task and site workflow authoring stay YAML/CLI first.
+- [x] LinkedIn and Medium are the first publish-capable content sites.
+- [x] Sensitive site actions require explicit run preapproval.
+- [x] Core execution has no cloud AI dependency.
+- [x] The product excludes stealth automation, CAPTCHA bypass, bot-detection
+  evasion, credential abuse, and abusive third-party automation.
+
+## Current Status
+
+- [x] Local test suite passed during the audit: 262 passed, 4 expected skips.
+- [x] Ruff passed during the audit.
+- [x] Mypy passed during the audit.
+- [x] CLI dry-run works.
+- [x] Site playbook compile and dry-run work.
+- [x] Benchmark harness runs locally.
+- [x] Product docs identify the revised ops-team content-automation vision.
+- [ ] Seed playbooks support publish-capable LinkedIn and Medium workflows.
+- [ ] Real run path includes Windows UIA perception.
+- [ ] Active-window safety is consistently enforced in real runs.
+- [ ] Approval manifest exists for ops-team preapproval.
+- [ ] Windows package and live smoke evidence are complete.
+
+## P0 Release Blockers
+
+- [x] Add `docs/vision-alignment-action-plan.md` as the tracking source for
+  this alignment work.
+- [x] Rewrite `README.md` and `docs/project-definition.md` around the revised
+  v1 vision.
+- [ ] Add local approval manifest support via `--approval-manifest <path>`.
+- [ ] Require approval manifests for sensitive `run-site` flows.
+- [ ] Add YAML variable support for content payloads.
+- [ ] Add LinkedIn publish-capable flow using YAML variables.
+- [ ] Add Medium publish-capable flow using YAML variables.
+- [ ] Add checkpoints before externally visible publish actions.
+- [ ] Keep all other seed sites read-only/open-surface until promoted.
+- [ ] Wire Windows UIA into non-dry-run perception.
+- [ ] Fix active-window allowlist enforcement for real runs.
+- [ ] Pass Windows package verification.
+- [ ] Pass Windows fixture e2e checks.
+- [ ] Pass authorized live smoke checks for LinkedIn and Medium.
+
+## P1 Product Alignment
+
+- [ ] Update `docs/website-playbooks.md` to distinguish read-only, draft, and
+  publish-capable flows.
+- [ ] Update `navigation_playbooks/README.md` with promotion criteria for
+  publish-capable sites.
+- [ ] Document the approval manifest schema.
+- [ ] Document YAML variable schema for content payloads.
+- [ ] Document local artifact locations for approvals, traces, and reports.
+- [ ] Update troubleshooting docs for approval-manifest failures.
+- [ ] Update release notes to remove benchmark overclaims.
+- [ ] Move non-v1 content ops actions into a clearly marked backlog.
+
+## P1 Safety Hardening
+
+- [ ] Implement one shared allowlist matcher for planner and actuator.
+- [ ] Support exact, case-insensitive contains, and optional `regex:` window
+  matching.
+- [ ] Populate active window title during Windows screen observation.
+- [ ] Pass effective task and runtime allowlists into final actuator guards.
+- [ ] Add regression test: wrong active window stops before timing.
+- [ ] Add regression test: wrong active window stops before actuation.
+- [ ] Add regression test: task allowlist works without duplicating config
+  allowlist.
+- [ ] Add regression test: sensitive site action fails without approval
+  manifest.
+- [ ] Add regression test: manifest scope mismatch fails before input.
+
+## P2 Evidence And Ops Readiness
+
+- [ ] Add sample approval manifest files under `examples/`.
+- [ ] Add sample LinkedIn content variables file.
+- [ ] Add sample Medium content variables file.
+- [ ] Add dry-run examples for publish-capable flows.
+- [ ] Add trace assertions for approval manifest metadata.
+- [ ] Add trace assertions for variable redaction/fingerprints.
+- [ ] Add opt-in Windows smoke command for LinkedIn publish dry-run/live-safe
+  path.
+- [ ] Add opt-in Windows smoke command for Medium publish dry-run/live-safe
+  path.
+- [ ] Record manual Windows evidence in `docs/windows-e2e-checklist.md`.
+
+## Acceptance Criteria
+
+- [ ] `desktop-agent dry-run-site linkedin <publish-flow>` validates variables
+  and approval requirements.
+- [ ] `desktop-agent dry-run-site medium <publish-flow>` validates variables and
+  approval requirements.
+- [ ] Sensitive site flow without approval manifest exits nonzero with a clear
+  message.
+- [ ] Approval manifest with wrong site, flow, step, or content fingerprint
+  exits nonzero.
+- [ ] Real run uses UIA, OCR, and CV candidate fusion.
+- [ ] Real run cannot act outside task/config allowed windows.
+- [ ] LinkedIn and Medium publish flows stop on logged-out, consent, CAPTCHA,
+  permission, unsupported-layout, or ambiguous-target states.
+- [ ] All artifacts remain local by default.
+- [ ] Full local quality gate passes.
+- [ ] Windows package verification passes.
+- [ ] Authorized live smoke evidence exists for LinkedIn and Medium.
+
+## Out Of Scope For This Pass
+
+- [x] Cross-platform desktop actuation.
+- [x] Cloud model adapters.
+- [x] Report server.
+- [x] Visual recorder.
+- [x] Full publish support for X, Instagram, Facebook, YouTube, and TikTok.
+- [x] Message, delete, settings-change, transaction, and engagement flows unless
+  separately promoted.
