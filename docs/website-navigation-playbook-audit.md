@@ -1994,3 +1994,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "compile_site_writes_valid_task_yaml"`: 1 passed, 10 deselected.
+
+### Task 148/211: `dry-run-site medium open-editor` validates without desktop input
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_cli.py::test_dry_run_site_validates_without_desktop_input`
+    runs `dry-run-site medium open-editor` with a temporary trace config and
+    `--no-screenshots`.
+  - The assertions verify status `0`, task output, and a passed run.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "dry_run_site_validates_without_desktop_input"`: 1 passed, 10 deselected.
