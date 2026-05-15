@@ -39,7 +39,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ## Phase 0: Scope And Safety Contract
 
-- [ ] Confirm public-site scope in `docs/safety.md`.
+- [x] Confirm public-site scope in `docs/safety.md`.
 - [ ] Document that third-party websites require operator authorization and
   compliance with the target site's rules.
 - [ ] Document unsupported behavior:

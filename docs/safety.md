@@ -18,6 +18,20 @@ applications.
 DeskPilot does not support stealth automation, CAPTCHA bypass, bot-detection
 evasion, credential abuse, or abusive third-party automation.
 
+## Public Website Automation Scope
+
+Public-site playbooks are limited to operator-authorized navigation on websites
+where automation is allowed by the operator's account, organization, and the
+target site's rules. They may open pages, search surfaces, profile or channel
+surfaces, notification views, settings pages, and composer surfaces that stop
+before externally visible submission.
+
+Public-site tasks must keep the same safety contract as local desktop tasks:
+allowed windows are required, sensitive steps need explicit confirmation, and
+blocked states such as logged-out sessions, consent dialogs, CAPTCHA
+challenges, permission restrictions, unsupported layouts, or ambiguous targets
+must stop execution with a local report.
+
 ## Safety Controls Planned For v1
 
 - Active-window allowlist checks before every action, with a final actuator
