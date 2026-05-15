@@ -70,6 +70,8 @@ agree on the same safety language.
   visible text to another surface.
 - `message`: composing, sending, replying to, forwarding, or otherwise changing
   direct or private messages.
+- `transaction`: applying, purchasing, accepting offers, marketplace actions,
+  or payment-adjacent account changes.
 
 ## Safety Controls Planned For v1
 
