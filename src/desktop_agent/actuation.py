@@ -20,6 +20,10 @@ from desktop_agent.screen import (
     screenshot_point_to_physical,
 )
 from desktop_agent.task_dsl import TaskRegion, TaskStep
+from desktop_agent.window_allowlist import (
+    WindowAllowlistError,
+    window_title_matches,
+)
 
 MouseButton = Literal["left", "right", "middle"]
 
@@ -807,7 +811,23 @@ class DesktopActuator(Actuator):
         if not config.allowed_windows:
             return None
         active_title = self._backend.active_window_title()
-        if active_title in config.allowed_windows:
+        try:
+            active_window_allowed = window_title_matches(
+                active_title,
+                config.allowed_windows,
+            )
+        except WindowAllowlistError as exc:
+            return ActionResult(
+                False,
+                str(exc),
+                {
+                    "input_blocked": True,
+                    "actuation_guard": "active_window",
+                    "active_window_title": active_title,
+                    "allowed_windows": list(config.allowed_windows),
+                },
+            )
+        if active_window_allowed:
             return None
         return ActionResult(
             False,

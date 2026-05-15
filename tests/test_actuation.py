@@ -272,6 +272,36 @@ def test_desktop_actuator_blocks_disallowed_active_window() -> None:
     assert backend.events == []
 
 
+def test_desktop_actuator_allows_case_insensitive_contains_window_match() -> None:
+    backend = FakeInputBackend(active_window_title="LinkedIn - Google Chrome")
+    actuator = DesktopActuator(backend, _instant_profile())
+
+    result = actuator.execute(
+        TaskStep(id="press-tab", action="press_key", text="tab"),
+        None,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("linkedin",)),
+    )
+
+    assert result.success is True
+    assert [event.kind for event in backend.events] == ["press_key"]
+
+
+def test_desktop_actuator_allows_regex_window_match() -> None:
+    backend = FakeInputBackend(active_window_title="Medium - Brave")
+    actuator = DesktopActuator(backend, _instant_profile())
+
+    result = actuator.execute(
+        TaskStep(id="press-tab", action="press_key", text="tab"),
+        None,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("regex:^medium\\b",)),
+    )
+
+    assert result.success is True
+    assert [event.kind for event in backend.events] == ["press_key"]
+
+
 def test_desktop_actuator_blocks_target_outside_step_region() -> None:
     backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
     actuator = DesktopActuator(backend, _instant_profile())

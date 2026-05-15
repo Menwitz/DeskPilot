@@ -10,7 +10,9 @@ For an end-to-end demonstration of the implemented capabilities, see
 ## Authoring Rules
 
 - Use a slug-safe `site_id`, for example `example-site`.
-- Declare at least one domain and one allowed window-title pattern.
+- Declare at least one domain and one allowed window-title pattern. Plain
+  title patterns match exact titles or case-insensitive substrings; use
+  `regex:` only when a site needs a stable regular-expression boundary.
 - Define landmarks for stable navigation labels or selectors.
 - Keep read-only navigation flows separate from sensitive flows.
 - Mark every sensitive step with `requires_confirmation: true` and a

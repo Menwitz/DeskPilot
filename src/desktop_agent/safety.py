@@ -10,6 +10,12 @@ from typing import Any, Protocol, cast
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.screen import ScreenObservation
 from desktop_agent.task_dsl import TaskDefinition, TaskStep, step_category
+from desktop_agent.window_allowlist import (
+    WindowAllowlistError,
+    effective_allowed_windows,
+    window_allowlist_errors,
+    window_title_matches,
+)
 
 STRICT_QA_CONFIRMATION_CATEGORIES: frozenset[str] = frozenset({"submission"})
 EXPLORATORY_BLOCKED_CATEGORIES: frozenset[str] = frozenset({"submission"})
@@ -95,9 +101,13 @@ class LocalSafetyPolicy(SafetyPolicy):
         task: TaskDefinition,
         config: RuntimeConfig,
     ) -> SafetyDecision:
-        _ = config
         if not task.allowed_windows:
             return SafetyDecision(False, "task must declare allowed windows")
+        errors = window_allowlist_errors(
+            effective_allowed_windows(task.allowed_windows, config.allowed_windows),
+        )
+        if errors:
+            return SafetyDecision(False, "; ".join(errors))
         return SafetyDecision(True, "allowed")
 
     def check_before_action(
@@ -107,7 +117,7 @@ class LocalSafetyPolicy(SafetyPolicy):
         config: RuntimeConfig,
         observation: ScreenObservation | None = None,
     ) -> SafetyDecision:
-        _ = step, config
+        _ = step
         if not task.allowed_windows:
             return SafetyDecision(False, "task must declare allowed windows")
         if (
@@ -145,12 +155,23 @@ class LocalSafetyPolicy(SafetyPolicy):
         if (
             observation
             and observation.active_window_title
-            and observation.active_window_title not in task.allowed_windows
         ):
-            return SafetyDecision(
-                False,
-                "active window is outside the task allowed_windows",
+            allowed_windows = effective_allowed_windows(
+                task.allowed_windows,
+                config.allowed_windows,
             )
+            try:
+                active_window_allowed = window_title_matches(
+                    observation.active_window_title,
+                    allowed_windows,
+                )
+            except WindowAllowlistError as exc:
+                return SafetyDecision(False, str(exc))
+            if not active_window_allowed:
+                return SafetyDecision(
+                    False,
+                    "active window is outside the effective allowed_windows",
+                )
         return SafetyDecision(True, "allowed")
 
 

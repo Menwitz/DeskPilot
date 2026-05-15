@@ -71,12 +71,15 @@ the emitted scroll steps and interval values.
 ## Safety
 
 The execution engine checks task safety before calling the actuator. The
-actuator also re-checks `RuntimeConfig.allowed_windows` through the backend when
-that config field is present. If the active window does not match, no input is
-sent and the action returns a failed result. Real actuation also applies a final
-step-region guard for targeted click and scroll actions, and `create_platform_actuator`
-can receive the same emergency-stop monitor used by the planner so the input
-adapter blocks before desktop input when the stop chord is active.
+planner merges task and runtime `allowed_windows` into the effective runtime
+config, then the actuator re-checks that same allowlist through the backend
+before input. Plain window entries match exact titles or case-insensitive title
+substrings; `regex:` entries run case-insensitive regular expressions. If the
+active window does not match, no input is sent and the action returns a failed
+result. Real actuation also applies a final step-region guard for targeted click
+and scroll actions, and `create_platform_actuator` can receive the same
+emergency-stop monitor used by the planner so the input adapter blocks before
+desktop input when the stop chord is active.
 
 ## Testing
 

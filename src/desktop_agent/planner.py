@@ -55,6 +55,7 @@ from desktop_agent.tracing import (
     TraceEvent,
     TraceSink,
 )
+from desktop_agent.window_allowlist import effective_allowed_windows
 
 TARGETED_ACTIONS: frozenset[str] = frozenset(
     {
@@ -225,6 +226,13 @@ class ExecutionEngine:
     def run(self, task_path: Path, config_path: Path | None = None) -> RunReport:
         config = self.config_loader.load(config_path)
         task = self.task_loader.load(task_path)
+        config = replace(
+            config,
+            allowed_windows=effective_allowed_windows(
+                task.allowed_windows,
+                config.allowed_windows,
+            ),
+        )
         config = self.trace_sink.prepare_run(task, config)
 
         try:

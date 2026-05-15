@@ -66,14 +66,14 @@ teams running approved content workflows.
 
 ## P1 Safety Hardening
 
-- [ ] Implement one shared allowlist matcher for planner and actuator.
-- [ ] Support exact, case-insensitive contains, and optional `regex:` window
+- [x] Implement one shared allowlist matcher for planner and actuator.
+- [x] Support exact, case-insensitive contains, and optional `regex:` window
   matching.
-- [ ] Populate active window title during Windows screen observation.
-- [ ] Pass effective task and runtime allowlists into final actuator guards.
-- [ ] Add regression test: wrong active window stops before timing.
-- [ ] Add regression test: wrong active window stops before actuation.
-- [ ] Add regression test: task allowlist works without duplicating config
+- [x] Populate active window title during Windows screen observation.
+- [x] Pass effective task and runtime allowlists into final actuator guards.
+- [x] Add regression test: wrong active window stops before timing.
+- [x] Add regression test: wrong active window stops before actuation.
+- [x] Add regression test: task allowlist works without duplicating config
   allowlist.
 - [x] Add regression test: sensitive site action fails without approval
   manifest.

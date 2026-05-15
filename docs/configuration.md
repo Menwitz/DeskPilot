@@ -43,6 +43,19 @@ execution_profile:
   random_seed: null
 ```
 
+## Allowed Windows
+
+`allowed_windows` entries are active-window title rules used by the planner and
+the final desktop input guard. Plain entries match either the exact title or a
+case-insensitive title substring, so `LinkedIn` matches
+`LinkedIn - Google Chrome`. Entries prefixed with `regex:` are evaluated as
+case-insensitive regular expressions, for example `regex:^Medium\b`.
+
+At runtime, DeskPilot merges task-level `allowed_windows` with runtime
+configuration or `--allowed-window` values. The merged allowlist is written into
+the resolved runtime config and is what the real actuator checks immediately
+before sending input.
+
 ## Task Overrides
 
 Tasks can override runtime settings in a `config` block:

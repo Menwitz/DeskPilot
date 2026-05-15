@@ -133,7 +133,8 @@ def test_regression_safety_stop_happens_before_timing_and_actuation() -> None:
 
     assert report.status == "failed"
     assert (
-        report.steps[0].message == "active window is outside the task allowed_windows"
+        report.steps[0].message
+        == "active window is outside the effective allowed_windows"
     )
     assert actuator.calls == 0
     assert "execution_timing" not in event_phases(report)

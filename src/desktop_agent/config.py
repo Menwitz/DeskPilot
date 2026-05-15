@@ -8,6 +8,8 @@ from typing import Protocol, cast
 
 import yaml
 
+from desktop_agent.window_allowlist import window_allowlist_errors
+
 EXECUTION_PERSONAS: frozenset[str] = frozenset({"careful", "normal", "fast"})
 SAMPLING_DISTRIBUTIONS: frozenset[str] = frozenset({"uniform", "center_weighted"})
 POLICY_PRESETS: frozenset[str] = frozenset(
@@ -225,8 +227,7 @@ def validate_config(config: RuntimeConfig) -> None:
         errors.append("trace_root is required")
     if not config.emergency_stop_hotkey.strip():
         errors.append("emergency_stop_hotkey is required")
-    if any(not window.strip() for window in config.allowed_windows):
-        errors.append("allowed_windows entries must not be blank")
+    errors.extend(window_allowlist_errors(config.allowed_windows))
     if any(not step_id.strip() for step_id in config.confirmed_steps):
         errors.append("confirmed_steps entries must not be blank")
     if config.policy_preset not in POLICY_PRESETS:

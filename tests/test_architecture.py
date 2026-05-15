@@ -39,6 +39,22 @@ class FailingOnceActuator:
         return ActionResult(success=True, message="recovered")
 
 
+class CapturingActuator:
+    def __init__(self) -> None:
+        self.allowed_windows: tuple[str, ...] | None = None
+
+    def execute(
+        self,
+        step: TaskStep,
+        target: ElementCandidate | None,
+        observation: ScreenObservation,
+        config: RuntimeConfig,
+    ) -> ActionResult:
+        _ = step, target, observation
+        self.allowed_windows = config.allowed_windows
+        return ActionResult(success=True, message="captured")
+
+
 class FixturePerceptionEngine(PerceptionEngine):
     def detect(
         self,
@@ -263,8 +279,70 @@ def test_execution_engine_rejects_disallowed_active_window_before_action() -> No
 
     assert report.status == "failed"
     assert (
-        report.steps[0].message == "active window is outside the task allowed_windows"
+        report.steps[0].message
+        == "active window is outside the effective allowed_windows"
     )
+
+
+def test_execution_engine_passes_effective_allowed_windows_to_actuator() -> None:
+    task = TaskDefinition(
+        name="window-fixture",
+        allowed_windows=("Task Window",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+    )
+    actuator = CapturingActuator()
+    engine = ExecutionEngine(
+        config_loader=StaticConfigLoader(
+            RuntimeConfig(
+                confidence_threshold=0.8,
+                allowed_windows=("Runtime Window",),
+            ),
+        ),
+        task_loader=StaticTaskLoader(task),
+        task_validator=BasicTaskValidator(),
+        trace_sink=MemoryTraceSink(),
+        safety_policy=LocalSafetyPolicy(),
+        screen_observer=StaticScreenObserver(
+            ScreenObservation(active_window_title="Runtime Window - Browser"),
+        ),
+        perception_engine=CompositePerceptionEngine((FixturePerceptionEngine(),)),
+        target_selector=ConfidenceTargetSelector(),
+        actuator=actuator,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    assert report.status == "passed"
+    assert actuator.allowed_windows == ("Task Window", "Runtime Window")
+
+
+def test_execution_engine_passes_task_allowed_windows_without_runtime_config() -> None:
+    task = TaskDefinition(
+        name="window-fixture",
+        allowed_windows=("Task Window",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+    )
+    actuator = CapturingActuator()
+    engine = ExecutionEngine(
+        config_loader=StaticConfigLoader(RuntimeConfig(confidence_threshold=0.8)),
+        task_loader=StaticTaskLoader(task),
+        task_validator=BasicTaskValidator(),
+        trace_sink=MemoryTraceSink(),
+        safety_policy=LocalSafetyPolicy(),
+        screen_observer=StaticScreenObserver(
+            ScreenObservation(active_window_title="Task Window - Browser"),
+        ),
+        perception_engine=CompositePerceptionEngine((FixturePerceptionEngine(),)),
+        target_selector=ConfidenceTargetSelector(),
+        actuator=actuator,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    assert report.status == "passed"
+    assert actuator.allowed_windows == ("Task Window",)
 
 
 def test_execution_engine_requires_confirmation_for_sensitive_step() -> None:

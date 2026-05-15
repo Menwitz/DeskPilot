@@ -48,6 +48,8 @@ steps:
 ## Guarantees
 
 - Every task must declare a name, allowed windows, timeout, and steps.
+- Allowed-window entries are matched against the active window title by exact
+  match, case-insensitive substring match, or `regex:` regular expression.
 - Every step must declare an ID and action.
 - Unknown actions and verification types fail validation before execution.
 - Duplicate step IDs fail validation before execution.

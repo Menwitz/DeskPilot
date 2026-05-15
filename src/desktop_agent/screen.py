@@ -95,6 +95,7 @@ class MssScreenObserver(ScreenObserver):
         return ScreenObservation(
             screenshot_path=screenshot_path,
             size=(monitor.width, monitor.height),
+            active_window_title=detect_active_window_title(),
             monitor=monitor,
             warnings=warnings,
             metadata={"monitor_count": len(monitors)},
@@ -199,6 +200,30 @@ def detect_windows_dpi_scale() -> tuple[float, float]:
         return (1.0, 1.0)
     scale = dpi / 96
     return (scale, scale)
+
+
+def detect_active_window_title() -> str | None:
+    """Read the current Windows foreground-window title when available."""
+
+    if sys.platform != "win32":
+        return None
+    try:
+        user32 = ctypes.windll.user32
+        foreground_window = int(user32.GetForegroundWindow())
+        if foreground_window == 0:
+            return None
+        length = int(user32.GetWindowTextLengthW(foreground_window))
+        if length <= 0:
+            return None
+        buffer = ctypes.create_unicode_buffer(length + 1)
+        copied = int(
+            user32.GetWindowTextW(foreground_window, buffer, length + 1),
+        )
+    except Exception:
+        return None
+    if copied <= 0:
+        return None
+    return buffer.value or None
 
 
 def ensure_desktop_available() -> None:

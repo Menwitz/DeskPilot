@@ -14,6 +14,7 @@ from desktop_agent.config import (
     RuntimeConfig,
     config_overrides_from_mapping,
 )
+from desktop_agent.window_allowlist import window_allowlist_errors
 
 
 class TaskValidationError(ValueError):
@@ -240,6 +241,7 @@ class BasicTaskValidator(TaskValidator):
             errors.append("task name is required")
         if not task.allowed_windows:
             errors.append("allowed_windows is required")
+        errors.extend(window_allowlist_errors(task.allowed_windows))
         if task.timeout_seconds <= 0:
             errors.append("timeout_seconds must be greater than zero")
         if task.entropy_budget is not None and task.entropy_budget < 0:
