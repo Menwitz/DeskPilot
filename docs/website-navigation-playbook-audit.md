@@ -315,3 +315,14 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` validation entrypoint and
     `tests/test_site_playbooks.py`.
+
+### Task 28/122: Validate site ID is required and slug-safe
+
+- Status: complete.
+- Evidence:
+  - `validate_site_playbook` rejects any `site_id` that does not match the
+    slug-safe pattern.
+  - Regression tests cover blank and invalid site IDs.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` site ID validation and
+    `tests/test_site_playbooks.py` site ID tests.
