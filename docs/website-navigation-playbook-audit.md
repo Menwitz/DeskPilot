@@ -1449,18 +1449,6 @@ checking layout, domain, flow, and blocked-state coverage.
     "run_site_returns_nonzero_when_platform_actuation_is_unavailable"`:
     1 passed, 10 deselected.
 
-### Task 150/211: Missing confirmation returns nonzero with a clear message
-
-- Status: complete.
-- Evidence:
-  - `tests/test_site_playbook_cli.py::test_missing_confirmation_returns_clear_message`
-    dry-runs a sensitive site flow without `--confirm-step`.
-  - The assertions verify status `1` and a `requires explicit confirmation`
-    message.
-- Verification:
-  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
-    "missing_confirmation_returns_clear_message"`: 1 passed, 10 deselected.
-
 ## Phase 4 Boundary Verification
 
 - Status: passed.
@@ -2031,3 +2019,26 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "run_site_returns_nonzero_when_platform_actuation_is_unavailable"`:
     1 passed, 10 deselected.
+
+### Task 150/211: Missing confirmation returns nonzero with a clear message
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_cli.py::test_missing_confirmation_returns_clear_message`
+    dry-runs a sensitive site flow without `--confirm-step`.
+  - The assertions verify status `1` and a `requires explicit confirmation`
+    message.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "missing_confirmation_returns_clear_message"`: 1 passed, 10 deselected.
+
+### Task 151/211: Invalid playbook returns nonzero with the validation error
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_cli.py::test_invalid_playbook_returns_validation_error`
+    points `list-sites` at a temporary invalid catalog.
+  - The assertions verify status `2` and the slug-safe validation message.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "invalid_playbook_returns_validation_error"`: 1 passed, 10 deselected.
