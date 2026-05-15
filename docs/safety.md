@@ -68,6 +68,8 @@ agree on the same safety language.
   friending, connecting, joining, or similar account-visible engagement.
 - `comment`: commenting, replying, reviewing, annotating, or otherwise adding
   visible text to another surface.
+- `message`: composing, sending, replying to, forwarding, or otherwise changing
+  direct or private messages.
 
 ## Safety Controls Planned For v1
 
