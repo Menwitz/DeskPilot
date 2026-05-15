@@ -63,6 +63,13 @@ blocked_states: []
 - Add blocked-state detectors and user-facing reasons.
 - Compile at least one read-only flow with `desktop-agent compile-site`.
 - Add or update schema/compiler tests for the new playbook.
+- Run `desktop-agent list-sites` and `desktop-agent list-flows <site-id>` to
+  confirm catalog discovery.
+- Dry-run the read-only smoke flow and inspect the trace directory, action log,
+  and final reports for `site_id`, `site_flow_id`, blocked-state, and
+  confirmation metadata.
+- Add the site to `tests/test_site_playbook_live_smoke.py` only when the smoke
+  flow is read-only and still skipped unless `DESKPILOT_LIVE_SITE_SMOKE=1`.
 - Run normal CI without live-site dependencies.
 
 ## Read-Only Navigation Flow

@@ -2395,3 +2395,16 @@ checking layout, domain, flow, and blocked-state coverage.
   - `rg -n "Authoring Workflow|site_id: example-site|test_site_playbook_tracing"
     docs/website-playbooks.md`: matched the new authoring section and test
     guidance.
+
+### Task 177/211: Add a new-site checklist
+
+- Status: complete.
+- Evidence:
+  - `docs/website-playbooks.md` now expands `New-Site Checklist` with catalog
+    discovery, dry-run trace/report inspection, live-smoke opt-in, and normal CI
+    expectations.
+  - The checklist ties new site onboarding to pipelines, monitoring artifacts,
+    and final reports instead of only YAML authoring.
+- Verification:
+  - `rg -n "New-Site Checklist|list-flows <site-id>|DESKPILOT_LIVE_SITE_SMOKE"
+    docs/website-playbooks.md`: matched the checklist and opt-in smoke guidance.

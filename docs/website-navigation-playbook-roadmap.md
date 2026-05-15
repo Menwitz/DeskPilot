@@ -256,7 +256,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 ## Phase 7: Documentation
 
 - [x] Add playbook authoring docs.
-- [ ] Add a new-site checklist.
+- [x] Add a new-site checklist.
 - [ ] Add examples for:
   - [ ] Read-only navigation flow.
   - [ ] Search flow.
