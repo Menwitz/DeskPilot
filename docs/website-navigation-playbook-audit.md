@@ -2363,3 +2363,21 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/mypy`: no issues found in 71 source files.
   - `.venv/bin/python -m build`: built `deskpilot-0.1.0.tar.gz` and
     `deskpilot-0.1.0-py3-none-any.whl`.
+
+## Phase 7 Audit
+
+- Status: ready to execute.
+- Roadmap range: Tasks 176-187 of 211.
+- Current documentation surfaces:
+  - `docs/website-playbooks.md` covers playbook authoring, new-site setup,
+    content variables, sensitive confirmations, approval manifests, and
+    blocked states.
+  - `docs/website-playbook-demo.md` covers command-level examples, tests,
+    traces, reports, and live-smoke notes.
+  - `README.md` links to website navigation roadmap and playbook docs.
+  - `docs/task-dsl.md` and `docs/safety.md` already mention the playbook layer
+    and third-party site guardrails.
+- Audit decision:
+  - Verify and tighten each documentation item task by task before checking it.
+  - Keep examples grounded in local validation, traces, monitoring artifacts,
+    and reports rather than live public-site dependencies.
