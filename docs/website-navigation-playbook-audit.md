@@ -1482,6 +1482,20 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
     "captcha_state_aborts_with_no_bypass_message"`: 1 passed, 7 deselected.
 
+### Task 158/211: Active-window mismatch aborts before action
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_active_window_mismatch_aborts_before_site_action`
+    runs a read-only site task while the active window title is outside
+    `allowed_windows`.
+  - The assertions verify failure category `safety_stop` and an
+    `allowed_windows` abort reason.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "active_window_mismatch_aborts_before_site_action"`: 1 passed,
+    7 deselected.
+
 ### Task 110/211: Explain missing confirmation failures
 
 - Status: complete.

@@ -227,7 +227,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Delete step is blocked without `--confirm-step`.
 - [x] Settings-change step is blocked without `--confirm-step`.
 - [x] CAPTCHA state aborts with a no-bypass message.
-- [ ] Active-window mismatch aborts before action.
+- [x] Active-window mismatch aborts before action.
 - [ ] Emergency stop behavior remains unchanged.
 
 ### Trace Regression Tests
