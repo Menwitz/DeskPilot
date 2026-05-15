@@ -138,7 +138,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Add blocked-state checks before irreversible actions.
 - [x] Add task metadata for trace readability:
   - [x] Site ID.
-  - [ ] Flow ID.
+  - [x] Flow ID.
   - [ ] Domain.
   - [ ] Sensitive step IDs.
   - [ ] Playbook version.

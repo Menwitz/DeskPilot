@@ -1112,3 +1112,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
     "final_report_includes_site_id_and_flow_id"`: 1 passed, 4 deselected.
+
+### Task 89/122: Add flow ID metadata
+
+- Status: complete.
+- Evidence:
+  - Compiled task metadata includes `site_flow_id`.
+  - Compiled step metadata also includes `site_flow_id`.
+  - Tracing/report coverage verifies flow ID is present in final report metadata
+    for site-playbook runs.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "final_report_includes_site_id_and_flow_id"`: 1 passed, 4 deselected.
