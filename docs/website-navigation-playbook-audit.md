@@ -1795,3 +1795,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "empty_window_title_patterns_are_rejected"`: 1 passed, 35 deselected.
+
+### Task 131/211: Duplicate flow IDs are rejected
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_duplicate_flow_ids_are_rejected` writes
+    a playbook with two `open-search` flows.
+  - The assertion verifies validation raises a duplicate flow ID error.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "duplicate_flow_ids_are_rejected"`: 1 passed, 35 deselected.
