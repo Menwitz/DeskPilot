@@ -1190,3 +1190,14 @@ checking layout, domain, flow, and blocked-state coverage.
     invalid playbook handling.
   - Unknown-site, unknown-flow, blocked-state, and unsupported-live-state
     messages will be verified before their roadmap items are checked.
+
+### Task 93/122: Add `desktop-agent list-sites`
+
+- Status: complete.
+- Evidence:
+  - The CLI parser registers `list-sites`.
+  - `_list_sites()` loads the playbook catalog and prints each site ID.
+  - Regression coverage asserts all seven seed site IDs are printed.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "list_sites_prints_all_seed_sites"`: 1 passed, 6 deselected.
