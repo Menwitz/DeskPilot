@@ -200,13 +200,26 @@ def test_dry_run_site_records_manifest_metadata_in_report(
         ],
     )
 
-    report_path = _single_trace_dir(tmp_path) / "final-report.json"
+    trace_dir = _single_trace_dir(tmp_path)
+    report_path = trace_dir / "final-report.json"
     report = json.loads(report_path.read_text(encoding="utf-8"))
+    action_log = [
+        json.loads(line)
+        for line in (trace_dir / "action-log.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    load_task_event = next(event for event in action_log if event["phase"] == "load_task")
     metadata = report["metadata"]
     assert status == 0
-    assert metadata["site_approval_manifest_status"] == "validated"
-    assert metadata["site_approved_step_ids"] == ["publish-post"]
-    assert metadata["content_variables_fingerprint"] == "fixture-content-v1"
+    for payload in (metadata, load_task_event["metadata"]):
+        assert payload["site_approval_manifest_status"] == "validated"
+        assert payload["site_approved_step_ids"] == ["publish-post"]
+        assert payload["site_approval_approver"] == "qa-lead@example.test"
+        assert (
+            payload["site_approval_reason"]
+            == "Preapproved fixture publish flow for regression testing."
+        )
+        assert payload["site_approval_approved_at"] == "2026-05-15T00:00:00+00:00"
+        assert payload["content_variables_fingerprint"] == "fixture-content-v1"
 
 
 def _dry_actuator(

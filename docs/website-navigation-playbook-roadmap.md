@@ -292,7 +292,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   site task contains sensitive or submission steps.
 - [x] Merge approved step IDs into runtime confirmation without interactive
   prompts for site runs.
-- [ ] Record manifest validation, approved step IDs, approver, reason,
+- [x] Record manifest validation, approved step IDs, approver, reason,
   timestamp, and content fingerprint in local traces and reports.
 - [ ] Add regression coverage for missing, invalid, and accepted approval
   manifests.

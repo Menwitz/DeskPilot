@@ -2761,3 +2761,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_approval_manifest.py -k
     "run_site_uses_manifest_without_operator_prompt"`: 1 passed, 9 deselected.
+
+### Task 200/211: Record manifest metadata in traces and reports
+
+- Status: complete.
+- Evidence:
+  - `ApprovalManifest.metadata()` records manifest validation status, approved
+    step IDs, approver, reason, approved timestamp, and content fingerprint.
+  - `tests/test_approval_manifest.py::test_dry_run_site_records_manifest_metadata_in_report`
+    verifies those fields in both `final-report.json` and `action-log.jsonl`.
+- Verification:
+  - `.venv/bin/pytest tests/test_approval_manifest.py -k
+    "dry_run_site_records_manifest_metadata_in_report"`: 1 passed,
+    9 deselected.
