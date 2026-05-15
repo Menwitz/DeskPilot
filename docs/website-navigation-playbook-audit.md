@@ -2798,3 +2798,18 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `rg -n "approval manifest|--approval-manifest|approved_steps|content_fingerprint|sensitive public-site flow"
     docs/website-playbooks.md docs/safety.md`: matched usage and safety docs.
+
+## Phase 9 Verification
+
+- Status: complete.
+- Scope:
+  - Approval manifest contract, field validation, real-run gate, confirmation
+    merge, trace/report metadata, regression coverage, and documentation are
+    checked.
+  - Roadmap implementation count is `202/211`.
+- Verification:
+  - `.venv/bin/pytest`: 328 passed, 4 skipped.
+  - `.venv/bin/ruff check .`: all checks passed.
+  - `.venv/bin/mypy`: no issues found in 71 source files.
+  - `.venv/bin/python -m build`: built `deskpilot-0.1.0.tar.gz` and
+    `deskpilot-0.1.0-py3-none-any.whl`.
