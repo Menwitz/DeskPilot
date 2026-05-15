@@ -149,7 +149,8 @@ class MssScreenObserver(ScreenObserver):
         screenshot_dir = config.trace_root / "screenshots"
         screenshot_dir.mkdir(parents=True, exist_ok=True)
         screenshot_path = screenshot_dir / _screenshot_name()
-        to_png(screenshot.bgra, screenshot.size, str(screenshot_path))
+        # `mss.tools.to_png` expects RGB bytes and uses a keyword-only output path.
+        to_png(screenshot.rgb, screenshot.size, output=str(screenshot_path))
         return screenshot_path
 
     def capture_active_window_region(

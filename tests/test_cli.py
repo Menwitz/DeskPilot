@@ -4,12 +4,22 @@ from pathlib import Path
 from pytest import CaptureFixture, MonkeyPatch
 
 from desktop_agent.actuation import ActuationProfile, DryRunActuator
-from desktop_agent.cli import _perception_engine_for_mode, main
+from desktop_agent.cli import (
+    _perception_engine_for_mode,
+    _screen_observer_for_mode,
+    main,
+)
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.ocr import OcrTextBlock
 from desktop_agent.perception import ElementCandidate
 from desktop_agent.safety import EmergencyStopMonitor
-from desktop_agent.screen import Bounds, ScreenObservation, ScreenUnavailableError
+from desktop_agent.screen import (
+    Bounds,
+    MssScreenObserver,
+    ScreenObservation,
+    ScreenUnavailableError,
+    StaticScreenObserver,
+)
 from desktop_agent.task_dsl import TaskStep
 
 
@@ -222,6 +232,62 @@ def test_cli_run_uses_operator_approval_for_submission_steps(
     assert "step click-submit: passed" in output
 
 
+def test_cli_demo_mouse_prints_trace_report(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    from desktop_agent.mouse_demo import MouseDemoReport, MouseDemoStep
+
+    def fake_run_mouse_demo(
+        *,
+        trace_root: Path,
+        random_seed: int,
+        movement_smoothness: float,
+        auto_close_seconds: float,
+    ) -> MouseDemoReport:
+        assert trace_root == tmp_path
+        assert random_seed == 7
+        assert movement_smoothness == 0.5
+        assert auto_close_seconds == 0
+        return MouseDemoReport(
+            status="passed",
+            trace_dir=tmp_path / "trace",
+            report_path=tmp_path / "trace" / "mouse-demo-report.json",
+            steps=(
+                MouseDemoStep(
+                    "click-target",
+                    "click",
+                    {
+                        "movement_points": 32,
+                        "movement_duration_seconds": 0.75,
+                    },
+                ),
+            ),
+        )
+
+    monkeypatch.setattr("desktop_agent.cli.run_mouse_demo", fake_run_mouse_demo)
+
+    status = main(
+        [
+            "demo-mouse",
+            "--trace-root",
+            str(tmp_path),
+            "--random-seed",
+            "7",
+            "--movement-smoothness",
+            "0.5",
+            "--auto-close-seconds",
+            "0",
+        ],
+    )
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "status: passed" in output
+    assert "step click-target: click (32 points, 0.750s)" in output
+
+
 class FixtureScreenObserver:
     def observe(self, config: RuntimeConfig) -> ScreenObservation:
         return ScreenObservation(
@@ -394,6 +460,36 @@ def test_real_mode_perception_keeps_ocr_fallback_when_uia_empty(
     )
 
     assert [candidate.source for candidate in candidates] == ["ocr"]
+
+
+def test_real_windows_mode_uses_live_screen_observer(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("desktop_agent.cli.sys.platform", "win32")
+
+    observer = _screen_observer_for_mode(False, object())
+
+    assert isinstance(observer, MssScreenObserver)
+
+
+def test_dry_run_mode_keeps_static_screen_observer(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("desktop_agent.cli.sys.platform", "win32")
+
+    observer = _screen_observer_for_mode(True, object())
+
+    assert isinstance(observer, StaticScreenObserver)
+
+
+def test_dry_run_actuator_keeps_static_screen_observer_on_windows(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("desktop_agent.cli.sys.platform", "win32")
+
+    observer = _screen_observer_for_mode(False, DryRunActuator())
+
+    assert isinstance(observer, StaticScreenObserver)
 
 
 def test_cli_inspect_screen_writes_success_report(

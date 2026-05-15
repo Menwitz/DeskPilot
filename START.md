@@ -67,7 +67,23 @@ Expected result:
 - OCR data is included when local Tesseract is installed.
 - Windows UIA data is only available on Windows.
 
-## 5. Real Desktop Runs On Windows
+## 5. Demonstrate Mouse Manipulation On Windows
+
+This validates the real Windows mouse actuator without relying on OCR, UIA, or
+target selection:
+
+```powershell
+uv run desktop-agent demo-mouse
+```
+
+Expected result:
+
+- A `DeskPilot Mouse Demo` window opens.
+- The pointer visibly follows smooth paths, clicks, drags, scrolls, and clicks
+  finish inside the local fixture.
+- A report is written under `traces\<timestamp>-mouse-demo\`.
+
+## 6. Real Desktop Runs On Windows
 
 Real mouse and keyboard automation is Windows-first in v1. Keep the Windows
 session unlocked, use the primary monitor, and make the relevant fixture window
@@ -121,7 +137,7 @@ Expected result:
 - `alt+tab` switches to the native fixture.
 - The native fixture completes final verification.
 
-## 6. Package And Test The Windows Executable
+## 7. Package And Test The Windows Executable
 
 Run these from PowerShell on Windows:
 
@@ -136,7 +152,7 @@ For the full manual checklist, use:
 
 - `docs/windows-e2e-checklist.md`
 
-## 7. Read Traces And Reports
+## 8. Read Traces And Reports
 
 Every run writes local trace artifacts under `traces/` unless configured
 otherwise.
@@ -156,7 +172,7 @@ Replay a trace summary:
 uv run desktop-agent replay traces/<trace-directory>
 ```
 
-## 8. Platform Expectations
+## 9. Platform Expectations
 
 On macOS or Linux, this command should fail clearly because real actuation is
 not available there in v1:

@@ -43,6 +43,7 @@ point, and passes the quality pipeline.
 ```bash
 desktop-agent dry-run examples/task.yaml --allowed-window "DeskPilot Fixture"
 desktop-agent run examples/task.yaml --allowed-window "DeskPilot Fixture"
+desktop-agent demo-mouse
 desktop-agent dry-run-site linkedin open-search
 desktop-agent inspect-screen --output traces/manual-inspection
 desktop-agent replay traces/example-run
@@ -72,6 +73,7 @@ fail with a clear unavailable message on unsupported platforms.
 - [Computer Vision](docs/computer-vision.md)
 - [Configuration](docs/configuration.md)
 - [Examples](docs/examples.md)
+- [Mouse Demo](docs/mouse-demo.md)
 - [OCR](docs/ocr.md)
 - [Packaging](docs/packaging.md)
 - [Planner](docs/planner.md)

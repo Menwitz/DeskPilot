@@ -88,6 +88,16 @@ keys. Unit tests cover coordinate conversion, clicks, typing, key chords, drag,
 scroll, movement planning, active-window blocking, region blocking, and final
 emergency-stop blocking.
 
+For a visible Windows-only actuator demonstration, run:
+
+```powershell
+uv run desktop-agent demo-mouse
+```
+
+The command opens a local fixture and exercises smooth pointer movement, click,
+drag, and scroll without using OCR, UIA, or target selection. See
+[Mouse Demo](mouse-demo.md) for the runbook and report details.
+
 ## Platform Support
 
 `create_platform_actuator()` returns the Windows input backend on Windows and a

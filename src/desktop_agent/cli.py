@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
@@ -31,6 +32,7 @@ from desktop_agent.config import (
     resolve_runtime_config,
 )
 from desktop_agent.content_variables import load_content_variables
+from desktop_agent.mouse_demo import MouseDemoError, run_mouse_demo
 from desktop_agent.ocr import (
     OcrPerceptionEngine,
     OcrTextBlock,
@@ -64,6 +66,7 @@ from desktop_agent.screen import (
     Bounds,
     MssScreenObserver,
     ScreenObservation,
+    ScreenObserver,
     ScreenUnavailableError,
     StaticScreenObserver,
 )
@@ -112,6 +115,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _calibrate_target(args)
         if args.command == "benchmark-run":
             return _run_benchmark(args)
+        if args.command == "demo-mouse":
+            return _demo_mouse(args)
         if args.command == "replay":
             return _replay(args)
         parser.print_help()
@@ -121,6 +126,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ApprovalManifestError,
         SitePlaybookValidationError,
         TaskValidationError,
+        MouseDemoError,
         OSError,
         ValueError,
     ) as exc:
@@ -208,6 +214,15 @@ def _build_parser() -> argparse.ArgumentParser:
     benchmark_parser.add_argument("--config", type=Path)
     benchmark_parser.add_argument("--confidence-threshold", type=float)
     benchmark_parser.add_argument("--allowed-window", action="append", default=[])
+
+    demo_mouse_parser = subparsers.add_parser(
+        "demo-mouse",
+        help="open a local fixture and demonstrate visible human-like mouse input",
+    )
+    demo_mouse_parser.add_argument("--trace-root", default=Path("traces"), type=Path)
+    demo_mouse_parser.add_argument("--random-seed", default=20260515, type=int)
+    demo_mouse_parser.add_argument("--movement-smoothness", default=0.85, type=float)
+    demo_mouse_parser.add_argument("--auto-close-seconds", default=3.0, type=float)
     return parser
 
 
@@ -268,11 +283,7 @@ def _run_loaded_task(
     if manifest_path is not None:
         task, config = apply_approval_manifest(task, config, manifest_path)
     if not dry_run:
-        config = (
-            config
-            if site_run
-            else _config_with_operator_approvals(task, config)
-        )
+        config = config if site_run else _config_with_operator_approvals(task, config)
     trace_sink = FileTraceSink()
     emergency_stop_monitor = (
         NoopEmergencyStopMonitor()
@@ -281,21 +292,24 @@ def _run_loaded_task(
     )
     if dry_run:
         print(render_dry_run_preview(build_dry_run_preview(task, config)))
+    actuator = (
+        DryRunActuator()
+        if dry_run
+        else create_platform_actuator(
+            actuation_profile_from_runtime_config(config),
+            emergency_stop_monitor,
+        )
+    )
     engine = ExecutionEngine(
         config_loader=StaticConfigLoader(config),
         task_loader=StaticTaskLoader(task),
         task_validator=BasicTaskValidator(),
         trace_sink=trace_sink,
         safety_policy=LocalSafetyPolicy(),
-        screen_observer=StaticScreenObserver(),
+        screen_observer=_screen_observer_for_mode(dry_run, actuator),
         perception_engine=_perception_engine_for_mode(dry_run),
         target_selector=ConfidenceTargetSelector(),
-        actuator=DryRunActuator()
-        if dry_run
-        else create_platform_actuator(
-            actuation_profile_from_runtime_config(config),
-            emergency_stop_monitor,
-        ),
+        actuator=actuator,
         emergency_stop_monitor=emergency_stop_monitor,
     )
     report = engine.run(task_path, args.config)
@@ -433,6 +447,13 @@ def _perception_engine_for_mode(dry_run: bool) -> CompositePerceptionEngine:
     )
 
 
+def _screen_observer_for_mode(dry_run: bool, actuator: object) -> ScreenObserver:
+    if dry_run or sys.platform != "win32" or isinstance(actuator, DryRunActuator):
+        return StaticScreenObserver()
+    # Real Windows runs need live screenshots so OCR/CV can find browser content.
+    return MssScreenObserver()
+
+
 def _cli_overrides_from_args(args: argparse.Namespace) -> ConfigOverrides:
     return ConfigOverrides(
         save_screenshots=False if args.no_screenshots else None,
@@ -548,9 +569,7 @@ def _calibrate_target(args: argparse.Namespace) -> int:
         task_overrides=task.config_overrides,
         cli_overrides=ConfigOverrides(
             confidence_threshold=args.confidence_threshold,
-            allowed_windows=tuple(args.allowed_window)
-            if args.allowed_window
-            else None,
+            allowed_windows=tuple(args.allowed_window) if args.allowed_window else None,
         ),
     )
     args.output.mkdir(parents=True, exist_ok=True)
@@ -572,9 +591,7 @@ def _calibrate_target(args: argparse.Namespace) -> int:
     candidates = _calibration_candidates(args.output, step, observation, config)
     selected = ConfidenceTargetSelector().select(step, candidates, config)
     selection_blocked = (
-        "confidence_or_ambiguity_gate"
-        if selected is None and candidates
-        else None
+        "confidence_or_ambiguity_gate" if selected is None and candidates else None
     )
     snapshot = ui_state_snapshot_metadata(
         step,
@@ -708,9 +725,7 @@ def _run_benchmark(args: argparse.Namespace) -> int:
         config_path=args.config,
         cli_overrides=ConfigOverrides(
             confidence_threshold=args.confidence_threshold,
-            allowed_windows=tuple(args.allowed_window)
-            if args.allowed_window
-            else None,
+            allowed_windows=tuple(args.allowed_window) if args.allowed_window else None,
         ),
     )
     print(f"benchmark: {args.task_yaml}")
@@ -731,6 +746,29 @@ def _run_benchmark(args: argparse.Namespace) -> int:
         and report.acceptance.passed
         else 1
     )
+
+
+def _demo_mouse(args: argparse.Namespace) -> int:
+    report = run_mouse_demo(
+        trace_root=args.trace_root,
+        random_seed=args.random_seed,
+        movement_smoothness=args.movement_smoothness,
+        auto_close_seconds=args.auto_close_seconds,
+    )
+    print(f"status: {report.status}")
+    print(f"trace: {report.trace_dir}")
+    print(f"report: {report.report_path}")
+    for step in report.steps:
+        movement_points = step.metadata.get("movement_points")
+        duration = step.metadata.get("movement_duration_seconds")
+        if isinstance(movement_points, int) and isinstance(duration, int | float):
+            print(
+                f"step {step.step_id}: {step.action} "
+                f"({movement_points} points, {duration:.3f}s)"
+            )
+        else:
+            print(f"step {step.step_id}: {step.action}")
+    return 0 if report.status == "passed" else 1
 
 
 def _collect_ocr_blocks(
