@@ -38,6 +38,11 @@ DeskPilot playbooks must be treated as navigation aids for authorized sessions,
 not a way to create access, ignore site restrictions, or automate behavior that
 the site or account owner does not permit.
 
+## Public Site Unsupported Behaviors
+
+Website playbooks must reject unsupported behaviors before they can be compiled
+or executed.
+
 ## Safety Controls Planned For v1
 
 - Active-window allowlist checks before every action, with a final actuator
