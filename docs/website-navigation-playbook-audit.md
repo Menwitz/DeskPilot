@@ -1862,3 +1862,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "blocked_state_without_reason_is_rejected"`: 1 passed, 35 deselected.
+
+### Task 137/211: Basic navigation flow compiles to `TaskDefinition`
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_basic_navigation_flow_compiles_to_task_definition`
+    loads a valid playbook and compiles `open-search`.
+  - The assertions verify the result is a `TaskDefinition` named
+    `example-site:open-search`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "basic_navigation_flow_compiles_to_task_definition"`: 1 passed,
+    35 deselected.

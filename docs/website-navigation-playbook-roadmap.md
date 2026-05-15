@@ -200,7 +200,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ### Compiler Regression Tests
 
-- [ ] Basic navigation flow compiles to `TaskDefinition`.
+- [x] Basic navigation flow compiles to `TaskDefinition`.
 - [ ] Compiled task passes `BasicTaskValidator`.
 - [ ] Domain and title rules become `allowed_windows`.
 - [ ] Flow timeout compiles into task timeout.
