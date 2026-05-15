@@ -1,0 +1,110 @@
+site_id: facebook
+version: "1"
+domains:
+  - host: facebook.com
+    include_subdomains: true
+    purpose: primary
+  - host: messenger.com
+    include_subdomains: true
+    purpose: messages
+allowed_window_titles:
+  - Facebook
+  - Messenger
+landmarks:
+  - id: home
+    action: click_text
+    target: Home
+  - id: search
+    action: click_text
+    target: Search Facebook
+  - id: profile
+    action: click_text
+    target: Profile
+  - id: notifications
+    action: click_text
+    target: Notifications
+  - id: messages
+    action: click_text
+    target: Messenger
+  - id: settings
+    action: click_text
+    target: Settings & privacy
+  - id: composer
+    action: click_text
+    target: What's on your mind
+flows:
+  - id: open-home
+    description: Open the Facebook feed.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-home
+        action: click_text
+        landmark: home
+  - id: open-search
+    description: Open Facebook search without submitting a query.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-search
+        action: click_text
+        landmark: search
+  - id: open-profile
+    description: Open the profile surface.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-profile
+        action: click_text
+        landmark: profile
+  - id: open-notifications
+    description: Open notifications.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-notifications
+        action: click_text
+        landmark: notifications
+  - id: open-messages
+    description: Open Messenger without sending content.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-messages
+        action: click_text
+        landmark: messages
+  - id: open-settings
+    description: Open settings navigation.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-settings
+        action: click_text
+        landmark: settings
+  - id: open-composer
+    description: Open the post composer without publishing.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-composer
+        action: click_text
+        landmark: composer
+blocked_states:
+  - id: logged-out
+    detector: "visible_text:Log in"
+    reason: Log in manually before running Facebook playbook flows.
+  - id: consent
+    detector: "visible_text:Allow all cookies"
+    reason: Resolve the cookie or consent dialog manually.
+  - id: captcha
+    detector: "visible_text:security check"
+    reason: CAPTCHA or suspicious-activity challenges are not automated.
+  - id: permission
+    detector: "visible_text:account restricted"
+    reason: Account or permission restrictions must be resolved manually.
+  - id: unsupported-layout
+    detector: "visible_text:unsupported browser"
+    reason: The current layout does not match this playbook.
+  - id: ambiguous-target
+    detector: "candidate_count:>1"
+    reason: Multiple matching targets require a narrower flow or manual choice.

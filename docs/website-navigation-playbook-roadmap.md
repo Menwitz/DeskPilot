@@ -86,14 +86,14 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 - [x] Add `navigation_playbooks/README.md`.
 - [x] Add `navigation_playbooks/_template.yaml`.
-- [ ] Add seed playbooks:
-  - [ ] `navigation_playbooks/linkedin.yaml`.
-  - [ ] `navigation_playbooks/x-twitter.yaml`.
-  - [ ] `navigation_playbooks/instagram.yaml`.
-  - [ ] `navigation_playbooks/facebook.yaml`.
-  - [ ] `navigation_playbooks/medium.yaml`.
-  - [ ] `navigation_playbooks/youtube.yaml`.
-  - [ ] `navigation_playbooks/tiktok.yaml`.
+- [x] Add seed playbooks:
+  - [x] `navigation_playbooks/linkedin.yaml`.
+  - [x] `navigation_playbooks/x-twitter.yaml`.
+  - [x] `navigation_playbooks/instagram.yaml`.
+  - [x] `navigation_playbooks/facebook.yaml`.
+  - [x] `navigation_playbooks/medium.yaml`.
+  - [x] `navigation_playbooks/youtube.yaml`.
+  - [x] `navigation_playbooks/tiktok.yaml`.
 - [ ] For each seed playbook, define domains:
   - [ ] Primary domain.
   - [ ] Common alternate domain when applicable.

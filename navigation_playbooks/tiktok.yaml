@@ -1,0 +1,109 @@
+site_id: tiktok
+version: "1"
+domains:
+  - host: tiktok.com
+    include_subdomains: true
+    purpose: primary
+  - host: tiktokv.com
+    include_subdomains: true
+    purpose: media-alternate
+allowed_window_titles:
+  - TikTok
+landmarks:
+  - id: home
+    action: click_text
+    target: For You
+  - id: search
+    action: click_text
+    target: Search
+  - id: profile
+    action: click_text
+    target: Profile
+  - id: notifications
+    action: click_text
+    target: Inbox
+  - id: messages
+    action: click_text
+    target: Messages
+  - id: settings
+    action: click_text
+    target: Settings
+  - id: upload
+    action: click_text
+    target: Upload
+flows:
+  - id: open-home
+    description: Open the TikTok feed.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-home
+        action: click_text
+        landmark: home
+  - id: open-search
+    description: Open TikTok search without submitting a query.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-search
+        action: click_text
+        landmark: search
+  - id: open-profile
+    description: Open the profile surface.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-profile
+        action: click_text
+        landmark: profile
+  - id: open-notifications
+    description: Open inbox or notifications.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-notifications
+        action: click_text
+        landmark: notifications
+  - id: open-messages
+    description: Open messages without sending content.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-messages
+        action: click_text
+        landmark: messages
+  - id: open-settings
+    description: Open settings navigation.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-settings
+        action: click_text
+        landmark: settings
+  - id: open-upload
+    description: Open the upload surface without submitting.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-upload
+        action: click_text
+        landmark: upload
+blocked_states:
+  - id: logged-out
+    detector: "visible_text:Log in"
+    reason: Log in manually before running TikTok playbook flows.
+  - id: consent
+    detector: "visible_text:Accept all"
+    reason: Resolve the cookie or consent dialog manually.
+  - id: captcha
+    detector: "visible_text:verification"
+    reason: CAPTCHA or suspicious-activity challenges are not automated.
+  - id: permission
+    detector: "visible_text:temporarily blocked"
+    reason: Account or permission restrictions must be resolved manually.
+  - id: unsupported-layout
+    detector: "visible_text:unsupported"
+    reason: The current layout does not match this playbook.
+  - id: ambiguous-target
+    detector: "candidate_count:>1"
+    reason: Multiple matching targets require a narrower flow or manual choice.

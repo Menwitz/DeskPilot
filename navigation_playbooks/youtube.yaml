@@ -1,0 +1,102 @@
+site_id: youtube
+version: "1"
+domains:
+  - host: youtube.com
+    include_subdomains: true
+    purpose: primary
+  - host: youtu.be
+    include_subdomains: false
+    purpose: short-links
+  - host: studio.youtube.com
+    include_subdomains: true
+    purpose: creator-studio
+allowed_window_titles:
+  - YouTube
+  - YouTube Studio
+landmarks:
+  - id: home
+    action: click_text
+    target: Home
+  - id: search
+    action: click_text
+    target: Search
+  - id: channel
+    action: click_text
+    target: Your channel
+  - id: notifications
+    action: click_text
+    target: Notifications
+  - id: settings
+    action: click_text
+    target: Settings
+  - id: upload
+    action: click_text
+    target: Create
+flows:
+  - id: open-home
+    description: Open the YouTube home feed.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-home
+        action: click_text
+        landmark: home
+  - id: open-search
+    description: Open YouTube search without submitting a query.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-search
+        action: click_text
+        landmark: search
+  - id: open-channel
+    description: Open the channel surface.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-channel
+        action: click_text
+        landmark: channel
+  - id: open-notifications
+    description: Open notifications.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-notifications
+        action: click_text
+        landmark: notifications
+  - id: open-settings
+    description: Open settings navigation.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-settings
+        action: click_text
+        landmark: settings
+  - id: open-upload
+    description: Open the upload surface without submitting.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-upload
+        action: click_text
+        landmark: upload
+blocked_states:
+  - id: logged-out
+    detector: "visible_text:Sign in"
+    reason: Sign in manually before running YouTube playbook flows.
+  - id: consent
+    detector: "visible_text:I agree"
+    reason: Resolve the consent dialog manually.
+  - id: captcha
+    detector: "visible_text:unusual traffic"
+    reason: CAPTCHA or suspicious-activity challenges are not automated.
+  - id: permission
+    detector: "visible_text:This action is not allowed"
+    reason: Account or permission restrictions must be resolved manually.
+  - id: unsupported-layout
+    detector: "visible_text:unsupported browser"
+    reason: The current layout does not match this playbook.
+  - id: ambiguous-target
+    detector: "candidate_count:>1"
+    reason: Multiple matching targets require a narrower flow or manual choice.

@@ -1,0 +1,98 @@
+site_id: medium
+version: "1"
+domains:
+  - host: medium.com
+    include_subdomains: true
+    purpose: primary
+  - host: mirror.xyz
+    include_subdomains: true
+    purpose: publishing-alternate
+allowed_window_titles:
+  - Medium
+landmarks:
+  - id: home
+    action: click_text
+    target: Home
+  - id: search
+    action: click_text
+    target: Search
+  - id: profile
+    action: click_text
+    target: Profile
+  - id: notifications
+    action: click_text
+    target: Notifications
+  - id: settings
+    action: click_text
+    target: Settings
+  - id: composer
+    action: click_text
+    target: Write
+flows:
+  - id: open-home
+    description: Open the Medium home feed.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-home
+        action: click_text
+        landmark: home
+  - id: open-search
+    description: Open Medium search without submitting a query.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-search
+        action: click_text
+        landmark: search
+  - id: open-profile
+    description: Open the profile surface.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-profile
+        action: click_text
+        landmark: profile
+  - id: open-notifications
+    description: Open notifications.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-notifications
+        action: click_text
+        landmark: notifications
+  - id: open-settings
+    description: Open settings navigation.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-settings
+        action: click_text
+        landmark: settings
+  - id: open-editor
+    description: Open the editor without publishing.
+    timeout_seconds: 30
+    retry: 1
+    steps:
+      - id: open-editor
+        action: click_text
+        landmark: composer
+blocked_states:
+  - id: logged-out
+    detector: "visible_text:Sign in"
+    reason: Sign in manually before running Medium playbook flows.
+  - id: consent
+    detector: "visible_text:Accept"
+    reason: Resolve the cookie or consent dialog manually.
+  - id: captcha
+    detector: "visible_text:challenge"
+    reason: CAPTCHA or suspicious-activity challenges are not automated.
+  - id: permission
+    detector: "visible_text:Access denied"
+    reason: Account or permission restrictions must be resolved manually.
+  - id: unsupported-layout
+    detector: "visible_text:unsupported"
+    reason: The current layout does not match this playbook.
+  - id: ambiguous-target
+    detector: "candidate_count:>1"
+    reason: Multiple matching targets require a narrower flow or manual choice.
