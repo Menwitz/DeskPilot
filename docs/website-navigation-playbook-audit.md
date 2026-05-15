@@ -107,3 +107,15 @@ website safety claim before the corresponding roadmap item is checked.
     exact step.
 - Verification:
   - Reviewed `docs/safety.md` lines 42-56.
+
+### Task 9/122: Define shared sensitive website action categories
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` has a `Sensitive Website Action Categories` section.
+  - The section states that website playbooks must mark sensitive steps with
+    `requires_confirmation: true`.
+  - The section ties shared categories to validation, CLI prompts, traces, and
+    reports so the pipeline uses consistent safety language.
+- Verification:
+  - Reviewed `docs/safety.md` lines 58-79.
