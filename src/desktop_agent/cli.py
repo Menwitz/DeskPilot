@@ -438,6 +438,8 @@ def _task_step_to_yaml_dict(step: TaskStep) -> dict[str, object]:
     if step.requires_confirmation:
         payload["requires_confirmation"] = True
     _put_optional(payload, "category", step.category)
+    if step.metadata:
+        payload["metadata"] = step.metadata
     return payload
 
 

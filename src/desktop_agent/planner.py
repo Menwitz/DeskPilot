@@ -155,6 +155,12 @@ class PassingStepVerifier(StepVerifier):
             return _verify_visible_text(verify.text, candidates)
         if verify.type == "not_visible_text":
             visible_matches = _matching_candidates(verify.text, candidates)
+            blocked_reason = step.metadata.get("site_blocked_state_reason")
+            if visible_matches and isinstance(blocked_reason, str):
+                return VerificationResult(
+                    False,
+                    f"blocked state detected: {blocked_reason}",
+                )
             return VerificationResult(
                 not visible_matches,
                 "text is not visible" if not visible_matches else "text is visible",
@@ -1430,6 +1436,7 @@ def _step_metadata(step: TaskStep, **metadata: object) -> dict[str, object]:
     step_metadata: dict[str, object] = {
         "step_id": step.id,
         "step_category": step_category(step),
+        **step.metadata,
         **metadata,
     }
     if step.entropy_budget is not None:
@@ -1576,7 +1583,10 @@ def _task_entropy_metadata(task: TaskDefinition) -> dict[str, object]:
 
 
 def _step_report_metadata(step: TaskStep) -> dict[str, object]:
-    metadata: dict[str, object] = {"step_category": step_category(step)}
+    metadata: dict[str, object] = {
+        "step_category": step_category(step),
+        **step.metadata,
+    }
     if step.entropy_budget is not None:
         metadata["step_entropy_budget"] = step.entropy_budget
     return metadata

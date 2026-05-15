@@ -271,6 +271,7 @@ def _step_to_dict(step: TaskStep) -> dict[str, object]:
         "recovery": [_recovery_rule_to_dict(rule) for rule in step.recovery],
         "depends_on": list(step.depends_on),
         "expected_state": _expected_state_to_dict(step.expected_state),
+        "metadata": step.metadata,
     }
 
 

@@ -344,7 +344,7 @@ def _blocked_state_checks(
             continue
         checks.append(
             TaskStep(
-                id=f"{step.id}-blocked-{blocked_state.id}",
+                id=f"blocked-state-{blocked_state.id}-before-{step.id}",
                 action="wait_for",
                 target=detector_text,
                 verify=VerificationDefinition(
@@ -354,6 +354,13 @@ def _blocked_state_checks(
                 timeout_seconds=step.timeout_seconds,
                 retry=0,
                 category="verification",
+                metadata={
+                    "site_id": playbook.site_id,
+                    "site_blocked_state_id": blocked_state.id,
+                    "site_blocked_state_detector": blocked_state.detector,
+                    "site_blocked_state_reason": blocked_state.reason,
+                    "site_blocked_state_check": True,
+                },
             ),
         )
     return tuple(checks)

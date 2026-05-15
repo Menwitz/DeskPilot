@@ -158,6 +158,7 @@ class TaskStep:
     recovery: tuple[RecoveryRule, ...] = ()
     depends_on: tuple[str, ...] = ()
     expected_state: ExpectedStateTransition | None = None
+    metadata: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -328,6 +329,7 @@ def _step_from_mapping(value: object, task_dir: Path) -> TaskStep:
         recovery=_recovery_rules_from_value(data.get("recovery")),
         depends_on=_optional_string_tuple(data.get("depends_on"), "depends_on") or (),
         expected_state=_expected_state_from_value(data.get("expected_state")),
+        metadata=dict(_optional_mapping(data.get("metadata")) or {}),
     )
 
 
