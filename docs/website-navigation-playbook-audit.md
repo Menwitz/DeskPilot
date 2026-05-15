@@ -2690,3 +2690,20 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/mypy`: no issues found in 71 source files.
   - `.venv/bin/python -m build`: built `deskpilot-0.1.0.tar.gz` and
     `deskpilot-0.1.0-py3-none-any.whl`.
+
+## Phase 9 Audit
+
+- Status: ready to execute.
+- Roadmap range: Tasks 196-202 of 211.
+- Current implementation surfaces:
+  - `src/desktop_agent/approval_manifest.py` defines the manifest contract,
+    validation, metadata, required-manifest gate, and runtime confirmation merge.
+  - `src/desktop_agent/cli.py` exposes `--approval-manifest` for site runs.
+  - `tests/test_approval_manifest.py`, `tests/test_site_playbook_cli.py`, and
+    `tests/test_examples.py` cover missing, invalid, accepted, recorded, and
+    sample-manifest behavior.
+  - `docs/website-playbooks.md`, `docs/safety.md`, `docs/troubleshooting.md`,
+    `docs/tracing.md`, and `examples/README.md` document usage and evidence.
+- Audit decision:
+  - Verify each approval-manifest roadmap item with focused tests or doc lookups
+    before checking it.
