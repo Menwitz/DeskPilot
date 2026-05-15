@@ -2153,3 +2153,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
     "final_report_includes_site_id_and_flow_id"`: 1 passed, 9 deselected.
+
+### Task 161/211: Action log includes selected playbook version
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_tracing.py::test_action_log_includes_selected_playbook_version`
+    dry-runs a seed site trace and reads `actions.jsonl`.
+  - The assertions verify the selected playbook version is recorded for the
+    site action log.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "action_log_includes_selected_playbook_version"`: 1 passed,
+    9 deselected.
