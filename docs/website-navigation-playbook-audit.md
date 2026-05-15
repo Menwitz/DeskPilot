@@ -2472,3 +2472,17 @@ checking layout, domain, flow, and blocked-state coverage.
   - `rg -n "Sensitive Confirmed Flow|requires_confirmation: true|approval manifest|confirmation state"
     docs/website-playbooks.md`: matched the sensitive example and approval
     guidance.
+
+### Task 183/211: Blocked-state detection example
+
+- Status: complete.
+- Evidence:
+  - `docs/website-playbooks.md` includes a `Blocked-State Detection` YAML
+    snippet for CAPTCHA and ambiguous-target stop conditions.
+  - The documentation states blocked states are reportable stops and that traces
+    and final reports must include blocked-state ID and reason for monitoring and
+    support review.
+- Verification:
+  - `rg -n "Blocked-State Detection|blocked-state ID and reason|must not describe bypasses"
+    docs/website-playbooks.md`: matched the blocked-state example and reporting
+    guidance.

@@ -265,3 +265,6 @@ blocked_states:
 
 Blocked states are stop conditions. They should explain what the operator must
 resolve manually; they must not describe bypasses.
+When a blocked state fires, the trace and final report should include the
+blocked-state ID and reason so monitoring and support review can diagnose the
+stop without rerunning the site flow.
