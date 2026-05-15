@@ -2556,3 +2556,21 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/mypy`: no issues found in 71 source files.
   - `.venv/bin/python -m build`: built `deskpilot-0.1.0.tar.gz` and
     `deskpilot-0.1.0-py3-none-any.whl`.
+
+## Phase 8 Audit
+
+- Status: ready to execute.
+- Roadmap range: Tasks 188-195 of 211.
+- Acceptance coverage map:
+  - New-site onboarding is documented in `docs/website-playbooks.md` and
+    `navigation_playbooks/README.md`.
+  - Seed validation, read-only flow coverage, sensitive confirmation coverage,
+    and compiled-flow task validation are covered in
+    `tests/test_site_playbooks.py`.
+  - Deterministic normal CI and opt-in live smoke behavior are covered by the
+    phase verification pipeline and `tests/test_site_playbook_live_smoke.py`.
+  - Failed site traces and final reports are covered in
+    `tests/test_site_playbook_tracing.py`.
+- Audit decision:
+  - Verify each acceptance criterion with its focused test or documentation
+    lookup before checking the roadmap item.
