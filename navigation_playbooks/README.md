@@ -18,3 +18,10 @@ Each playbook defines:
 
 Copy `_template.yaml` when adding a new site, keep normal CI deterministic, and
 put any live checks behind an explicit opt-in flag.
+
+## Domain Scope
+
+Every seed playbook declares a primary public domain and any common alternate
+domain that is needed for recognition, such as legacy, regional, messaging, or
+creator-studio hosts. Account or auth-related domains should appear only when a
+playbook needs them to recognize an allowed settings or account surface.
