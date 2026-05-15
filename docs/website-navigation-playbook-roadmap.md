@@ -221,7 +221,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ### Safety Regression Tests
 
-- [ ] Login step is blocked without `--confirm-step`.
+- [x] Login step is blocked without `--confirm-step`.
 - [ ] Post or publish step is blocked without `--confirm-step`.
 - [ ] Message-send step is blocked without `--confirm-step`.
 - [ ] Delete step is blocked without `--confirm-step`.

@@ -1409,6 +1409,19 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "invalid_playbook_returns_validation_error"`: 1 passed, 10 deselected.
 
+### Task 152/211: Login step is blocked without `--confirm-step`
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
+    parameterizes sensitive categories, including `login`.
+  - The focused login case verifies `LocalSafetyPolicy` rejects the step with a
+    `requires explicit confirmation` reason.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "sensitive_site_steps_are_blocked_without_confirmation and login"`:
+    1 passed, 7 deselected.
+
 ### Task 110/211: Explain missing confirmation failures
 
 - Status: complete.
