@@ -2614,3 +2614,15 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "every_seed_playbook_has_read_only_navigation_flow"`: 1 passed,
     41 deselected.
+
+### Task 191/211: Seed sensitive actions require explicit confirmation
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_seed_sensitive_actions_require_confirmation`
+    iterates every seed flow and checks each step with `sensitive_category`.
+  - The assertions require `requires_confirmation` to be true for every
+    sensitive seed action.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "seed_sensitive_actions_require_confirmation"`: 1 passed, 41 deselected.
