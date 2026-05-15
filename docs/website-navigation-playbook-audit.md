@@ -1970,3 +1970,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "list_sites_prints_all_seed_sites"`: 1 passed, 10 deselected.
+
+### Task 146/211: `list-flows linkedin` prints LinkedIn flows
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_cli.py::test_list_flows_linkedin_prints_flows`
+    runs `main(["list-flows", "linkedin"])`.
+  - The assertion verifies `open-search` and the LinkedIn flow description are
+    printed.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "list_flows_linkedin_prints_flows"`: 1 passed, 10 deselected.

@@ -212,7 +212,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 ### CLI Regression Tests
 
 - [x] `list-sites` prints all seed sites.
-- [ ] `list-flows linkedin` prints LinkedIn flows.
+- [x] `list-flows linkedin` prints LinkedIn flows.
 - [ ] `compile-site youtube open-search` writes a valid task YAML.
 - [ ] `dry-run-site medium open-editor` validates without desktop input.
 - [ ] `run-site` returns nonzero when platform actuation is unavailable.
