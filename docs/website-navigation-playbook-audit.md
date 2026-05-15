@@ -1409,93 +1409,6 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "invalid_playbook_returns_validation_error"`: 1 passed, 10 deselected.
 
-### Task 152/211: Login step is blocked without `--confirm-step`
-
-- Status: complete.
-- Evidence:
-  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
-    parameterizes sensitive categories, including `login`.
-  - The focused login case verifies `LocalSafetyPolicy` rejects the step with a
-    `requires explicit confirmation` reason.
-- Verification:
-  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
-    "sensitive_site_steps_are_blocked_without_confirmation and login"`:
-    1 passed, 7 deselected.
-
-### Task 153/211: Post or publish step is blocked without `--confirm-step`
-
-- Status: complete.
-- Evidence:
-  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
-    includes the `publish` sensitive category.
-  - The focused publish case verifies safety rejection before action.
-- Verification:
-  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
-    "sensitive_site_steps_are_blocked_without_confirmation and publish"`:
-    1 passed, 7 deselected.
-
-### Task 154/211: Message-send step is blocked without `--confirm-step`
-
-- Status: complete.
-- Evidence:
-  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
-    includes the `message` sensitive category.
-  - The focused message case verifies safety rejection before action.
-- Verification:
-  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
-    "sensitive_site_steps_are_blocked_without_confirmation and message"`:
-    1 passed, 7 deselected.
-
-### Task 155/211: Delete step is blocked without `--confirm-step`
-
-- Status: complete.
-- Evidence:
-  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
-    includes the `delete` sensitive category.
-  - The focused delete case verifies safety rejection before action.
-- Verification:
-  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
-    "sensitive_site_steps_are_blocked_without_confirmation and delete"`:
-    1 passed, 7 deselected.
-
-### Task 156/211: Settings-change step is blocked without `--confirm-step`
-
-- Status: complete.
-- Evidence:
-  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
-    includes the `account_settings` sensitive category.
-  - The focused account-settings case verifies safety rejection before action.
-- Verification:
-  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
-    "sensitive_site_steps_are_blocked_without_confirmation and account_settings"`:
-    1 passed, 7 deselected.
-
-### Task 157/211: CAPTCHA state aborts with a no-bypass message
-
-- Status: complete.
-- Evidence:
-  - `tests/test_site_playbook_safety.py::test_captcha_state_aborts_with_no_bypass_message`
-    compiles a sensitive flow with a visible-text challenge blocked state.
-  - The assertions verify the run fails with `blocked state detected` and the
-    authored `CAPTCHA challenges are not automated` message.
-- Verification:
-  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
-    "captcha_state_aborts_with_no_bypass_message"`: 1 passed, 7 deselected.
-
-### Task 158/211: Active-window mismatch aborts before action
-
-- Status: complete.
-- Evidence:
-  - `tests/test_site_playbook_safety.py::test_active_window_mismatch_aborts_before_site_action`
-    runs a read-only site task while the active window title is outside
-    `allowed_windows`.
-  - The assertions verify failure category `safety_stop` and an
-    `allowed_windows` abort reason.
-- Verification:
-  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
-    "active_window_mismatch_aborts_before_site_action"`: 1 passed,
-    7 deselected.
-
 ### Task 110/211: Explain missing confirmation failures
 
 - Status: complete.
@@ -2129,3 +2042,103 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "invalid_playbook_returns_validation_error"`: 1 passed, 10 deselected.
+
+### Task 152/211: Login step is blocked without `--confirm-step`
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
+    parameterizes sensitive categories, including `login`.
+  - The focused login case verifies `LocalSafetyPolicy` rejects the step with a
+    `requires explicit confirmation` reason.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "sensitive_site_steps_are_blocked_without_confirmation and login"`:
+    1 passed, 7 deselected.
+
+### Task 153/211: Post or publish step is blocked without `--confirm-step`
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
+    includes the `publish` sensitive category.
+  - The focused publish case verifies safety rejection before action.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "sensitive_site_steps_are_blocked_without_confirmation and publish"`:
+    1 passed, 7 deselected.
+
+### Task 154/211: Message-send step is blocked without `--confirm-step`
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
+    includes the `message` sensitive category.
+  - The focused message case verifies safety rejection before action.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "sensitive_site_steps_are_blocked_without_confirmation and message"`:
+    1 passed, 7 deselected.
+
+### Task 155/211: Delete step is blocked without `--confirm-step`
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
+    includes the `delete` sensitive category.
+  - The focused delete case verifies safety rejection before action.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "sensitive_site_steps_are_blocked_without_confirmation and delete"`:
+    1 passed, 7 deselected.
+
+### Task 156/211: Settings-change step is blocked without `--confirm-step`
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
+    includes the `account_settings` sensitive category.
+  - The focused account-settings case verifies safety rejection before action.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "sensitive_site_steps_are_blocked_without_confirmation and account_settings"`:
+    1 passed, 7 deselected.
+
+### Task 157/211: CAPTCHA state aborts with a no-bypass message
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_captcha_state_aborts_with_no_bypass_message`
+    compiles a sensitive flow with a visible-text challenge blocked state.
+  - The assertions verify the run fails with `blocked state detected` and the
+    authored `CAPTCHA challenges are not automated` message.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "captcha_state_aborts_with_no_bypass_message"`: 1 passed, 7 deselected.
+
+### Task 158/211: Active-window mismatch aborts before action
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_active_window_mismatch_aborts_before_site_action`
+    runs a read-only site task while the active window title is outside
+    `allowed_windows`.
+  - The assertions verify failure category `safety_stop` and an
+    `allowed_windows` abort reason.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "active_window_mismatch_aborts_before_site_action"`: 1 passed,
+    7 deselected.
+
+### Task 159/211: Emergency stop behavior remains unchanged
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_emergency_stop_behavior_remains_unchanged_for_site_tasks`
+    runs a read-only site task with a triggered emergency-stop monitor.
+  - The assertions verify status `emergency_stopped` and the unchanged abort
+    reason `emergency stop requested`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "emergency_stop_behavior_remains_unchanged_for_site_tasks"`: 1 passed,
+    7 deselected.
