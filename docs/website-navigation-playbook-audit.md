@@ -1470,6 +1470,18 @@ checking layout, domain, flow, and blocked-state coverage.
     "sensitive_site_steps_are_blocked_without_confirmation and account_settings"`:
     1 passed, 7 deselected.
 
+### Task 157/211: CAPTCHA state aborts with a no-bypass message
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_captcha_state_aborts_with_no_bypass_message`
+    compiles a sensitive flow with a visible-text challenge blocked state.
+  - The assertions verify the run fails with `blocked state detected` and the
+    authored `CAPTCHA challenges are not automated` message.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "captcha_state_aborts_with_no_bypass_message"`: 1 passed, 7 deselected.
+
 ### Task 110/211: Explain missing confirmation failures
 
 - Status: complete.
