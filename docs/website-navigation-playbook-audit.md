@@ -2446,3 +2446,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `rg -n "Search Flow|id: open-search|before typing or submitting a query"
     docs/website-playbooks.md`: matched the search example and guardrail.
+
+### Task 181/211: Composer-open flow example stops before submission
+
+- Status: complete.
+- Evidence:
+  - `docs/website-playbooks.md` includes a `Composer-Open Flow` YAML snippet with
+    a reusable composer landmark and `open-editor` flow.
+  - The example states that final `Post`, `Publish`, `Send`, or `Submit` actions
+    must move into a separate confirmed sensitive flow.
+- Verification:
+  - `rg -n "Composer-Open Flow|id: open-editor|confirmed sensitive flow|inspect the final report"
+    docs/website-playbooks.md`: matched the composer-open example, stop rule,
+    and report inspection guidance.

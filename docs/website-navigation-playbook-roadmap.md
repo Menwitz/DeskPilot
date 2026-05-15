@@ -260,7 +260,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Add examples for:
   - [x] Read-only navigation flow.
   - [x] Search flow.
-  - [ ] Composer-open flow that stops before submission.
+  - [x] Composer-open flow that stops before submission.
   - [ ] Sensitive confirmed flow.
   - [ ] Blocked-state detection.
 - [ ] Update `README.md` documentation links.

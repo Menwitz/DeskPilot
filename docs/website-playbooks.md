@@ -140,6 +140,8 @@ flows:
 This flow opens the writing surface only. It must not include final `Post`,
 `Publish`, `Send`, or `Submit` actions unless those actions move into a separate
 confirmed sensitive flow.
+Dry-run the composer-open flow and inspect the final report before adding any
+publish-capable variant.
 
 ## Sensitive Confirmed Flow
 
