@@ -1060,3 +1060,14 @@ checking layout, domain, flow, and blocked-state coverage.
     33 deselected.
   - `.venv/bin/ruff check tests/test_site_playbooks.py`: all checks passed.
   - `.venv/bin/mypy tests/test_site_playbooks.py`: no issues found.
+
+### Task 85/122: Compile optional search region defaults
+
+- Status: complete.
+- Evidence:
+  - `SiteTaskCompiler` assigns `flow.search_region` to compiled step `region`.
+  - The `scroll_until` action regression supplies a flow-level search region
+    and asserts the compiled step preserves the region width.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
+    and scroll_until"`: 1 passed, 33 deselected.

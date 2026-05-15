@@ -134,7 +134,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Timeout.
   - [x] Retry budget.
   - [x] Confidence threshold.
-  - [ ] Optional search region.
+  - [x] Optional search region.
 - [ ] Add blocked-state checks before irreversible actions.
 - [ ] Add task metadata for trace readability:
   - [ ] Site ID.
