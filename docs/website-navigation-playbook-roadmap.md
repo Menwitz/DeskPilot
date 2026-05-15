@@ -216,7 +216,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] `compile-site youtube open-search` writes a valid task YAML.
 - [x] `dry-run-site medium open-editor` validates without desktop input.
 - [x] `run-site` returns nonzero when platform actuation is unavailable.
-- [ ] Missing confirmation returns nonzero with a clear message.
+- [x] Missing confirmation returns nonzero with a clear message.
 - [ ] Invalid playbook returns nonzero with the validation error.
 
 ### Safety Regression Tests
