@@ -2834,3 +2834,13 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `git log --oneline --grep="^docs: add website navigation playbook roadmap$"`:
     matched `db55fac`.
+
+### Task 204/211: Commit plan includes site playbook schema commit
+
+- Status: complete.
+- Evidence:
+  - `a4f1c98 feat: validate website playbook schema` is the implementation
+    equivalent for the planned `feat: add site playbook schema` item.
+- Verification:
+  - `git log --oneline --grep="website playbook schema\|site playbook schema"`:
+    matched `a4f1c98`.
