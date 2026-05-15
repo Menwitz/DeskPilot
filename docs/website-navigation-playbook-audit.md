@@ -1542,3 +1542,22 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check tests/test_site_playbook_tracing.py`: all checks
     passed.
   - `.venv/bin/mypy tests/test_site_playbook_tracing.py`: no issues found.
+
+### Task 116/211: Record blocked-state checks and outcomes
+
+- Status: complete.
+- Evidence:
+  - `SiteTaskCompiler` inserts blocked-state check steps before sensitive
+    public-site actions.
+  - Blocked-state check steps carry `site_blocked_state_check`,
+    `site_blocked_state_id`, detector, and reason metadata.
+  - The planner records failed blocked-state checks as failed step reports and
+    emits a `failure` trace event with the same blocked-state metadata.
+  - Added regression coverage that verifies the failed report step and action
+    log failure event both identify the blocked-state check and outcome.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "blocked_state_check_outcome"`: 1 passed, 8 deselected.
+  - `.venv/bin/ruff check tests/test_site_playbook_tracing.py`: all checks
+    passed.
+  - `.venv/bin/mypy tests/test_site_playbook_tracing.py`: no issues found.

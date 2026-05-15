@@ -98,6 +98,24 @@ def test_blocked_state_reason_appears_in_final_report(tmp_path: Path) -> None:
     assert "blocked state detected" in str(step["message"])
 
 
+def test_blocked_state_check_outcome_appears_in_trace(tmp_path: Path) -> None:
+    trace_dir = _run_sensitive_site_trace(tmp_path, "visible_text:challenge")
+
+    report = _read_final_report(trace_dir)
+    events = _read_action_log(trace_dir)
+
+    step = _steps(report)[0]
+    step_metadata = _metadata(step)
+    failure = next(event for event in events if event["phase"] == "failure")
+    failure_metadata = _metadata(failure)
+    assert step["step_id"] == "blocked-state-captcha-before-publish-post"
+    assert step["status"] == "failed"
+    assert step_metadata["site_blocked_state_check"] is True
+    assert step_metadata["site_blocked_state_id"] == "captcha"
+    assert failure_metadata["site_blocked_state_check"] is True
+    assert failure_metadata["site_blocked_state_id"] == "captcha"
+
+
 def test_replay_prints_site_and_flow_when_present(
     tmp_path: Path,
     capsys: CaptureFixture[str],

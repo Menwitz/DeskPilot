@@ -171,7 +171,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Extend trace output with site-playbook metadata.
 - [x] Record playbook validation results in trace metadata.
 - [x] Record compiled task path or in-memory task summary.
-- [ ] Record blocked-state checks and outcomes.
+- [x] Record blocked-state checks and outcomes.
 - [ ] Record whether each sensitive step was confirmed or blocked.
 - [ ] Update replay output to include site and flow when present.
 - [ ] Update troubleshooting docs with public-site failure modes:
