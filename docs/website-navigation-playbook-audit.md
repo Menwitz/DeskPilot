@@ -1087,3 +1087,16 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "blocked_state_checks_compile_before_sensitive_final_actions"`: 1 passed,
     33 deselected.
+
+### Task 87/122: Add task metadata for trace readability
+
+- Status: complete.
+- Evidence:
+  - Compiled tasks include `site_id`, `site_flow_id`, `site_playbook_version`,
+    `site_domains`, `site_sensitive_step_ids`, `site_blocked_state_ids`,
+    validation status, compilation source, compiled step count, and summary.
+  - Compiled steps also include site and flow metadata, so downstream traces,
+    monitoring, deep-search output, and reports can identify the playbook
+    context at both task and action levels.
+- Verification:
+  - Compiled `linkedin:open-search` and printed the resulting task metadata.
