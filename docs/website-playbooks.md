@@ -85,6 +85,10 @@ queries or changing site state belongs in a separate confirmed flow.
 ## Read-Only Navigation Flow
 
 ```yaml
+landmarks:
+  - id: home
+    action: click_text
+    target: Home
 flows:
   - id: open-home
     description: Open the site feed without changing account state.

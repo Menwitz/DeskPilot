@@ -258,7 +258,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Add playbook authoring docs.
 - [x] Add a new-site checklist.
 - [x] Add examples for:
-  - [ ] Read-only navigation flow.
+  - [x] Read-only navigation flow.
   - [ ] Search flow.
   - [ ] Composer-open flow that stops before submission.
   - [ ] Sensitive confirmed flow.

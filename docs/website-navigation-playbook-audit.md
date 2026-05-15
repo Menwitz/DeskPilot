@@ -2422,3 +2422,15 @@ checking layout, domain, flow, and blocked-state coverage.
   - `rg -n "## Examples|compiled task and generated trace/report|deep-search examples"
     docs/website-playbooks.md`: matched the examples section, verification
     guidance, and search guardrail.
+
+### Task 179/211: Read-only navigation flow example
+
+- Status: complete.
+- Evidence:
+  - `docs/website-playbooks.md` includes a self-contained `Read-Only Navigation
+    Flow` YAML snippet with a reusable `home` landmark and `open-home` flow.
+  - The example stays navigation-only and describes opening the site feed without
+    changing account state.
+- Verification:
+  - `rg -n "Read-Only Navigation Flow|id: home|without changing account state"
+    docs/website-playbooks.md`: matched the read-only example.
