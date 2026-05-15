@@ -453,3 +453,15 @@ checking layout, domain, flow, and blocked-state coverage.
     domain scope, seed flow coverage, and blocked-state coverage.
 - Verification:
   - Reviewed `navigation_playbooks/README.md` lines 1-42.
+
+### Task 39/122: Add `navigation_playbooks/_template.yaml`
+
+- Status: complete.
+- Evidence:
+  - `navigation_playbooks/_template.yaml` exists.
+  - It is a copyable playbook scaffold with `site_id`, `version`, `domains`,
+    `allowed_window_titles`, `landmarks`, `flows`, and `blocked_states`.
+  - The catalog loader intentionally skips `_template.yaml` because files
+    prefixed with `_` are templates, not runnable seed playbooks.
+- Verification:
+  - Reviewed `navigation_playbooks/_template.yaml` lines 1-29.

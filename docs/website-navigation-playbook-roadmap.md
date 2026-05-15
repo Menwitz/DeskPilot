@@ -85,7 +85,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 ## Phase 2: Catalog Layout And Seed Playbooks
 
 - [x] Add `navigation_playbooks/README.md`.
-- [ ] Add `navigation_playbooks/_template.yaml`.
+- [x] Add `navigation_playbooks/_template.yaml`.
 - [ ] Add seed playbooks:
   - [ ] `navigation_playbooks/linkedin.yaml`.
   - [ ] `navigation_playbooks/x-twitter.yaml`.
