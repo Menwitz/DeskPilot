@@ -110,7 +110,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Logged out.
   - [x] Consent or cookie interstitial.
   - [x] CAPTCHA or suspicious-activity challenge.
-  - [ ] Permission or account restriction.
+  - [x] Permission or account restriction.
   - [ ] Unsupported layout.
   - [ ] Ambiguous target.
 

@@ -770,3 +770,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and printed the `captcha` detector and reason for
     each site.
+
+### Task 64/122: Define permission or account-restriction blocked states
+
+- Status: complete.
+- Evidence:
+  - Every seed playbook defines `permission`.
+  - Detectors cover account-restriction language such as restricted, account
+    suspended, access denied, temporarily blocked, try again later, account
+    restricted, and action-not-allowed text.
+  - Reasons require manual resolution of account or permission restrictions.
+- Verification:
+  - Loaded all seed playbooks and printed the `permission` detector and reason
+    for each site.
