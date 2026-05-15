@@ -46,6 +46,8 @@ or executed.
 - CAPTCHA solving, CAPTCHA bypass, or challenge workarounds are not supported.
 - Bot-detection bypass, rate-limit evasion, fingerprint masking, and stealth
   automation techniques are not supported.
+- Credential abuse, credential harvesting, account takeover, password guessing,
+  and automation against accounts without authorization are not supported.
 
 ## Safety Controls Planned For v1
 
