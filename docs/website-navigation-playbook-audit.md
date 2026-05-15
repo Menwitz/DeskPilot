@@ -936,3 +936,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and press_key"`: 1 passed, 32 deselected.
+
+### Task 75/122: Compile `scroll`
+
+- Status: complete.
+- Evidence:
+  - The action regression matrix includes a `scroll` site step.
+  - `SiteTaskCompiler` preserves the `scroll` action in the compiled `TaskStep`,
+    and `BasicTaskValidator` accepts the result.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
+    and scroll and not scroll_until"`: 1 passed, 32 deselected.
