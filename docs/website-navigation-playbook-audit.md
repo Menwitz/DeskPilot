@@ -192,3 +192,12 @@ website safety claim before the corresponding roadmap item is checked.
     notification, security, billing, identity, or permission settings.
 - Verification:
   - Reviewed `docs/safety.md` lines 78-79.
+
+### Phase 0 Boundary Verification
+
+- Status: passed.
+- Commands:
+  - `.venv/bin/pytest`: 268 passed, 4 skipped.
+  - `.venv/bin/ruff check .`: passed.
+  - `.venv/bin/mypy`: passed.
+  - `.venv/bin/python -m build`: built source distribution and wheel.
