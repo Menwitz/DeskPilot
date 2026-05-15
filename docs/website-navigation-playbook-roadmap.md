@@ -188,7 +188,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 - [x] Valid playbook loads successfully.
 - [x] Missing site ID is rejected.
-- [ ] Invalid site ID is rejected.
+- [x] Invalid site ID is rejected.
 - [ ] Empty domains are rejected.
 - [ ] Empty window-title patterns are rejected.
 - [ ] Duplicate flow IDs are rejected.

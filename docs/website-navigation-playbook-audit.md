@@ -1760,3 +1760,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "missing_site_id_is_rejected"`: 1 passed, 35 deselected.
+
+### Task 128/211: Invalid site ID is rejected
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_invalid_site_id_is_rejected` writes a
+    playbook whose `site_id` contains spaces and uppercase characters.
+  - The assertion verifies `SitePlaybookValidationError` mentions the
+    slug-safe requirement.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "invalid_site_id_is_rejected"`: 1 passed, 35 deselected.
