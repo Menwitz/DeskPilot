@@ -48,6 +48,8 @@ or executed.
   automation techniques are not supported.
 - Credential abuse, credential harvesting, account takeover, password guessing,
   and automation against accounts without authorization are not supported.
+- Stealth automation is not supported; runs must remain visible to the operator
+  and must not disguise automation from the local user.
 
 ## Safety Controls Planned For v1
 
