@@ -1241,3 +1241,16 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "run_site_returns_nonzero_when_platform_actuation_is_unavailable"`:
     1 passed, 6 deselected.
+
+### Task 97/122: Add `desktop-agent dry-run-site <site> <flow>`
+
+- Status: complete.
+- Evidence:
+  - The CLI parser registers `dry-run-site` with site and flow arguments.
+  - `_run_site_task(..., dry_run=True)` compiles the site flow and routes it
+    through existing dry-run validation without desktop input.
+  - Regression coverage validates `medium open-editor` with config and
+    `--no-screenshots` and asserts a passed status.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "dry_run_site_validates_without_desktop_input"`: 1 passed, 6 deselected.
