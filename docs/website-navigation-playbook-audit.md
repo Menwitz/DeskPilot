@@ -428,3 +428,12 @@ checking roadmap items.
   - There are no broad narrative comments around self-explanatory field mapping.
 - Verification:
   - Reviewed comment usage in `src/desktop_agent/site_playbooks.py`.
+
+### Phase 1 Boundary Verification
+
+- Status: passed.
+- Commands:
+  - `.venv/bin/pytest`: 268 passed, 4 skipped.
+  - `.venv/bin/ruff check .`: passed.
+  - `.venv/bin/mypy`: passed.
+  - `.venv/bin/python -m build`: built source distribution and wheel.
