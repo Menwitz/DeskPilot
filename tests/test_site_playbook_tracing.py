@@ -4,7 +4,20 @@ from typing import cast
 
 from pytest import CaptureFixture
 
+from desktop_agent.actuation import DryRunActuator
 from desktop_agent.cli import main
+from desktop_agent.config import RuntimeConfig, StaticConfigLoader
+from desktop_agent.perception import (
+    CompositePerceptionEngine,
+    ConfidenceTargetSelector,
+    ElementCandidate,
+)
+from desktop_agent.planner import ExecutionEngine
+from desktop_agent.safety import LocalSafetyPolicy
+from desktop_agent.screen import Bounds, ScreenObservation, StaticScreenObserver
+from desktop_agent.site_playbooks import SiteTaskCompiler, load_site_playbook
+from desktop_agent.task_dsl import BasicTaskValidator, StaticTaskLoader, TaskStep
+from desktop_agent.tracing import FileTraceSink
 
 
 def test_final_report_includes_site_id_and_flow_id(tmp_path: Path) -> None:
@@ -164,6 +177,11 @@ def _run_seed_site_trace(tmp_path: Path) -> Path:
 
 
 def _run_sensitive_site_trace(tmp_path: Path, detector: str) -> Path:
+    if detector.startswith("visible_text:"):
+        return _run_sensitive_site_trace_with_visible_blocked_text(
+            tmp_path,
+            detector,
+        )
     return _run_sensitive_site_trace_with_confirmation(
         tmp_path,
         detector,
@@ -209,6 +227,44 @@ def _run_sensitive_site_trace_with_confirmation(
     )
     assert status == (0 if confirm_step else 1)
     return _single_trace_dir(tmp_path)
+
+
+def _run_sensitive_site_trace_with_visible_blocked_text(
+    tmp_path: Path,
+    detector: str,
+) -> Path:
+    playbook_dir = tmp_path / "playbooks"
+    playbook_dir.mkdir()
+    playbook_path = playbook_dir / "sensitive-site.yaml"
+    playbook_path.write_text(_sensitive_playbook(detector), encoding="utf-8")
+    playbook = load_site_playbook(playbook_path)
+    task = SiteTaskCompiler().compile(playbook, "publish-post")
+    trace_sink = FileTraceSink()
+    config = RuntimeConfig(
+        trace_root=tmp_path / "traces",
+        save_screenshots=False,
+    )
+    engine = ExecutionEngine(
+        config_loader=StaticConfigLoader(config),
+        task_loader=StaticTaskLoader(task),
+        task_validator=BasicTaskValidator(),
+        trace_sink=trace_sink,
+        safety_policy=LocalSafetyPolicy(),
+        screen_observer=StaticScreenObserver(
+            ScreenObservation(active_window_title="Sensitive"),
+        ),
+        perception_engine=CompositePerceptionEngine(
+            (BlockedTextPerceptionEngine("challenge"),),
+        ),
+        target_selector=ConfidenceTargetSelector(),
+        actuator=DryRunActuator(),
+    )
+
+    report = engine.run(Path("site-sensitive-publish.yaml"))
+
+    assert report.status == "failed"
+    assert trace_sink.run_dir is not None
+    return trace_sink.run_dir
 
 
 def _write_config(tmp_path: Path) -> Path:
@@ -281,3 +337,25 @@ blocked_states:
     detector: "{detector}"
     reason: CAPTCHA challenges are not automated.
 """
+
+
+class BlockedTextPerceptionEngine:
+    def __init__(self, text: str) -> None:
+        self._text = text
+
+    def detect(
+        self,
+        step: TaskStep,
+        observation: ScreenObservation,
+        config: RuntimeConfig,
+    ) -> tuple[ElementCandidate, ...]:
+        _ = step, observation, config
+        return (
+            ElementCandidate(
+                id="blocked-state-text",
+                source="ocr",
+                label=self._text,
+                bounds=Bounds(x=0, y=0, width=10, height=10),
+                confidence=1.0,
+            ),
+        )

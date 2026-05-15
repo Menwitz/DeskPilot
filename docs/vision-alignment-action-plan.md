@@ -108,9 +108,22 @@ teams running approved content workflows.
 - [x] LinkedIn and Medium publish flows stop on logged-out, consent, CAPTCHA,
   permission, unsupported-layout, or ambiguous-target states.
 - [x] All artifacts remain local by default.
-- [ ] Full local quality gate passes.
+- [x] Full local quality gate passes.
 - [ ] Windows package verification passes.
 - [ ] Authorized live smoke evidence exists for LinkedIn and Medium.
+
+## Final Verification Notes
+
+- [x] `.venv/bin/python -m pytest`: 327 passed, 4 skipped.
+- [x] `.venv/bin/ruff check .`: passed.
+- [x] `.venv/bin/mypy`: passed.
+- [x] `desktop-agent dry-run-site youtube open-search --no-screenshots`: passed.
+- [x] `desktop-agent dry-run-site linkedin publish-post --variables
+  examples/linkedin-content-variables.yaml --approval-manifest
+  examples/linkedin-approval-manifest.yaml --no-screenshots`: passed.
+- [x] `desktop-agent dry-run-site medium publish-story --variables
+  examples/medium-content-variables.yaml --approval-manifest
+  examples/medium-approval-manifest.yaml --no-screenshots`: passed.
 
 ## Out Of Scope For This Pass
 

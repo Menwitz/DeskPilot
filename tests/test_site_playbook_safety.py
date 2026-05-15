@@ -8,12 +8,19 @@ from desktop_agent.perception import (
     CompositePerceptionEngine,
     ConfidenceTargetSelector,
     DryRunPerceptionEngine,
+    ElementCandidate,
+    PerceptionEngine,
 )
 from desktop_agent.planner import ExecutionEngine
 from desktop_agent.safety import LocalSafetyPolicy, StaticEmergencyStopMonitor
-from desktop_agent.screen import ScreenObservation, StaticScreenObserver
+from desktop_agent.screen import Bounds, ScreenObservation, StaticScreenObserver
 from desktop_agent.site_playbooks import SiteTaskCompiler, load_site_playbook
-from desktop_agent.task_dsl import BasicTaskValidator, StaticTaskLoader, TaskDefinition
+from desktop_agent.task_dsl import (
+    BasicTaskValidator,
+    StaticTaskLoader,
+    TaskDefinition,
+    TaskStep,
+)
 from desktop_agent.tracing import MemoryTraceSink
 
 
@@ -42,7 +49,10 @@ def test_sensitive_site_steps_are_blocked_without_confirmation(
 def test_captcha_state_aborts_with_no_bypass_message(tmp_path: Path) -> None:
     task = _compiled_sensitive_task(tmp_path, "publish", "visible_text:challenge")
 
-    report = _engine(task).run(Path("site-sensitive-publish.yaml"))
+    report = _engine(
+        task,
+        perception_engine=BlockedTextPerceptionEngine("challenge"),
+    ).run(Path("site-sensitive-publish.yaml"))
 
     assert report.status == "failed"
     assert "blocked state detected" in (report.abort_reason or "")
@@ -78,6 +88,7 @@ def _engine(
     *,
     observation: ScreenObservation | None = None,
     emergency_stop: bool = False,
+    perception_engine: PerceptionEngine | None = None,
 ) -> ExecutionEngine:
     return ExecutionEngine(
         config_loader=StaticConfigLoader(RuntimeConfig()),
@@ -86,11 +97,35 @@ def _engine(
         trace_sink=MemoryTraceSink(),
         safety_policy=LocalSafetyPolicy(),
         screen_observer=StaticScreenObserver(observation or ScreenObservation()),
-        perception_engine=CompositePerceptionEngine((DryRunPerceptionEngine(),)),
+        perception_engine=CompositePerceptionEngine(
+            (perception_engine or DryRunPerceptionEngine(),),
+        ),
         target_selector=ConfidenceTargetSelector(),
         actuator=DryRunActuator(),
         emergency_stop_monitor=StaticEmergencyStopMonitor(triggered=emergency_stop),
     )
+
+
+class BlockedTextPerceptionEngine:
+    def __init__(self, text: str) -> None:
+        self._text = text
+
+    def detect(
+        self,
+        step: TaskStep,
+        observation: ScreenObservation,
+        config: RuntimeConfig,
+    ) -> tuple[ElementCandidate, ...]:
+        _ = step, observation, config
+        return (
+            ElementCandidate(
+                id="blocked-state-text",
+                source="ocr",
+                label=self._text,
+                bounds=Bounds(x=0, y=0, width=10, height=10),
+                confidence=1.0,
+            ),
+        )
 
 
 def _compiled_sensitive_task(
