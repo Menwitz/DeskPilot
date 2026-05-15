@@ -56,6 +56,15 @@ checks, tracing, or reports.
 The compiler preserves confirmation requirements, inserts blocked-state checks
 before confirmation-gated site actions, and writes site ID, flow ID, domains,
 version, sensitive step IDs, and blocked-state IDs into task metadata.
+The CLI boundary exposes this layer through `list-sites`, `list-flows`,
+`compile-site`, `dry-run-site`, and `run-site`; each command still hands a
+validated task to the same execution, safety, tracing, and final-reporting
+pipeline used by hand-authored task YAML.
+
+Site run traces and reports must keep the selected playbook version, site ID,
+flow ID, blocked-state outcomes, sensitive confirmation state, and approved step
+metadata so monitoring and support review can diagnose public-site failures
+without replaying live input.
 
 ## Observability
 

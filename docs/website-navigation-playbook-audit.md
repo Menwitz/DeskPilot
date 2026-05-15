@@ -2498,3 +2498,18 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `rg -n "Website Navigation Playbook Catalog|Website Playbooks|Website Playbook Capability Demo"
     README.md`: matched the README documentation links.
+
+### Task 185/211: Update architecture docs with the playbook layer
+
+- Status: complete.
+- Evidence:
+  - `docs/architecture.md` documents the website playbook layer, compiler
+    metadata, CLI boundary, and unchanged execution/safety/tracing/reporting
+    pipeline.
+  - The architecture now states that traces and reports carry selected playbook
+    version, site/flow IDs, blocked-state outcomes, sensitive confirmation
+    state, and approved step metadata.
+- Verification:
+  - `rg -n "Website Playbook Layer|compile-site|blocked-state outcomes|approved step metadata"
+    docs/architecture.md`: matched the architecture layer and reporting
+    metadata.
