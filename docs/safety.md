@@ -50,6 +50,9 @@ or executed.
   and automation against accounts without authorization are not supported.
 - Stealth automation is not supported; runs must remain visible to the operator
   and must not disguise automation from the local user.
+- Unconfirmed posting, messaging, purchasing, applying, deleting, or settings
+  changes are not supported; these steps must stop until the operator confirms
+  the exact step.
 
 ## Safety Controls Planned For v1
 
