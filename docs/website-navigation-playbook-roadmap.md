@@ -284,7 +284,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ## Phase 9: Approval Manifests For Sensitive Site Runs
 
-- [ ] Add a local YAML approval manifest contract for sensitive public-site
+- [x] Add a local YAML approval manifest contract for sensitive public-site
   workflows.
 - [ ] Validate manifest site ID, flow ID, approved step IDs, approver, reason,
   ISO timestamp, and content fingerprint before execution.

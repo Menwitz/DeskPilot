@@ -2707,3 +2707,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Audit decision:
   - Verify each approval-manifest roadmap item with focused tests or doc lookups
     before checking it.
+
+### Task 196/211: Add local YAML approval manifest contract
+
+- Status: complete.
+- Evidence:
+  - `src/desktop_agent/approval_manifest.py` defines `ApprovalManifest` and
+    `load_approval_manifest`.
+  - `tests/test_approval_manifest.py::test_approval_manifest_loads_required_fields`
+    loads a YAML manifest and verifies site ID, flow ID, approved steps, and
+    validation metadata.
+- Verification:
+  - `.venv/bin/pytest tests/test_approval_manifest.py -k
+    "approval_manifest_loads_required_fields"`: 1 passed, 8 deselected.
