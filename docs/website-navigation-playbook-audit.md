@@ -1933,3 +1933,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "sensitive_steps_preserve_confirmation"`: 1 passed, 35 deselected.
+
+### Task 143/211: Blocked-state checks compile before sensitive final actions
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_blocked_state_checks_compile_before_sensitive_final_actions`
+    compiles a sensitive publish flow.
+  - The assertions verify the blocked-state check step is first and the
+    sensitive action remains last.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "blocked_state_checks_compile_before_sensitive_final_actions"`: 1 passed,
+    35 deselected.
