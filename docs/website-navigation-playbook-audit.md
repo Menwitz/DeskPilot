@@ -238,3 +238,13 @@ checking roadmap items.
     landmarks, flows, blocked states, and source path.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` `SitePlaybook` declaration.
+
+### Task 21/122: Add `SiteDomain`
+
+- Status: complete.
+- Evidence:
+  - `SiteDomain` is an immutable dataclass.
+  - It stores `host`, `include_subdomains`, and optional `purpose` so a
+    playbook can describe recognized domains without embedding runtime logic.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` `SiteDomain` declaration.
