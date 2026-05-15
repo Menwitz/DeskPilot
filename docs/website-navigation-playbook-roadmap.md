@@ -245,7 +245,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Live smoke tests never run final submit, post, message, purchase, apply, or
   delete actions unless a separate confirmation flag is present.
 - [x] Each seed site has one read-only smoke flow:
-  - [ ] LinkedIn: open search or profile surface.
+  - [x] LinkedIn: open search or profile surface.
   - [ ] X/Twitter: open search or notifications surface.
   - [ ] Instagram: open search or profile surface.
   - [ ] Facebook: open search or notifications surface.

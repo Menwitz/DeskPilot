@@ -2258,3 +2258,16 @@ checking layout, domain, flow, and blocked-state coverage.
     1 skipped.
   - `.venv/bin/pytest tests/test_site_playbook_live_smoke.py -k
     "each_seed_site_has_one_read_only_smoke_flow"`: 1 passed, 9 deselected.
+
+### Task 169/211: LinkedIn read-only smoke flow
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_live_smoke.py::test_seed_site_read_only_smoke_flow[linkedin]`
+    resolves the LinkedIn `open-search` smoke flow.
+  - The parameterized assertions verify the flow has steps and each step is
+    non-sensitive and does not require confirmation.
+- Verification:
+  - `.venv/bin/pytest
+    'tests/test_site_playbook_live_smoke.py::test_seed_site_read_only_smoke_flow[linkedin]'`:
+    1 passed.
