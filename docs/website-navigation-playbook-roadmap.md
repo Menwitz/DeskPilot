@@ -162,7 +162,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Unknown site.
   - [x] Unknown flow.
   - [x] Invalid playbook.
-  - [ ] Missing confirmation.
+  - [x] Missing confirmation.
   - [ ] Blocked state detected.
   - [ ] Unsupported live-site state.
 

@@ -1404,3 +1404,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "invalid_playbook_returns_validation_error"`: 1 passed, 10 deselected.
+
+### Task 110/122: Explain missing confirmation failures
+
+- Status: complete.
+- Evidence:
+  - Site flows preserve confirmation requirements through compilation.
+  - Runtime safety rejects unconfirmed sensitive steps with a clear
+    `requires explicit confirmation` message.
+  - CLI regression coverage asserts the message is printed for an unconfirmed
+    sensitive site dry-run.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "missing_confirmation_returns_clear_message"`: 1 passed, 10 deselected.
