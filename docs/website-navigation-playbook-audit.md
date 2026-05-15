@@ -1008,3 +1008,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "sensitive_steps_preserve_confirmation"`: 1 passed, 32 deselected.
+
+### Task 81/122: Add flow-level defaults
+
+- Status: complete.
+- Evidence:
+  - `SiteTaskCompiler` maps flow-level timeout to `TaskDefinition.timeout_seconds`.
+  - It maps flow-level retry to compiled steps that do not override retry.
+  - It maps flow-level confidence threshold into `TaskDefinition.config_overrides`.
+  - It maps flow-level search region into compiled `TaskStep.region`.
+- Verification:
+  - Constructed an in-memory playbook with all four defaults and compiled it.
+    The compiled task printed timeout `42`, retry `5`, confidence `0.77`, and
+    search-region width `300`.

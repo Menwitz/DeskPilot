@@ -130,7 +130,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] `assert_visible`.
   - [x] `branch_if_visible`.
 - [x] Preserve confirmation requirements when compiling sensitive steps.
-- [ ] Add flow-level defaults:
+- [x] Add flow-level defaults:
   - [ ] Timeout.
   - [ ] Retry budget.
   - [ ] Confidence threshold.
