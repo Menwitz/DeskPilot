@@ -437,3 +437,19 @@ checking roadmap items.
   - `.venv/bin/ruff check .`: passed.
   - `.venv/bin/mypy`: passed.
   - `.venv/bin/python -m build`: built source distribution and wheel.
+
+## Phase 2 Audit: Catalog Layout And Seed Playbooks
+
+Phase 2 starts by inspecting the catalog files and seed playbooks before
+checking layout, domain, flow, and blocked-state coverage.
+
+### Task 38/122: Add `navigation_playbooks/README.md`
+
+- Status: complete.
+- Evidence:
+  - `navigation_playbooks/README.md` exists.
+  - It explains that playbooks compile into the DeskPilot task DSL.
+  - It documents the required playbook sections, deterministic CI expectation,
+    domain scope, seed flow coverage, and blocked-state coverage.
+- Verification:
+  - Reviewed `navigation_playbooks/README.md` lines 1-42.
