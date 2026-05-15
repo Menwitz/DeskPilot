@@ -521,3 +521,15 @@ checking layout, domain, flow, and blocked-state coverage.
     blocked states.
 - Verification:
   - Loaded `navigation_playbooks/facebook.yaml` with `load_site_playbook`.
+
+### Task 45/122: Add `navigation_playbooks/medium.yaml`
+
+- Status: complete.
+- Evidence:
+  - `navigation_playbooks/medium.yaml` exists.
+  - It validates through `load_site_playbook`.
+  - It defines the `medium` site ID, two domains, six flows, and six blocked
+    states. The seed omits a message flow because Medium does not have a
+    standard direct-message navigation surface in this catalog scope.
+- Verification:
+  - Loaded `navigation_playbooks/medium.yaml` with `load_site_playbook`.
