@@ -2284,3 +2284,16 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest
     'tests/test_site_playbook_live_smoke.py::test_seed_site_read_only_smoke_flow[x-twitter]'`:
     1 passed.
+
+### Task 171/211: Instagram read-only smoke flow
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_live_smoke.py::test_seed_site_read_only_smoke_flow[instagram]`
+    resolves the Instagram `open-search` smoke flow.
+  - The parameterized assertions verify the flow has steps and each step is
+    non-sensitive and does not require confirmation.
+- Verification:
+  - `.venv/bin/pytest
+    'tests/test_site_playbook_live_smoke.py::test_seed_site_read_only_smoke_flow[instagram]'`:
+    1 passed.
