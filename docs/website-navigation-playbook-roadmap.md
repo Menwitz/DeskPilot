@@ -44,7 +44,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   compliance with the target site's rules.
 - [x] Document unsupported behavior:
   - [x] CAPTCHA solving or bypass.
-  - [ ] Bot-detection bypass.
+  - [x] Bot-detection bypass.
   - [ ] Credential abuse.
   - [ ] Stealth automation.
   - [ ] Unconfirmed posting, messaging, purchasing, applying, deleting, or

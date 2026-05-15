@@ -64,3 +64,14 @@ website safety claim before the corresponding roadmap item is checked.
     recovery path.
 - Verification:
   - Reviewed `docs/safety.md` lines 42-47.
+
+### Task 5/122: Document bot-detection bypass as unsupported
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` states that bot-detection bypass, rate-limit evasion,
+    fingerprint masking, and stealth automation techniques are not supported.
+  - This keeps playbooks aligned with visible, authorized navigation rather than
+    anti-abuse circumvention.
+- Verification:
+  - Reviewed `docs/safety.md` lines 42-49.
