@@ -2898,3 +2898,12 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `git log --oneline --grep="^test: cover site run safety gates$"`:
     matched `64720f4`.
+
+### Task 211/211: Commit plan includes approval manifest feature commit
+
+- Status: complete.
+- Evidence:
+  - `525a563 feat: require approval manifests for site runs`
+- Verification:
+  - `git log --oneline --grep="^feat: require approval manifests for site runs$"`:
+    matched `525a563`.

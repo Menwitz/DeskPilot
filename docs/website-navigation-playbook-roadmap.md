@@ -308,4 +308,4 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] `test: cover website playbook validation`
 - [x] `test: cover site flow compilation`
 - [x] `test: cover site run safety gates`
-- [ ] `feat: require approval manifests for site runs`
+- [x] `feat: require approval manifests for site runs`
