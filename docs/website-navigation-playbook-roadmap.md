@@ -164,7 +164,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Invalid playbook.
   - [x] Missing confirmation.
   - [x] Blocked state detected.
-  - [ ] Unsupported live-site state.
+  - [x] Unsupported live-site state.
 
 ## Phase 5: Tracing And Debuggability
 

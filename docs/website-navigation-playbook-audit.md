@@ -1430,3 +1430,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
     "captcha_state_aborts_with_no_bypass_message"`: 1 passed, 7 deselected.
+
+### Task 112/122: Explain unsupported live-site state failures
+
+- Status: complete.
+- Evidence:
+  - `run-site` uses the live platform actuator path when not in dry-run mode.
+  - When platform actuation is unavailable, the CLI returns nonzero and prints a
+    clear `desktop actuation is unavailable on this platform` message.
+  - This gives unsupported live execution states an explicit failure instead of
+    silently falling back to dry-run behavior.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "run_site_returns_nonzero_when_platform_actuation_is_unavailable"`:
+    1 passed, 10 deselected.
