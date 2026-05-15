@@ -1,52 +1,55 @@
-# Mouse Demo
+# Real Input Demo
 
-`desktop-agent demo-mouse` is a Windows-only local actuator demo. It opens a
-small Tkinter fixture and sends real OS mouse input inside that window without
-using OCR, UI Automation, image matching, or task target selection.
+`desktop-agent demo-input` is a Windows-only low-level input demonstration. It
+uses the main Windows cursor and keyboard globally. It does not open a fixture,
+render a synthetic cursor, constrain movement to a test window, use OCR, use UI
+Automation, or run target selection.
 
-Use this when validating the lower-level mouse-control behavior before testing
-full task perception.
+`desktop-agent demo-mouse` remains as an alias for the same implementation.
 
 ## Run
 
 From the repository root on an unlocked Windows desktop:
 
 ```powershell
-uv run desktop-agent demo-mouse
+uv run desktop-agent demo-input
 ```
 
 Expected result:
 
-- A `DeskPilot Mouse Demo` window opens.
-- The pointer visibly moves along smooth curved paths.
-- The demo clicks a target, drags a token into a drop zone, scrolls over a
-  scroll panel, and clicks finish.
-- A report is written under `traces/<timestamp>-mouse-demo/`.
+- The command counts down so you can stop touching the mouse.
+- `Win+D` reveals the desktop.
+- The real Windows cursor moves across global desktop waypoints.
+- The real cursor performs a harmless desktop drag-selection.
+- A fresh Notepad instance opens.
+- DeskPilot types the configured text into Notepad with keyboard cadence.
+- A report is written under `traces/<timestamp>-input-demo/`.
 
 Useful options:
 
 ```powershell
-uv run desktop-agent demo-mouse `
-  --movement-smoothness 0.85 `
+uv run desktop-agent demo-input `
+  --trace-root traces `
   --random-seed 20260515 `
-  --auto-close-seconds 5
+  --movement-smoothness 0.85 `
+  --keyboard-text "DeskPilot controlled input" `
+  --countdown-seconds 3
 ```
-
-Set `--auto-close-seconds 0` to close the window immediately after the sequence.
 
 ## What It Proves
 
-This command exercises the same `DesktopActuator`, `WindowsInputBackend`, and
-`ActuationProfile` used by real runs. The report records movement point counts,
-movement duration, pointer timing metadata, path model, overshoot/correction
-state, settle timing, scroll cadence, and the random seed.
+This command exercises `WindowsInputBackend`, `SmoothMovementPlanner`, and
+`ActuationProfile` through a reusable `RealInputController`. The trace records
+planned pointer frames, actual `GetCursorPos` readbacks after every movement
+frame, drift in pixels, button down/up events, keyboard events, sampled cadence,
+and final status.
 
-It does not prove OCR, UIA, screenshots, candidate fusion, or task YAML target
-selection. Those layers are intentionally bypassed so mouse behavior can be
-validated independently.
+It proves low-level global cursor and keyboard control. It does not prove OCR,
+UIA, screenshots, candidate fusion, YAML planning, or website target selection.
 
 ## Safety
 
-The fixture is local and owned. Do not move the mouse while the demo is running.
-The window is kept topmost during execution so the generated input lands inside
-the fixture.
+Run this only inside an owned, unlocked Windows desktop or VM. The desktop
+drag-selection is intentionally used as the mouse-button demonstration because
+it is visible and disposable. Do not move the mouse or type while the countdown
+and sequence are running.

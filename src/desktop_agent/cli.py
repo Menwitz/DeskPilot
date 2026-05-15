@@ -32,7 +32,7 @@ from desktop_agent.config import (
     resolve_runtime_config,
 )
 from desktop_agent.content_variables import load_content_variables
-from desktop_agent.mouse_demo import MouseDemoError, run_mouse_demo
+from desktop_agent.mouse_demo import MouseDemoError, run_input_demo, run_linkedin_demo
 from desktop_agent.ocr import (
     OcrPerceptionEngine,
     OcrTextBlock,
@@ -115,8 +115,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _calibrate_target(args)
         if args.command == "benchmark-run":
             return _run_benchmark(args)
-        if args.command == "demo-mouse":
-            return _demo_mouse(args)
+        if args.command in {"demo-input", "demo-mouse"}:
+            return _demo_input(args)
+        if args.command == "demo-linkedin":
+            return _demo_linkedin(args)
         if args.command == "replay":
             return _replay(args)
         parser.print_help()
@@ -215,14 +217,23 @@ def _build_parser() -> argparse.ArgumentParser:
     benchmark_parser.add_argument("--confidence-threshold", type=float)
     benchmark_parser.add_argument("--allowed-window", action="append", default=[])
 
+    demo_input_parser = subparsers.add_parser(
+        "demo-input",
+        help="demonstrate global real Windows cursor and keyboard input",
+    )
+    _add_input_demo_options(demo_input_parser)
+
     demo_mouse_parser = subparsers.add_parser(
         "demo-mouse",
-        help="open a local fixture and demonstrate visible human-like mouse input",
+        help="alias for demo-input",
     )
-    demo_mouse_parser.add_argument("--trace-root", default=Path("traces"), type=Path)
-    demo_mouse_parser.add_argument("--random-seed", default=20260515, type=int)
-    demo_mouse_parser.add_argument("--movement-smoothness", default=0.85, type=float)
-    demo_mouse_parser.add_argument("--auto-close-seconds", default=3.0, type=float)
+    _add_input_demo_options(demo_mouse_parser)
+
+    demo_linkedin_parser = subparsers.add_parser(
+        "demo-linkedin",
+        help="open Edge, navigate to LinkedIn, and perform a safe page action",
+    )
+    _add_linkedin_demo_options(demo_linkedin_parser)
     return parser
 
 
@@ -240,6 +251,32 @@ def _add_runtime_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--allowed-window", action="append", default=[])
     parser.add_argument("--confirm-step", action="append", default=[])
     parser.add_argument("--approval-manifest", type=Path)
+
+
+def _add_input_demo_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--trace-root", default=Path("traces"), type=Path)
+    parser.add_argument("--random-seed", default=20260515, type=int)
+    parser.add_argument("--movement-smoothness", default=0.85, type=float)
+    parser.add_argument(
+        "--keyboard-text",
+        default="DeskPilot controlled input",
+        help="text typed into the fresh Notepad window",
+    )
+    parser.add_argument("--countdown-seconds", default=3.0, type=float)
+
+
+def _add_linkedin_demo_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--trace-root", default=Path("traces"), type=Path)
+    parser.add_argument("--random-seed", default=20260515, type=int)
+    parser.add_argument("--movement-smoothness", default=0.85, type=float)
+    parser.add_argument("--countdown-seconds", default=3.0, type=float)
+    parser.add_argument("--url", default="https://www.linkedin.com/")
+    parser.add_argument(
+        "--find-text",
+        default="LinkedIn",
+        help="text highlighted through Edge's browser find box after navigation",
+    )
+    parser.add_argument("--page-load-seconds", default=5.0, type=float)
 
 
 def _add_site_catalog_options(parser: argparse.ArgumentParser) -> None:
@@ -748,14 +785,45 @@ def _run_benchmark(args: argparse.Namespace) -> int:
     )
 
 
-def _demo_mouse(args: argparse.Namespace) -> int:
-    report = run_mouse_demo(
+def _demo_input(args: argparse.Namespace) -> int:
+    report = run_input_demo(
         trace_root=args.trace_root,
         random_seed=args.random_seed,
         movement_smoothness=args.movement_smoothness,
-        auto_close_seconds=args.auto_close_seconds,
+        keyboard_text=args.keyboard_text,
+        countdown_seconds=args.countdown_seconds,
     )
     print(f"status: {report.status}")
+    if report.reason:
+        print(f"reason: {report.reason}")
+    print(f"trace: {report.trace_dir}")
+    print(f"report: {report.report_path}")
+    for step in report.steps:
+        movement_points = step.metadata.get("movement_points")
+        duration = step.metadata.get("movement_duration_seconds")
+        if isinstance(movement_points, int) and isinstance(duration, int | float):
+            print(
+                f"step {step.step_id}: {step.action} "
+                f"({movement_points} points, {duration:.3f}s)"
+            )
+        else:
+            print(f"step {step.step_id}: {step.action}")
+    return 0 if report.status == "passed" else 1
+
+
+def _demo_linkedin(args: argparse.Namespace) -> int:
+    report = run_linkedin_demo(
+        trace_root=args.trace_root,
+        random_seed=args.random_seed,
+        movement_smoothness=args.movement_smoothness,
+        countdown_seconds=args.countdown_seconds,
+        url=args.url,
+        find_text=args.find_text,
+        page_load_seconds=args.page_load_seconds,
+    )
+    print(f"status: {report.status}")
+    if report.reason:
+        print(f"reason: {report.reason}")
     print(f"trace: {report.trace_dir}")
     print(f"report: {report.report_path}")
     for step in report.steps:

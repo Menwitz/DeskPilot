@@ -232,32 +232,34 @@ def test_cli_run_uses_operator_approval_for_submission_steps(
     assert "step click-submit: passed" in output
 
 
-def test_cli_demo_mouse_prints_trace_report(
+def test_cli_demo_input_prints_trace_report(
     tmp_path: Path,
     capsys: CaptureFixture[str],
     monkeypatch: MonkeyPatch,
 ) -> None:
     from desktop_agent.mouse_demo import MouseDemoReport, MouseDemoStep
 
-    def fake_run_mouse_demo(
+    def fake_run_input_demo(
         *,
         trace_root: Path,
         random_seed: int,
         movement_smoothness: float,
-        auto_close_seconds: float,
+        keyboard_text: str,
+        countdown_seconds: float,
     ) -> MouseDemoReport:
         assert trace_root == tmp_path
         assert random_seed == 7
         assert movement_smoothness == 0.5
-        assert auto_close_seconds == 0
+        assert keyboard_text == "typed by test"
+        assert countdown_seconds == 0
         return MouseDemoReport(
             status="passed",
             trace_dir=tmp_path / "trace",
-            report_path=tmp_path / "trace" / "mouse-demo-report.json",
+            report_path=tmp_path / "trace" / "input-demo-report.json",
             steps=(
                 MouseDemoStep(
-                    "click-target",
-                    "click",
+                    "desktop-waypoint-1",
+                    "move",
                     {
                         "movement_points": 32,
                         "movement_duration_seconds": 0.75,
@@ -266,18 +268,20 @@ def test_cli_demo_mouse_prints_trace_report(
             ),
         )
 
-    monkeypatch.setattr("desktop_agent.cli.run_mouse_demo", fake_run_mouse_demo)
+    monkeypatch.setattr("desktop_agent.cli.run_input_demo", fake_run_input_demo)
 
     status = main(
         [
-            "demo-mouse",
+            "demo-input",
             "--trace-root",
             str(tmp_path),
             "--random-seed",
             "7",
             "--movement-smoothness",
             "0.5",
-            "--auto-close-seconds",
+            "--keyboard-text",
+            "typed by test",
+            "--countdown-seconds",
             "0",
         ],
     )
@@ -285,7 +289,107 @@ def test_cli_demo_mouse_prints_trace_report(
     output = capsys.readouterr().out
     assert status == 0
     assert "status: passed" in output
-    assert "step click-target: click (32 points, 0.750s)" in output
+    assert "step desktop-waypoint-1: move (32 points, 0.750s)" in output
+
+
+def test_cli_demo_mouse_alias_uses_input_demo(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    from desktop_agent.mouse_demo import MouseDemoReport
+
+    calls: list[str] = []
+
+    def fake_run_input_demo(
+        *,
+        trace_root: Path,
+        random_seed: int,
+        movement_smoothness: float,
+        keyboard_text: str,
+        countdown_seconds: float,
+    ) -> MouseDemoReport:
+        _ = trace_root, random_seed, movement_smoothness, keyboard_text
+        assert countdown_seconds == 0
+        calls.append("called")
+        return MouseDemoReport(
+            status="passed",
+            trace_dir=tmp_path / "trace",
+            report_path=tmp_path / "trace" / "input-demo-report.json",
+            steps=(),
+        )
+
+    monkeypatch.setattr("desktop_agent.cli.run_input_demo", fake_run_input_demo)
+
+    status = main(
+        ["demo-mouse", "--trace-root", str(tmp_path), "--countdown-seconds", "0"]
+    )
+
+    assert status == 0
+    assert calls == ["called"]
+
+
+def test_cli_demo_linkedin_prints_trace_report(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    from desktop_agent.mouse_demo import MouseDemoReport, MouseDemoStep
+
+    def fake_run_linkedin_demo(
+        *,
+        trace_root: Path,
+        random_seed: int,
+        movement_smoothness: float,
+        countdown_seconds: float,
+        url: str,
+        find_text: str,
+        page_load_seconds: float,
+    ) -> MouseDemoReport:
+        assert trace_root == tmp_path
+        assert random_seed == 13
+        assert movement_smoothness == 0.4
+        assert countdown_seconds == 0
+        assert url == "https://www.linkedin.com/"
+        assert find_text == "LinkedIn"
+        assert page_load_seconds == 0
+        return MouseDemoReport(
+            status="passed",
+            trace_dir=tmp_path / "trace",
+            report_path=tmp_path / "trace" / "linkedin-demo-report.json",
+            steps=(
+                MouseDemoStep(
+                    "scroll-linkedin-page",
+                    "scroll",
+                    {
+                        "movement_points": 12,
+                        "movement_duration_seconds": 0.5,
+                    },
+                ),
+            ),
+        )
+
+    monkeypatch.setattr("desktop_agent.cli.run_linkedin_demo", fake_run_linkedin_demo)
+
+    status = main(
+        [
+            "demo-linkedin",
+            "--trace-root",
+            str(tmp_path),
+            "--random-seed",
+            "13",
+            "--movement-smoothness",
+            "0.4",
+            "--countdown-seconds",
+            "0",
+            "--page-load-seconds",
+            "0",
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "status: passed" in output
+    assert "step scroll-linkedin-page: scroll (12 points, 0.500s)" in output
 
 
 class FixtureScreenObserver:

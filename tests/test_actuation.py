@@ -5,6 +5,12 @@ from desktop_agent.actuation import (
     FittsLawPointerTimingModel,
     PointerTimingContext,
     SmoothMovementPlanner,
+    _keyboard_input,
+    _mouse_button_input,
+    _mouse_wheel_input,
+    _normalize_absolute_mouse_point,
+    _relative_mouse_move_input,
+    _virtual_key,
     actuation_profile_from_runtime_config,
 )
 from desktop_agent.config import ExecutionProfile, RuntimeConfig
@@ -55,6 +61,67 @@ def test_desktop_actuator_clicks_converted_target_center() -> None:
     assert backend.events[-2].point == (150, 250)
     assert backend.events[-1].kind == "mouse_up"
     assert backend.events[-1].point == (150, 250)
+
+
+def test_windows_absolute_mouse_points_are_normalized_for_sendinput() -> None:
+    assert _normalize_absolute_mouse_point((0, 0), (0, 0, 1920, 1080)) == (0, 0)
+    assert _normalize_absolute_mouse_point((1919, 1079), (0, 0, 1920, 1080)) == (
+        65535,
+        65535,
+    )
+    assert _normalize_absolute_mouse_point((960, 540), (0, 0, 1920, 1080)) == (
+        32785,
+        32798,
+    )
+
+
+def test_windows_absolute_mouse_points_support_virtual_screen_offsets() -> None:
+    assert _normalize_absolute_mouse_point((-1280, 0), (-1280, 0, 3200, 1080)) == (
+        0,
+        0,
+    )
+    assert _normalize_absolute_mouse_point((1919, 1079), (-1280, 0, 3200, 1080)) == (
+        65535,
+        65535,
+    )
+
+
+def test_windows_relative_mouse_input_uses_delta_move_events() -> None:
+    input_record = _relative_mouse_move_input((12, -7))
+
+    assert input_record.type == 0
+    assert input_record.data.mi.dx == 12
+    assert input_record.data.mi.dy == -7
+    assert input_record.data.mi.dwFlags == 0x0001
+
+
+def test_windows_mouse_button_and_wheel_inputs_use_sendinput_records() -> None:
+    down_record = _mouse_button_input(0x0002)
+    wheel_record = _mouse_wheel_input(-3)
+
+    assert down_record.type == 0
+    assert down_record.data.mi.dwFlags == 0x0002
+    assert wheel_record.type == 0
+    assert wheel_record.data.mi.dwFlags == 0x0800
+    assert wheel_record.data.mi.mouseData & 0xFFFFFFFF == (-360 & 0xFFFFFFFF)
+
+
+def test_windows_keyboard_inputs_use_sendinput_records() -> None:
+    down_record = _keyboard_input(0x41, key_down=True)
+    up_record = _keyboard_input(0x41, key_down=False)
+
+    assert down_record.type == 1
+    assert down_record.data.ki.wVk == 0x41
+    assert down_record.data.ki.dwFlags == 0
+    assert up_record.type == 1
+    assert up_record.data.ki.wVk == 0x41
+    assert up_record.data.ki.dwFlags == 0x0002
+
+
+def test_windows_key_aliases_include_global_desktop_modifier() -> None:
+    assert _virtual_key("win") == 0x5B
+    assert _virtual_key("windows") == 0x5B
+    assert _virtual_key("meta") == 0x5B
 
 
 def test_desktop_actuator_types_text_and_key_chords() -> None:
@@ -234,9 +301,7 @@ def test_scroll_cadence_profiles_preserve_total_scroll_clicks() -> None:
         RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
     )
 
-    scroll_clicks = [
-        event.clicks for event in backend.events if event.kind == "scroll"
-    ]
+    scroll_clicks = [event.clicks for event in backend.events if event.kind == "scroll"]
     sleep_durations = [
         event.duration_seconds for event in backend.events if event.kind == "sleep"
     ]

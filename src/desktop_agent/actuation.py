@@ -8,7 +8,7 @@ import sys
 import time
 from ctypes import wintypes
 from dataclasses import dataclass, field, replace
-from typing import Any, Literal, Protocol
+from typing import Any, ClassVar, Literal, Protocol
 
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.perception import ElementCandidate
@@ -26,6 +26,7 @@ from desktop_agent.window_allowlist import (
 )
 
 MouseButton = Literal["left", "right", "middle"]
+MouseMoveMode = Literal["absolute", "relative"]
 
 _CLICK_ACTIONS = {"click_text", "click_image", "click_uia"}
 _PASSIVE_ACTIONS = {"wait_for", "assert_visible", "branch_if_visible"}
@@ -209,9 +210,7 @@ class KeyboardCadencePlan:
             "keyboard_interval_count": len(self.interval_seconds),
             "keyboard_interval_seconds": list(self.interval_seconds),
             "random_seed": self.random_seed,
-            "sample_records": [
-                record.metadata() for record in self.sample_records
-            ],
+            "sample_records": [record.metadata() for record in self.sample_records],
         }
 
 
@@ -234,9 +233,7 @@ class ScrollCadencePlan:
             "scroll_interval_count": len(self.interval_seconds),
             "scroll_interval_seconds": list(self.interval_seconds),
             "random_seed": self.random_seed,
-            "sample_records": [
-                record.metadata() for record in self.sample_records
-            ],
+            "sample_records": [record.metadata() for record in self.sample_records],
         }
 
 
@@ -430,9 +427,7 @@ class SmoothMovementPlanner:
 
         bend = distance * 0.18 * self._profile.movement_smoothness
         direction = (
-            -1
-            if self._sampler.probability("actuation.control_direction", 0.5)
-            else 1
+            -1 if self._sampler.probability("actuation.control_direction", 0.5) else 1
         )
         normal_x = -delta_y / distance
         normal_y = delta_x / distance
@@ -933,10 +928,16 @@ class FakeInputBackend(InputBackend):
 class WindowsInputBackend(InputBackend):
     """Windows input backend using the local user32 API."""
 
-    def __init__(self) -> None:
+    _user32: Any
+    _move_mode: MouseMoveMode
+
+    def __init__(self, *, move_mode: MouseMoveMode = "absolute") -> None:
         if sys.platform != "win32":
             raise ActuationError("Windows input backend requires Windows")
+        if move_mode not in ("absolute", "relative"):
+            raise ActuationError(f"unsupported mouse move mode: {move_mode}")
         self._user32: Any = ctypes.windll.user32
+        self._move_mode = move_mode
 
     def current_position(self) -> tuple[int, int]:
         point = wintypes.POINT()
@@ -945,20 +946,45 @@ class WindowsInputBackend(InputBackend):
         return (int(point.x), int(point.y))
 
     def move_to(self, point: tuple[int, int]) -> None:
-        if not self._user32.SetCursorPos(int(point[0]), int(point[1])):
+        if self._move_mode == "relative":
+            self._move_to_relative(point)
+            return
+        self._move_to_absolute(point)
+
+    def _move_to_absolute(self, point: tuple[int, int]) -> None:
+        input_record = _absolute_mouse_move_input(
+            point,
+            _virtual_screen_bounds(self._user32),
+        )
+        if not self._send_input(input_record) and not self._user32.SetCursorPos(
+            int(point[0]),
+            int(point[1]),
+        ):
+            raise ActuationError("unable to move mouse")
+
+    def _move_to_relative(self, point: tuple[int, int]) -> None:
+        current_x, current_y = self.current_position()
+        delta = (int(point[0] - current_x), int(point[1] - current_y))
+        if delta == (0, 0):
+            return
+        input_record = _relative_mouse_move_input(delta)
+        if not self._send_input(input_record) and not self._user32.SetCursorPos(
+            int(point[0]),
+            int(point[1]),
+        ):
             raise ActuationError("unable to move mouse")
 
     def mouse_down(self, point: tuple[int, int], button: MouseButton) -> None:
         self.move_to(point)
-        self._user32.mouse_event(_MOUSE_DOWN_FLAGS[button], 0, 0, 0, 0)
+        self._require_send_input(_mouse_button_input(_MOUSE_DOWN_FLAGS[button]))
 
     def mouse_up(self, point: tuple[int, int], button: MouseButton) -> None:
         self.move_to(point)
-        self._user32.mouse_event(_MOUSE_UP_FLAGS[button], 0, 0, 0, 0)
+        self._require_send_input(_mouse_button_input(_MOUSE_UP_FLAGS[button]))
 
     def scroll(self, point: tuple[int, int], clicks: int) -> None:
         self.move_to(point)
-        self._user32.mouse_event(_MOUSEEVENTF_WHEEL, 0, 0, clicks * 120, 0)
+        self._require_send_input(_mouse_wheel_input(clicks))
 
     def type_text(self, text: str) -> None:
         for character in text:
@@ -1009,8 +1035,21 @@ class WindowsInputBackend(InputBackend):
                 self._key_event(modifier, key_down=False)
 
     def _key_event(self, virtual_key: int, *, key_down: bool) -> None:
-        flags = 0 if key_down else _KEYEVENTF_KEYUP
-        self._user32.keybd_event(virtual_key, 0, flags, 0)
+        self._require_send_input(_keyboard_input(virtual_key, key_down=key_down))
+
+    def _send_input(self, input_record: _INPUT) -> bool:
+        sent = int(
+            self._user32.SendInput(
+                1,
+                ctypes.byref(input_record),
+                ctypes.sizeof(_INPUT),
+            )
+        )
+        return sent == 1
+
+    def _require_send_input(self, input_record: _INPUT) -> None:
+        if not self._send_input(input_record):
+            raise ActuationError("unable to send input")
 
 
 class ActuationError(RuntimeError):
@@ -1156,9 +1195,7 @@ def _input_metadata(
         "movement_smoothness": plan.movement_smoothness,
         "pointer_path_model": plan.path_model,
         "overshoot_applied": plan.overshoot_applied,
-        "overshoot_point": list(plan.overshoot_point)
-        if plan.overshoot_point
-        else None,
+        "overshoot_point": list(plan.overshoot_point) if plan.overshoot_point else None,
         "settle_duration_seconds": plan.settle_duration_seconds,
         "random_seed": plan.random_seed,
         "sample_records": [record.metadata() for record in plan.sample_records],
@@ -1176,6 +1213,106 @@ def _scroll_clicks(step: TaskStep) -> int:
         return int(step.text)
     except ValueError as exc:
         raise ActuationError("scroll text must be an integer wheel distance") from exc
+
+
+def _absolute_mouse_move_input(
+    point: tuple[int, int],
+    virtual_screen: tuple[int, int, int, int],
+) -> _INPUT:
+    normalized_x, normalized_y = _normalize_absolute_mouse_point(
+        point,
+        virtual_screen,
+    )
+    mouse_input = _MOUSEINPUT(
+        dx=normalized_x,
+        dy=normalized_y,
+        mouseData=0,
+        dwFlags=(_MOUSEEVENTF_MOVE | _MOUSEEVENTF_ABSOLUTE | _MOUSEEVENTF_VIRTUALDESK),
+        time=0,
+        dwExtraInfo=0,
+    )
+    return _INPUT(type=_INPUT_MOUSE, data=_INPUT_UNION(mi=mouse_input))
+
+
+def _relative_mouse_move_input(delta: tuple[int, int]) -> _INPUT:
+    mouse_input = _MOUSEINPUT(
+        dx=delta[0],
+        dy=delta[1],
+        mouseData=0,
+        dwFlags=_MOUSEEVENTF_MOVE,
+        time=0,
+        dwExtraInfo=0,
+    )
+    return _INPUT(type=_INPUT_MOUSE, data=_INPUT_UNION(mi=mouse_input))
+
+
+def _mouse_button_input(flags: int) -> _INPUT:
+    return _mouse_input(flags=flags)
+
+
+def _mouse_wheel_input(clicks: int) -> _INPUT:
+    return _mouse_input(flags=_MOUSEEVENTF_WHEEL, mouse_data=clicks * 120)
+
+
+def _mouse_input(
+    *,
+    flags: int,
+    dx: int = 0,
+    dy: int = 0,
+    mouse_data: int = 0,
+) -> _INPUT:
+    mouse_input = _MOUSEINPUT(
+        dx=dx,
+        dy=dy,
+        mouseData=mouse_data,
+        dwFlags=flags,
+        time=0,
+        dwExtraInfo=0,
+    )
+    return _INPUT(type=_INPUT_MOUSE, data=_INPUT_UNION(mi=mouse_input))
+
+
+def _keyboard_input(virtual_key: int, *, key_down: bool) -> _INPUT:
+    flags = 0 if key_down else _KEYEVENTF_KEYUP
+    keyboard_input = _KEYBDINPUT(
+        wVk=virtual_key,
+        wScan=0,
+        dwFlags=flags,
+        time=0,
+        dwExtraInfo=0,
+    )
+    return _INPUT(type=_INPUT_KEYBOARD, data=_INPUT_UNION(ki=keyboard_input))
+
+
+def _normalize_absolute_mouse_point(
+    point: tuple[int, int],
+    virtual_screen: tuple[int, int, int, int],
+) -> tuple[int, int]:
+    left, top, width, height = virtual_screen
+    safe_width = max(1, width - 1)
+    safe_height = max(1, height - 1)
+    normalized_x = round(((point[0] - left) * 65535) / safe_width)
+    normalized_y = round(((point[1] - top) * 65535) / safe_height)
+    return (_clamp_int(normalized_x, 0, 65535), _clamp_int(normalized_y, 0, 65535))
+
+
+def _virtual_screen_bounds(user32: Any) -> tuple[int, int, int, int]:
+    left = int(user32.GetSystemMetrics(_SM_XVIRTUALSCREEN))
+    top = int(user32.GetSystemMetrics(_SM_YVIRTUALSCREEN))
+    width = int(user32.GetSystemMetrics(_SM_CXVIRTUALSCREEN))
+    height = int(user32.GetSystemMetrics(_SM_CYVIRTUALSCREEN))
+    if width > 0 and height > 0:
+        return (left, top, width, height)
+    return (
+        0,
+        0,
+        int(user32.GetSystemMetrics(_SM_CXSCREEN)),
+        int(user32.GetSystemMetrics(_SM_CYSCREEN)),
+    )
+
+
+def _clamp_int(value: int, lower: int, upper: int) -> int:
+    return max(lower, min(upper, value))
 
 
 def _quadratic_bezier(
@@ -1229,11 +1366,63 @@ def _shift_state_modifiers(shift_state: int) -> tuple[int, ...]:
 
 _MOUSEEVENTF_LEFTDOWN = 0x0002
 _MOUSEEVENTF_LEFTUP = 0x0004
+_MOUSEEVENTF_MOVE = 0x0001
 _MOUSEEVENTF_RIGHTDOWN = 0x0008
 _MOUSEEVENTF_RIGHTUP = 0x0010
 _MOUSEEVENTF_MIDDLEDOWN = 0x0020
 _MOUSEEVENTF_MIDDLEUP = 0x0040
 _MOUSEEVENTF_WHEEL = 0x0800
+_MOUSEEVENTF_ABSOLUTE = 0x8000
+_MOUSEEVENTF_VIRTUALDESK = 0x4000
+_INPUT_MOUSE = 0
+_INPUT_KEYBOARD = 1
+_SM_CXSCREEN = 0
+_SM_CYSCREEN = 1
+_SM_XVIRTUALSCREEN = 76
+_SM_YVIRTUALSCREEN = 77
+_SM_CXVIRTUALSCREEN = 78
+_SM_CYVIRTUALSCREEN = 79
+
+
+class _MOUSEINPUT(ctypes.Structure):
+    """ctypes representation of Windows MOUSEINPUT for SendInput."""
+
+    _fields_: ClassVar[Any] = [
+        ("dx", wintypes.LONG),
+        ("dy", wintypes.LONG),
+        ("mouseData", wintypes.DWORD),
+        ("dwFlags", wintypes.DWORD),
+        ("time", wintypes.DWORD),
+        ("dwExtraInfo", ctypes.c_size_t),
+    ]
+
+
+class _KEYBDINPUT(ctypes.Structure):
+    """ctypes representation of Windows KEYBDINPUT for SendInput."""
+
+    _fields_: ClassVar[Any] = [
+        ("wVk", wintypes.WORD),
+        ("wScan", wintypes.WORD),
+        ("dwFlags", wintypes.DWORD),
+        ("time", wintypes.DWORD),
+        ("dwExtraInfo", ctypes.c_size_t),
+    ]
+
+
+class _INPUT_UNION(ctypes.Union):
+    """ctypes INPUT union branches used by mouse and keyboard SendInput."""
+
+    _fields_: ClassVar[Any] = [("mi", _MOUSEINPUT), ("ki", _KEYBDINPUT)]
+
+
+class _INPUT(ctypes.Structure):
+    """ctypes representation of Windows INPUT for SendInput events."""
+
+    _fields_: ClassVar[Any] = [
+        ("type", wintypes.DWORD),
+        ("data", _INPUT_UNION),
+    ]
+
 
 _MOUSE_DOWN_FLAGS: dict[MouseButton, int] = {
     "left": _MOUSEEVENTF_LEFTDOWN,
@@ -1250,6 +1439,7 @@ _KEYEVENTF_KEYUP = 0x0002
 _VK_SHIFT = 0x10
 _VK_CONTROL = 0x11
 _VK_MENU = 0x12
+_VK_LWIN = 0x5B
 
 _KEY_ALIASES = {
     "ctrl": _VK_CONTROL,
@@ -1272,6 +1462,9 @@ _KEY_ALIASES = {
     "up": 0x26,
     "right": 0x27,
     "down": 0x28,
-    "win": 0x5B,
+    # The input demo uses the real left Windows key for global Win+D desktop reveal.
+    "win": _VK_LWIN,
+    "windows": _VK_LWIN,
+    "meta": _VK_LWIN,
     **{f"f{index}": 0x6F + index for index in range(1, 13)},
 }

@@ -1,33 +1,100 @@
-"""Interactive Windows mouse-control demo using the real actuation layer."""
+"""Windows-only global input demo using the real OS cursor."""
 
 from __future__ import annotations
 
 import ctypes
 import json
+import math
+import subprocess
 import sys
-import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from desktop_agent.actuation import (
     ActuationProfile,
-    DesktopActuator,
+    InputBackend,
+    MouseButton,
     MovementPlan,
-    ScrollCadencePlan,
+    SmoothMovementPlanner,
     WindowsInputBackend,
 )
+from desktop_agent.sampling import SeededSampler
 
 
 class MouseDemoError(RuntimeError):
-    """Raised when the local mouse demo cannot run safely."""
+    """Raised when the local input demo cannot run safely."""
+
+
+@dataclass(frozen=True)
+class CursorFrame:
+    """One planned pointer frame plus the real cursor readback after SendInput."""
+
+    action: str
+    index: int
+    planned: tuple[int, int]
+    actual: tuple[int, int]
+    timestamp_seconds: float
+    drift_pixels: float
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "action": self.action,
+            "frame_index": self.index,
+            "planned": list(self.planned),
+            "actual": list(self.actual),
+            "timestamp_seconds": self.timestamp_seconds,
+            "drift_pixels": self.drift_pixels,
+        }
+
+
+@dataclass(frozen=True)
+class InputDemoEvent:
+    """Low-level mouse or keyboard event recorded by the demo trace."""
+
+    event: str
+    timestamp_seconds: float
+    point: tuple[int, int] | None = None
+    button: MouseButton | None = None
+    key: str | None = None
+    text: str | None = None
+    clicks: int | None = None
+    interval_seconds: float | None = None
+
+    def metadata(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "event": self.event,
+            "timestamp_seconds": self.timestamp_seconds,
+        }
+        if self.point is not None:
+            payload["point"] = list(self.point)
+        if self.button is not None:
+            payload["button"] = self.button
+        if self.key is not None:
+            payload["key"] = self.key
+        if self.text is not None:
+            payload["text"] = self.text
+        if self.clicks is not None:
+            payload["clicks"] = self.clicks
+        if self.interval_seconds is not None:
+            payload["interval_seconds"] = self.interval_seconds
+        return payload
+
+
+@dataclass(frozen=True)
+class MovementTrace:
+    """Movement plan and real cursor samples captured while executing it."""
+
+    plan: MovementPlan
+    frames: tuple[CursorFrame, ...]
 
 
 @dataclass(frozen=True)
 class MouseDemoStep:
-    """One visible mouse action recorded by the demo."""
+    """One global input action recorded by the demo."""
 
     step_id: str
     action: str
@@ -36,23 +103,399 @@ class MouseDemoStep:
 
 @dataclass(frozen=True)
 class MouseDemoReport:
-    """Result returned by the mouse demo command."""
+    """Result returned by the global input demo command."""
 
     status: str
     trace_dir: Path
     report_path: Path
     steps: tuple[MouseDemoStep, ...]
+    reason: str | None = None
 
 
 @dataclass(frozen=True)
-class MouseDemoPoints:
-    """Absolute screen coordinates used by the local Tk demo fixture."""
+class InputDemoPoints:
+    """Global desktop coordinates used by the low-level input demo."""
 
-    click_target: tuple[int, int]
+    screen_bounds: tuple[int, int, int, int]
+    waypoints: tuple[tuple[int, int], ...]
     drag_start: tuple[int, int]
     drag_end: tuple[int, int]
-    scroll_target: tuple[int, int]
-    finish_target: tuple[int, int]
+
+
+type MouseDemoPoints = InputDemoPoints
+
+
+class RealInputController:
+    """Reusable low-level controller for the real Windows cursor and keyboard."""
+
+    def __init__(
+        self,
+        backend: InputBackend,
+        profile: ActuationProfile,
+        *,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        self._backend = backend
+        self._profile = profile
+        self._movement_planner = SmoothMovementPlanner(profile)
+        self._keyboard_sampler = SeededSampler(profile.random_seed)
+        self._scroll_sampler = SeededSampler(profile.random_seed)
+        self._clock = clock
+        self._started_at = clock()
+
+    def move_to(
+        self,
+        step_id: str,
+        point: tuple[int, int],
+        *,
+        target_size_pixels: tuple[float, float] = (96.0, 96.0),
+    ) -> MouseDemoStep:
+        """Move the real cursor through a planned path and record readback frames."""
+
+        trace = self._run_movement(step_id, point, target_size_pixels)
+        return MouseDemoStep(
+            step_id,
+            "move",
+            {"point": list(point), **_movement_trace_metadata(trace)},
+        )
+
+    def click(
+        self,
+        step_id: str,
+        point: tuple[int, int],
+        *,
+        button: MouseButton = "left",
+        target_size_pixels: tuple[float, float] = (64.0, 64.0),
+    ) -> MouseDemoStep:
+        """Click a physical point with low-level down/up events."""
+
+        trace = self._run_movement(step_id, point, target_size_pixels)
+        events = [
+            self._mouse_down(point, button),
+        ]
+        self.pause(0.08)
+        events.append(self._mouse_up(point, button))
+        return MouseDemoStep(
+            step_id,
+            "click",
+            {
+                "point": list(point),
+                "button": button,
+                "button_events": _events_metadata(events),
+                **_movement_trace_metadata(trace),
+            },
+        )
+
+    def drag(
+        self,
+        step_id: str,
+        start: tuple[int, int],
+        end: tuple[int, int],
+        *,
+        button: MouseButton = "left",
+        start_target_size_pixels: tuple[float, float] = (72.0, 72.0),
+        end_target_size_pixels: tuple[float, float] = (180.0, 120.0),
+    ) -> MouseDemoStep:
+        """Drag the real cursor from start to end and trace down/move/up order."""
+
+        approach = self._run_movement(
+            f"{step_id}.approach",
+            start,
+            start_target_size_pixels,
+        )
+        events = [self._mouse_down(start, button)]
+        self.pause(0.10)
+        drag_trace = self._run_movement(
+            f"{step_id}.drag",
+            end,
+            end_target_size_pixels,
+        )
+        events.append(self._mouse_up(end, button))
+        return MouseDemoStep(
+            step_id,
+            "drag",
+            {
+                "start": list(start),
+                "end": list(end),
+                "button": button,
+                "button_events": _events_metadata(events),
+                "approach_movement": _movement_trace_metadata(approach),
+                **_movement_trace_metadata(drag_trace),
+            },
+        )
+
+    def scroll(
+        self,
+        step_id: str,
+        point: tuple[int, int],
+        clicks: int,
+        *,
+        target_size_pixels: tuple[float, float] = (220.0, 140.0),
+    ) -> MouseDemoStep:
+        """Send wheel events from the real cursor location with cadence metadata."""
+
+        trace = self._run_movement(step_id, point, target_size_pixels)
+        direction = 1 if clicks > 0 else -1
+        events: list[InputDemoEvent] = []
+        intervals: list[float] = []
+        sample_start = self._scroll_sampler.sample_count
+        for index in range(abs(clicks)):
+            self._backend.scroll(point, direction)
+            events.append(
+                InputDemoEvent(
+                    event="wheel",
+                    timestamp_seconds=self._elapsed(),
+                    point=point,
+                    clicks=direction,
+                )
+            )
+            if index == abs(clicks) - 1:
+                continue
+            interval = self._sample_interval(
+                self._scroll_sampler,
+                "actuation.scroll_interval",
+                self._profile.scroll_interval_seconds,
+            )
+            intervals.append(interval)
+            self.pause(interval)
+        return MouseDemoStep(
+            step_id,
+            "scroll",
+            {
+                "point": list(point),
+                "requested_clicks": clicks,
+                "scroll_events": _events_metadata(events),
+                "scroll_interval_seconds": intervals,
+                "sample_records": [
+                    record.metadata()
+                    for record in self._scroll_sampler.records_since(sample_start)
+                ],
+                **_movement_trace_metadata(trace),
+            },
+        )
+
+    def type_text(self, step_id: str, text: str) -> MouseDemoStep:
+        """Type exact text as per-character events so cadence can be audited."""
+
+        events: list[InputDemoEvent] = []
+        intervals: list[float] = []
+        sample_start = self._keyboard_sampler.sample_count
+        for index, character in enumerate(text):
+            self._backend.type_text(character)
+            events.append(
+                InputDemoEvent(
+                    event="type_text",
+                    timestamp_seconds=self._elapsed(),
+                    text=character,
+                )
+            )
+            if index == len(text) - 1:
+                continue
+            interval = self._sample_interval(
+                self._keyboard_sampler,
+                "actuation.keyboard_interval",
+                self._profile.keyboard_interval_seconds,
+            )
+            intervals.append(interval)
+            self.pause(interval)
+        return MouseDemoStep(
+            step_id,
+            "type_text",
+            {
+                "text": text,
+                "text_length": len(text),
+                "typed_events": _events_metadata(events),
+                "typed_text_reconstructed": "".join(
+                    event.text or "" for event in events
+                ),
+                "keyboard_interval_seconds": intervals,
+                "sample_records": [
+                    record.metadata()
+                    for record in self._keyboard_sampler.records_since(sample_start)
+                ],
+            },
+        )
+
+    def press_chord(self, step_id: str, chord: str) -> MouseDemoStep:
+        """Press a keyboard chord such as Win+D using real key down/up events."""
+
+        keys = tuple(part.strip().lower() for part in chord.split("+") if part.strip())
+        if not keys:
+            raise MouseDemoError("keyboard chord must contain at least one key")
+
+        events: list[InputDemoEvent] = []
+        modifiers = keys[:-1]
+        final_key = keys[-1]
+        for key in modifiers:
+            self._backend.key_down(key)
+            events.append(
+                InputDemoEvent(
+                    event="key_down",
+                    timestamp_seconds=self._elapsed(),
+                    key=key,
+                )
+            )
+            self.pause(0.04)
+        self._backend.press_key(final_key)
+        events.append(
+            InputDemoEvent(
+                event="press_key",
+                timestamp_seconds=self._elapsed(),
+                key=final_key,
+            )
+        )
+        self.pause(0.04)
+        for key in reversed(modifiers):
+            self._backend.key_up(key)
+            events.append(
+                InputDemoEvent(
+                    event="key_up",
+                    timestamp_seconds=self._elapsed(),
+                    key=key,
+                )
+            )
+            self.pause(0.04)
+        return MouseDemoStep(
+            step_id,
+            "press_chord",
+            {"chord": chord, "key_events": _events_metadata(events)},
+        )
+
+    def current_position_step(self, step_id: str) -> MouseDemoStep:
+        """Record the final OS cursor position without moving it."""
+
+        point = self._backend.current_position()
+        return MouseDemoStep(
+            step_id,
+            "cursor_readback",
+            {
+                "actual": list(point),
+                "timestamp_seconds": self._elapsed(),
+            },
+        )
+
+    def pause(self, seconds: float) -> None:
+        if seconds > 0:
+            self._backend.sleep(seconds)
+
+    def _run_movement(
+        self,
+        action: str,
+        point: tuple[int, int],
+        target_size_pixels: tuple[float, float],
+    ) -> MovementTrace:
+        start = self._backend.current_position()
+        plan = self._movement_planner.plan(start, point, target_size_pixels)
+        frames: list[CursorFrame] = []
+        for index, path_point in enumerate(plan.points, start=1):
+            self._backend.move_to(path_point)
+            actual = self._backend.current_position()
+            frames.append(
+                CursorFrame(
+                    action=action,
+                    index=index,
+                    planned=path_point,
+                    actual=actual,
+                    timestamp_seconds=self._elapsed(),
+                    drift_pixels=math.hypot(
+                        actual[0] - path_point[0],
+                        actual[1] - path_point[1],
+                    ),
+                )
+            )
+            self.pause(plan.step_delay_seconds)
+        self.pause(plan.settle_duration_seconds)
+        return MovementTrace(plan=plan, frames=tuple(frames))
+
+    def _mouse_down(
+        self,
+        point: tuple[int, int],
+        button: MouseButton,
+    ) -> InputDemoEvent:
+        self._backend.mouse_down(point, button)
+        return InputDemoEvent(
+            event="mouse_down",
+            timestamp_seconds=self._elapsed(),
+            point=self._backend.current_position(),
+            button=button,
+        )
+
+    def _mouse_up(
+        self,
+        point: tuple[int, int],
+        button: MouseButton,
+    ) -> InputDemoEvent:
+        self._backend.mouse_up(point, button)
+        return InputDemoEvent(
+            event="mouse_up",
+            timestamp_seconds=self._elapsed(),
+            point=self._backend.current_position(),
+            button=button,
+        )
+
+    def _sample_interval(
+        self,
+        sampler: SeededSampler,
+        label: str,
+        bounds: tuple[float, float],
+    ) -> float:
+        lower, upper = bounds
+        if lower == upper:
+            return lower
+        return sampler.uniform(label, bounds)
+
+    def _elapsed(self) -> float:
+        return max(0.0, self._clock() - self._started_at)
+
+
+def run_input_demo(
+    *,
+    trace_root: Path = Path("traces"),
+    random_seed: int = 20260515,
+    movement_smoothness: float = 0.85,
+    keyboard_text: str = "DeskPilot controlled input",
+    countdown_seconds: float = 3.0,
+) -> MouseDemoReport:
+    """Move the main Windows cursor globally, drag on the desktop, and type."""
+
+    if sys.platform != "win32":
+        raise MouseDemoError("demo-input requires Windows desktop input")
+    if not 0 <= movement_smoothness <= 1:
+        raise MouseDemoError("movement_smoothness must be between 0 and 1")
+    if countdown_seconds < 0:
+        raise MouseDemoError("countdown_seconds must not be negative")
+
+    _set_process_dpi_aware()
+    trace_dir = _prepare_trace_dir(trace_root, "input-demo")
+    profile = _demo_actuation_profile(random_seed, movement_smoothness)
+    backend = WindowsInputBackend(move_mode="absolute")
+    controller = RealInputController(backend, profile)
+    steps: list[MouseDemoStep] = []
+    status = "passed"
+    reason: str | None = None
+
+    try:
+        _countdown(countdown_seconds)
+        points = _input_demo_points(_windows_virtual_screen_bounds())
+        steps.extend(_run_global_input_sequence(controller, points, keyboard_text))
+    except Exception as exc:  # pragma: no cover - exercised manually on Windows.
+        status = "failed"
+        reason = str(exc)
+
+    report_path = _write_report(
+        trace_dir,
+        tuple(steps),
+        status,
+        reason,
+        report_name="input-demo-report.json",
+    )
+    return MouseDemoReport(
+        status=status,
+        reason=reason,
+        trace_dir=trace_dir,
+        report_path=report_path,
+        steps=tuple(steps),
+    )
 
 
 def run_mouse_demo(
@@ -60,59 +503,80 @@ def run_mouse_demo(
     trace_root: Path = Path("traces"),
     random_seed: int = 20260515,
     movement_smoothness: float = 0.85,
-    auto_close_seconds: float = 3.0,
+    keyboard_text: str = "DeskPilot controlled input",
+    countdown_seconds: float = 3.0,
 ) -> MouseDemoReport:
-    """Open a local window and drive visible mouse actions inside it."""
+    """Backward-compatible alias for the global input demo."""
+
+    return run_input_demo(
+        trace_root=trace_root,
+        random_seed=random_seed,
+        movement_smoothness=movement_smoothness,
+        keyboard_text=keyboard_text,
+        countdown_seconds=countdown_seconds,
+    )
+
+
+def run_linkedin_demo(
+    *,
+    trace_root: Path = Path("traces"),
+    random_seed: int = 20260515,
+    movement_smoothness: float = 0.85,
+    countdown_seconds: float = 3.0,
+    url: str = "https://www.linkedin.com/",
+    find_text: str = "LinkedIn",
+    page_load_seconds: float = 5.0,
+) -> MouseDemoReport:
+    """Open Edge, navigate to LinkedIn, then visibly interact with the page."""
 
     if sys.platform != "win32":
-        raise MouseDemoError("demo-mouse requires Windows desktop input")
+        raise MouseDemoError("demo-linkedin requires Windows desktop input")
     if not 0 <= movement_smoothness <= 1:
         raise MouseDemoError("movement_smoothness must be between 0 and 1")
-    if auto_close_seconds < 0:
-        raise MouseDemoError("auto_close_seconds must not be negative")
+    if countdown_seconds < 0:
+        raise MouseDemoError("countdown_seconds must not be negative")
+    if page_load_seconds < 0:
+        raise MouseDemoError("page_load_seconds must not be negative")
+    if not url:
+        raise MouseDemoError("url must not be empty")
+    if not find_text:
+        raise MouseDemoError("find_text must not be empty")
 
     _set_process_dpi_aware()
-    tk = _load_tkinter()
-    root, canvas, state = _build_demo_window(tk)
-    # Avoid closing the target window mid-sequence while real input is in flight.
-    root.protocol("WM_DELETE_WINDOW", lambda: None)
+    trace_dir = _prepare_trace_dir(trace_root, "linkedin-demo")
     profile = _demo_actuation_profile(random_seed, movement_smoothness)
-    actuator = DesktopActuator(WindowsInputBackend(), profile)
-    trace_dir = _prepare_trace_dir(trace_root)
+    backend = WindowsInputBackend(move_mode="absolute")
+    controller = RealInputController(backend, profile)
     steps: list[MouseDemoStep] = []
-    completed = threading.Event()
-    failed: list[str] = []
+    status = "passed"
+    reason: str | None = None
 
-    def start_worker() -> None:
-        points = _demo_points(canvas)
-        worker = threading.Thread(
-            target=_run_mouse_sequence,
-            args=(actuator, points, steps, root, state, completed, failed),
-            daemon=True,
+    try:
+        _countdown(countdown_seconds)
+        screen_bounds = _windows_virtual_screen_bounds()
+        steps.extend(
+            _run_linkedin_sequence(
+                controller,
+                screen_bounds,
+                url=url,
+                find_text=find_text,
+                page_load_seconds=page_load_seconds,
+            )
         )
-        worker.start()
+    except Exception as exc:  # pragma: no cover - exercised manually on Windows.
+        status = "failed"
+        reason = str(exc)
 
-    def poll_completion() -> None:
-        if completed.is_set():
-            _write_report(trace_dir, steps, "failed" if failed else "passed", failed)
-            _mark_done(canvas, state, "failed" if failed else "passed")
-            if auto_close_seconds == 0:
-                root.destroy()
-            else:
-                root.after(round(auto_close_seconds * 1000), root.destroy)
-            return
-        root.after(100, poll_completion)
-
-    # Keep the demo in front while the worker sends real OS-level input.
-    root.attributes("-topmost", True)
-    root.after(500, start_worker)
-    root.after(100, poll_completion)
-    root.mainloop()
-
-    status = "failed" if failed else "passed"
-    report_path = trace_dir / "mouse-demo-report.json"
+    report_path = _write_report(
+        trace_dir,
+        tuple(steps),
+        status,
+        reason,
+        report_name="linkedin-demo-report.json",
+    )
     return MouseDemoReport(
         status=status,
+        reason=reason,
         trace_dir=trace_dir,
         report_path=report_path,
         steps=tuple(steps),
@@ -124,11 +588,11 @@ def _demo_actuation_profile(
     movement_smoothness: float,
 ) -> ActuationProfile:
     return ActuationProfile(
-        movement_duration_seconds=(0.35, 0.90),
+        movement_duration_seconds=(0.90, 1.80),
         timing_variation_seconds=(0.04, 0.12),
         keyboard_interval_seconds=(0.02, 0.07),
         scroll_interval_seconds=(0.08, 0.18),
-        movement_steps=32,
+        movement_steps=72,
         movement_smoothness=movement_smoothness,
         overshoot_probability=0.35,
         overshoot_pixels=(3.0, 8.0),
@@ -137,90 +601,115 @@ def _demo_actuation_profile(
     )
 
 
-def _run_mouse_sequence(
-    actuator: DesktopActuator,
-    points: MouseDemoPoints,
-    steps: list[MouseDemoStep],
-    root: Any,
-    state: dict[str, Any],
-    completed: threading.Event,
-    failed: list[str],
-) -> None:
-    try:
-        time.sleep(0.8)
-        _record_movement(
-            steps,
-            "click-target",
-            "click",
-            actuator.click(points.click_target, target_size_pixels=(160, 70)),
-            points.click_target,
-        )
-        _set_status(root, state, "Clicked target. Dragging token...")
-        time.sleep(0.25)
-        _record_movement(
-            steps,
-            "drag-token",
-            "drag",
-            actuator.drag(
-                points.drag_start,
-                points.drag_end,
-                start_target_size_pixels=(72, 72),
-                end_target_size_pixels=(170, 100),
-            ),
+def _run_global_input_sequence(
+    controller: RealInputController,
+    points: InputDemoPoints,
+    keyboard_text: str,
+) -> tuple[MouseDemoStep, ...]:
+    steps: list[MouseDemoStep] = []
+
+    # Win+D exposes the desktop so the drag-selection demonstration is harmless.
+    steps.append(controller.press_chord("reveal-desktop", "win+d"))
+    controller.pause(0.60)
+    for index, point in enumerate(points.waypoints, start=1):
+        steps.append(controller.move_to(f"desktop-waypoint-{index}", point))
+    controller.pause(0.20)
+    steps.append(
+        controller.drag(
+            "desktop-drag-selection",
+            points.drag_start,
             points.drag_end,
         )
-        _set_status(root, state, "Drag complete. Scrolling...")
-        time.sleep(0.25)
-        scroll = actuator.scroll(
-            points.scroll_target,
-            -5,
-            target_size_pixels=(220, 140),
-        )
-        steps.append(
-            MouseDemoStep(
-                "scroll-panel",
-                "scroll",
-                {
-                    "point": list(points.scroll_target),
-                    **_scroll_metadata(scroll),
-                },
-            )
-        )
-        _set_status(root, state, "Scroll complete. Finishing...")
-        time.sleep(0.25)
-        _record_movement(
-            steps,
-            "finish-click",
-            "click",
-            actuator.click(points.finish_target, target_size_pixels=(160, 70)),
-            points.finish_target,
-        )
-    except Exception as exc:  # pragma: no cover - exercised manually on Windows.
-        failed.append(str(exc))
-    finally:
-        completed.set()
+    )
+    controller.pause(0.40)
+    steps.append(_launch_notepad())
+    controller.pause(1.00)
+    steps.append(controller.type_text("type-notepad-text", keyboard_text))
+    steps.append(controller.current_position_step("final-cursor-readback"))
+    return tuple(steps)
 
 
-def _record_movement(
-    steps: list[MouseDemoStep],
-    step_id: str,
-    action: str,
-    plan: MovementPlan,
-    point: tuple[int, int],
-) -> None:
+def _run_linkedin_sequence(
+    controller: RealInputController,
+    screen_bounds: tuple[int, int, int, int],
+    *,
+    url: str,
+    find_text: str,
+    page_load_seconds: float,
+    launch_edge: Callable[[str], MouseDemoStep] | None = None,
+) -> tuple[MouseDemoStep, ...]:
+    steps: list[MouseDemoStep] = []
+    edge_launcher = launch_edge or _launch_edge
+
+    steps.append(edge_launcher("about:blank"))
+    controller.pause(2.0)
+    steps.append(controller.press_chord("focus-edge-address-bar", "ctrl+l"))
+    steps.append(controller.type_text("type-linkedin-url", url))
+    steps.append(controller.press_chord("submit-linkedin-url", "enter"))
+    controller.pause(page_load_seconds)
     steps.append(
-        MouseDemoStep(
-            step_id,
-            action,
-            {
-                "point": list(point),
-                **_movement_metadata(plan),
-            },
+        controller.scroll(
+            "scroll-linkedin-page",
+            _screen_point(screen_bounds, 0.50, 0.56),
+            -3,
         )
+    )
+    steps.append(controller.press_chord("open-browser-find", "ctrl+f"))
+    steps.append(controller.type_text("type-find-text", find_text))
+    steps.append(controller.press_chord("confirm-find-text", "enter"))
+    steps.append(controller.press_chord("close-browser-find", "esc"))
+    steps.append(controller.current_position_step("final-cursor-readback"))
+    return tuple(steps)
+
+
+def _launch_notepad() -> MouseDemoStep:
+    process = subprocess.Popen(["notepad.exe"])
+    return MouseDemoStep(
+        "open-notepad",
+        "launch_application",
+        {
+            "application": "notepad.exe",
+            "pid": process.pid,
+            "expected_target": "fresh Notepad editing surface",
+        },
     )
 
 
-def _movement_metadata(plan: MovementPlan) -> dict[str, object]:
+def _launch_edge(initial_url: str) -> MouseDemoStep:
+    edge_args = ("--new-window", initial_url)
+    attempted: list[str] = []
+    for executable in _edge_executable_candidates():
+        attempted.append(executable)
+        try:
+            process = subprocess.Popen([executable, *edge_args])
+        except FileNotFoundError:
+            continue
+        return MouseDemoStep(
+            "open-edge",
+            "launch_application",
+            {
+                "application": "msedge.exe",
+                "executable": executable,
+                "arguments": list(edge_args),
+                "pid": process.pid,
+                "expected_target": "fresh Edge browser window",
+            },
+        )
+    raise MouseDemoError(
+        "Microsoft Edge was not found; attempted " + ", ".join(attempted)
+    )
+
+
+def _edge_executable_candidates() -> tuple[str, ...]:
+    return (
+        "msedge.exe",
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+    )
+
+
+def _movement_trace_metadata(trace: MovementTrace) -> dict[str, object]:
+    plan = trace.plan
     metadata: dict[str, object] = {
         "movement_points": len(plan.points),
         "movement_duration_seconds": plan.duration_seconds,
@@ -230,6 +719,12 @@ def _movement_metadata(plan: MovementPlan) -> dict[str, object]:
         "overshoot_point": list(plan.overshoot_point) if plan.overshoot_point else None,
         "settle_duration_seconds": plan.settle_duration_seconds,
         "random_seed": plan.random_seed,
+        "cursor_frame_count": len(trace.frames),
+        "cursor_frames": [frame.metadata() for frame in trace.frames],
+        "max_drift_pixels": max(
+            (frame.drift_pixels for frame in trace.frames),
+            default=0.0,
+        ),
         "sample_records": [record.metadata() for record in plan.sample_records],
     }
     if plan.timing_estimate is not None:
@@ -237,119 +732,24 @@ def _movement_metadata(plan: MovementPlan) -> dict[str, object]:
     return metadata
 
 
-def _scroll_metadata(plan: ScrollCadencePlan) -> dict[str, object]:
-    return plan.metadata()
-
-
-def _set_status(root: Any, state: dict[str, Any], text: str) -> None:
-    root.after(0, lambda: state["status"].set(text))
-
-
-def _mark_done(canvas: Any, state: dict[str, Any], status: str) -> None:
-    color = "#2f8f46" if status == "passed" else "#b3261e"
-    state["status"].set(f"Demo {status}. Report written under traces.")
-    canvas.itemconfig(state["finish_shape"], fill=color)
-
-
-def _build_demo_window(tk: Any) -> tuple[Any, Any, dict[str, Any]]:
-    root = tk.Tk()
-    root.title("DeskPilot Mouse Demo")
-    root.geometry("900x560+120+120")
-    root.resizable(False, False)
-
-    frame = tk.Frame(root, padx=16, pady=16)
-    frame.pack(fill="both", expand=True)
-    status = tk.StringVar(value="Starting visible mouse demo...")
-    tk.Label(
-        frame,
-        textvariable=status,
-        font=("Segoe UI", 12, "bold"),
-        anchor="w",
-    ).pack(fill="x")
-    canvas = tk.Canvas(frame, width=860, height=470, bg="#f6f8fb", highlightthickness=0)
-    canvas.pack(pady=(12, 0))
-
-    click_shape = canvas.create_rectangle(
-        60,
-        70,
-        220,
-        140,
-        fill="#d7e8ff",
-        outline="#2f67b2",
-        width=2,
-    )
-    canvas.create_text(140, 105, text="Click target", font=("Segoe UI", 13, "bold"))
-    canvas.create_rectangle(
-        330,
-        165,
-        550,
-        315,
-        fill="#fff6d7",
-        outline="#a97900",
-        width=2,
-    )
-    canvas.create_text(440, 205, text="Scroll zone", font=("Segoe UI", 13, "bold"))
-    canvas.create_text(440, 245, text="Wheel input lands here", font=("Segoe UI", 10))
-    canvas.create_oval(80, 310, 152, 382, fill="#f3c6d3", outline="#9a3150", width=2)
-    canvas.create_text(116, 346, text="Drag", font=("Segoe UI", 11, "bold"))
-    canvas.create_rectangle(
-        620,
-        290,
-        790,
-        390,
-        fill="#dff4df",
-        outline="#3d8742",
-        width=2,
-    )
-    canvas.create_text(705, 340, text="Drop zone", font=("Segoe UI", 13, "bold"))
-    finish_shape = canvas.create_rectangle(
-        640,
-        70,
-        800,
-        140,
-        fill="#e7ddff",
-        outline="#6542a6",
-        width=2,
-    )
-    canvas.create_text(720, 105, text="Finish", font=("Segoe UI", 13, "bold"))
-    canvas.create_line(230, 105, 630, 105, fill="#8a94a6", width=2, dash=(4, 4))
-    canvas.create_line(155, 346, 615, 346, fill="#8a94a6", width=2, dash=(4, 4))
-
-    state: dict[str, Any] = {
-        "status": status,
-        "click_shape": click_shape,
-        "finish_shape": finish_shape,
-    }
-    canvas.bind(
-        "<Button-1>",
-        lambda _event: canvas.itemconfig(click_shape, fill="#9fd0ff"),
-    )
-    canvas.bind("<MouseWheel>", lambda _event: status.set("Wheel event received"))
-    root.update_idletasks()
-    return root, canvas, state
-
-
-def _demo_points(canvas: Any) -> MouseDemoPoints:
-    root_x = int(canvas.winfo_rootx())
-    root_y = int(canvas.winfo_rooty())
-    return MouseDemoPoints(
-        click_target=(root_x + 140, root_y + 105),
-        drag_start=(root_x + 116, root_y + 346),
-        drag_end=(root_x + 705, root_y + 340),
-        scroll_target=(root_x + 440, root_y + 245),
-        finish_target=(root_x + 720, root_y + 105),
-    )
+def _events_metadata(events: list[InputDemoEvent]) -> list[dict[str, object]]:
+    return [event.metadata() for event in events]
 
 
 def _write_report(
     trace_dir: Path,
-    steps: list[MouseDemoStep],
+    steps: tuple[MouseDemoStep, ...],
     status: str,
-    errors: list[str],
+    reason: str | None,
+    *,
+    report_name: str,
 ) -> Path:
-    payload = {
+    report_path = trace_dir / report_name
+    payload: dict[str, object] = {
         "status": status,
-        "errors": list(errors),
+        "reason": reason,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "trace_dir": str(trace_dir),
         "steps": [
             {
                 "step_id": step.step_id,
@@ -359,32 +759,81 @@ def _write_report(
             for step in steps
         ],
     }
-    report_path = trace_dir / "mouse-demo-report.json"
-    report_path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    report_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return report_path
 
 
-def _prepare_trace_dir(trace_root: Path) -> Path:
+def _prepare_trace_dir(trace_root: Path, suffix: str) -> Path:
     timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
-    trace_dir = trace_root / f"{timestamp}-mouse-demo"
+    trace_dir = trace_root / f"{timestamp}-{suffix}"
     trace_dir.mkdir(parents=True, exist_ok=False)
     return trace_dir
 
 
+def _countdown(seconds: float) -> None:
+    whole_seconds = int(seconds)
+    for remaining in range(whole_seconds, 0, -1):
+        print(f"starting global input demo in {remaining}...")
+        time.sleep(1.0)
+    fractional = seconds - whole_seconds
+    if fractional > 0:
+        time.sleep(fractional)
+
+
+def _input_demo_points(screen_bounds: tuple[int, int, int, int]) -> InputDemoPoints:
+    waypoints = (
+        _screen_point(screen_bounds, 0.18, 0.18),
+        _screen_point(screen_bounds, 0.82, 0.30),
+        _screen_point(screen_bounds, 0.50, 0.78),
+    )
+    return InputDemoPoints(
+        screen_bounds=screen_bounds,
+        waypoints=waypoints,
+        drag_start=_screen_point(screen_bounds, 0.26, 0.38),
+        drag_end=_screen_point(screen_bounds, 0.52, 0.58),
+    )
+
+
+def _screen_point(
+    screen_bounds: tuple[int, int, int, int],
+    x_fraction: float,
+    y_fraction: float,
+) -> tuple[int, int]:
+    left, top, width, height = screen_bounds
+    if width <= 0 or height <= 0:
+        raise MouseDemoError(f"invalid virtual screen bounds: {screen_bounds}")
+
+    # Keep the demo away from screen edges so taskbars and VM chrome are avoided.
+    margin_x = min(140, max(20, width // 8))
+    margin_y = min(110, max(20, height // 8))
+    usable_left = left + margin_x
+    usable_top = top + margin_y
+    usable_width = max(1, width - (margin_x * 2))
+    usable_height = max(1, height - (margin_y * 2))
+    x = usable_left + round(usable_width * x_fraction)
+    y = usable_top + round(usable_height * y_fraction)
+    return (x, y)
+
+
+def _windows_virtual_screen_bounds() -> tuple[int, int, int, int]:
+    ctypes_module: Any = ctypes
+    user32: Any = ctypes_module.windll.user32
+    left = int(user32.GetSystemMetrics(76))
+    top = int(user32.GetSystemMetrics(77))
+    width = int(user32.GetSystemMetrics(78))
+    height = int(user32.GetSystemMetrics(79))
+    if width <= 0 or height <= 0:
+        width = int(user32.GetSystemMetrics(0))
+        height = int(user32.GetSystemMetrics(1))
+        left = 0
+        top = 0
+    return (left, top, width, height)
+
+
 def _set_process_dpi_aware() -> None:
     try:
-        cast(Any, ctypes).windll.user32.SetProcessDPIAware()
-    except Exception:
-        # DPI awareness is best-effort; the demo can still run without it.
+        ctypes_module: Any = ctypes
+        user32: Any = ctypes_module.windll.user32
+        user32.SetProcessDPIAware()
+    except (AttributeError, OSError):
         return
-
-
-def _load_tkinter() -> Any:
-    try:
-        import tkinter as tk
-    except Exception as exc:  # pragma: no cover - depends on Windows install.
-        raise MouseDemoError("tkinter is required for demo-mouse") from exc
-    return tk

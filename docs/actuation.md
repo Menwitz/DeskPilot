@@ -88,18 +88,35 @@ keys. Unit tests cover coordinate conversion, clicks, typing, key chords, drag,
 scroll, movement planning, active-window blocking, region blocking, and final
 emergency-stop blocking.
 
-For a visible Windows-only actuator demonstration, run:
+For a visible Windows-only low-level input demonstration, run:
 
 ```powershell
-uv run desktop-agent demo-mouse
+uv run desktop-agent demo-input
 ```
 
-The command opens a local fixture and exercises smooth pointer movement, click,
-drag, and scroll without using OCR, UIA, or target selection. See
-[Mouse Demo](mouse-demo.md) for the runbook and report details.
+The command uses the main Windows cursor globally, reveals the desktop, moves
+through smooth waypoints, performs a harmless desktop drag-selection, opens
+Notepad, and types with keyboard cadence. `demo-mouse` is retained as an alias
+for the same command. See [Real Input Demo](mouse-demo.md) for the runbook and
+report details.
+
+For a browser-focused low-level demo, run:
+
+```powershell
+uv run desktop-agent demo-linkedin
+```
+
+The command opens Edge, types the LinkedIn URL through the address bar, scrolls
+the page with the real cursor, and uses browser Find to highlight text. See
+[LinkedIn Edge Demo](linkedin-demo.md) for the runbook.
 
 ## Platform Support
 
 `create_platform_actuator()` returns the Windows input backend on Windows and a
 clear unavailable adapter elsewhere. This keeps non-Windows development safe
 while preserving the Windows-first adapter boundary.
+
+The Windows backend supports `SendInput` absolute and relative mouse move
+events. Normal automation and the global input demo use absolute movement for
+precise target placement on the virtual desktop. `SetCursorPos` is retained
+only as a fallback if Windows rejects a move event.

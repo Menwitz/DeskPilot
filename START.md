@@ -67,23 +67,37 @@ Expected result:
 - OCR data is included when local Tesseract is installed.
 - Windows UIA data is only available on Windows.
 
-## 5. Demonstrate Mouse Manipulation On Windows
+## 5. Demonstrate Global Input On Windows
 
 This validates the real Windows mouse actuator without relying on OCR, UIA, or
 target selection:
 
 ```powershell
-uv run desktop-agent demo-mouse
+uv run desktop-agent demo-input
 ```
 
 Expected result:
 
-- A `DeskPilot Mouse Demo` window opens.
-- The pointer visibly follows smooth paths, clicks, drags, scrolls, and clicks
-  finish inside the local fixture.
-- A report is written under `traces\<timestamp>-mouse-demo\`.
+- The main Windows cursor moves globally across the desktop.
+- The cursor performs a harmless desktop drag-selection.
+- Notepad opens and receives typed text with keyboard cadence.
+- A report is written under `traces\<timestamp>-input-demo\`.
 
 ## 6. Real Desktop Runs On Windows
+
+To validate low-level browser input against a real website, run:
+
+```powershell
+uv run desktop-agent demo-linkedin
+```
+
+Expected result:
+
+- Edge opens in a fresh window.
+- DeskPilot navigates to LinkedIn through the address bar.
+- The real cursor scrolls the page.
+- Edge Find highlights `LinkedIn`.
+- A report is written under `traces\<timestamp>-linkedin-demo\`.
 
 Real mouse and keyboard automation is Windows-first in v1. Keep the Windows
 session unlocked, use the primary monitor, and make the relevant fixture window
