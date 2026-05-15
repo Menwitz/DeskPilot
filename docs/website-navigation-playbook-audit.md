@@ -406,3 +406,14 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` action validation and
     `tests/test_site_playbooks.py` unknown-action test.
+
+### Task 36/122: Validate blocked states include detector and reason
+
+- Status: complete.
+- Evidence:
+  - `_validate_blocked_states` applies unique ID validation and rejects missing
+    detectors or reasons.
+  - Regression tests cover missing blocked-state reasons.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` blocked-state validation and
+    `tests/test_site_playbooks.py` blocked-state reason test.
