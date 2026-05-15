@@ -1422,6 +1422,18 @@ checking layout, domain, flow, and blocked-state coverage.
     "sensitive_site_steps_are_blocked_without_confirmation and login"`:
     1 passed, 7 deselected.
 
+### Task 153/211: Post or publish step is blocked without `--confirm-step`
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
+    includes the `publish` sensitive category.
+  - The focused publish case verifies safety rejection before action.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "sensitive_site_steps_are_blocked_without_confirmation and publish"`:
+    1 passed, 7 deselected.
+
 ### Task 110/211: Explain missing confirmation failures
 
 - Status: complete.
