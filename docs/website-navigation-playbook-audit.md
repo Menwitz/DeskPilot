@@ -627,3 +627,16 @@ checking layout, domain, flow, and blocked-state coverage.
     current playbook scope.
 - Verification:
   - Loaded all seed playbooks and printed each flow ID by site.
+
+### Task 53/122: Define open home or feed flows
+
+- Status: complete.
+- Evidence:
+  - Every seed playbook defines an `open-home` flow.
+  - The flow descriptions map site-specific labels to the shared home/feed
+    navigation intent, including LinkedIn feed, X timeline, Facebook feed,
+    Instagram home feed, Medium home feed, YouTube home feed, and TikTok feed.
+  - This gives pipeline, deep-search, monitoring, and report code one stable
+    flow ID for basic entry-surface checks across sites.
+- Verification:
+  - Loaded all seed playbooks and confirmed each contains `open-home`.
