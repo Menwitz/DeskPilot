@@ -2889,3 +2889,12 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `git log --oneline --grep="^test: cover site flow compilation$"`:
     matched `d112b2d`.
+
+### Task 210/211: Commit plan includes site run safety gates tests commit
+
+- Status: complete.
+- Evidence:
+  - `64720f4 test: cover site run safety gates`
+- Verification:
+  - `git log --oneline --grep="^test: cover site run safety gates$"`:
+    matched `64720f4`.
