@@ -79,6 +79,8 @@ patterns: read-only navigation, search, composer/editor opening, confirmed
 sensitive actions, and blocked-state detection. Keep examples small enough to
 copy into tests, then validate the compiled task and generated trace/report
 metadata before using them as live-site playbooks.
+Search and deep-search examples should open discovery surfaces only; submitting
+queries or changing site state belongs in a separate confirmed flow.
 
 ## Read-Only Navigation Flow
 

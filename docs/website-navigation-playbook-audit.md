@@ -2408,3 +2408,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `rg -n "New-Site Checklist|list-flows <site-id>|DESKPILOT_LIVE_SITE_SMOKE"
     docs/website-playbooks.md`: matched the checklist and opt-in smoke guidance.
+
+### Task 178/211: Add examples section
+
+- Status: complete.
+- Evidence:
+  - `docs/website-playbooks.md` now introduces the examples as copyable,
+    testable snippets for read-only navigation, search, composer/editor opening,
+    confirmed sensitive actions, and blocked-state detection.
+  - The examples section directs authors to validate compiled tasks and
+    trace/report metadata before using snippets as live-site playbooks.
+- Verification:
+  - `rg -n "## Examples|compiled task and generated trace/report|deep-search examples"
+    docs/website-playbooks.md`: matched the examples section, verification
+    guidance, and search guardrail.
