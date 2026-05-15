@@ -62,6 +62,8 @@ agree on the same safety language.
 
 - `login`: entering credentials, opening an authentication flow, approving a
   sign-in, or switching accounts.
+- `publish`: posting, publishing, uploading, submitting, or otherwise making
+  content externally visible.
 
 ## Safety Controls Planned For v1
 
