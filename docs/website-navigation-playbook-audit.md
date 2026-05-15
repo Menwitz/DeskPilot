@@ -2649,3 +2649,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_live_smoke.py -k
     "require_explicit_environment_flag"`: 1 skipped, 9 deselected.
+
+### Task 194/211: Opt-in live smoke tests can run manually
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_live_smoke.py` can be run with
+    `DESKPILOT_LIVE_SITE_SMOKE=1`.
+  - The file validates the explicit opt-in gate and every seed site's read-only
+    smoke flow selection.
+- Verification:
+  - `env DESKPILOT_LIVE_SITE_SMOKE=1 .venv/bin/pytest
+    tests/test_site_playbook_live_smoke.py`: 10 passed.
