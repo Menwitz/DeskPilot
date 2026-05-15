@@ -126,7 +126,11 @@ Markdown event rows include compact decision details for recovery paths,
 ambiguity gates, and timing delays so timing, ambiguity, recovery, and safety
 stops can be reviewed without opening the JSON report. Final actuator guard
 failures include `input_blocked` and `actuation_guard` metadata, and the
-Markdown report prints which guard blocked input.
+Markdown report prints which guard blocked input. Target-selection failures
+include a `diagnostic_bundle` in the failure event and failed step metadata. The
+bundle includes the screenshot path, active-window title, monitor metadata,
+cursor readback, candidates grouped by source, ranking metadata, selected
+candidate if any, and blocked-candidate reasons.
 After target selection, the planner emits `ui_state_snapshot` with visible
 controls, the selected candidate, confidence and fusion scores, and blocked
 candidate reasons such as disabled, not visible, below confidence threshold,

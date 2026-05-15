@@ -88,6 +88,9 @@ class SequenceActuator:
         self.calls += 1
         return self._results[index]
 
+    def current_position(self) -> tuple[int, int]:
+        return (333, 444)
+
 
 class AdvancingActuator:
     def __init__(self, clock: FakeClock, *, success: bool = True) -> None:
@@ -739,6 +742,57 @@ def test_execution_engine_reports_failure_category_metadata() -> None:
     assert actuation_report.steps[0].metadata["failure_category"] == (
         "actuation_failure"
     )
+
+
+def test_execution_engine_missed_target_includes_diagnostic_bundle(
+    tmp_path: Path,
+) -> None:
+    observation = ScreenObservation(
+        screenshot_path=tmp_path / "screen.png",
+        size=(800, 600),
+        active_window_title="LinkedIn - Edge",
+    )
+    candidates = (
+        ElementCandidate(
+            id="uia-settings",
+            source="uia",
+            label="Submit",
+            bounds=Bounds(x=10, y=20, width=100, height=30),
+            confidence=0.40,
+        ),
+        ElementCandidate(
+            id="ocr-profile",
+            source="ocr",
+            label="Submit",
+            bounds=Bounds(x=200, y=40, width=90, height=25),
+            confidence=0.50,
+        ),
+    )
+    trace_sink = MemoryTraceSink()
+    report = _engine(
+        _single_click_task("diagnostics", retry=0),
+        perception=SequencePerceptionEngine((candidates,)),
+        screen_observer=SequenceScreenObserver((observation,)),
+        actuator=SequenceActuator((ActionResult(True, "unused"),)),
+        trace_sink=trace_sink,
+    ).run(Path("task.yaml"))
+
+    diagnostic = report.steps[0].metadata["diagnostic_bundle"]
+    assert isinstance(diagnostic, dict)
+    assert report.status == "failed"
+    assert report.steps[0].metadata["failure_category"] == "selection_ambiguity"
+    assert diagnostic["diagnostic_type"] == "target_selection_failure"
+    assert diagnostic["screenshot_path"] == str(tmp_path / "screen.png")
+    assert diagnostic["active_window_title"] == "LinkedIn - Edge"
+    assert diagnostic["cursor_readback"] == {
+        "status": "passed",
+        "position": [333, 444],
+    }
+    candidates_by_source = diagnostic["candidates_by_source"]
+    assert isinstance(candidates_by_source, dict)
+    assert candidates_by_source["uia"][0]["id"] == "uia-settings"
+    assert candidates_by_source["ocr"][0]["id"] == "ocr-profile"
+    assert any(event.phase == "target_diagnostics" for event in report.events)
 
 
 def test_execution_engine_recovers_when_verification_target_disappears() -> None:

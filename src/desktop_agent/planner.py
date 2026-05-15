@@ -609,6 +609,19 @@ class ExecutionEngine:
                         )
                     self._consume_timing_delay(retry_timing)
                     continue
+                diagnostic_bundle = self._target_selection_diagnostics(
+                    step,
+                    observation,
+                    candidates,
+                    target,
+                    config,
+                    selection_recovery_policy,
+                )
+                self._record(
+                    "target_diagnostics",
+                    "target selection diagnostic bundle captured",
+                    _step_metadata(step, **diagnostic_bundle),
+                )
                 return StepExecutionOutcome(
                     self._step_failed(
                         step,
@@ -622,6 +635,7 @@ class ExecutionEngine:
                             selection_recovery_policy,
                             candidates,
                         ),
+                        diagnostic_bundle=diagnostic_bundle,
                     ),
                 )
 
@@ -817,13 +831,11 @@ class ExecutionEngine:
             last_message = verification.message
             last_failure_category = _action_failure_category(action_result)
             if attempt < total_attempts:
-                recovery_observation, recovery_candidates = (
-                    self._recovery_observation(
-                        step,
-                        config,
-                        failed_attempt=attempt,
-                        next_attempt=attempt + 1,
-                    )
+                recovery_observation, recovery_candidates = self._recovery_observation(
+                    step,
+                    config,
+                    failed_attempt=attempt,
+                    next_attempt=attempt + 1,
                 )
                 recovery_policy = recovery_policy_for_action_result(
                     recovery_observation,
@@ -1314,6 +1326,52 @@ class ExecutionEngine:
         self.clock.sleep(decision.delay_seconds)
         return max(0.0, self.clock.monotonic() - started)
 
+    def _target_selection_diagnostics(
+        self,
+        step: TaskStep,
+        observation: ScreenObservation,
+        candidates: tuple[ElementCandidate, ...],
+        target: ElementCandidate | None,
+        config: RuntimeConfig,
+        recovery_policy: RecoveryPolicy | None,
+    ) -> dict[str, object]:
+        ranking_metadata = candidate_ranking_metadata(step, candidates, config)
+        snapshot_metadata = ui_state_snapshot_metadata(step, candidates, target, config)
+        return {
+            "diagnostic_type": "target_selection_failure",
+            "step_id": step.id,
+            "action": step.action,
+            "target": step.target,
+            "recovery_reason": recovery_policy.reason if recovery_policy else None,
+            "screenshot_path": str(observation.screenshot_path)
+            if observation.screenshot_path
+            else None,
+            "screen_size": list(observation.size),
+            "active_window_title": observation.active_window_title,
+            "monitor": _monitor_metadata(observation),
+            "candidate_count": len(candidates),
+            "candidates_by_source": _candidates_by_source(candidates),
+            "chosen_target": snapshot_metadata.get("selected_candidate"),
+            "selected_candidate": snapshot_metadata.get("selected_candidate"),
+            "blocked_candidates": snapshot_metadata.get("blocked_candidates", []),
+            "candidate_rankings": ranking_metadata.get("candidate_rankings", []),
+            "cursor_readback": self._cursor_readback_metadata(),
+        }
+
+    def _cursor_readback_metadata(self) -> dict[str, object]:
+        current_position = getattr(self.actuator, "current_position", None)
+        if not callable(current_position):
+            return {"status": "unavailable", "reason": "actuator has no cursor reader"}
+        try:
+            point = current_position()
+        except Exception as exc:
+            return {
+                "status": "failed",
+                "reason": str(exc),
+                "error_type": type(exc).__name__,
+            }
+        return {"status": "passed", "position": list(point)}
+
     def _step_passed(
         self,
         step: TaskStep,
@@ -1343,12 +1401,15 @@ class ExecutionEngine:
         candidate_id: str | None,
         *,
         failure_category: str = "execution_failure",
+        diagnostic_bundle: dict[str, object] | None = None,
     ) -> StepReport:
         failure_metadata = _step_metadata(
             step,
             candidate_id=candidate_id,
             failure_category=failure_category,
         )
+        if diagnostic_bundle is not None:
+            failure_metadata["diagnostic_bundle"] = diagnostic_bundle
         self._record(
             "failure",
             message,
@@ -1356,6 +1417,8 @@ class ExecutionEngine:
         )
         report_metadata = _step_report_metadata(step)
         report_metadata["failure_category"] = failure_category
+        if diagnostic_bundle is not None:
+            report_metadata["diagnostic_bundle"] = diagnostic_bundle
         return StepReport(
             step_id=step.id,
             action=step.action,
@@ -1425,9 +1488,8 @@ def _action_failure_category(action_result: ActionResult) -> str:
 
 
 def _actuation_guard_blocked(action_result: ActionResult) -> bool:
-    return (
-        action_result.metadata.get("input_blocked") is True
-        and isinstance(action_result.metadata.get("actuation_guard"), str)
+    return action_result.metadata.get("input_blocked") is True and isinstance(
+        action_result.metadata.get("actuation_guard"), str
     )
 
 
@@ -1589,9 +1651,7 @@ def _retry_backoff_metadata(decision: TimingDecision) -> dict[str, object]:
         "retry_limit_respected",
     }
     return {
-        key: decision_metadata[key]
-        for key in backoff_keys
-        if key in decision_metadata
+        key: decision_metadata[key] for key in backoff_keys if key in decision_metadata
     }
 
 
@@ -1630,6 +1690,55 @@ def _observation_metadata(
         "size": list(observation.size),
         "active_window_title": observation.active_window_title,
         "warnings": list(observation.warnings),
+    }
+
+
+def _monitor_metadata(observation: ScreenObservation) -> dict[str, object] | None:
+    if observation.monitor is None:
+        return None
+    return {
+        "left": observation.monitor.left,
+        "top": observation.monitor.top,
+        "width": observation.monitor.width,
+        "height": observation.monitor.height,
+        "scale_x": observation.monitor.scale_x,
+        "scale_y": observation.monitor.scale_y,
+        "is_primary": observation.monitor.is_primary,
+    }
+
+
+def _candidates_by_source(
+    candidates: tuple[ElementCandidate, ...],
+) -> dict[str, list[dict[str, object]]]:
+    grouped: dict[str, list[dict[str, object]]] = {
+        "uia": [],
+        "ocr": [],
+        "image": [],
+        "unknown": [],
+    }
+    for candidate in candidates:
+        grouped.setdefault(candidate.source, []).append(
+            _candidate_diagnostic(candidate)
+        )
+    return grouped
+
+
+def _candidate_diagnostic(candidate: ElementCandidate) -> dict[str, object]:
+    return {
+        "id": candidate.id,
+        "source": candidate.source,
+        "label": candidate.label,
+        "confidence": candidate.confidence,
+        "visible": candidate.visible,
+        "enabled": candidate.enabled,
+        "bounds": {
+            "x": candidate.bounds.x,
+            "y": candidate.bounds.y,
+            "width": candidate.bounds.width,
+            "height": candidate.bounds.height,
+            "center": list(candidate.bounds.center),
+        },
+        "metadata": candidate.metadata,
     }
 
 

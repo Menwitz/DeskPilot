@@ -559,6 +559,11 @@ class DesktopActuator(Actuator):
             self._backend.sleep(plan.settle_duration_seconds)
         return plan
 
+    def current_position(self) -> tuple[int, int]:
+        """Expose the backend cursor readback for diagnostic traces."""
+
+        return self._backend.current_position()
+
     def click(
         self,
         point: tuple[int, int],

@@ -118,7 +118,7 @@ Acceptance:
 - [ ] The system can explain why it clicked one visible target instead of
       another.
 - [ ] Target coordinates are auditable from screenshot bounds to physical point.
-- [ ] A missed target produces a diagnostic trace, not just `missed_target`.
+- [x] A missed target produces a diagnostic trace, not just `missed_target`.
 
 ## Phase 5: Desktop I/O Task Model
 
@@ -183,6 +183,6 @@ Acceptance:
       `demo-input` and `demo-linkedin` traces.
 - [x] Add a Windows smoke checklist command that verifies Edge launch, Notepad
       typing, cursor readback, and trace file creation.
-- [ ] Replace `missed_target`-only failures with a diagnostic bundle containing
+- [x] Replace `missed_target`-only failures with a diagnostic bundle containing
       screenshot, OCR candidates, UIA candidates, chosen target, and cursor
       readback.

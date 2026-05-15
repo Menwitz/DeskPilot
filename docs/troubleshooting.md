@@ -80,6 +80,10 @@ Checks:
   `transient_loading`, or `verification_failure`.
 - Inspect `recover_candidates` to see whether deep search found a better target
   after re-observation.
+- For target-selection failures, inspect the failed step's `diagnostic_bundle`
+  in `final-report.json`. It contains the screenshot path, active-window title,
+  cursor readback, OCR/UIA/image candidates grouped by source, ranking metadata,
+  and blocked-candidate reasons.
 - Check the dry-run preview to verify the step has the intended recovery path
   and enough timeout budget for worst-case waits.
 
