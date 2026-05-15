@@ -290,7 +290,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   ISO timestamp, and content fingerprint before execution.
 - [x] Require approval manifests for real `run-site` execution when a compiled
   site task contains sensitive or submission steps.
-- [ ] Merge approved step IDs into runtime confirmation without interactive
+- [x] Merge approved step IDs into runtime confirmation without interactive
   prompts for site runs.
 - [ ] Record manifest validation, approved step IDs, approver, reason,
   timestamp, and content fingerprint in local traces and reports.

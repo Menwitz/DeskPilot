@@ -2748,3 +2748,16 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_approval_manifest.py -k
     "run_site_requires_manifest_for_sensitive_real_run"`: 1 passed,
     9 deselected.
+
+### Task 199/211: Merge approved step IDs without interactive prompts
+
+- Status: complete.
+- Evidence:
+  - `src/desktop_agent/approval_manifest.py::apply_approval_manifest` merges
+    manifest-approved steps into `RuntimeConfig.confirmed_steps`.
+  - `tests/test_approval_manifest.py::test_run_site_uses_manifest_without_operator_prompt`
+    verifies a manifest-backed `run-site` path does not ask for interactive
+    operator input.
+- Verification:
+  - `.venv/bin/pytest tests/test_approval_manifest.py -k
+    "run_site_uses_manifest_without_operator_prompt"`: 1 passed, 9 deselected.
