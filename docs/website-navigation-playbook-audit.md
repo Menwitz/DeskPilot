@@ -847,3 +847,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Imported `SiteTaskCompiler`, compiled `linkedin:open-search`, and confirmed
     the result is a `TaskDefinition`.
+
+### Task 68/122: Compile domains and window-title patterns into `allowed_windows`
+
+- Status: complete.
+- Evidence:
+  - `SiteTaskCompiler.compile()` sets `TaskDefinition.allowed_windows` from
+    `_compiled_allowed_windows(playbook)`.
+  - `_compiled_allowed_windows()` combines `allowed_window_titles` and domain
+    hosts while preserving order and de-duplicating entries.
+  - Compiled seed tasks include titles and domains such as `YouTube`,
+    `YouTube Studio`, `youtube.com`, `youtu.be`, and `studio.youtube.com`.
+- Verification:
+  - Compiled one flow for every seed playbook and printed each task's
+    `allowed_windows`.
