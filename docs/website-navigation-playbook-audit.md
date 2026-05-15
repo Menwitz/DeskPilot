@@ -201,3 +201,20 @@ website safety claim before the corresponding roadmap item is checked.
   - `.venv/bin/ruff check .`: passed.
   - `.venv/bin/mypy`: passed.
   - `.venv/bin/python -m build`: built source distribution and wheel.
+
+## Phase 1 Audit: Playbook Schema
+
+Phase 1 starts by inspecting the existing playbook schema module and then
+verifying each model, loader, validation rule, and safety comment before
+checking roadmap items.
+
+### Task 18/122: Add `src/desktop_agent/site_playbooks.py`
+
+- Status: complete.
+- Evidence:
+  - `src/desktop_agent/site_playbooks.py` exists.
+  - The module contains website playbook contracts, YAML loading helpers,
+    validation helpers, and the site-task compiler entrypoint.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` module header and top-level
+    contracts.

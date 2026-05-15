@@ -61,7 +61,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ## Phase 1: Playbook Schema
 
-- [ ] Add `src/desktop_agent/site_playbooks.py`.
+- [x] Add `src/desktop_agent/site_playbooks.py`.
 - [ ] Add immutable data models:
   - [ ] `SitePlaybook`.
   - [ ] `SiteDomain`.
