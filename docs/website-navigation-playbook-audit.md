@@ -337,3 +337,15 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` domain validation and
     `tests/test_site_playbooks.py` domain validation test.
+
+### Task 30/122: Validate at least one allowed window-title pattern is required
+
+- Status: complete.
+- Evidence:
+  - `validate_site_playbook` rejects playbooks with no allowed window-title
+    patterns.
+  - The same validation path rejects blank title patterns.
+  - Regression tests cover empty window-title lists.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` window-title validation and
+    `tests/test_site_playbooks.py` window-title validation test.
