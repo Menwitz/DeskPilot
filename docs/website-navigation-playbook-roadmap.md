@@ -75,7 +75,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] At least one domain is required.
   - [x] At least one allowed window-title pattern is required.
   - [x] Flow IDs are unique.
-  - [ ] Step IDs are unique within each flow.
+  - [x] Step IDs are unique within each flow.
   - [ ] Sensitive steps must declare `requires_confirmation: true`.
   - [ ] References to landmarks must resolve.
   - [ ] Unsupported actions fail validation before execution.

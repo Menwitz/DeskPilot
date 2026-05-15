@@ -360,3 +360,14 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` flow ID validation and
     `tests/test_site_playbooks.py` duplicate-flow test.
+
+### Task 32/122: Validate step IDs are unique within each flow
+
+- Status: complete.
+- Evidence:
+  - `_validate_flow` applies `_validate_unique_ids` to the IDs of steps in that
+    specific flow.
+  - Regression tests cover duplicate step IDs inside one flow.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` flow-step ID validation and
+    `tests/test_site_playbooks.py` duplicate-step test.
