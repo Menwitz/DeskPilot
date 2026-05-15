@@ -218,3 +218,13 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` module header and top-level
     contracts.
+
+### Task 19/122: Add immutable data models
+
+- Status: complete.
+- Evidence:
+  - `SiteDomain`, `SiteLandmark`, `SiteFlowStep`, `BlockedState`, `SiteFlow`,
+    and `SitePlaybook` are all declared with `@dataclass(frozen=True)`.
+  - Model fields use tuples for repeated child collections on aggregate models.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` model declarations.
