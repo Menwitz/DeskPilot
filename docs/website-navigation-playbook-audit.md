@@ -1982,3 +1982,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "list_flows_linkedin_prints_flows"`: 1 passed, 10 deselected.
+
+### Task 147/211: `compile-site youtube open-search` writes a valid task YAML
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_cli.py::test_compile_site_writes_valid_task_yaml`
+    runs `compile-site youtube open-search --output <path>`.
+  - The test loads the generated YAML, validates it with `BasicTaskValidator`,
+    and checks site metadata.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "compile_site_writes_valid_task_yaml"`: 1 passed, 10 deselected.
