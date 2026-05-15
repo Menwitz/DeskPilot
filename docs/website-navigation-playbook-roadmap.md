@@ -296,7 +296,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   timestamp, and content fingerprint in local traces and reports.
 - [x] Add regression coverage for missing, invalid, and accepted approval
   manifests.
-- [ ] Document approval manifest usage in website playbook and safety docs.
+- [x] Document approval manifest usage in website playbook and safety docs.
 
 ## Commit Plan
 

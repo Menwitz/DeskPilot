@@ -2785,3 +2785,16 @@ checking layout, domain, flow, and blocked-state coverage.
     execution, and manifest metadata recording.
 - Verification:
   - `.venv/bin/pytest tests/test_approval_manifest.py`: 10 passed.
+
+### Task 202/211: Document approval manifest usage in playbook and safety docs
+
+- Status: complete.
+- Evidence:
+  - `docs/website-playbooks.md` documents approval manifest fields, example YAML,
+    `--approval-manifest`, and sample manifest paths.
+  - `docs/safety.md` documents that sensitive public-site `run-site` flows require
+    local approval manifests and that manifests preapprove exact sensitive step
+    IDs.
+- Verification:
+  - `rg -n "approval manifest|--approval-manifest|approved_steps|content_fingerprint|sensitive public-site flow"
+    docs/website-playbooks.md docs/safety.md`: matched usage and safety docs.
