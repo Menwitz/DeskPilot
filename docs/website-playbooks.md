@@ -117,6 +117,9 @@ flows:
         landmark: search
 ```
 
+Use this pattern for search or deep-search discovery surfaces that should stop
+before typing or submitting a query.
+
 ## Composer-Open Flow
 
 ```yaml

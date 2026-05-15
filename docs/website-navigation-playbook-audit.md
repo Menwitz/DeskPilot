@@ -2434,3 +2434,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `rg -n "Read-Only Navigation Flow|id: home|without changing account state"
     docs/website-playbooks.md`: matched the read-only example.
+
+### Task 180/211: Search flow example
+
+- Status: complete.
+- Evidence:
+  - `docs/website-playbooks.md` includes a `Search Flow` YAML snippet with a
+    reusable `search` landmark and an `open-search` flow.
+  - The example explicitly stops before typing or submitting a query, preserving
+    read-only search and deep-search discovery behavior.
+- Verification:
+  - `rg -n "Search Flow|id: open-search|before typing or submitting a query"
+    docs/website-playbooks.md`: matched the search example and guardrail.
