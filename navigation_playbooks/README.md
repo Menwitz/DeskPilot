@@ -33,3 +33,10 @@ profile or channel surfaces, notifications, settings, and a composer, upload, or
 editor surface that stops before final submission. Sites with direct-message
 surfaces also include an `open-messages` flow that opens the surface without
 sending content.
+
+## Blocked State Coverage
+
+Every seed playbook includes blocked-state detectors for logged-out sessions,
+consent or cookie interstitials, CAPTCHA or suspicious-activity challenges,
+permission restrictions, unsupported layouts, and ambiguous targets. These
+states are reportable stops, not bypass instructions.

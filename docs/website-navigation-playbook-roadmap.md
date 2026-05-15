@@ -106,13 +106,13 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Open messages when the site has messages.
   - [x] Open settings.
   - [x] Open composer, upload, or editor surface without final submission.
-- [ ] For each seed playbook, define blocked states:
-  - [ ] Logged out.
-  - [ ] Consent or cookie interstitial.
-  - [ ] CAPTCHA or suspicious-activity challenge.
-  - [ ] Permission or account restriction.
-  - [ ] Unsupported layout.
-  - [ ] Ambiguous target.
+- [x] For each seed playbook, define blocked states:
+  - [x] Logged out.
+  - [x] Consent or cookie interstitial.
+  - [x] CAPTCHA or suspicious-activity challenge.
+  - [x] Permission or account restriction.
+  - [x] Unsupported layout.
+  - [x] Ambiguous target.
 
 ## Phase 3: Compiler Into Existing Task DSL
 
