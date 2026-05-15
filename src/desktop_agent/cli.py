@@ -15,6 +15,11 @@ from desktop_agent.actuation import (
     actuation_profile_from_runtime_config,
     create_platform_actuator,
 )
+from desktop_agent.approval_manifest import (
+    ApprovalManifestError,
+    apply_approval_manifest,
+    require_approval_manifest_if_needed,
+)
 from desktop_agent.benchmark_runner import BenchmarkRunHarness
 from desktop_agent.computer_vision import OpenCvTemplatePerceptionEngine
 from desktop_agent.config import (
@@ -111,6 +116,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
     except (
         ConfigError,
+        ApprovalManifestError,
         SitePlaybookValidationError,
         TaskValidationError,
         OSError,
@@ -215,6 +221,7 @@ def _add_runtime_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--confidence-threshold", type=float)
     parser.add_argument("--allowed-window", action="append", default=[])
     parser.add_argument("--confirm-step", action="append", default=[])
+    parser.add_argument("--approval-manifest", type=Path)
 
 
 def _add_site_catalog_options(parser: argparse.ArgumentParser) -> None:
@@ -243,6 +250,7 @@ def _run_loaded_task(
     task_path: Path,
     *,
     dry_run: bool,
+    site_run: bool = False,
 ) -> int:
     file_config = YamlConfigLoader().load(args.config)
     config = resolve_runtime_config(
@@ -250,8 +258,17 @@ def _run_loaded_task(
         task_overrides=task.config_overrides,
         cli_overrides=_cli_overrides_from_args(args),
     )
+    manifest_path = getattr(args, "approval_manifest", None)
+    if site_run and not dry_run:
+        require_approval_manifest_if_needed(task, manifest_path)
+    if manifest_path is not None:
+        task, config = apply_approval_manifest(task, config, manifest_path)
     if not dry_run:
-        config = _config_with_operator_approvals(task, config)
+        config = (
+            config
+            if site_run
+            else _config_with_operator_approvals(task, config)
+        )
     trace_sink = FileTraceSink()
     emergency_stop_monitor = (
         NoopEmergencyStopMonitor()
@@ -324,6 +341,7 @@ def _run_site_task(args: argparse.Namespace, *, dry_run: bool) -> int:
         task,
         Path(f"site-{args.site}-{args.flow}.yaml"),
         dry_run=dry_run,
+        site_run=True,
     )
 
 

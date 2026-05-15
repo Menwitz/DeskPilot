@@ -103,6 +103,28 @@ Run it only after reviewing the task and confirming the exact step:
 desktop-agent dry-run-site example-site publish-post --confirm-step publish-post
 ```
 
+For real `run-site` execution of a sensitive public-site flow, use an approval
+manifest instead of an interactive prompt. The manifest is a local preapproval
+record that names the site, flow, approved step IDs, approver, reason,
+timestamp, and content fingerprint. DeskPilot validates it before real input is
+sent, merges the approved step IDs into runtime confirmation, and records the
+approval metadata in traces and final reports.
+
+```yaml
+site_id: example-site
+flow_id: publish-post
+approved_steps:
+  - publish-post
+approver: qa-lead@example.test
+reason: Approved content workflow for the current run.
+approved_at: 2026-05-15T00:00:00Z
+content_fingerprint: reviewed-content-v1
+```
+
+```bash
+desktop-agent run-site example-site publish-post --approval-manifest approval.yaml
+```
+
 ## Blocked-State Detection
 
 ```yaml

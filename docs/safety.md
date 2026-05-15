@@ -139,6 +139,10 @@ For real `run` commands, the CLI also prompts before unconfirmed
 `requires_confirmation` or `submission` category steps. If the operator declines
 or the prompt cannot read input, the run continues to the planner with
 `require_operator_approval` enabled and stops with a report before input.
+For real `run-site` commands, sensitive public-site flows require a local
+approval manifest. The manifest preapproves the exact sensitive step IDs for the
+site and flow, records approver/reason/timestamp/content fingerprint metadata,
+and is included in local traces and final reports.
 Sensitive or irreversible steps can also declare `checkpoint`; the planner must
 pass that read-only verification before timing or action execution.
 

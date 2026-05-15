@@ -282,6 +282,22 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Opt-in live smoke tests can be run manually for the seed sites.
 - [x] Failed site runs produce clear local traces and final reports.
 
+## Phase 9: Approval Manifests For Sensitive Site Runs
+
+- [x] Add a local YAML approval manifest contract for sensitive public-site
+  workflows.
+- [x] Validate manifest site ID, flow ID, approved step IDs, approver, reason,
+  ISO timestamp, and content fingerprint before execution.
+- [x] Require approval manifests for real `run-site` execution when a compiled
+  site task contains sensitive or submission steps.
+- [x] Merge approved step IDs into runtime confirmation without interactive
+  prompts for site runs.
+- [x] Record manifest validation, approved step IDs, approver, reason,
+  timestamp, and content fingerprint in local traces and reports.
+- [x] Add regression coverage for missing, invalid, and accepted approval
+  manifests.
+- [x] Document approval manifest usage in website playbook and safety docs.
+
 ## Commit Plan
 
 - [x] `docs: add website navigation playbook roadmap`
@@ -292,3 +308,4 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] `test: cover website playbook validation`
 - [x] `test: cover site flow compilation`
 - [x] `test: cover site run safety gates`
+- [x] `feat: require approval manifests for site runs`
