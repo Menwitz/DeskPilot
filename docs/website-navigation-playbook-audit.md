@@ -1294,3 +1294,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
+
+### Task 101/122: Support `--no-screenshots`
+
+- Status: complete.
+- Evidence:
+  - `--no-screenshots` is registered through `_add_runtime_options()`.
+  - `_cli_overrides_from_args()` maps it to `save_screenshots=False`.
+  - The runtime-flag regression passes `--no-screenshots` to `dry-run-site`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.

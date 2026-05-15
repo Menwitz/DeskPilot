@@ -153,7 +153,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Support existing runtime safety flags:
   - [x] `--config`.
   - [x] `--verbose`.
-  - [ ] `--no-screenshots`.
+  - [x] `--no-screenshots`.
   - [ ] `--max-runtime-seconds`.
   - [ ] `--confidence-threshold`.
   - [ ] `--allowed-window`.
