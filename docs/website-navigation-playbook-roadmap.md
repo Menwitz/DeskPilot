@@ -240,18 +240,18 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ### Opt-In Live Smoke Tests
 
-- [ ] Live smoke tests are skipped by default.
-- [ ] Live smoke tests require an explicit environment flag.
-- [ ] Live smoke tests never run final submit, post, message, purchase, apply, or
+- [x] Live smoke tests are skipped by default.
+- [x] Live smoke tests require an explicit environment flag.
+- [x] Live smoke tests never run final submit, post, message, purchase, apply, or
   delete actions unless a separate confirmation flag is present.
-- [ ] Each seed site has one read-only smoke flow:
-  - [ ] LinkedIn: open search or profile surface.
-  - [ ] X/Twitter: open search or notifications surface.
-  - [ ] Instagram: open search or profile surface.
-  - [ ] Facebook: open search or notifications surface.
-  - [ ] Medium: open search or editor surface without publishing.
-  - [ ] YouTube: open search or channel surface.
-  - [ ] TikTok: open search or profile surface.
+- [x] Each seed site has one read-only smoke flow:
+  - [x] LinkedIn: open search or profile surface.
+  - [x] X/Twitter: open search or notifications surface.
+  - [x] Instagram: open search or profile surface.
+  - [x] Facebook: open search or notifications surface.
+  - [x] Medium: open search or editor surface without publishing.
+  - [x] YouTube: open search or channel surface.
+  - [x] TikTok: open search or profile surface.
 
 ## Phase 7: Documentation
 
