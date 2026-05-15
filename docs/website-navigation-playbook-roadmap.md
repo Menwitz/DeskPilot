@@ -103,7 +103,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Open search.
   - [x] Open profile or channel page.
   - [x] Open notifications.
-  - [ ] Open messages when the site has messages.
+  - [x] Open messages when the site has messages.
   - [ ] Open settings.
   - [ ] Open composer, upload, or editor surface without final submission.
 - [ ] For each seed playbook, define blocked states:

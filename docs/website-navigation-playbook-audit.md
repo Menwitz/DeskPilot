@@ -678,3 +678,18 @@ checking layout, domain, flow, and blocked-state coverage.
     navigation without sending, acknowledging, or modifying anything.
 - Verification:
   - Loaded all seed playbooks and confirmed each contains `open-notifications`.
+
+### Task 57/122: Define open messages flows when the site has messages
+
+- Status: complete.
+- Evidence:
+  - LinkedIn, X/Twitter, Instagram, Facebook, and TikTok define
+    `open-messages`.
+  - Each message-flow description stops at opening the message surface without
+    sending content.
+  - Medium and YouTube intentionally omit `open-messages` because the seed scope
+    does not include a standard direct-message navigation surface for those
+    sites.
+- Verification:
+  - Loaded all seed playbooks and printed whether each contains
+    `open-messages`.
