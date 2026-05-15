@@ -80,7 +80,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] References to landmarks must resolve.
   - [x] Unsupported actions fail validation before execution.
   - [x] Blocked-state definitions must include a detector and user-facing reason.
-- [ ] Add comments only around non-obvious validation and safety decisions.
+- [x] Add comments only around non-obvious validation and safety decisions.
 
 ## Phase 2: Catalog Layout And Seed Playbooks
 

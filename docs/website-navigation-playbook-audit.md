@@ -417,3 +417,14 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` blocked-state validation and
     `tests/test_site_playbooks.py` blocked-state reason test.
+
+### Task 37/122: Add comments only around non-obvious validation and safety decisions
+
+- Status: complete.
+- Evidence:
+  - `src/desktop_agent/site_playbooks.py` contains one inline comment.
+  - The comment explains why sensitive category validation must enforce
+    confirmation before the compiler sees a step.
+  - There are no broad narrative comments around self-explanatory field mapping.
+- Verification:
+  - Reviewed comment usage in `src/desktop_agent/site_playbooks.py`.
