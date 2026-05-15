@@ -72,6 +72,8 @@ agree on the same safety language.
   direct or private messages.
 - `transaction`: applying, purchasing, accepting offers, marketplace actions,
   or payment-adjacent account changes.
+- `delete`: deleting, removing, hiding, archiving, or retracting user or
+  account content.
 
 ## Safety Controls Planned For v1
 
