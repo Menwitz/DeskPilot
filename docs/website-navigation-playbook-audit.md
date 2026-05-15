@@ -1327,3 +1327,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
+
+### Task 104/122: Support `--allowed-window`
+
+- Status: complete.
+- Evidence:
+  - `--allowed-window` is registered through `_add_runtime_options()` and may be
+    provided more than once.
+  - `_cli_overrides_from_args()` maps it to `allowed_windows`.
+  - The runtime-flag regression passes `--allowed-window Medium`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.

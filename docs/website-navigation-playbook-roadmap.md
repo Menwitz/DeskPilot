@@ -156,7 +156,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] `--no-screenshots`.
   - [x] `--max-runtime-seconds`.
   - [x] `--confidence-threshold`.
-  - [ ] `--allowed-window`.
+  - [x] `--allowed-window`.
   - [ ] `--confirm-step`.
 - [ ] Ensure CLI failures explain:
   - [ ] Unknown site.
