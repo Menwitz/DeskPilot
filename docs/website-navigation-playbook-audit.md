@@ -1339,3 +1339,18 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
+
+### Task 105/122: Support `--confirm-step`
+
+- Status: complete.
+- Evidence:
+  - `--confirm-step` is registered through `_add_runtime_options()` and may be
+    provided more than once.
+  - `_cli_overrides_from_args()` maps it to `confirmed_steps`.
+  - Added regression coverage that dry-runs a sensitive site flow successfully
+    only when `--confirm-step publish-post` is supplied.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "confirm_step_allows_sensitive_site_dry_run"`: 1 passed, 8 deselected.
+  - `.venv/bin/ruff check tests/test_site_playbook_cli.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_site_playbook_cli.py`: no issues found.

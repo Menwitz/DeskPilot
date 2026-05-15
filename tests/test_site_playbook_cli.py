@@ -171,6 +171,37 @@ def test_missing_confirmation_returns_clear_message(
     assert "requires explicit confirmation" in output
 
 
+def test_confirm_step_allows_sensitive_site_dry_run(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    playbook_dir = tmp_path / "playbooks"
+    playbook_dir.mkdir()
+    (playbook_dir / "sensitive-site.yaml").write_text(
+        _sensitive_playbook(),
+        encoding="utf-8",
+    )
+    config_path = _write_config(tmp_path)
+
+    status = main(
+        [
+            "dry-run-site",
+            "sensitive-site",
+            "publish-post",
+            "--playbook-dir",
+            str(playbook_dir),
+            "--config",
+            str(config_path),
+            "--confirm-step",
+            "publish-post",
+        ],
+    )
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "status: passed" in output
+
+
 def test_invalid_playbook_returns_validation_error(
     tmp_path: Path,
     capsys: CaptureFixture[str],
