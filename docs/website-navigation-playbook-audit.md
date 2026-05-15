@@ -2638,3 +2638,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "all_seed_flows_compile_and_validate"`: 1 passed, 41 deselected.
+
+### Task 193/211: Normal CI remains deterministic without live public sites
+
+- Status: complete.
+- Evidence:
+  - Phase 7 full-suite verification ran normal CI with live-site smoke skipped.
+  - `tests/test_site_playbook_live_smoke.py::test_live_site_smoke_tests_require_explicit_environment_flag`
+    skips unless `DESKPILOT_LIVE_SITE_SMOKE=1` is set.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_live_smoke.py -k
+    "require_explicit_environment_flag"`: 1 skipped, 9 deselected.
