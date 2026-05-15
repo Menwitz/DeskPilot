@@ -45,6 +45,7 @@ desktop-agent dry-run examples/task.yaml --allowed-window "DeskPilot Fixture"
 desktop-agent run examples/task.yaml --allowed-window "DeskPilot Fixture"
 desktop-agent demo-input
 desktop-agent demo-linkedin
+desktop-agent windows-smoke-checklist
 desktop-agent dry-run-site linkedin open-search
 desktop-agent inspect-screen --output traces/manual-inspection
 desktop-agent replay traces/example-run
@@ -91,6 +92,7 @@ fail with a clear unavailable message on unsupported platforms.
 - [Safety](docs/safety.md)
 - [Tracing](docs/tracing.md)
 - [Troubleshooting](docs/troubleshooting.md)
+- [Windows Smoke Checklist Command](docs/windows-smoke-checklist.md)
 - [Windows E2E Checklist](docs/windows-e2e-checklist.md)
 - [Windows UI Automation](docs/windows-uia.md)
 - [Roadmap](docs/roadmap.md)

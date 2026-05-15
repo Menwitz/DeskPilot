@@ -13,10 +13,12 @@ from desktop_agent.mouse_demo import (
     RealInputController,
     _demo_actuation_profile,
     _run_linkedin_sequence,
+    _run_windows_smoke_sequence,
     _write_report,
     run_input_demo,
     run_linkedin_demo,
     run_mouse_demo,
+    run_windows_smoke_checklist,
 )
 from desktop_agent.screen import ScreenObservation
 
@@ -191,6 +193,52 @@ def test_linkedin_sequence_opens_edge_navigates_and_finds_text() -> None:
     assert observer.observe_count == len(steps)
 
 
+def test_windows_smoke_sequence_checks_cursor_notepad_edge_and_trace() -> None:
+    backend = FakeInputBackend(start_position=(0, 0))
+    controller = RealInputController(backend, _instant_demo_profile())
+    observer = FakeScreenObserver(active_window_title="Smoke Window")
+    recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=Path("trace"),
+        observer=observer,
+    )
+
+    steps = _run_windows_smoke_sequence(
+        controller,
+        keyboard_text="smoke text",
+        edge_url="about:blank",
+        evidence_recorder=recorder,
+        launch_notepad=lambda: MouseDemoStep(
+            "open-notepad",
+            "launch_application",
+            {"application": "notepad.exe"},
+        ),
+        launch_edge=lambda url: MouseDemoStep(
+            "open-edge",
+            "launch_application",
+            {"url": url},
+        ),
+    )
+
+    check_ids = [
+        cast(dict[str, object], step.metadata["smoke_check"])["check_id"]
+        for step in steps
+    ]
+    typed_text = "".join(
+        event.text or "" for event in backend.events if event.kind == "type_text"
+    )
+    assert check_ids == [
+        "cursor_readback",
+        "notepad_launch",
+        "notepad_typing",
+        "edge_launch",
+        "final_cursor_readback",
+    ]
+    assert typed_text == "smoke text"
+    assert all("post_action_evidence" in step.metadata for step in steps)
+    assert observer.observe_count == len(steps)
+
+
 def test_run_input_demo_requires_windows(
     tmp_path: Path,
     monkeypatch: MonkeyPatch,
@@ -209,6 +257,16 @@ def test_run_linkedin_demo_requires_windows(
 
     with pytest.raises(MouseDemoError, match="demo-linkedin requires Windows"):
         run_linkedin_demo(trace_root=tmp_path)
+
+
+def test_run_windows_smoke_checklist_requires_windows(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("desktop_agent.mouse_demo.sys.platform", "darwin")
+
+    with pytest.raises(MouseDemoError, match="requires Windows"):
+        run_windows_smoke_checklist(trace_root=tmp_path)
 
 
 def test_run_mouse_demo_alias_requires_windows(

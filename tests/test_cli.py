@@ -392,6 +392,69 @@ def test_cli_demo_linkedin_prints_trace_report(
     assert "step scroll-linkedin-page: scroll (12 points, 0.500s)" in output
 
 
+def test_cli_windows_smoke_checklist_prints_checks(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    from desktop_agent.mouse_demo import MouseDemoReport, MouseDemoStep
+
+    def fake_run_windows_smoke_checklist(
+        *,
+        trace_root: Path,
+        random_seed: int,
+        movement_smoothness: float,
+        countdown_seconds: float,
+        keyboard_text: str,
+        edge_url: str,
+    ) -> MouseDemoReport:
+        assert trace_root == tmp_path
+        assert random_seed == 21
+        assert movement_smoothness == 0.6
+        assert countdown_seconds == 0
+        assert keyboard_text == "smoke"
+        assert edge_url == "about:blank"
+        return MouseDemoReport(
+            status="passed",
+            trace_dir=tmp_path / "trace",
+            report_path=tmp_path / "trace" / "windows-smoke-checklist-report.json",
+            steps=(
+                MouseDemoStep(
+                    "cursor-readback-check",
+                    "cursor_readback",
+                    {"smoke_check": {"check_id": "cursor_readback"}},
+                ),
+            ),
+        )
+
+    monkeypatch.setattr(
+        "desktop_agent.cli.run_windows_smoke_checklist",
+        fake_run_windows_smoke_checklist,
+    )
+
+    status = main(
+        [
+            "windows-smoke-checklist",
+            "--trace-root",
+            str(tmp_path),
+            "--random-seed",
+            "21",
+            "--movement-smoothness",
+            "0.6",
+            "--countdown-seconds",
+            "0",
+            "--keyboard-text",
+            "smoke",
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "status: passed" in output
+    assert "checklist:" in output
+    assert "check cursor_readback: cursor_readback" in output
+
+
 class FixtureScreenObserver:
     def observe(self, config: RuntimeConfig) -> ScreenObservation:
         return ScreenObservation(

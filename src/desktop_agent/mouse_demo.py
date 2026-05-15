@@ -688,6 +688,77 @@ def run_linkedin_demo(
     )
 
 
+def run_windows_smoke_checklist(
+    *,
+    trace_root: Path = Path("traces"),
+    random_seed: int = 20260515,
+    movement_smoothness: float = 0.85,
+    countdown_seconds: float = 3.0,
+    keyboard_text: str = "DeskPilot Windows smoke check",
+    edge_url: str = "about:blank",
+) -> MouseDemoReport:
+    """Run a bounded Windows smoke checklist through real desktop input."""
+
+    if sys.platform != "win32":
+        raise MouseDemoError("windows-smoke-checklist requires Windows desktop input")
+    if not 0 <= movement_smoothness <= 1:
+        raise MouseDemoError("movement_smoothness must be between 0 and 1")
+    if countdown_seconds < 0:
+        raise MouseDemoError("countdown_seconds must not be negative")
+    if not keyboard_text:
+        raise MouseDemoError("keyboard_text must not be empty")
+    if not edge_url:
+        raise MouseDemoError("edge_url must not be empty")
+
+    _set_process_dpi_aware()
+    trace_dir = _prepare_trace_dir(trace_root, "windows-smoke-checklist")
+    profile = _demo_actuation_profile(random_seed, movement_smoothness)
+    backend = WindowsInputBackend(move_mode="absolute")
+    controller = RealInputController(backend, profile)
+    evidence_recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=trace_dir,
+    )
+    steps: list[MouseDemoStep] = []
+    status = "passed"
+    reason: str | None = None
+
+    try:
+        _countdown(countdown_seconds)
+        steps.extend(
+            _run_windows_smoke_sequence(
+                controller,
+                keyboard_text=keyboard_text,
+                edge_url=edge_url,
+                evidence_recorder=evidence_recorder,
+            )
+        )
+    except Exception as exc:  # pragma: no cover - exercised manually on Windows.
+        status = "failed"
+        reason = str(exc)
+
+    report_path = _write_report(
+        trace_dir,
+        tuple(steps),
+        status,
+        reason,
+        report_name="windows-smoke-checklist-report.json",
+    )
+    _write_smoke_checklist_markdown(
+        trace_dir,
+        tuple(steps),
+        status,
+        report_path,
+    )
+    return MouseDemoReport(
+        status=status,
+        reason=reason,
+        trace_dir=trace_dir,
+        report_path=report_path,
+        steps=tuple(steps),
+    )
+
+
 def _demo_actuation_profile(
     random_seed: int,
     movement_smoothness: float,
@@ -821,6 +892,69 @@ def _run_linkedin_sequence(
     return tuple(steps)
 
 
+def _run_windows_smoke_sequence(
+    controller: RealInputController,
+    *,
+    keyboard_text: str,
+    edge_url: str,
+    evidence_recorder: PostActionEvidenceRecorder | None = None,
+    launch_notepad: Callable[[], MouseDemoStep] | None = None,
+    launch_edge: Callable[[str], MouseDemoStep] | None = None,
+) -> tuple[MouseDemoStep, ...]:
+    steps: list[MouseDemoStep] = []
+    notepad_launcher = launch_notepad or _launch_notepad
+    edge_launcher = launch_edge or _launch_edge
+
+    _record_step(
+        steps,
+        _smoke_step(
+            controller.current_position_step("cursor-readback-check"),
+            "cursor_readback",
+            "real cursor position was read from the desktop input backend",
+        ),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        _smoke_step(
+            notepad_launcher(),
+            "notepad_launch",
+            "Notepad process was launched for disposable keyboard input",
+        ),
+        evidence_recorder,
+    )
+    controller.pause(1.0)
+    _record_step(
+        steps,
+        _smoke_step(
+            controller.type_text("notepad-typing-check", keyboard_text),
+            "notepad_typing",
+            "configured text was sent through low-level keyboard input",
+        ),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        _smoke_step(
+            edge_launcher(edge_url),
+            "edge_launch",
+            "Microsoft Edge process was launched for browser input validation",
+        ),
+        evidence_recorder,
+    )
+    controller.pause(1.0)
+    _record_step(
+        steps,
+        _smoke_step(
+            controller.current_position_step("final-cursor-readback"),
+            "final_cursor_readback",
+            "cursor remained readable after app launch and typing checks",
+        ),
+        evidence_recorder,
+    )
+    return tuple(steps)
+
+
 def _launch_notepad() -> MouseDemoStep:
     process = subprocess.Popen(["notepad.exe"])
     return MouseDemoStep(
@@ -876,6 +1010,19 @@ def _record_step(
         steps.append(step)
         return
     steps.append(evidence_recorder.attach(step))
+
+
+def _smoke_step(
+    step: MouseDemoStep,
+    check_id: str,
+    expectation: str,
+) -> MouseDemoStep:
+    metadata = dict(step.metadata)
+    metadata["smoke_check"] = {
+        "check_id": check_id,
+        "expectation": expectation,
+    }
+    return MouseDemoStep(step.step_id, step.action, metadata)
 
 
 def _post_action_evidence_from_observation(
@@ -972,6 +1119,37 @@ def _write_demo_action_log(
             }
             file.write(json.dumps(payload, sort_keys=True) + "\n")
     return action_log_path
+
+
+def _write_smoke_checklist_markdown(
+    trace_dir: Path,
+    steps: tuple[MouseDemoStep, ...],
+    status: str,
+    report_path: Path,
+) -> Path:
+    checklist_path = trace_dir / "windows-smoke-checklist.md"
+    lines = [
+        "# Windows Smoke Checklist",
+        "",
+        f"- [x] Status: `{status}`",
+        f"- [x] Report written: `{report_path}`",
+        f"- [x] Action log written: `{trace_dir / 'action-log.jsonl'}`",
+    ]
+    for step in steps:
+        smoke_check = step.metadata.get("smoke_check")
+        if isinstance(smoke_check, dict):
+            check_id = smoke_check.get("check_id", step.step_id)
+            expectation = smoke_check.get("expectation", step.action)
+            evidence = step.metadata.get("post_action_evidence")
+            evidence_status = (
+                evidence.get("status") if isinstance(evidence, dict) else "not captured"
+            )
+            lines.append(
+                f"- [x] `{check_id}`: {expectation} "
+                f"(post-action evidence: `{evidence_status}`)"
+            )
+    checklist_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return checklist_path
 
 
 def _prepare_trace_dir(trace_root: Path, suffix: str) -> Path:

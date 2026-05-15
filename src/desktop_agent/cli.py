@@ -32,7 +32,12 @@ from desktop_agent.config import (
     resolve_runtime_config,
 )
 from desktop_agent.content_variables import load_content_variables
-from desktop_agent.mouse_demo import MouseDemoError, run_input_demo, run_linkedin_demo
+from desktop_agent.mouse_demo import (
+    MouseDemoError,
+    run_input_demo,
+    run_linkedin_demo,
+    run_windows_smoke_checklist,
+)
 from desktop_agent.ocr import (
     OcrPerceptionEngine,
     OcrTextBlock,
@@ -119,6 +124,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _demo_input(args)
         if args.command == "demo-linkedin":
             return _demo_linkedin(args)
+        if args.command == "windows-smoke-checklist":
+            return _windows_smoke_checklist(args)
         if args.command == "replay":
             return _replay(args)
         parser.print_help()
@@ -234,6 +241,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="open Edge, navigate to LinkedIn, and perform a safe page action",
     )
     _add_linkedin_demo_options(demo_linkedin_parser)
+
+    windows_smoke_parser = subparsers.add_parser(
+        "windows-smoke-checklist",
+        help="run a real-input Windows smoke checklist and write trace evidence",
+    )
+    _add_windows_smoke_checklist_options(windows_smoke_parser)
     return parser
 
 
@@ -277,6 +290,19 @@ def _add_linkedin_demo_options(parser: argparse.ArgumentParser) -> None:
         help="text highlighted through Edge's browser find box after navigation",
     )
     parser.add_argument("--page-load-seconds", default=5.0, type=float)
+
+
+def _add_windows_smoke_checklist_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--trace-root", default=Path("traces"), type=Path)
+    parser.add_argument("--random-seed", default=20260515, type=int)
+    parser.add_argument("--movement-smoothness", default=0.85, type=float)
+    parser.add_argument("--countdown-seconds", default=3.0, type=float)
+    parser.add_argument(
+        "--keyboard-text",
+        default="DeskPilot Windows smoke check",
+        help="text typed into the disposable Notepad window",
+    )
+    parser.add_argument("--edge-url", default="about:blank")
 
 
 def _add_site_catalog_options(parser: argparse.ArgumentParser) -> None:
@@ -834,6 +860,30 @@ def _demo_linkedin(args: argparse.Namespace) -> int:
                 f"step {step.step_id}: {step.action} "
                 f"({movement_points} points, {duration:.3f}s)"
             )
+        else:
+            print(f"step {step.step_id}: {step.action}")
+    return 0 if report.status == "passed" else 1
+
+
+def _windows_smoke_checklist(args: argparse.Namespace) -> int:
+    report = run_windows_smoke_checklist(
+        trace_root=args.trace_root,
+        random_seed=args.random_seed,
+        movement_smoothness=args.movement_smoothness,
+        countdown_seconds=args.countdown_seconds,
+        keyboard_text=args.keyboard_text,
+        edge_url=args.edge_url,
+    )
+    print(f"status: {report.status}")
+    if report.reason:
+        print(f"reason: {report.reason}")
+    print(f"trace: {report.trace_dir}")
+    print(f"report: {report.report_path}")
+    print(f"checklist: {report.trace_dir / 'windows-smoke-checklist.md'}")
+    for step in report.steps:
+        smoke_check = step.metadata.get("smoke_check")
+        if isinstance(smoke_check, dict):
+            print(f"check {smoke_check.get('check_id', step.step_id)}: {step.action}")
         else:
             print(f"step {step.step_id}: {step.action}")
     return 0 if report.status == "passed" else 1

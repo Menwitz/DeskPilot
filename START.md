@@ -99,6 +99,20 @@ Expected result:
 - Edge Find highlights `LinkedIn`.
 - A report is written under `traces\<timestamp>-linkedin-demo\`.
 
+To run the lower-level Windows smoke checklist:
+
+```powershell
+uv run desktop-agent windows-smoke-checklist --countdown-seconds 5
+```
+
+Expected result:
+
+- Cursor readback succeeds.
+- Notepad opens and receives the configured smoke text.
+- Edge opens in a fresh window.
+- A checklist, report, action log, and screenshots are written under
+  `traces\<timestamp>-windows-smoke-checklist\`.
+
 Real mouse and keyboard automation is Windows-first in v1. Keep the Windows
 session unlocked, use the primary monitor, and make the relevant fixture window
 visible.

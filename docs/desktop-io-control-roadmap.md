@@ -151,6 +151,8 @@ Acceptance:
 
 ## Phase 7: Product Hardening
 
+- [x] Add Windows smoke checklist command for Edge launch, Notepad typing,
+      cursor readback, and trace file creation.
 - [ ] Add Windows smoke tests gated by `DESKPILOT_WINDOWS_SMOKE=1`.
 - [ ] Add a manual VM acceptance checklist for each demo command.
 - [ ] Add trace schema versioning.
@@ -179,7 +181,7 @@ Acceptance:
 
 - [x] Add post-action screenshot capture and active-window metadata to
       `demo-input` and `demo-linkedin` traces.
-- [ ] Add a Windows smoke checklist command that verifies Edge launch, Notepad
+- [x] Add a Windows smoke checklist command that verifies Edge launch, Notepad
       typing, cursor readback, and trace file creation.
 - [ ] Replace `missed_target`-only failures with a diagnostic bundle containing
       screenshot, OCR candidates, UIA candidates, chosen target, and cursor

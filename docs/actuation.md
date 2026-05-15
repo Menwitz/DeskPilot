@@ -110,6 +110,16 @@ The command opens Edge, types the LinkedIn URL through the address bar, scrolls
 the page with the real cursor, and uses browser Find to highlight text. See
 [LinkedIn Edge Demo](linkedin-demo.md) for the runbook.
 
+For a compact Windows smoke checklist, run:
+
+```powershell
+uv run desktop-agent windows-smoke-checklist
+```
+
+The command verifies cursor readback, Notepad typing, Edge launch, trace file
+creation, post-action screenshots, and monitoring logs. See
+[Windows Smoke Checklist Command](windows-smoke-checklist.md) for the runbook.
+
 ## Platform Support
 
 `create_platform_actuator()` returns the Windows input backend on Windows and a
