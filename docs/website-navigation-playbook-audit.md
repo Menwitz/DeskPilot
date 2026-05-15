@@ -1627,3 +1627,17 @@ checking layout, domain, flow, and blocked-state coverage.
     "public_site_failure_modes"`: 1 passed, 5 deselected.
   - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
   - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.
+
+### Task 121/211: Consent dialog
+
+- Status: complete.
+- Evidence:
+  - `docs/troubleshooting.md` now identifies consent failures by consent,
+    cookie, or privacy text.
+  - The remediation directs the operator to resolve the dialog manually
+    according to their preference and rerun the flow.
+- Verification:
+  - `.venv/bin/pytest tests/test_safety_docs.py -k
+    "public_site_failure_modes"`: 1 passed, 5 deselected.
+  - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.

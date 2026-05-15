@@ -145,7 +145,9 @@ Symptoms:
 
 - Logged-out session: a blocked-state step reports `logged-out` or sign-in
   text; authenticate manually in the browser, then rerun the same flow.
-- Consent dialog: a blocked-state step reports a cookie or consent interstitial.
+- Consent dialog: a blocked-state step reports consent, cookie, or privacy
+  text; resolve the dialog manually according to the operator's preference, then
+  rerun the flow.
 - Site redesign: an unsupported-layout blocked state or repeated target
   mismatch appears in the action log.
 - CAPTCHA or suspicious-activity challenge: the report says the challenge is not

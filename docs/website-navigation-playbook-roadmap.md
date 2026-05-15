@@ -176,7 +176,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Update replay output to include site and flow when present.
 - [x] Update troubleshooting docs with public-site failure modes:
   - [x] Logged-out session.
-  - [ ] Consent dialog.
+  - [x] Consent dialog.
   - [ ] Site redesign.
   - [ ] CAPTCHA or suspicious-activity challenge.
   - [ ] Permission restriction.
