@@ -878,3 +878,15 @@ checking layout, domain, flow, and blocked-state coverage.
     tests/test_site_playbooks.py`: all checks passed.
   - `.venv/bin/mypy src/desktop_agent/site_playbooks.py
     tests/test_site_playbooks.py`: no issues found.
+
+### Task 70/122: Compile `click_text`
+
+- Status: complete.
+- Evidence:
+  - The action regression matrix includes a `click_text` site step with a
+    `target` value.
+  - `SiteTaskCompiler` preserves the action and target in the compiled
+    `TaskStep`, and `BasicTaskValidator` accepts the result.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
+    and click_text"`: 1 passed, 32 deselected.
