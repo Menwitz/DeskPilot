@@ -177,7 +177,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Update troubleshooting docs with public-site failure modes:
   - [x] Logged-out session.
   - [x] Consent dialog.
-  - [ ] Site redesign.
+  - [x] Site redesign.
   - [ ] CAPTCHA or suspicious-activity challenge.
   - [ ] Permission restriction.
   - [ ] Ambiguous selector.

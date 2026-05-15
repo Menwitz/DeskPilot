@@ -1641,3 +1641,18 @@ checking layout, domain, flow, and blocked-state coverage.
     "public_site_failure_modes"`: 1 passed, 5 deselected.
   - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
   - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.
+
+### Task 122/211: Site redesign
+
+- Status: complete.
+- Evidence:
+  - `docs/troubleshooting.md` now identifies redesign failures through
+    unsupported-layout blocked states, missing landmarks, or repeated target
+    mismatches in the action log.
+  - The remediation directs maintainers to inspect the changed page and update
+    playbook landmarks or the flow.
+- Verification:
+  - `.venv/bin/pytest tests/test_safety_docs.py -k
+    "public_site_failure_modes"`: 1 passed, 5 deselected.
+  - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.

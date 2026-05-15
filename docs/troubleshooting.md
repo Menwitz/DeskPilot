@@ -148,8 +148,9 @@ Symptoms:
 - Consent dialog: a blocked-state step reports consent, cookie, or privacy
   text; resolve the dialog manually according to the operator's preference, then
   rerun the flow.
-- Site redesign: an unsupported-layout blocked state or repeated target
-  mismatch appears in the action log.
+- Site redesign: an unsupported-layout blocked state, missing landmark, or
+  repeated target mismatch appears in the action log; inspect the page and
+  update the playbook landmarks or flow.
 - CAPTCHA or suspicious-activity challenge: the report says the challenge is not
   automated and the run stops.
 - Permission restriction: account, policy, or unavailable-action text appears in
