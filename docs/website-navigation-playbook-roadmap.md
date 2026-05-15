@@ -127,7 +127,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] `scroll`.
   - [x] `scroll_until`.
   - [x] `wait_for`.
-  - [ ] `assert_visible`.
+  - [x] `assert_visible`.
   - [ ] `branch_if_visible`.
 - [ ] Preserve confirmation requirements when compiling sensitive steps.
 - [ ] Add flow-level defaults:
