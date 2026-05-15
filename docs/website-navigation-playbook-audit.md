@@ -1484,3 +1484,23 @@ checking layout, domain, flow, and blocked-state coverage.
 - Plan:
   - Each Phase 5 item will be checked only after its trace/report/docs evidence
     is recorded below and committed separately.
+
+### Task 113/211: Extend trace output with site-playbook metadata
+
+- Status: complete.
+- Evidence:
+  - `SiteTaskCompiler` writes site ID, flow ID, playbook version, and domain
+    metadata into the compiled task.
+  - `FileTraceSink.prepare_run()` persists that metadata in `task.json`.
+  - The planner's `load_task` trace event includes task metadata in
+    `action-log.jsonl`.
+  - `FileTraceSink.write_final_report()` persists task metadata in
+    `final-report.json`.
+  - Added regression coverage that compares these fields across all three trace
+    artifacts for a seed YouTube site run.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "trace_artifacts_include_site_playbook_metadata"`: 1 passed, 5 deselected.
+  - `.venv/bin/ruff check tests/test_site_playbook_tracing.py`: all checks
+    passed.
+  - `.venv/bin/mypy tests/test_site_playbook_tracing.py`: no issues found.

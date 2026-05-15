@@ -17,6 +17,26 @@ def test_final_report_includes_site_id_and_flow_id(tmp_path: Path) -> None:
     assert metadata["site_flow_id"] == "open-search"
 
 
+def test_trace_artifacts_include_site_playbook_metadata(tmp_path: Path) -> None:
+    trace_dir = _run_seed_site_trace(tmp_path)
+
+    task = _read_json_object(trace_dir / "task.json")
+    report = _read_final_report(trace_dir)
+    events = _read_action_log(trace_dir)
+    load_task = next(event for event in events if event["phase"] == "load_task")
+
+    for payload in (task, report, load_task):
+        metadata = _metadata(payload)
+        assert metadata["site_id"] == "youtube"
+        assert metadata["site_flow_id"] == "open-search"
+        assert metadata["site_playbook_version"] == "1"
+        assert metadata["site_domains"] == [
+            "youtube.com",
+            "youtu.be",
+            "studio.youtube.com",
+        ]
+
+
 def test_action_log_includes_selected_playbook_version(tmp_path: Path) -> None:
     trace_dir = _run_seed_site_trace(tmp_path)
 
@@ -116,7 +136,11 @@ def _single_trace_dir(tmp_path: Path) -> Path:
 
 
 def _read_final_report(trace_dir: Path) -> dict[str, object]:
-    loaded = json.loads((trace_dir / "final-report.json").read_text(encoding="utf-8"))
+    return _read_json_object(trace_dir / "final-report.json")
+
+
+def _read_json_object(path: Path) -> dict[str, object]:
+    loaded = json.loads(path.read_text(encoding="utf-8"))
     assert isinstance(loaded, dict)
     return loaded
 
