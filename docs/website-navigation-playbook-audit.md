@@ -1709,3 +1709,31 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check .`: all checks passed.
   - `.venv/bin/mypy`: no issues in 67 source files.
   - `.venv/bin/python -m build`: built source distribution and wheel.
+
+## Phase 6 Pre-Implementation Audit: Regression Tests
+
+- Status: ready.
+- Scope:
+  - Phase 6 covers schema, compiler, CLI, safety, trace, and opt-in live smoke
+    regression coverage for website playbooks.
+- Evidence:
+  - `tests/test_site_playbooks.py` contains schema and compiler regression
+    tests for playbook loading, validation failures, compiler output, seed
+    catalog validation, and compiled task validation.
+  - `tests/test_site_playbook_cli.py` contains CLI regressions for catalog
+    commands, compilation, dry-runs, platform-actuation failures, missing
+    confirmation, and invalid playbooks.
+  - `tests/test_site_playbook_safety.py` contains safety regressions for
+    sensitive categories, CAPTCHA blocked states, active-window mismatch, and
+    emergency stop behavior.
+  - `tests/test_site_playbook_tracing.py` contains trace regressions for site
+    metadata, playbook version, confirmation state, blocked-state reports, and
+    replay output.
+  - `tests/test_site_playbook_live_smoke.py` contains opt-in live smoke
+    coverage for seed read-only flows and explicit environment gating.
+- Verification:
+  - Phase 5 boundary verification just ran the full suite successfully:
+    291 passed, 4 skipped.
+- Plan:
+  - Each Phase 6 checklist item will be checked only after the exact regression
+    evidence and focused command are recorded below.
