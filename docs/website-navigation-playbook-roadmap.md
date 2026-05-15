@@ -196,7 +196,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Unknown step action is rejected.
 - [x] Missing landmark reference is rejected.
 - [x] Sensitive step without confirmation is rejected.
-- [ ] Blocked state without a reason is rejected.
+- [x] Blocked state without a reason is rejected.
 
 ### Compiler Regression Tests
 

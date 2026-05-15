@@ -1851,3 +1851,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "sensitive_step_without_confirmation_is_rejected"`: 1 passed, 35 deselected.
+
+### Task 136/211: Blocked state without a reason is rejected
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_blocked_state_without_reason_is_rejected`
+    writes a blocked state with an empty `reason`.
+  - The assertion verifies validation raises a `reason is required` error.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "blocked_state_without_reason_is_rejected"`: 1 passed, 35 deselected.
