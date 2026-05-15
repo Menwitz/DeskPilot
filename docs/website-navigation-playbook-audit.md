@@ -2230,3 +2230,16 @@ checking layout, domain, flow, and blocked-state coverage.
   - `env DESKPILOT_LIVE_SITE_SMOKE=1 .venv/bin/pytest
     tests/test_site_playbook_live_smoke.py -k
     "require_explicit_environment_flag"`: 1 passed, 2 deselected.
+
+### Task 167/211: Live smoke tests never run final actions by default
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_live_smoke.py::test_live_site_smoke_flows_never_run_final_actions_by_default`
+    resolves every seed smoke flow.
+  - The assertions verify default smoke steps have no confirmation requirement
+    and no sensitive category, preventing final submit, post, message,
+    purchase, apply, or delete actions from running as smoke defaults.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_live_smoke.py -k
+    "never_run_final_actions_by_default"`: 1 passed, 2 deselected.
