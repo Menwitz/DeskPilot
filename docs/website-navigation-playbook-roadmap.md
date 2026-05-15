@@ -241,7 +241,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 ### Opt-In Live Smoke Tests
 
 - [x] Live smoke tests are skipped by default.
-- [ ] Live smoke tests require an explicit environment flag.
+- [x] Live smoke tests require an explicit environment flag.
 - [ ] Live smoke tests never run final submit, post, message, purchase, apply, or
   delete actions unless a separate confirmation flag is present.
 - [ ] Each seed site has one read-only smoke flow:

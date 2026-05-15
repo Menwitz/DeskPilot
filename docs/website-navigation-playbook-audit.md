@@ -2217,3 +2217,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_live_smoke.py -k
     "require_explicit_environment_flag"`: 1 skipped, 2 deselected.
+
+### Task 166/211: Live smoke tests require an explicit environment flag
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_live_smoke.py::test_live_site_smoke_tests_require_explicit_environment_flag`
+    asserts the opt-in environment variable is present before live-site smoke
+    execution is allowed.
+  - Running the selected test with `DESKPILOT_LIVE_SITE_SMOKE=1` passed.
+- Verification:
+  - `env DESKPILOT_LIVE_SITE_SMOKE=1 .venv/bin/pytest
+    tests/test_site_playbook_live_smoke.py -k
+    "require_explicit_environment_flag"`: 1 passed, 2 deselected.
