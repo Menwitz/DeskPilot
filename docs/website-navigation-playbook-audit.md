@@ -75,3 +75,14 @@ website safety claim before the corresponding roadmap item is checked.
     anti-abuse circumvention.
 - Verification:
   - Reviewed `docs/safety.md` lines 42-49.
+
+### Task 6/122: Document credential abuse as unsupported
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` states that credential abuse, credential harvesting,
+    account takeover, password guessing, and automation against accounts without
+    authorization are not supported.
+  - This directly constrains public-site playbooks to authorized sessions.
+- Verification:
+  - Reviewed `docs/safety.md` lines 42-51.
