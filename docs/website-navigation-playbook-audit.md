@@ -1958,3 +1958,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "unknown_site_flow_fails_before_task_execution"`: 1 passed, 35 deselected.
+
+### Task 145/211: `list-sites` prints all seed sites
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_cli.py::test_list_sites_prints_all_seed_sites`
+    runs `main(["list-sites"])`.
+  - The assertion verifies the printed set matches every seed site:
+    Facebook, Instagram, LinkedIn, Medium, TikTok, X/Twitter, and YouTube.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "list_sites_prints_all_seed_sites"`: 1 passed, 10 deselected.
