@@ -81,6 +81,38 @@ def test_dry_run_site_validates_without_desktop_input(
     assert "status: passed" in output
 
 
+def test_dry_run_site_accepts_runtime_safety_flags(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    config_path = _write_config(tmp_path)
+
+    status = main(
+        [
+            "dry-run-site",
+            "medium",
+            "open-search",
+            "--config",
+            str(config_path),
+            "--verbose",
+            "--no-screenshots",
+            "--max-runtime-seconds",
+            "5",
+            "--confidence-threshold",
+            "0.75",
+            "--allowed-window",
+            "Medium",
+            "--confirm-step",
+            "open-search",
+        ],
+    )
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "status: passed" in output
+    assert "event" in output
+
+
 def test_run_site_returns_nonzero_when_platform_actuation_is_unavailable(
     tmp_path: Path,
     capsys: CaptureFixture[str],

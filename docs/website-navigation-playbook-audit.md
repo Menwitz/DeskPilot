@@ -1254,3 +1254,19 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_validates_without_desktop_input"`: 1 passed, 6 deselected.
+
+### Task 98/122: Support existing runtime safety flags
+
+- Status: complete.
+- Evidence:
+  - `run-site` and `dry-run-site` share `_add_runtime_options()`.
+  - Runtime options include `--config`, `--verbose`, `--no-screenshots`,
+    `--max-runtime-seconds`, `--confidence-threshold`, `--allowed-window`,
+    and `--confirm-step`.
+  - Added regression coverage that runs `dry-run-site` with all listed runtime
+    flags and confirms the command passes with verbose output.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
+  - `.venv/bin/ruff check tests/test_site_playbook_cli.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_site_playbook_cli.py`: no issues found.
