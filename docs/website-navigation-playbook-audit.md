@@ -1392,3 +1392,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "unknown_flow_returns_clear_message"`: 1 passed, 10 deselected.
+
+### Task 109/122: Explain invalid playbook failures
+
+- Status: complete.
+- Evidence:
+  - CLI error handling catches `SitePlaybookValidationError` raised by catalog
+    loading.
+  - Regression coverage writes an invalid playbook and asserts the slug-safe
+    validation message is printed with nonzero status.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "invalid_playbook_returns_validation_error"`: 1 passed, 10 deselected.
