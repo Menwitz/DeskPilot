@@ -2720,3 +2720,18 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_approval_manifest.py -k
     "approval_manifest_loads_required_fields"`: 1 passed, 8 deselected.
+
+### Task 197/211: Validate approval manifest fields before execution
+
+- Status: complete.
+- Evidence:
+  - `src/desktop_agent/approval_manifest.py` validates site ID, flow ID, approved
+    steps, approver, reason, ISO timestamp, and content fingerprint before the
+    manifest can authorize a task.
+  - `tests/test_approval_manifest.py` now asserts approver, reason, normalized
+    timestamp, content fingerprint, invalid timestamps, scope mismatches, unknown
+    steps, and stale content fingerprints.
+- Verification:
+  - `.venv/bin/pytest tests/test_approval_manifest.py -k
+    "approval_manifest_loads_required_fields or approval_manifest_rejects_invalid_approved_at or approval_manifest_rejects_unknown_approved_step or approval_manifest_rejects_site_scope_mismatch or approval_manifest_rejects_flow_scope_mismatch or approval_manifest_rejects_content_fingerprint_mismatch"`:
+    6 passed, 4 deselected.

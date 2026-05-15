@@ -25,7 +25,29 @@ def test_approval_manifest_loads_required_fields(tmp_path: Path) -> None:
     assert manifest.site_id == "sensitive-site"
     assert manifest.flow_id == "publish-post"
     assert manifest.approved_steps == ("publish-post",)
+    assert manifest.approver == "qa-lead@example.test"
+    assert manifest.reason == "Preapproved fixture publish flow for regression testing."
+    assert manifest.approved_at == "2026-05-15T00:00:00+00:00"
+    assert manifest.content_fingerprint == "fixture-content-v1"
     assert manifest.metadata()["site_approval_manifest_status"] == "validated"
+
+
+def test_approval_manifest_rejects_invalid_approved_at(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path, approved_steps=("publish-post",))
+    manifest_path.write_text(
+        manifest_path.read_text(encoding="utf-8").replace(
+            "approved_at: 2026-05-15T00:00:00Z",
+            "approved_at: not-a-timestamp",
+        ),
+        encoding="utf-8",
+    )
+
+    try:
+        load_approval_manifest(manifest_path)
+    except ApprovalManifestError as exc:
+        assert "approved_at must be an ISO timestamp" in str(exc)
+    else:
+        raise AssertionError("approval manifest should reject invalid timestamps")
 
 
 def test_approval_manifest_rejects_unknown_approved_step(tmp_path: Path) -> None:

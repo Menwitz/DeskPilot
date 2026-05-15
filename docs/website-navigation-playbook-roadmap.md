@@ -286,7 +286,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 - [x] Add a local YAML approval manifest contract for sensitive public-site
   workflows.
-- [ ] Validate manifest site ID, flow ID, approved step IDs, approver, reason,
+- [x] Validate manifest site ID, flow ID, approved step IDs, approver, reason,
   ISO timestamp, and content fingerprint before execution.
 - [ ] Require approval manifests for real `run-site` execution when a compiled
   site task contains sensitive or submission steps.
