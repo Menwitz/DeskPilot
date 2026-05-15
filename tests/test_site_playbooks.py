@@ -276,6 +276,24 @@ def test_flow_retry_defaults_compile_to_steps(tmp_path: Path) -> None:
     assert task.steps[0].retry == 3
 
 
+def test_flow_confidence_threshold_compiles_to_config_override(
+    tmp_path: Path,
+) -> None:
+    playbook = load_site_playbook(
+        _write_playbook(
+            tmp_path,
+            _valid_playbook().replace(
+                "retry: 1\n    steps:",
+                "retry: 1\n    confidence_threshold: 0.84\n    steps:",
+            ),
+        ),
+    )
+
+    task = SiteTaskCompiler().compile(playbook, "open-search")
+
+    assert task.config_overrides.confidence_threshold == 0.84
+
+
 def test_sensitive_steps_preserve_confirmation(tmp_path: Path) -> None:
     playbook = load_site_playbook(
         _write_playbook(tmp_path, _sensitive_playbook("publish")),

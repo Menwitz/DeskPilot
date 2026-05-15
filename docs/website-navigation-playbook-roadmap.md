@@ -133,7 +133,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Add flow-level defaults:
   - [x] Timeout.
   - [x] Retry budget.
-  - [ ] Confidence threshold.
+  - [x] Confidence threshold.
   - [ ] Optional search region.
 - [ ] Add blocked-state checks before irreversible actions.
 - [ ] Add task metadata for trace readability:

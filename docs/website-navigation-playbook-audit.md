@@ -1045,3 +1045,18 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "flow_retry_defaults_compile_to_steps"`: 1 passed, 32 deselected.
+
+### Task 84/122: Compile flow confidence threshold defaults
+
+- Status: complete.
+- Evidence:
+  - `SiteTaskCompiler` assigns `flow.confidence_threshold` to
+    `TaskDefinition.config_overrides.confidence_threshold`.
+  - Added dedicated regression coverage that compiles a flow with confidence
+    threshold `0.84` and asserts the compiled config override preserves it.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "flow_confidence_threshold_compiles_to_config_override"`: 1 passed,
+    33 deselected.
+  - `.venv/bin/ruff check tests/test_site_playbooks.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_site_playbooks.py`: no issues found.
