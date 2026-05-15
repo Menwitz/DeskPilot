@@ -195,7 +195,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Duplicate flow-step IDs are rejected.
 - [x] Unknown step action is rejected.
 - [x] Missing landmark reference is rejected.
-- [ ] Sensitive step without confirmation is rejected.
+- [x] Sensitive step without confirmation is rejected.
 - [ ] Blocked state without a reason is rejected.
 
 ### Compiler Regression Tests

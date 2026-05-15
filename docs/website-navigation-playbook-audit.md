@@ -1840,3 +1840,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "missing_landmark_reference_is_rejected"`: 1 passed, 35 deselected.
+
+### Task 135/211: Sensitive step without confirmation is rejected
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_sensitive_step_without_confirmation_is_rejected`
+    adds `sensitive_category: publish` without `requires_confirmation: true`.
+  - The assertion verifies validation rejects the playbook before compilation.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "sensitive_step_without_confirmation_is_rejected"`: 1 passed, 35 deselected.
