@@ -7,6 +7,7 @@ from desktop_agent.site_playbooks import (
     SitePlaybookValidationError,
     SiteTaskCompiler,
     load_site_playbook,
+    load_site_playbooks,
 )
 from desktop_agent.task_dsl import BasicTaskValidator, TaskDefinition
 
@@ -229,6 +230,51 @@ def test_unknown_site_flow_fails_before_task_execution(tmp_path: Path) -> None:
 
     with pytest.raises(SitePlaybookValidationError, match="unknown flow"):
         SiteTaskCompiler().compile(playbook, "missing-flow")
+
+
+def test_all_seed_playbooks_validate() -> None:
+    playbooks = load_site_playbooks()
+
+    assert {playbook.site_id for playbook in playbooks} == {
+        "facebook",
+        "instagram",
+        "linkedin",
+        "medium",
+        "tiktok",
+        "x-twitter",
+        "youtube",
+    }
+
+
+def test_every_seed_playbook_has_read_only_navigation_flow() -> None:
+    for playbook in load_site_playbooks():
+        read_only_flows = [
+            flow
+            for flow in playbook.flows
+            if all(
+                not step.requires_confirmation and step.sensitive_category is None
+                for step in flow.steps
+            )
+        ]
+        assert read_only_flows, playbook.site_id
+
+
+def test_seed_sensitive_actions_require_confirmation() -> None:
+    for playbook in load_site_playbooks():
+        for flow in playbook.flows:
+            for step in flow.steps:
+                if step.sensitive_category is not None:
+                    assert step.requires_confirmation is True
+
+
+def test_all_seed_flows_compile_and_validate() -> None:
+    compiler = SiteTaskCompiler()
+    validator = BasicTaskValidator()
+
+    for playbook in load_site_playbooks():
+        for flow in playbook.flows:
+            task = compiler.compile(playbook, flow.id)
+            validator.validate(task, RuntimeConfig())
 
 
 def _write_playbook(tmp_path: Path, content: str) -> Path:

@@ -271,16 +271,16 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ## Phase 8: Acceptance Criteria
 
-- [ ] A new engineer can add a website by copying `_template.yaml`, filling in
+- [x] A new engineer can add a website by copying `_template.yaml`, filling in
   landmarks and flows, and adding schema/compiler tests.
-- [ ] All seven seed playbooks validate.
-- [ ] Every seed playbook has at least one read-only navigation flow.
-- [ ] Every seed playbook has sensitive actions marked with explicit
+- [x] All seven seed playbooks validate.
+- [x] Every seed playbook has at least one read-only navigation flow.
+- [x] Every seed playbook has sensitive actions marked with explicit
   confirmation.
-- [ ] Compiled flows pass the existing task validator.
-- [ ] Normal CI remains deterministic and does not depend on live public sites.
-- [ ] Opt-in live smoke tests can be run manually for the seed sites.
-- [ ] Failed site runs produce clear local traces and final reports.
+- [x] Compiled flows pass the existing task validator.
+- [x] Normal CI remains deterministic and does not depend on live public sites.
+- [x] Opt-in live smoke tests can be run manually for the seed sites.
+- [x] Failed site runs produce clear local traces and final reports.
 
 ## Commit Plan
 
