@@ -4,6 +4,8 @@ DeskPilot ships deterministic local fixtures and task examples:
 
 - `examples/browser_fixture.html` with `examples/browser-task.yaml`
 - `examples/adversarial_fixture.html` with `examples/adversarial-task.yaml`
+- `examples/capability-showcase-task.yaml` for a broad dry-run capability
+  showcase
 - `examples/native_fixture.py` with `examples/native-task.yaml`
 - `examples/mixed-task.yaml` for a browser-to-native handoff
 - `examples/execution-profile-fast-task.yaml`,
@@ -20,6 +22,14 @@ fixture.
 The adversarial fixture is a browser page with duplicated controls, a delayed
 disabled control, and a moving target. It is intended for benchmark and recovery
 work rather than simple smoke tests.
+
+The capability showcase is the heaviest single YAML example. It is intentionally
+dry-run oriented and demonstrates the full maintained task-planning surface:
+task-level config overrides, careful execution-profile timing, entropy budgets,
+dependencies, expected state transitions, recovery rules, safe action variants,
+confirmation-gated submission, checkpointing, branch fallback, explicit scroll,
+`scroll_until`, `click_text`, `click_uia`, `click_image`, `type_text`,
+`press_key`, `drag`, `wait_for`, and `assert_visible`.
 
 Run `desktop-agent dry-run <task.yaml>` first to validate the task and produce a
 local trace without sending desktop input. Real `run` execution requires an
@@ -48,4 +58,5 @@ acceptance metrics.
 desktop-agent dry-run examples/execution-profile-fast-task.yaml
 desktop-agent dry-run examples/execution-profile-normal-task.yaml
 desktop-agent dry-run examples/execution-profile-careful-task.yaml
+desktop-agent dry-run examples/capability-showcase-task.yaml
 ```

@@ -25,6 +25,18 @@ desktop-agent dry-run examples/execution-profile-normal-task.yaml
 desktop-agent dry-run examples/execution-profile-careful-task.yaml
 ```
 
+## Capability Showcase
+
+`capability-showcase-task.yaml` is the broadest dry-run example. It combines
+task-level configuration, careful execution-profile timing, dependencies,
+expected state transitions, recovery rules, confirmation gates, branching,
+scrolling, dragging, image matching, text/UIA clicks, typing, key chords, and
+assertions in one maintained scenario.
+
+```bash
+desktop-agent dry-run examples/capability-showcase-task.yaml
+```
+
 ## Native Fixture
 
 Run the Tkinter fixture on Windows with Python:

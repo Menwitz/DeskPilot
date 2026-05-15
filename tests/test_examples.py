@@ -6,6 +6,7 @@ from desktop_agent.task_dsl import BasicTaskValidator, YamlTaskLoader
 EXAMPLE_TASKS = (
     Path("examples/adversarial-task.yaml"),
     Path("examples/browser-task.yaml"),
+    Path("examples/capability-showcase-task.yaml"),
     Path("examples/execution-profile-careful-task.yaml"),
     Path("examples/execution-profile-fast-task.yaml"),
     Path("examples/execution-profile-normal-task.yaml"),
@@ -64,3 +65,34 @@ def test_execution_profile_examples_cover_personas_and_reporting_gates() -> None
         assert submission_steps
         assert all(step.checkpoint is not None for step in submission_steps)
         assert all(step.verify is not None for step in submission_steps)
+
+
+def test_capability_showcase_covers_full_dry_run_action_surface() -> None:
+    loader = YamlTaskLoader()
+    task = loader.load(Path("examples/capability-showcase-task.yaml"))
+    actions = {step.action for step in task.steps}
+    verification_types = {
+        step.verify.type
+        for step in task.steps
+        if step.verify is not None
+    }
+
+    assert {
+        "assert_visible",
+        "branch_if_visible",
+        "click_image",
+        "click_text",
+        "click_uia",
+        "drag",
+        "press_key",
+        "scroll",
+        "scroll_until",
+        "type_text",
+        "wait_for",
+    } <= actions
+    assert {"visible_text", "not_visible_text"} <= verification_types
+    assert task.config_overrides.execution_profile is not None
+    assert task.config_overrides.confirmed_steps == ("submit-showcase",)
+    assert any(step.recovery for step in task.steps)
+    assert any(step.checkpoint is not None for step in task.steps)
+    assert any(step.safe_action_variants for step in task.steps)

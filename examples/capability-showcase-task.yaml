@@ -1,0 +1,302 @@
+# Broad dry-run showcase for the task DSL and execution pipeline.
+# Real desktop runs should only use this against a matching owned fixture window.
+name: capability-showcase-heavy-demo
+allowed_windows:
+  - DeskPilot Capability Showcase
+timeout_seconds: 240
+entropy_budget: 9.0
+config:
+  default_timeout_seconds: 20
+  confidence_threshold: 0.8
+  max_steps: 40
+  max_retries_per_step: 2
+  max_runtime_seconds: 240
+  policy_preset: strict_qa
+  require_operator_approval: false
+  confirmed_steps:
+    - submit-showcase
+  execution_profile:
+    persona: careful
+    enabled: true
+    action_delay_seconds: [0.08, 0.28]
+    retry_delay_seconds: [0.2, 0.8]
+    action_delay_distribution: center_weighted
+    retry_delay_distribution: center_weighted
+    action_variant_distribution: uniform
+    hesitation_probability: 0.2
+    movement_smoothness: 0.75
+    keyboard_interval_seconds: [0.01, 0.04]
+    scroll_interval_seconds: [0.02, 0.06]
+    random_seed: 101
+steps:
+  - id: wait-for-dashboard
+    action: wait_for
+    target: Capability Dashboard
+    category: recognition
+    timeout_seconds: 8
+    entropy_budget: 0.0
+    verify:
+      type: visible_text
+      text: Capability Dashboard
+    expected_state:
+      after: dashboard-ready
+    recovery:
+      - reason: transient_loading
+        actions:
+          - wait_for_loading
+          - reobserve_screen
+          - abort_with_trace
+
+  - id: assert-start-panel
+    action: assert_visible
+    target: Scenario Start Panel
+    category: verification
+    depends_on:
+      - wait-for-dashboard
+    entropy_budget: 0.25
+    expected_state:
+      before: dashboard-ready
+      after: start-panel-visible
+    verify:
+      type: visible_text
+      text: Scenario Start Panel
+
+  - id: click-search-field
+    action: click_text
+    target: Search Workflows
+    category: navigation
+    depends_on:
+      - assert-start-panel
+    entropy_budget: 1.0
+    safe_action_variants:
+      - click_uia
+    expected_state:
+      before: start-panel-visible
+      after: search-focused
+    recovery:
+      - reason: missed_target
+        actions:
+          - reobserve_screen
+          - retry_with_fresh_candidates
+          - abort_with_trace
+      - reason: occluded_control
+        actions:
+          - refocus_allowed_window
+          - wait_and_reobserve
+          - abort_with_trace
+
+  - id: type-search-query
+    action: type_text
+    text: full capability regression sweep
+    category: data_entry
+    depends_on:
+      - click-search-field
+    entropy_budget: 0.0
+    expected_state:
+      before: search-focused
+      after: query-entered
+
+  - id: confirm-query-hotkey
+    action: press_key
+    text: ctrl+enter
+    category: navigation
+    depends_on:
+      - type-search-query
+    entropy_budget: 0.0
+    expected_state:
+      before: query-entered
+      after: results-requested
+
+  - id: wait-for-results
+    action: wait_for
+    target: Results Ready
+    category: recognition
+    depends_on:
+      - confirm-query-hotkey
+    timeout_seconds: 10
+    entropy_budget: 0.0
+    verify:
+      type: visible_text
+      text: Results Ready
+    expected_state:
+      before: results-requested
+      after: results-ready
+    recovery:
+      - reason: transient_loading
+        actions:
+          - wait_for_loading
+          - wait_and_reobserve
+          - abort_with_trace
+
+  - id: click-uia-filter
+    action: click_uia
+    target: Advanced Filter
+    category: navigation
+    depends_on:
+      - wait-for-results
+    entropy_budget: 0.75
+    safe_action_variants:
+      - click_text
+    expected_state:
+      before: results-ready
+      after: filter-open
+    recovery:
+      - reason: disabled_control
+        actions:
+          - wait_for_enabled
+          - reobserve_screen
+          - abort_with_trace
+
+  - id: click-image-action
+    action: click_image
+    image: assets/capability-showcase-template.pgm
+    category: navigation
+    depends_on:
+      - click-uia-filter
+    entropy_budget: 0.75
+    expected_state:
+      before: filter-open
+      after: image-action-selected
+    verify:
+      type: visible_text
+      text: Image Action Selected
+    recovery:
+      - reason: stale_observation
+        actions:
+          - reobserve_screen
+          - retry_with_fresh_candidates
+          - abort_with_trace
+
+  - id: drag-card-to-dropzone
+    action: drag
+    target: Draggable Result Card
+    category: navigation
+    depends_on:
+      - click-image-action
+    region:
+      x: 0
+      y: 0
+      width: 640
+      height: 480
+    entropy_budget: 0.75
+    expected_state:
+      before: image-action-selected
+      after: card-positioned
+    verify:
+      type: visible_text
+      text: Card Positioned
+    recovery:
+      - reason: missed_target
+        actions:
+          - retry_alternate_candidate
+          - retry_with_fresh_candidates
+          - abort_with_trace
+
+  - id: scroll-detail-panel
+    action: scroll
+    text: "-3"
+    category: navigation
+    depends_on:
+      - drag-card-to-dropzone
+    region:
+      x: 0
+      y: 0
+      width: 800
+      height: 600
+    entropy_budget: 0.5
+    expected_state:
+      before: card-positioned
+      after: details-scrolled
+
+  - id: scroll-until-submit
+    action: scroll_until
+    target: Submit Showcase
+    category: navigation
+    depends_on:
+      - scroll-detail-panel
+    region:
+      x: 0
+      y: 0
+      width: 1200
+      height: 900
+    retry: 5
+    timeout_seconds: 15
+    entropy_budget: 1.0
+    expected_state:
+      before: details-scrolled
+      after: submit-visible
+    recovery:
+      - reason: missed_target
+        actions:
+          - scroll_search_region
+          - wait_and_reobserve
+          - abort_with_trace
+
+  - id: submit-showcase
+    action: click_text
+    target: Submit Showcase
+    category: submission
+    requires_confirmation: true
+    depends_on:
+      - scroll-until-submit
+    entropy_budget: 1.0
+    checkpoint:
+      type: visible_text
+      text: Submit Showcase
+    verify:
+      type: visible_text
+      text: Showcase Submitted
+    expected_state:
+      before: submit-visible
+      after: showcase-submitted
+    recovery:
+      - reason: verification_failure
+        actions:
+          - wait_and_reobserve
+          - retry_alternate_candidate
+          - abort_with_trace
+
+  - id: assert-error-cleared
+    action: assert_visible
+    target: Showcase Submitted
+    category: verification
+    depends_on:
+      - submit-showcase
+    entropy_budget: 0.25
+    expected_state:
+      before: showcase-submitted
+      after: submission-verified
+    verify:
+      type: visible_text
+      text: Showcase Submitted
+
+  # Dry-run synthesizes this optional text, so the negative check exercises
+  # the branch fallback without requiring a live modal fixture.
+  - id: branch-if-optional-modal
+    action: branch_if_visible
+    category: recognition
+    depends_on:
+      - assert-error-cleared
+    on_failure: final-audit-marker
+    entropy_budget: 0.0
+    verify:
+      type: not_visible_text
+      text: Optional Modal
+    expected_state:
+      before: submission-verified
+      after: optional-modal-skipped
+
+  - id: close-optional-modal
+    action: press_key
+    text: esc
+    category: navigation
+    entropy_budget: 0.25
+
+  - id: final-audit-marker
+    action: assert_visible
+    target: Final Audit Marker
+    category: verification
+    entropy_budget: 0.25
+    verify:
+      type: visible_text
+      text: Final Audit Marker
