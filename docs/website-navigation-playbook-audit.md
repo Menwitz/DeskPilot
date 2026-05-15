@@ -2862,3 +2862,12 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `git log --oneline --grep="^feat: add site playbook cli commands$"`:
     matched `a2b3d52`.
+
+### Task 207/211: Commit plan includes website playbook authoring docs commit
+
+- Status: complete.
+- Evidence:
+  - `c79a83f docs: document website playbook authoring`
+- Verification:
+  - `git log --oneline --grep="^docs: document website playbook authoring$"`:
+    matched `c79a83f`.

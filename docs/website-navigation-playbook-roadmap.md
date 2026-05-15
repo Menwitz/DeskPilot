@@ -304,7 +304,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] `feat: add site playbook schema`
 - [x] `feat: compile site playbooks into tasks`
 - [x] `feat: add site playbook cli commands`
-- [ ] `docs: document website playbook authoring`
+- [x] `docs: document website playbook authoring`
 - [ ] `test: cover website playbook validation`
 - [ ] `test: cover site flow compilation`
 - [ ] `test: cover site run safety gates`
