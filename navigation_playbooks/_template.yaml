@@ -1,0 +1,29 @@
+# Copy this file to `<site-id>.yaml` and replace every example value.
+site_id: example-site
+version: "1"
+domains:
+  - host: example.com
+    include_subdomains: true
+    purpose: primary
+allowed_window_titles:
+  - Example
+landmarks:
+  - id: open-search
+    action: click_text
+    target: Search
+    description: Opens the site's search surface.
+flows:
+  - id: open-search
+    description: Opens search without submitting content.
+    timeout_seconds: 30
+    retry: 1
+    confidence_threshold: 0.75
+    steps:
+      - id: open-search
+        action: click_text
+        landmark: open-search
+blocked_states:
+  - id: logged-out
+    detector: visible_text:Sign in
+    reason: Sign in before running this playbook.
+    recovery_hint: Authenticate manually, then rerun the selected flow.
