@@ -186,7 +186,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ### Schema Regression Tests
 
-- [ ] Valid playbook loads successfully.
+- [x] Valid playbook loads successfully.
 - [ ] Missing site ID is rejected.
 - [ ] Invalid site ID is rejected.
 - [ ] Empty domains are rejected.

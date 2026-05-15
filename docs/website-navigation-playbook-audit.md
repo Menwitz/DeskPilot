@@ -1737,3 +1737,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Plan:
   - Each Phase 6 checklist item will be checked only after the exact regression
     evidence and focused command are recorded below.
+
+### Task 126/211: Valid playbook loads successfully
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_valid_playbook_loads_successfully`
+    writes a valid playbook fixture and loads it through `load_site_playbook`.
+  - The assertion verifies the loaded site ID and first flow ID.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "valid_playbook_loads_successfully"`: 1 passed, 35 deselected.
