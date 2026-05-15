@@ -245,6 +245,7 @@ def _task_to_dict(task: TaskDefinition) -> dict[str, object]:
         "allowed_windows": list(task.allowed_windows),
         "timeout_seconds": task.timeout_seconds,
         "entropy_budget": task.entropy_budget,
+        "metadata": task.metadata,
         "steps": [_step_to_dict(step) for step in task.steps],
     }
 

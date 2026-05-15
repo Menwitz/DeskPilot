@@ -10,7 +10,14 @@ from typing import cast
 
 import yaml
 
-from desktop_agent.task_dsl import SUPPORTED_ACTIONS
+from desktop_agent.config import ConfigOverrides
+from desktop_agent.task_dsl import (
+    SUPPORTED_ACTIONS,
+    TaskDefinition,
+    TaskRegion,
+    TaskStep,
+    VerificationDefinition,
+)
 
 _SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _SENSITIVE_CATEGORIES: frozenset[str] = frozenset(
@@ -88,7 +95,7 @@ class SiteFlow:
     timeout_seconds: float | None = None
     retry: int | None = None
     confidence_threshold: float | None = None
-    search_region: str | None = None
+    search_region: TaskRegion | None = None
     steps: tuple[SiteFlowStep, ...] = field(default_factory=tuple)
 
 
@@ -104,6 +111,29 @@ class SitePlaybook:
     flows: tuple[SiteFlow, ...] = field(default_factory=tuple)
     blocked_states: tuple[BlockedState, ...] = field(default_factory=tuple)
     source_path: str | None = None
+
+
+class SiteTaskCompiler:
+    """Compiles validated website playbook flows into DeskPilot tasks."""
+
+    def compile(self, playbook: SitePlaybook, flow_id: str) -> TaskDefinition:
+        validate_site_playbook(playbook)
+        flow = resolve_site_flow(playbook, flow_id)
+        steps: list[TaskStep] = []
+        for site_step in flow.steps:
+            compiled_step = _compile_site_step(playbook, flow, site_step)
+            steps.extend(_blocked_state_checks(playbook, compiled_step))
+            steps.append(compiled_step)
+        return TaskDefinition(
+            name=f"{playbook.site_id}:{flow.id}",
+            allowed_windows=_compiled_allowed_windows(playbook),
+            timeout_seconds=flow.timeout_seconds or 30.0,
+            steps=tuple(steps),
+            config_overrides=ConfigOverrides(
+                confidence_threshold=flow.confidence_threshold,
+            ),
+            metadata=_compiled_task_metadata(playbook, flow, tuple(steps)),
+        )
 
 
 def load_site_playbook(playbook_path: Path) -> SitePlaybook:
@@ -133,6 +163,15 @@ def load_site_playbooks(playbook_dir: Path = Path("navigation_playbooks")) -> tu
         for path in sorted(playbook_dir.glob("*.yaml"))
         if not path.name.startswith("_")
     )
+
+
+def resolve_site_flow(playbook: SitePlaybook, flow_id: str) -> SiteFlow:
+    """Return one flow from a validated site playbook."""
+
+    for flow in playbook.flows:
+        if flow.id == flow_id:
+            return flow
+    raise SitePlaybookValidationError(f"unknown flow: {flow_id}")
 
 
 def validate_site_playbook(playbook: SitePlaybook) -> None:
@@ -216,7 +255,7 @@ def _flow_from_mapping(value: object) -> SiteFlow:
         timeout_seconds=_optional_float(data.get("timeout_seconds")),
         retry=_optional_int(data.get("retry")),
         confidence_threshold=_optional_float(data.get("confidence_threshold")),
-        search_region=_optional_str(data.get("search_region")),
+        search_region=_optional_region(data.get("search_region")),
         steps=tuple(_flow_step_from_mapping(item) for item in _sequence(data, "steps")),
     )
 
@@ -245,6 +284,110 @@ def _blocked_state_from_mapping(value: object) -> BlockedState:
         reason=str(data.get("reason", "")),
         recovery_hint=_optional_str(data.get("recovery_hint")),
     )
+
+
+def _compile_site_step(
+    playbook: SitePlaybook,
+    flow: SiteFlow,
+    site_step: SiteFlowStep,
+) -> TaskStep:
+    landmark = _landmark_by_id(playbook, site_step.landmark)
+    image = site_step.image or (landmark.image if landmark else None)
+    return TaskStep(
+        id=site_step.id,
+        action=site_step.action,
+        target=site_step.target or _landmark_target(landmark),
+        text=site_step.text or (landmark.text if landmark else None),
+        image=Path(image) if image else None,
+        region=flow.search_region,
+        timeout_seconds=site_step.timeout_seconds,
+        retry=site_step.retry if site_step.retry is not None else flow.retry,
+        requires_confirmation=site_step.requires_confirmation,
+        category=_site_step_category(site_step),
+    )
+
+
+def _landmark_by_id(
+    playbook: SitePlaybook,
+    landmark_id: str | None,
+) -> SiteLandmark | None:
+    if landmark_id is None:
+        return None
+    for landmark in playbook.landmarks:
+        if landmark.id == landmark_id:
+            return landmark
+    raise SitePlaybookValidationError(f"landmark does not exist: {landmark_id}")
+
+
+def _landmark_target(landmark: SiteLandmark | None) -> str | None:
+    if landmark is None:
+        return None
+    return landmark.target or landmark.text or landmark.selector
+
+
+def _site_step_category(site_step: SiteFlowStep) -> str | None:
+    if site_step.sensitive_category is None:
+        return None
+    return "submission"
+
+
+def _blocked_state_checks(
+    playbook: SitePlaybook,
+    step: TaskStep,
+) -> tuple[TaskStep, ...]:
+    if not step.requires_confirmation:
+        return ()
+    checks: list[TaskStep] = []
+    for blocked_state in playbook.blocked_states:
+        detector_text = _detector_text(blocked_state.detector)
+        if detector_text is None:
+            continue
+        checks.append(
+            TaskStep(
+                id=f"{step.id}-blocked-{blocked_state.id}",
+                action="wait_for",
+                target=detector_text,
+                verify=VerificationDefinition(
+                    type="not_visible_text",
+                    text=detector_text,
+                ),
+                timeout_seconds=step.timeout_seconds,
+                retry=0,
+                category="verification",
+            ),
+        )
+    return tuple(checks)
+
+
+def _detector_text(detector: str) -> str | None:
+    prefix = "visible_text:"
+    if detector.startswith(prefix):
+        return detector[len(prefix) :].strip()
+    return None
+
+
+def _compiled_allowed_windows(playbook: SitePlaybook) -> tuple[str, ...]:
+    windows = [*playbook.allowed_window_titles]
+    windows.extend(domain.host for domain in playbook.domains)
+    return tuple(dict.fromkeys(windows))
+
+
+def _compiled_task_metadata(
+    playbook: SitePlaybook,
+    flow: SiteFlow,
+    steps: tuple[TaskStep, ...],
+) -> dict[str, object]:
+    return {
+        "site_id": playbook.site_id,
+        "site_flow_id": flow.id,
+        "site_playbook_version": playbook.version,
+        "site_domains": [domain.host for domain in playbook.domains],
+        "site_sensitive_step_ids": [
+            step.id for step in steps if step.requires_confirmation
+        ],
+        "site_blocked_state_ids": [state.id for state in playbook.blocked_states],
+        "site_compiled_step_count": len(steps),
+    }
 
 
 def _validate_landmarks(landmarks: tuple[SiteLandmark, ...]) -> list[str]:
@@ -287,6 +430,30 @@ def _validate_flow(
                     f"step {step.id} sensitive steps require confirmation",
                 )
     return errors
+
+
+def _optional_region(value: object) -> TaskRegion | None:
+    if value is None:
+        return None
+    data = _mapping(value, "search_region must be a mapping")
+    region = TaskRegion(
+        x=_required_int(data, "x"),
+        y=_required_int(data, "y"),
+        width=_required_int(data, "width"),
+        height=_required_int(data, "height"),
+    )
+    if region.width <= 0 or region.height <= 0:
+        raise SitePlaybookValidationError(
+            "search_region width and height must be greater than zero",
+        )
+    return region
+
+
+def _required_int(data: Mapping[str, object], key: str) -> int:
+    value = data.get(key)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise SitePlaybookValidationError(f"search_region.{key} must be an integer")
+    return value
 
 
 def _validate_blocked_states(

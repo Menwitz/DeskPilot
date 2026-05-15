@@ -170,6 +170,7 @@ class TaskDefinition:
     steps: tuple[TaskStep, ...]
     config_overrides: ConfigOverrides = field(default_factory=ConfigOverrides)
     entropy_budget: float | None = None
+    metadata: dict[str, object] = field(default_factory=dict)
 
 
 class TaskLoader(Protocol):

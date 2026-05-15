@@ -116,32 +116,32 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ## Phase 3: Compiler Into Existing Task DSL
 
-- [ ] Add `SiteTaskCompiler`.
-- [ ] Compile site domains and window-title patterns into task `allowed_windows`.
-- [ ] Compile playbook steps into existing task actions:
-  - [ ] `click_text`.
-  - [ ] `click_image`.
-  - [ ] `click_uia`.
-  - [ ] `type_text`.
-  - [ ] `press_key`.
-  - [ ] `scroll`.
-  - [ ] `scroll_until`.
-  - [ ] `wait_for`.
-  - [ ] `assert_visible`.
-  - [ ] `branch_if_visible`.
-- [ ] Preserve confirmation requirements when compiling sensitive steps.
-- [ ] Add flow-level defaults:
-  - [ ] Timeout.
-  - [ ] Retry budget.
-  - [ ] Confidence threshold.
-  - [ ] Optional search region.
-- [ ] Add blocked-state checks before irreversible actions.
-- [ ] Add task metadata for trace readability:
-  - [ ] Site ID.
-  - [ ] Flow ID.
-  - [ ] Domain.
-  - [ ] Sensitive step IDs.
-  - [ ] Playbook version.
+- [x] Add `SiteTaskCompiler`.
+- [x] Compile site domains and window-title patterns into task `allowed_windows`.
+- [x] Compile playbook steps into existing task actions:
+  - [x] `click_text`.
+  - [x] `click_image`.
+  - [x] `click_uia`.
+  - [x] `type_text`.
+  - [x] `press_key`.
+  - [x] `scroll`.
+  - [x] `scroll_until`.
+  - [x] `wait_for`.
+  - [x] `assert_visible`.
+  - [x] `branch_if_visible`.
+- [x] Preserve confirmation requirements when compiling sensitive steps.
+- [x] Add flow-level defaults:
+  - [x] Timeout.
+  - [x] Retry budget.
+  - [x] Confidence threshold.
+  - [x] Optional search region.
+- [x] Add blocked-state checks before irreversible actions.
+- [x] Add task metadata for trace readability:
+  - [x] Site ID.
+  - [x] Flow ID.
+  - [x] Domain.
+  - [x] Sensitive step IDs.
+  - [x] Playbook version.
 
 ## Phase 4: CLI Commands
 
