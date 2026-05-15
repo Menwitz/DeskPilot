@@ -42,7 +42,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Confirm public-site scope in `docs/safety.md`.
 - [x] Document that third-party websites require operator authorization and
   compliance with the target site's rules.
-- [ ] Document unsupported behavior:
+- [x] Document unsupported behavior:
   - [ ] CAPTCHA solving or bypass.
   - [ ] Bot-detection bypass.
   - [ ] Credential abuse.

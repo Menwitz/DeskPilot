@@ -39,3 +39,16 @@ website safety claim before the corresponding roadmap item is checked.
     sessions, not a way to create access or ignore site restrictions.
 - Verification:
   - Reviewed `docs/safety.md` lines 23-25 and 36-40.
+
+### Task 3/122: Document unsupported behavior
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` has a `Public Site Unsupported Behaviors` section.
+  - The section states that website playbooks must reject unsupported behaviors
+    before they can be compiled or executed.
+  - The section lists the behavior groups that Phase 0 audits individually:
+    CAPTCHA/challenge bypass, bot-detection bypass, credential abuse, stealth
+    automation, and unconfirmed externally visible actions.
+- Verification:
+  - Reviewed `docs/safety.md` lines 42-56.
