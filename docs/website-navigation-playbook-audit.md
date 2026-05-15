@@ -1282,3 +1282,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
+
+### Task 100/122: Support `--verbose`
+
+- Status: complete.
+- Evidence:
+  - `--verbose` is registered through `_add_runtime_options()`.
+  - `_print_report()` emits event details when verbose mode is enabled.
+  - The runtime-flag regression passes `--verbose` and asserts event output is
+    present.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.

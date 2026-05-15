@@ -152,7 +152,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Add `desktop-agent dry-run-site <site> <flow>`.
 - [x] Support existing runtime safety flags:
   - [x] `--config`.
-  - [ ] `--verbose`.
+  - [x] `--verbose`.
   - [ ] `--no-screenshots`.
   - [ ] `--max-runtime-seconds`.
   - [ ] `--confidence-threshold`.
