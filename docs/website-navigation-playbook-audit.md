@@ -2542,3 +2542,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `rg -n "DESKPILOT_LIVE_SITE_SMOKE|schema, compiler, dry-run|CAPTCHA bypass"
     docs/safety.md`: matched the third-party website guardrails.
+
+## Phase 7 Verification
+
+- Status: complete.
+- Scope:
+  - Documentation tasks for authoring, new-site onboarding, examples, README,
+    architecture, task DSL, and public-site safety guardrails are checked.
+  - Roadmap implementation count is `187/211`.
+- Verification:
+  - `.venv/bin/pytest`: 327 passed, 4 skipped.
+  - `.venv/bin/ruff check .`: all checks passed.
+  - `.venv/bin/mypy`: no issues found in 71 source files.
+  - `.venv/bin/python -m build`: built `deskpilot-0.1.0.tar.gz` and
+    `deskpilot-0.1.0-py3-none-any.whl`.
