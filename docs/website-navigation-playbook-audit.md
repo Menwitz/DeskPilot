@@ -1174,3 +1174,19 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check .`: all checks passed.
   - `.venv/bin/mypy`: no issues in 67 source files.
   - `.venv/bin/python -m build`: built source distribution and wheel.
+
+## Phase 4 Pre-Implementation Audit
+
+- Status: ready to verify task-by-task.
+- Scope:
+  - Phase 4 covers `desktop-agent` site-playbook commands, runtime safety flag
+    passthrough, and user-facing failure messages.
+- Findings:
+  - `src/desktop_agent/cli.py` defines `list-sites`, `list-flows`,
+    `compile-site`, `run-site`, and `dry-run-site`.
+  - Site-run commands share existing runtime options through `_add_runtime_options`.
+  - `tests/test_site_playbook_cli.py` already covers seed listing, flow listing,
+    task compilation, dry-run, unavailable actuation, missing confirmation, and
+    invalid playbook handling.
+  - Unknown-site, unknown-flow, blocked-state, and unsupported-live-state
+    messages will be verified before their roadmap items are checked.
