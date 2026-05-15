@@ -732,3 +732,15 @@ checking layout, domain, flow, and blocked-state coverage.
     stop and explain the condition.
 - Verification:
   - Loaded all seed playbooks and printed each blocked-state ID by site.
+
+### Task 61/122: Define logged-out blocked states
+
+- Status: complete.
+- Evidence:
+  - Every seed playbook defines `logged-out`.
+  - Detectors use site-specific visible text such as `Sign in` or `Log in`.
+  - Reasons direct the operator to authenticate manually instead of automating
+    credentials.
+- Verification:
+  - Loaded all seed playbooks and printed the `logged-out` detector and reason
+    for each site.
