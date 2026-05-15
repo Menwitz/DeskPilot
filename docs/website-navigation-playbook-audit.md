@@ -2600,3 +2600,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "all_seed_playbooks_validate"`: 1 passed, 41 deselected.
+
+### Task 190/211: Every seed playbook has a read-only navigation flow
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_every_seed_playbook_has_read_only_navigation_flow`
+    iterates every seed playbook and requires at least one flow with no
+    confirmation requirement and no sensitive category.
+  - This keeps the seed catalog usable for deterministic read-only navigation and
+    opt-in smoke checks.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "every_seed_playbook_has_read_only_navigation_flow"`: 1 passed,
+    41 deselected.
