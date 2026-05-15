@@ -51,6 +51,21 @@ def test_trace_metadata_records_playbook_validation_result(tmp_path: Path) -> No
         assert metadata["site_playbook_validation_errors"] == []
 
 
+def test_trace_metadata_records_compiled_task_summary(tmp_path: Path) -> None:
+    trace_dir = _run_seed_site_trace(tmp_path)
+
+    task = _read_json_object(trace_dir / "task.json")
+    report = _read_final_report(trace_dir)
+    events = _read_action_log(trace_dir)
+    load_task = next(event for event in events if event["phase"] == "load_task")
+
+    for payload in (task, report, load_task):
+        metadata = _metadata(payload)
+        assert metadata["site_compilation_source"] == "in_memory"
+        assert metadata["site_compiled_step_count"] == 1
+        assert metadata["site_compiled_task_summary"] == "youtube:open-search (1 steps)"
+
+
 def test_action_log_includes_selected_playbook_version(tmp_path: Path) -> None:
     trace_dir = _run_seed_site_trace(tmp_path)
 

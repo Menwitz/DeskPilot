@@ -1523,3 +1523,22 @@ checking layout, domain, flow, and blocked-state coverage.
     tests/test_site_playbook_tracing.py`: all checks passed.
   - `.venv/bin/mypy src/desktop_agent/site_playbooks.py
     tests/test_site_playbook_tracing.py`: no issues found.
+
+### Task 115/211: Record compiled task path or in-memory task summary
+
+- Status: complete.
+- Evidence:
+  - `run-site` and `dry-run-site` compile the site flow directly into an
+    in-memory `TaskDefinition`.
+  - `_compiled_task_metadata()` records `site_compilation_source: in_memory`,
+    `site_compiled_step_count`, and `site_compiled_task_summary`.
+  - `compile-site` still records `site_compiled_task_path` in generated task
+    YAML when an output file is requested.
+  - Added regression coverage that checks the in-memory summary metadata in
+    `task.json`, the `load_task` action-log event, and `final-report.json`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "compiled_task_summary"`: 1 passed, 7 deselected.
+  - `.venv/bin/ruff check tests/test_site_playbook_tracing.py`: all checks
+    passed.
+  - `.venv/bin/mypy tests/test_site_playbook_tracing.py`: no issues found.
