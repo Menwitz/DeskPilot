@@ -154,8 +154,9 @@ Symptoms:
 - CAPTCHA or suspicious-activity challenge: the report says the challenge is
   not automated; do not solve or bypass it with DeskPilot, and either resolve it
   manually or abandon the run.
-- Permission restriction: account, policy, or unavailable-action text appears in
-  the blocked-state reason.
+- Permission restriction: account, policy, restricted, or unavailable-action
+  text appears in the blocked-state reason; use an authorized account or choose
+  a permitted flow instead of working around the restriction.
 - Ambiguous selector: candidate rankings show multiple matching controls and the
   run stops before acting.
 

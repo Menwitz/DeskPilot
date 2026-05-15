@@ -1671,3 +1671,18 @@ checking layout, domain, flow, and blocked-state coverage.
     "public_site_failure_modes"`: 1 passed, 5 deselected.
   - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
   - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.
+
+### Task 124/211: Permission restriction
+
+- Status: complete.
+- Evidence:
+  - `docs/troubleshooting.md` now identifies permission failures through
+    account, policy, restricted, or unavailable-action text in blocked-state
+    reasons.
+  - The remediation directs the operator to use an authorized account or choose
+    a permitted flow rather than working around the restriction.
+- Verification:
+  - `.venv/bin/pytest tests/test_safety_docs.py -k
+    "public_site_failure_modes"`: 1 passed, 5 deselected.
+  - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.
