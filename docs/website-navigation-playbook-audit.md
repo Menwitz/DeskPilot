@@ -86,3 +86,13 @@ website safety claim before the corresponding roadmap item is checked.
   - This directly constrains public-site playbooks to authorized sessions.
 - Verification:
   - Reviewed `docs/safety.md` lines 42-51.
+
+### Task 7/122: Document stealth automation as unsupported
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` states that stealth automation is not supported.
+  - It also states that runs must remain visible to the operator and must not
+    disguise automation from the local user.
+- Verification:
+  - Reviewed `docs/safety.md` lines 42-53.
