@@ -169,7 +169,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 ## Phase 5: Tracing And Debuggability
 
 - [x] Extend trace output with site-playbook metadata.
-- [ ] Record playbook validation results in trace metadata.
+- [x] Record playbook validation results in trace metadata.
 - [ ] Record compiled task path or in-memory task summary.
 - [ ] Record blocked-state checks and outcomes.
 - [ ] Record whether each sensitive step was confirmed or blocked.

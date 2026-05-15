@@ -1504,3 +1504,22 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check tests/test_site_playbook_tracing.py`: all checks
     passed.
   - `.venv/bin/mypy tests/test_site_playbook_tracing.py`: no issues found.
+
+### Task 114/211: Record playbook validation results in trace metadata
+
+- Status: complete.
+- Evidence:
+  - `_compiled_task_metadata()` now records
+    `site_playbook_validation_status: passed`.
+  - `_compiled_task_metadata()` also records
+    `site_playbook_validation_errors: []` for successful validation so the
+    trace shape has an explicit result field and error-list field.
+  - Added regression coverage that checks the validation result in `task.json`,
+    the `load_task` action-log event, and `final-report.json`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "validation_result"`: 1 passed, 6 deselected.
+  - `.venv/bin/ruff check src/desktop_agent/site_playbooks.py
+    tests/test_site_playbook_tracing.py`: all checks passed.
+  - `.venv/bin/mypy src/desktop_agent/site_playbooks.py
+    tests/test_site_playbook_tracing.py`: no issues found.
