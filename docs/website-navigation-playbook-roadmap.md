@@ -102,7 +102,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Open home or feed.
   - [x] Open search.
   - [x] Open profile or channel page.
-  - [ ] Open notifications.
+  - [x] Open notifications.
   - [ ] Open messages when the site has messages.
   - [ ] Open settings.
   - [ ] Open composer, upload, or editor surface without final submission.

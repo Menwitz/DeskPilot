@@ -666,3 +666,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and filtered flows to `open-profile` or
     `open-channel`.
+
+### Task 56/122: Define open notifications flows
+
+- Status: complete.
+- Evidence:
+  - Every seed playbook defines `open-notifications`.
+  - TikTok maps the flow to its inbox/notification surface while retaining the
+    shared flow ID for catalog-level checks.
+  - This creates a consistent monitoring and report hook for notification
+    navigation without sending, acknowledging, or modifying anything.
+- Verification:
+  - Loaded all seed playbooks and confirmed each contains `open-notifications`.
