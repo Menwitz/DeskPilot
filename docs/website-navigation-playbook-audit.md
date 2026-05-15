@@ -1021,3 +1021,15 @@ checking layout, domain, flow, and blocked-state coverage.
   - Constructed an in-memory playbook with all four defaults and compiled it.
     The compiled task printed timeout `42`, retry `5`, confidence `0.77`, and
     search-region width `300`.
+
+### Task 82/122: Compile flow timeout defaults
+
+- Status: complete.
+- Evidence:
+  - `SiteTaskCompiler` assigns `flow.timeout_seconds` to
+    `TaskDefinition.timeout_seconds`, with a safe default when omitted.
+  - Regression coverage mutates a flow timeout to `45` and asserts the compiled
+    task timeout is `45`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "flow_timeout_compiles_to_task_timeout"`: 1 passed, 32 deselected.
