@@ -37,6 +37,22 @@ assertions in one maintained scenario.
 desktop-agent dry-run examples/capability-showcase-task.yaml
 ```
 
+## Site Publish Dry-Runs
+
+The LinkedIn and Medium examples pair local content variables with matching
+approval manifests. They are safe dry-run fixtures for validating publish-flow
+compilation, approval metadata, checkpoints, and local trace output.
+
+```bash
+desktop-agent dry-run-site linkedin publish-post \
+  --variables examples/linkedin-content-variables.yaml \
+  --approval-manifest examples/linkedin-approval-manifest.yaml
+
+desktop-agent dry-run-site medium publish-story \
+  --variables examples/medium-content-variables.yaml \
+  --approval-manifest examples/medium-approval-manifest.yaml
+```
+
 ## Native Fixture
 
 Run the Tkinter fixture on Windows with Python:

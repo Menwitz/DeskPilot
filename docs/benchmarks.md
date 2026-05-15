@@ -110,9 +110,11 @@ Current acceptance gates cover:
 
 The CLI prints `acceptance: passed`, `acceptance: failed`, or
 `acceptance: not_configured`. Built-in benchmark task files must pass acceptance
-before a behavior change should be treated as an improvement. Ad hoc task files
-can still use the harness, but their report is marked `not_configured` until a
-task spec adds thresholds.
+before a behavior change is eligible for improvement review. Acceptance passing
+is not proof of improvement by itself; it only means the run stayed inside the
+configured reliability and safety thresholds. Ad hoc task files can still use
+the harness, but their report is marked `not_configured` until a task spec adds
+thresholds.
 
 ## Baseline Comparison
 
@@ -123,3 +125,7 @@ and does not reduce grounding accuracy or increase ambiguity, recovery, or
 operator intervention rates. If safety is preserved but reliability and speed
 are unchanged, the comparison is `neutral`. If safety or reliability regresses,
 the comparison is `regressed`.
+
+Treat `baseline-comparison.json`, repeated local traces, and any manual Windows
+evidence as the improvement evidence. Do not cite a single acceptance pass as a
+measured performance or reliability gain.

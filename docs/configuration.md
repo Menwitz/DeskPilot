@@ -56,6 +56,14 @@ configuration or `--allowed-window` values. The merged allowlist is written into
 the resolved runtime config and is what the real actuator checks immediately
 before sending input.
 
+## Local Artifacts
+
+`trace_root` controls where run evidence is written. Each run creates a unique
+local subdirectory containing normalized config, task JSON, action logs, final
+reports, and optional screenshots/OCR/CV artifacts. Content variable files and
+approval manifests remain at their original local paths; reports store only
+their paths, approved step IDs, variable names, and fingerprints.
+
 ## Task Overrides
 
 Tasks can override runtime settings in a `config` block:

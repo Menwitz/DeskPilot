@@ -59,10 +59,10 @@ teams running approved content workflows.
   publish-capable sites.
 - [x] Document the approval manifest schema.
 - [x] Document YAML variable schema for content payloads.
-- [ ] Document local artifact locations for approvals, traces, and reports.
-- [ ] Update troubleshooting docs for approval-manifest failures.
-- [ ] Update release notes to remove benchmark overclaims.
-- [ ] Move non-v1 content ops actions into a clearly marked backlog.
+- [x] Document local artifact locations for approvals, traces, and reports.
+- [x] Update troubleshooting docs for approval-manifest failures.
+- [x] Update release notes to remove benchmark overclaims.
+- [x] Move non-v1 content ops actions into a clearly marked backlog.
 
 ## P1 Safety Hardening
 
@@ -81,17 +81,17 @@ teams running approved content workflows.
 
 ## P2 Evidence And Ops Readiness
 
-- [ ] Add sample approval manifest files under `examples/`.
+- [x] Add sample approval manifest files under `examples/`.
 - [x] Add sample LinkedIn content variables file.
 - [x] Add sample Medium content variables file.
-- [ ] Add dry-run examples for publish-capable flows.
+- [x] Add dry-run examples for publish-capable flows.
 - [x] Add trace assertions for approval manifest metadata.
 - [x] Add trace assertions for variable redaction/fingerprints.
-- [ ] Add opt-in Windows smoke command for LinkedIn publish dry-run/live-safe
+- [x] Add opt-in Windows smoke command for LinkedIn publish dry-run/live-safe
   path.
-- [ ] Add opt-in Windows smoke command for Medium publish dry-run/live-safe
+- [x] Add opt-in Windows smoke command for Medium publish dry-run/live-safe
   path.
-- [ ] Record manual Windows evidence in `docs/windows-e2e-checklist.md`.
+- [x] Record manual Windows evidence in `docs/windows-e2e-checklist.md`.
 
 ## Acceptance Criteria
 
@@ -107,7 +107,7 @@ teams running approved content workflows.
 - [x] Real run cannot act outside task/config allowed windows.
 - [x] LinkedIn and Medium publish flows stop on logged-out, consent, CAPTCHA,
   permission, unsupported-layout, or ambiguous-target states.
-- [ ] All artifacts remain local by default.
+- [x] All artifacts remain local by default.
 - [ ] Full local quality gate passes.
 - [ ] Windows package verification passes.
 - [ ] Authorized live smoke evidence exists for LinkedIn and Medium.

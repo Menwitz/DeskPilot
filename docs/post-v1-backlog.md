@@ -77,6 +77,15 @@ bounded execution, dry-run support, trace events, and final reports.
 
 ## Operator Experience
 
+### Additional Publish-Capable Sites
+
+- Promote X/Twitter, Instagram, Facebook, YouTube, TikTok, direct messaging,
+  engagement, delete, settings-change, transaction, and other externally
+  visible site actions only after the LinkedIn/Medium safeguards are replicated.
+- Required evidence: YAML variables, approval manifests, blocked-state checks,
+  checkpoints, dry-run traces, and authorized live smoke evidence for each
+  promoted flow.
+
 ### Rich Desktop Tray UI
 
 - Surface run state, emergency stop, active trace directory, and recent reports.

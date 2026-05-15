@@ -1,5 +1,24 @@
 # Release Notes
 
+## Ops Content Workflow Alignment
+
+Date: 2026-05-15
+
+This alignment update narrows v1 around Windows-first, local YAML/CLI
+automation for approved ops content workflows.
+
+- Added local approval manifests for sensitive site runs.
+- Added local YAML content variables with redacted trace metadata and content
+  fingerprints.
+- Hardened active-window safety with shared planner/actuator matching.
+- Added Windows UIA to the real perception pipeline alongside OCR and CV.
+- Promoted only LinkedIn and Medium to publish-capable seed workflows.
+- Added sample content-variable files and matching approval manifests.
+
+Benchmark acceptance remains a threshold check, not a performance claim. Treat
+baseline comparisons, repeated local traces, and Windows checklist evidence as
+the source for any actual improvement claim.
+
 ## Human-Like Execution Safety Release
 
 Date: 2026-05-14

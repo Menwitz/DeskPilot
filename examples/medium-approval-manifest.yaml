@@ -1,0 +1,9 @@
+# Sample manifest for examples/medium-content-variables.yaml.
+site_id: medium
+flow_id: publish-story
+approved_steps:
+  - publish-story
+approver: qa-lead@example.test
+reason: Approved sample Medium content payload for local dry-run validation.
+approved_at: 2026-05-15T00:00:00Z
+content_fingerprint: sha256:c03234f1ffeeafcbdd165b771ab9c1a13b02143aa1975e95187271eceb90949a

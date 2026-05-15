@@ -19,6 +19,11 @@ the execution pipeline as the active `config.trace_root`.
 - `overlays/` receives computer-vision candidate overlays when screenshot
   saving is enabled.
 
+Approval manifests and content variable files are not copied into the trace
+directory. Trace metadata records their local path, approved step IDs, variable
+names, and content fingerprint so operators can audit the run without exposing
+raw content payloads in reports.
+
 ## Report Contents
 
 The final report includes the task name, final status, abort reason when
@@ -38,6 +43,9 @@ event so report review can tell whether the run used strict QA, personal
 automation, or exploratory-testing safety behavior.
 `config.json` also records `require_operator_approval`, which is enabled by CLI
 real runs after operator prompts are processed.
+For sensitive site workflows, final report metadata records validated approval
+manifest fields and content-variable fingerprints, while step metadata records
+variable names with `content_variables_redacted: true`.
 For execution-profile runs, `safety-audit.json` and `safety-audit.md` summarize
 the active policy preset, operator-approval state, allowed windows, emergency
 stop hotkey, sensitive steps, checkpoint coverage, and audit findings.

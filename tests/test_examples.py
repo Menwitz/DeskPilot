@@ -1,6 +1,9 @@
 from pathlib import Path
 
+from desktop_agent.approval_manifest import load_approval_manifest
 from desktop_agent.config import RuntimeConfig
+from desktop_agent.content_variables import load_content_variables
+from desktop_agent.site_playbooks import SiteTaskCompiler, load_site_playbook
 from desktop_agent.task_dsl import BasicTaskValidator, YamlTaskLoader
 
 EXAMPLE_TASKS = (
@@ -46,6 +49,35 @@ def test_example_tasks_validate() -> None:
         validator.validate(task, config)
         assert task.allowed_windows
         assert task.steps
+
+
+def test_publish_example_manifests_match_content_fingerprints() -> None:
+    examples = (
+        (
+            "linkedin",
+            "publish-post",
+            Path("examples/linkedin-content-variables.yaml"),
+            Path("examples/linkedin-approval-manifest.yaml"),
+        ),
+        (
+            "medium",
+            "publish-story",
+            Path("examples/medium-content-variables.yaml"),
+            Path("examples/medium-approval-manifest.yaml"),
+        ),
+    )
+
+    for site_id, flow_id, variables_path, manifest_path in examples:
+        variables = load_content_variables(variables_path)
+        playbook = load_site_playbook(Path(f"navigation_playbooks/{site_id}.yaml"))
+        task = SiteTaskCompiler(variables).compile(playbook, flow_id)
+        manifest = load_approval_manifest(manifest_path)
+
+        assert manifest.site_id == site_id
+        assert manifest.flow_id == flow_id
+        assert manifest.content_fingerprint == task.metadata[
+            "content_variables_fingerprint"
+        ]
 
 
 def test_execution_profile_examples_cover_personas_and_reporting_gates() -> None:

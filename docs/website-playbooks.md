@@ -137,6 +137,10 @@ flows:
         landmark: composer
 ```
 
+This flow opens the writing surface only. It must not include final `Post`,
+`Publish`, `Send`, or `Submit` actions unless those actions move into a separate
+confirmed sensitive flow.
+
 ## Sensitive Confirmed Flow
 
 ```yaml
@@ -226,6 +230,13 @@ flows in v1. Both flows use local YAML content variables, run blocked-state
 checks before the final publish action, require confirmation on that final
 action, and declare a checkpoint that must pass before input is sent. Real
 `run-site` execution also requires a matching approval manifest.
+
+Sample local payloads and manifests live in `examples/`:
+
+- `examples/linkedin-content-variables.yaml`
+- `examples/linkedin-approval-manifest.yaml`
+- `examples/medium-content-variables.yaml`
+- `examples/medium-approval-manifest.yaml`
 
 All other seed sites remain limited to read-only navigation or opening a
 composer/editor surface without submitting content.

@@ -102,6 +102,57 @@ Expected result:
 - The native fixture completes final verification.
 - The final report status is `passed`.
 
+## Publish Flow Dry-Runs
+
+Run these before any authorized live site validation:
+
+```powershell
+dist\deskpilot.exe dry-run-site linkedin publish-post `
+  --variables examples\linkedin-content-variables.yaml `
+  --approval-manifest examples\linkedin-approval-manifest.yaml `
+  --config packaging\default-config.yaml
+
+dist\deskpilot.exe dry-run-site medium publish-story `
+  --variables examples\medium-content-variables.yaml `
+  --approval-manifest examples\medium-approval-manifest.yaml `
+  --config packaging\default-config.yaml
+```
+
+Expected result:
+
+- Both dry-runs exit with status `passed`.
+- Trace metadata records the manifest path, approved publish step, content
+  variable names, and content fingerprint.
+- No desktop input is sent.
+
+## Authorized Live Site Checks
+
+Run live `run-site` checks only on an authorized account with reviewed content
+and a matching approval manifest. These commands may publish externally visible
+content, so do not run them as routine CI:
+
+```powershell
+dist\deskpilot.exe run-site linkedin publish-post `
+  --variables examples\linkedin-content-variables.yaml `
+  --approval-manifest examples\linkedin-approval-manifest.yaml `
+  --config packaging\default-config.yaml
+
+dist\deskpilot.exe run-site medium publish-story `
+  --variables examples\medium-content-variables.yaml `
+  --approval-manifest examples\medium-approval-manifest.yaml `
+  --config packaging\default-config.yaml
+```
+
+Evidence to collect:
+
+- The reviewed content payload and approval manifest path.
+- The final trace directory with `config.json`, `task.json`,
+  `action-log.jsonl`, and `final-report.json`.
+- Screenshots proving the account was already authenticated and no CAPTCHA,
+  consent, permission, unsupported-layout, or ambiguous-target state was active.
+- Confirmation that the final publish step matched the approved step ID and
+  content fingerprint.
+
 ## Safety And Reports
 
 - Press `ctrl+alt+esc` during a run and confirm it stops within one second.

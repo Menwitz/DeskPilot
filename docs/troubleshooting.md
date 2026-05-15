@@ -13,7 +13,9 @@ session, make the fixture window visible, and rerun the task.
 ## Active Window Is Rejected
 
 Check the task `allowed_windows` list and the visible window title. The title
-must match exactly in v1.
+may match an allowed entry exactly, contain a plain entry case-insensitively, or
+match a `regex:` entry. For real runs, `config.json` records the effective
+allowlist after task and runtime window rules are merged.
 
 ## OCR Or Image Matching Finds No Target
 
@@ -169,6 +171,29 @@ Actions:
 - Update the playbook landmark or flow when a site redesign changes labels.
 - Add a narrower landmark, search region, or flow-specific target when selector
   ambiguity is expected.
+
+## Approval Manifest Stops
+
+Sensitive `run-site` flows require `--approval-manifest <path>`. The manifest
+must match the compiled task's `site_id`, `site_flow_id`, sensitive step IDs,
+and `content_variables_fingerprint`.
+
+Symptoms:
+
+- The CLI exits with `approval manifest is required for sensitive site flow`.
+- The CLI exits with a `site_id mismatch`, `flow_id mismatch`, unknown step, or
+  `content_fingerprint mismatch`.
+- `final-report.json` is absent because validation failed before the planner
+  created a run trace.
+
+Actions:
+
+- Compile or dry-run the same site flow with the same `--variables` file and
+  inspect `final-report.json` or `task.json` for the content fingerprint.
+- Update the manifest only after reviewing the exact local content variables
+  and approved sensitive step IDs.
+- Keep the manifest beside the reviewed content payload or in an ops-controlled
+  local evidence folder; do not reuse a manifest after changing content.
 
 ## Packaged Executable Fails
 

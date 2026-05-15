@@ -1,0 +1,9 @@
+# Sample manifest for examples/linkedin-content-variables.yaml.
+site_id: linkedin
+flow_id: publish-post
+approved_steps:
+  - publish-post
+approver: qa-lead@example.test
+reason: Approved sample LinkedIn content payload for local dry-run validation.
+approved_at: 2026-05-15T00:00:00Z
+content_fingerprint: sha256:4a99d720bb9e3c4efca54734896b4617301e8cdf39e2f3b5465f353df2b5b0a2
