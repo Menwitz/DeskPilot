@@ -43,7 +43,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Document that third-party websites require operator authorization and
   compliance with the target site's rules.
 - [x] Document unsupported behavior:
-  - [ ] CAPTCHA solving or bypass.
+  - [x] CAPTCHA solving or bypass.
   - [ ] Bot-detection bypass.
   - [ ] Credential abuse.
   - [ ] Stealth automation.

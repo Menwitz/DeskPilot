@@ -52,3 +52,15 @@ website safety claim before the corresponding roadmap item is checked.
     automation, and unconfirmed externally visible actions.
 - Verification:
   - Reviewed `docs/safety.md` lines 42-56.
+
+### Task 4/122: Document CAPTCHA solving or bypass as unsupported
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` states that CAPTCHA solving, CAPTCHA bypass, and challenge
+    workarounds are not supported.
+  - The same unsupported-behavior section requires rejection before compile or
+    execution, so CAPTCHA handling is framed as a stop condition rather than a
+    recovery path.
+- Verification:
+  - Reviewed `docs/safety.md` lines 42-47.
