@@ -146,6 +146,10 @@ publish-capable variant.
 ## Sensitive Confirmed Flow
 
 ```yaml
+landmarks:
+  - id: publish
+    action: click_text
+    target: Publish
 flows:
   - id: publish-post
     description: Requires explicit operator confirmation.
@@ -157,6 +161,10 @@ flows:
         requires_confirmation: true
         sensitive_category: publish
 ```
+
+Real `run-site` execution for this flow requires an approval manifest. Dry-run
+and trace replay should show the sensitive step, confirmation state, and final
+report metadata before any live run is attempted.
 
 ## Content Variables
 

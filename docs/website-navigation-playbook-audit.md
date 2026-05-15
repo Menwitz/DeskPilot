@@ -2459,3 +2459,16 @@ checking layout, domain, flow, and blocked-state coverage.
   - `rg -n "Composer-Open Flow|id: open-editor|confirmed sensitive flow|inspect the final report"
     docs/website-playbooks.md`: matched the composer-open example, stop rule,
     and report inspection guidance.
+
+### Task 182/211: Sensitive confirmed flow example
+
+- Status: complete.
+- Evidence:
+  - `docs/website-playbooks.md` includes a `Sensitive Confirmed Flow` YAML
+    snippet with a reusable `publish` landmark and `publish-post` flow.
+  - The example requires `requires_confirmation: true`, `sensitive_category:
+    publish`, approval manifests for real runs, and trace/final-report review.
+- Verification:
+  - `rg -n "Sensitive Confirmed Flow|requires_confirmation: true|approval manifest|confirmation state"
+    docs/website-playbooks.md`: matched the sensitive example and approval
+    guidance.

@@ -261,7 +261,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Read-only navigation flow.
   - [x] Search flow.
   - [x] Composer-open flow that stops before submission.
-  - [ ] Sensitive confirmed flow.
+  - [x] Sensitive confirmed flow.
   - [ ] Blocked-state detection.
 - [ ] Update `README.md` documentation links.
 - [ ] Update `docs/architecture.md` with the playbook layer.
