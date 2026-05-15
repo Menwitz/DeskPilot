@@ -180,7 +180,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Site redesign.
   - [x] CAPTCHA or suspicious-activity challenge.
   - [x] Permission restriction.
-  - [ ] Ambiguous selector.
+  - [x] Ambiguous selector.
 
 ## Phase 6: Regression Tests
 

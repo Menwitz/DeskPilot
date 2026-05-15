@@ -1686,3 +1686,17 @@ checking layout, domain, flow, and blocked-state coverage.
     "public_site_failure_modes"`: 1 passed, 5 deselected.
   - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
   - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.
+
+### Task 125/211: Ambiguous selector
+
+- Status: complete.
+- Evidence:
+  - `docs/troubleshooting.md` now identifies ambiguous selector failures by
+    candidate rankings or `candidate_count` checks with multiple matches.
+  - The remediation directs maintainers to narrow the landmark, search region,
+    or flow-specific target before rerunning.
+- Verification:
+  - `.venv/bin/pytest tests/test_safety_docs.py -k
+    "public_site_failure_modes"`: 1 passed, 5 deselected.
+  - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.

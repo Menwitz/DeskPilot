@@ -157,8 +157,9 @@ Symptoms:
 - Permission restriction: account, policy, restricted, or unavailable-action
   text appears in the blocked-state reason; use an authorized account or choose
   a permitted flow instead of working around the restriction.
-- Ambiguous selector: candidate rankings show multiple matching controls and the
-  run stops before acting.
+- Ambiguous selector: candidate rankings or `candidate_count` checks show
+  multiple matching controls; narrow the landmark, search region, or
+  flow-specific target before rerunning.
 
 Actions:
 
