@@ -156,3 +156,12 @@ website safety claim before the corresponding roadmap item is checked.
     annotating, or otherwise adding visible text to another surface.
 - Verification:
   - Reviewed `docs/safety.md` lines 70-71.
+
+### Task 14/122: Define message or send as sensitive
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` defines `message` as composing, sending, replying to,
+    forwarding, or otherwise changing direct or private messages.
+- Verification:
+  - Reviewed `docs/safety.md` lines 72-73.
