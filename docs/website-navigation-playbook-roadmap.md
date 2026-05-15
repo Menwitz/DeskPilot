@@ -192,7 +192,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Empty domains are rejected.
 - [x] Empty window-title patterns are rejected.
 - [x] Duplicate flow IDs are rejected.
-- [ ] Duplicate flow-step IDs are rejected.
+- [x] Duplicate flow-step IDs are rejected.
 - [ ] Unknown step action is rejected.
 - [ ] Missing landmark reference is rejected.
 - [ ] Sensitive step without confirmation is rejected.

@@ -1806,3 +1806,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "duplicate_flow_ids_are_rejected"`: 1 passed, 35 deselected.
+
+### Task 132/211: Duplicate flow-step IDs are rejected
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_duplicate_flow_step_ids_are_rejected`
+    writes a flow with two `open-search` steps.
+  - The assertion verifies validation raises a duplicate step ID error.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "duplicate_flow_step_ids_are_rejected"`: 1 passed, 35 deselected.
