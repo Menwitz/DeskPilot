@@ -2349,3 +2349,17 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest
     'tests/test_site_playbook_live_smoke.py::test_seed_site_read_only_smoke_flow[tiktok]'`:
     1 passed.
+
+## Phase 6 Verification
+
+- Status: complete.
+- Scope:
+  - Schema, compiler, CLI, safety, trace, and opt-in live smoke regression
+    tasks are checked in the roadmap.
+  - Roadmap implementation count is `175/211`.
+- Verification:
+  - `.venv/bin/pytest`: 316 passed, 4 skipped.
+  - `.venv/bin/ruff check .`: all checks passed.
+  - `.venv/bin/mypy`: no issues found in 71 source files.
+  - `.venv/bin/python -m build`: built `deskpilot-0.1.0.tar.gz` and
+    `deskpilot-0.1.0-py3-none-any.whl`.
