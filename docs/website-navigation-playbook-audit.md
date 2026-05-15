@@ -796,3 +796,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and printed the `unsupported-layout` detector and
     reason for each site.
+
+### Task 66/122: Define ambiguous-target blocked states
+
+- Status: complete.
+- Evidence:
+  - Every seed playbook defines `ambiguous-target`.
+  - Detectors use `candidate_count:>1` to catch cases where a selector or
+    visible-text target resolves to multiple choices.
+  - Reasons require a narrower flow or manual choice, preventing the runtime
+    from guessing when monitoring or reports need deterministic trace evidence.
+- Verification:
+  - Loaded all seed playbooks and printed the `ambiguous-target` detector and
+    reason for each site.
