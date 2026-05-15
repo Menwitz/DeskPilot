@@ -248,3 +248,13 @@ checking roadmap items.
     playbook can describe recognized domains without embedding runtime logic.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` `SiteDomain` declaration.
+
+### Task 22/122: Add `SiteLandmark`
+
+- Status: complete.
+- Evidence:
+  - `SiteLandmark` is an immutable dataclass.
+  - It stores reusable navigation target data: ID, action, target, text, image,
+    selector, and description.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` `SiteLandmark` declaration.

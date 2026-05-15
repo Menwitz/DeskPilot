@@ -65,7 +65,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Add immutable data models:
   - [x] `SitePlaybook`.
   - [x] `SiteDomain`.
-  - [ ] `SiteLandmark`.
+  - [x] `SiteLandmark`.
   - [ ] `SiteFlow`.
   - [ ] `SiteFlowStep`.
   - [ ] `BlockedState`.
