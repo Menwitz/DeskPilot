@@ -132,7 +132,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Preserve confirmation requirements when compiling sensitive steps.
 - [x] Add flow-level defaults:
   - [x] Timeout.
-  - [ ] Retry budget.
+  - [x] Retry budget.
   - [ ] Confidence threshold.
   - [ ] Optional search region.
 - [ ] Add blocked-state checks before irreversible actions.

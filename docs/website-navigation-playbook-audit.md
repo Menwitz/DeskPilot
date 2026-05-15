@@ -1033,3 +1033,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "flow_timeout_compiles_to_task_timeout"`: 1 passed, 32 deselected.
+
+### Task 83/122: Compile flow retry budget defaults
+
+- Status: complete.
+- Evidence:
+  - `SiteTaskCompiler` assigns `flow.retry` to compiled steps that do not set an
+    explicit step retry.
+  - Regression coverage mutates a flow retry budget to `3` and asserts the
+    compiled step retry is `3`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "flow_retry_defaults_compile_to_steps"`: 1 passed, 32 deselected.
