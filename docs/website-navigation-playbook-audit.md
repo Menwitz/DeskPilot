@@ -1580,3 +1580,21 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check tests/test_site_playbook_tracing.py`: all checks
     passed.
   - `.venv/bin/mypy tests/test_site_playbook_tracing.py`: no issues found.
+
+### Task 118/211: Update replay output to include site and flow when present
+
+- Status: complete.
+- Evidence:
+  - `_replay()` reads `final-report.json`, extracts `site_id` and
+    `site_flow_id` from report metadata, and prints `site:` and `flow:` lines
+    when both are present.
+  - Regression coverage dry-runs a seed site flow, replays the generated trace,
+    and asserts the replay output includes `site: youtube` and
+    `flow: open-search`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "replay_prints_site_and_flow"`: 1 passed, 9 deselected.
+  - `.venv/bin/ruff check tests/test_site_playbook_tracing.py
+    src/desktop_agent/cli.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_site_playbook_tracing.py
+    src/desktop_agent/cli.py`: no issues found.
