@@ -465,3 +465,15 @@ checking layout, domain, flow, and blocked-state coverage.
     prefixed with `_` are templates, not runnable seed playbooks.
 - Verification:
   - Reviewed `navigation_playbooks/_template.yaml` lines 1-29.
+
+### Task 40/122: Add seed playbooks
+
+- Status: complete.
+- Evidence:
+  - The catalog contains seed playbooks for Facebook, Instagram, LinkedIn,
+    Medium, TikTok, X/Twitter, and YouTube.
+  - `load_site_playbooks()` loads the seven seed playbooks and skips the
+    `_template.yaml` scaffold.
+  - `tests/test_site_playbooks.py` asserts the expected seed-site ID set.
+- Verification:
+  - Ran `load_site_playbooks()` and reviewed the seed catalog files.

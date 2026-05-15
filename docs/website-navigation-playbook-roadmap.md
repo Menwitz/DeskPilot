@@ -86,7 +86,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 - [x] Add `navigation_playbooks/README.md`.
 - [x] Add `navigation_playbooks/_template.yaml`.
-- [ ] Add seed playbooks:
+- [x] Add seed playbooks:
   - [ ] `navigation_playbooks/linkedin.yaml`.
   - [ ] `navigation_playbooks/x-twitter.yaml`.
   - [ ] `navigation_playbooks/instagram.yaml`.
