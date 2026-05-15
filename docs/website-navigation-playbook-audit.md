@@ -545,3 +545,15 @@ checking layout, domain, flow, and blocked-state coverage.
     recognition while stopping before any submit action.
 - Verification:
   - Loaded `navigation_playbooks/youtube.yaml` with `load_site_playbook`.
+
+### Task 47/122: Add `navigation_playbooks/tiktok.yaml`
+
+- Status: complete.
+- Evidence:
+  - `navigation_playbooks/tiktok.yaml` exists.
+  - It validates through `load_site_playbook`.
+  - It defines the `tiktok` site ID, two domains, seven flows, and six blocked
+    states. The seed includes an `open-messages` flow that navigates to the
+    message surface without sending content.
+- Verification:
+  - Loaded `navigation_playbooks/tiktok.yaml` with `load_site_playbook`.
