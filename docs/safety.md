@@ -66,6 +66,8 @@ agree on the same safety language.
   content externally visible.
 - `engage`: liking, reacting, clapping, reposting, subscribing, following,
   friending, connecting, joining, or similar account-visible engagement.
+- `comment`: commenting, replying, reviewing, annotating, or otherwise adding
+  visible text to another surface.
 
 ## Safety Controls Planned For v1
 
