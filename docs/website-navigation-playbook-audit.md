@@ -2513,3 +2513,17 @@ checking layout, domain, flow, and blocked-state coverage.
   - `rg -n "Website Playbook Layer|compile-site|blocked-state outcomes|approved step metadata"
     docs/architecture.md`: matched the architecture layer and reporting
     metadata.
+
+### Task 186/211: Update task DSL docs for playbook compilation
+
+- Status: complete.
+- Evidence:
+  - `docs/task-dsl.md` states that website playbooks compile into the same strict
+    task YAML shape and keep allowed windows, retries, confirmations, blocked
+    states, and metadata visible to planner traces and reports.
+  - The docs now explicitly forbid behavior that exists only in playbook YAML;
+    new behavior must be added to the DSL/compiler contract and covered with
+    compiled-task, trace, and final-report regressions.
+- Verification:
+  - `rg -n "Website Playbooks Compile Into Tasks|Do not add runtime behavior|final reports"
+    docs/task-dsl.md`: matched the compile-to-DSL contract.

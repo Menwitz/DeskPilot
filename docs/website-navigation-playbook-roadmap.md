@@ -265,7 +265,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Blocked-state detection.
 - [x] Update `README.md` documentation links.
 - [x] Update `docs/architecture.md` with the playbook layer.
-- [ ] Update `docs/task-dsl.md` to explain that playbooks compile into existing
+- [x] Update `docs/task-dsl.md` to explain that playbooks compile into existing
   tasks rather than replacing the DSL.
 - [ ] Update `docs/safety.md` with third-party website guardrails.
 

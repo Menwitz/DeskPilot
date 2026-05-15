@@ -140,6 +140,9 @@ same strict task YAML shape documented here. The compiled task keeps
 `allowed_windows`, step actions, retry defaults, confidence-threshold overrides,
 confirmation gates, blocked-state checks, and site metadata visible to the
 planner and trace reports.
+Do not add runtime behavior that exists only in playbook YAML. If a website
+flow needs a new behavior, add it to the task DSL or compiler contract, then
+cover the compiled task, trace metadata, and final reports with regressions.
 
 Site playbook steps may use content variables in `target`, `text`, or `image`
 fields with `{{variable_name}}` placeholders. Pass a local YAML variable file
