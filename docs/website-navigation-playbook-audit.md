@@ -2205,3 +2205,15 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
     "replay_prints_site_and_flow_when_present"`: 1 passed,
     9 deselected.
+
+### Task 165/211: Live smoke tests are skipped by default
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_live_smoke.py::test_live_site_smoke_tests_require_explicit_environment_flag`
+    is marked `live_site_smoke` and guarded by `DESKPILOT_LIVE_SITE_SMOKE`.
+  - Running the selected test without the environment flag produced a skip with
+    the authorized live-site smoke reason.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_live_smoke.py -k
+    "require_explicit_environment_flag"`: 1 skipped, 2 deselected.
