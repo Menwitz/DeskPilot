@@ -614,3 +614,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and filtered domains whose purpose contains
     `account` or `auth`.
+
+### Task 52/122: Define navigation flows for each seed playbook
+
+- Status: complete.
+- Evidence:
+  - Each seed playbook has a validated `flows` list.
+  - The audited flow matrix covers home/feed, search, profile or channel,
+    notifications, settings, and composer/upload/editor navigation where the
+    site exposes those surfaces.
+  - Message flows are present only for sites with a message surface in the
+    current playbook scope.
+- Verification:
+  - Loaded all seed playbooks and printed each flow ID by site.
