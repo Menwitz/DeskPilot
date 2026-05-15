@@ -1817,3 +1817,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "duplicate_flow_step_ids_are_rejected"`: 1 passed, 35 deselected.
+
+### Task 133/211: Unknown step action is rejected
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_unknown_step_action_is_rejected` writes
+    a playbook using unsupported action `teleport`.
+  - The assertion verifies validation raises an `unknown action` error before
+    compilation or execution.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "unknown_step_action_is_rejected"`: 1 passed, 35 deselected.
