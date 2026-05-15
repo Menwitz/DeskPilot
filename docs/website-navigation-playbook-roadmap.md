@@ -251,7 +251,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Facebook: open search or notifications surface.
   - [x] Medium: open search or editor surface without publishing.
   - [x] YouTube: open search or channel surface.
-  - [ ] TikTok: open search or profile surface.
+  - [x] TikTok: open search or profile surface.
 
 ## Phase 7: Documentation
 
