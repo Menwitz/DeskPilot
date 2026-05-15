@@ -1354,3 +1354,19 @@ checking layout, domain, flow, and blocked-state coverage.
     "confirm_step_allows_sensitive_site_dry_run"`: 1 passed, 8 deselected.
   - `.venv/bin/ruff check tests/test_site_playbook_cli.py`: all checks passed.
   - `.venv/bin/mypy tests/test_site_playbook_cli.py`: no issues found.
+
+### Task 106/122: Ensure CLI failures explain
+
+- Status: complete.
+- Evidence:
+  - Added CLI regressions for unknown site and unknown flow messages.
+  - Existing CLI coverage verifies invalid playbook, missing confirmation, and
+    unavailable platform actuation messages.
+  - Existing site safety coverage verifies blocked-state abort messages.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py
+    tests/test_site_playbook_safety.py`: 19 passed.
+  - `.venv/bin/ruff check tests/test_site_playbook_cli.py
+    tests/test_site_playbook_safety.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_site_playbook_cli.py
+    tests/test_site_playbook_safety.py`: no issues found.

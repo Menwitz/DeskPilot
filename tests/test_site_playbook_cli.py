@@ -202,6 +202,22 @@ def test_confirm_step_allows_sensitive_site_dry_run(
     assert "status: passed" in output
 
 
+def test_unknown_site_returns_clear_message(capsys: CaptureFixture[str]) -> None:
+    status = main(["list-flows", "missing-site"])
+
+    output = capsys.readouterr().out
+    assert status == 2
+    assert "unknown site: missing-site" in output
+
+
+def test_unknown_flow_returns_clear_message(capsys: CaptureFixture[str]) -> None:
+    status = main(["dry-run-site", "medium", "missing-flow"])
+
+    output = capsys.readouterr().out
+    assert status == 2
+    assert "unknown flow: missing-flow" in output
+
+
 def test_invalid_playbook_returns_validation_error(
     tmp_path: Path,
     capsys: CaptureFixture[str],
