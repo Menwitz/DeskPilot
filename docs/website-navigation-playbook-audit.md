@@ -1748,3 +1748,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "valid_playbook_loads_successfully"`: 1 passed, 35 deselected.
+
+### Task 127/211: Missing site ID is rejected
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_missing_site_id_is_rejected` writes a
+    playbook with an empty `site_id`.
+  - The assertion verifies `load_site_playbook` raises
+    `SitePlaybookValidationError` mentioning `site_id`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "missing_site_id_is_rejected"`: 1 passed, 35 deselected.
