@@ -60,6 +60,9 @@ Website playbooks must mark sensitive steps with `requires_confirmation: true`
 using shared action categories so validation, CLI prompts, traces, and reports
 agree on the same safety language.
 
+- `login`: entering credentials, opening an authentication flow, approving a
+  sign-in, or switching accounts.
+
 ## Safety Controls Planned For v1
 
 - Active-window allowlist checks before every action, with a final actuator

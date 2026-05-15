@@ -50,7 +50,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Unconfirmed posting, messaging, purchasing, applying, deleting, or
     settings changes.
 - [x] Define sensitive action categories shared by all site playbooks:
-  - [ ] Login.
+  - [x] Login.
   - [ ] Post, publish, upload, or submit.
   - [ ] Like, react, clap, repost, subscribe, follow, friend, connect, or join.
   - [ ] Comment or reply.
