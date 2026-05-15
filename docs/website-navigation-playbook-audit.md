@@ -1613,3 +1613,17 @@ checking layout, domain, flow, and blocked-state coverage.
     "public_site_failure_modes"`: 1 passed, 5 deselected.
   - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
   - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.
+
+### Task 120/211: Logged-out session
+
+- Status: complete.
+- Evidence:
+  - `docs/troubleshooting.md` now identifies logged-out failures by the
+    `logged-out` blocked-state signal or sign-in text.
+  - The remediation directs the operator to authenticate manually in the
+    browser and rerun the same flow, without bypass behavior.
+- Verification:
+  - `.venv/bin/pytest tests/test_safety_docs.py -k
+    "public_site_failure_modes"`: 1 passed, 5 deselected.
+  - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.

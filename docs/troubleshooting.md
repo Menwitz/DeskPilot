@@ -143,7 +143,8 @@ prints the site and flow when those fields are present.
 
 Symptoms:
 
-- Logged-out session: a blocked-state step reports that sign-in is required.
+- Logged-out session: a blocked-state step reports `logged-out` or sign-in
+  text; authenticate manually in the browser, then rerun the same flow.
 - Consent dialog: a blocked-state step reports a cookie or consent interstitial.
 - Site redesign: an unsupported-layout blocked state or repeated target
   mismatch appears in the action log.
