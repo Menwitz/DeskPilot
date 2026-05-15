@@ -1381,3 +1381,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "unknown_site_returns_clear_message"`: 1 passed, 10 deselected.
+
+### Task 108/122: Explain unknown flow failures
+
+- Status: complete.
+- Evidence:
+  - `resolve_site_flow()` raises `SitePlaybookValidationError` with
+    `unknown flow: <flow>` when a requested flow is absent.
+  - CLI error handling prints the message and returns status `2`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "unknown_flow_returns_clear_message"`: 1 passed, 10 deselected.
