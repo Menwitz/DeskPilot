@@ -288,3 +288,16 @@ checking roadmap items.
     recovery hint.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` `BlockedState` declaration.
+
+### Task 26/122: Add YAML loader for `navigation_playbooks/*.yaml`
+
+- Status: complete.
+- Evidence:
+  - `load_site_playbook` reads YAML with `yaml.safe_load`, maps it into
+    `SitePlaybook`, and validates before returning.
+  - `load_site_playbooks` defaults to `navigation_playbooks`, loads sorted
+    `*.yaml` files, and skips files prefixed with `_` such as the template.
+  - CLI catalog commands use these loader functions.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` loader functions and loader
+    call sites in `src/desktop_agent/cli.py`.
