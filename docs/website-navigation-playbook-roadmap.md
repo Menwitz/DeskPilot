@@ -205,7 +205,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Domain and title rules become `allowed_windows`.
 - [x] Flow timeout compiles into task timeout.
 - [x] Flow retry defaults compile into step retry values.
-- [ ] Sensitive steps preserve `requires_confirmation`.
+- [x] Sensitive steps preserve `requires_confirmation`.
 - [ ] Blocked-state checks compile before sensitive final actions.
 - [ ] Unknown site flow fails before task execution.
 

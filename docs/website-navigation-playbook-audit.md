@@ -1921,3 +1921,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "flow_retry_defaults_compile_to_steps"`: 1 passed, 35 deselected.
+
+### Task 142/211: Sensitive steps preserve `requires_confirmation`
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_sensitive_steps_preserve_confirmation`
+    compiles a sensitive publish flow.
+  - The assertions verify the final compiled step keeps
+    `requires_confirmation: true` and compiles into the submission category.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "sensitive_steps_preserve_confirmation"`: 1 passed, 35 deselected.
