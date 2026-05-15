@@ -54,6 +54,12 @@ or executed.
   changes are not supported; these steps must stop until the operator confirms
   the exact step.
 
+## Sensitive Website Action Categories
+
+Website playbooks must mark sensitive steps with `requires_confirmation: true`
+using shared action categories so validation, CLI prompts, traces, and reports
+agree on the same safety language.
+
 ## Safety Controls Planned For v1
 
 - Active-window allowlist checks before every action, with a final actuator

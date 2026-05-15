@@ -49,7 +49,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Stealth automation.
   - [x] Unconfirmed posting, messaging, purchasing, applying, deleting, or
     settings changes.
-- [ ] Define sensitive action categories shared by all site playbooks:
+- [x] Define sensitive action categories shared by all site playbooks:
   - [ ] Login.
   - [ ] Post, publish, upload, or submit.
   - [ ] Like, react, clap, repost, subscribe, follow, friend, connect, or join.
