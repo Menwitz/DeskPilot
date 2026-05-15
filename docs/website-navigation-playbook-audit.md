@@ -2243,3 +2243,18 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_live_smoke.py -k
     "never_run_final_actions_by_default"`: 1 passed, 2 deselected.
+
+### Task 168/211: Each seed site has one read-only smoke flow
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_live_smoke.py::test_each_seed_site_has_one_read_only_smoke_flow`
+    verifies the live smoke catalog covers exactly the seed site set.
+  - `tests/test_site_playbook_live_smoke.py::test_seed_site_read_only_smoke_flow`
+    adds parameterized per-site read-only checks so each seed site can be
+    selected independently.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_live_smoke.py`: 9 passed,
+    1 skipped.
+  - `.venv/bin/pytest tests/test_site_playbook_live_smoke.py -k
+    "each_seed_site_has_one_read_only_smoke_flow"`: 1 passed, 9 deselected.
