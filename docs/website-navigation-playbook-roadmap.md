@@ -63,7 +63,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 - [x] Add `src/desktop_agent/site_playbooks.py`.
 - [x] Add immutable data models:
-  - [ ] `SitePlaybook`.
+  - [x] `SitePlaybook`.
   - [ ] `SiteDomain`.
   - [ ] `SiteLandmark`.
   - [ ] `SiteFlow`.

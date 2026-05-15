@@ -228,3 +228,13 @@ checking roadmap items.
   - Model fields use tuples for repeated child collections on aggregate models.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` model declarations.
+
+### Task 20/122: Add `SitePlaybook`
+
+- Status: complete.
+- Evidence:
+  - `SitePlaybook` is an immutable dataclass.
+  - It carries the site ID, version, domains, allowed window-title patterns,
+    landmarks, flows, blocked states, and source path.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` `SitePlaybook` declaration.
