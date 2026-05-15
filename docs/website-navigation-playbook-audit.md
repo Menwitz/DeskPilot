@@ -2907,3 +2907,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `git log --oneline --grep="^feat: require approval manifests for site runs$"`:
     matched `525a563`.
+
+## Final Verification
+
+- Status: complete.
+- Scope:
+  - Roadmap implementation count is `211/211`.
+  - The working tree was clean before final verification.
+- Verification:
+  - `.venv/bin/pytest`: 328 passed, 4 skipped.
+  - `.venv/bin/ruff check .`: all checks passed.
+  - `.venv/bin/mypy`: no issues found in 71 source files.
+  - `.venv/bin/python -m build`: built `deskpilot-0.1.0.tar.gz` and
+    `deskpilot-0.1.0-py3-none-any.whl`.
