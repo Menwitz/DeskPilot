@@ -123,7 +123,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] `click_image`.
   - [x] `click_uia`.
   - [x] `type_text`.
-  - [ ] `press_key`.
+  - [x] `press_key`.
   - [ ] `scroll`.
   - [ ] `scroll_until`.
   - [ ] `wait_for`.

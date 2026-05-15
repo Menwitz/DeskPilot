@@ -925,3 +925,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and type_text"`: 1 passed, 32 deselected.
+
+### Task 74/122: Compile `press_key`
+
+- Status: complete.
+- Evidence:
+  - The action regression matrix includes a `press_key` site step with key text.
+  - `SiteTaskCompiler` preserves the key text in the compiled `TaskStep`, and
+    `BasicTaskValidator` accepts the result.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
+    and press_key"`: 1 passed, 32 deselected.
