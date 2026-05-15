@@ -488,3 +488,14 @@ checking layout, domain, flow, and blocked-state coverage.
     states.
 - Verification:
   - Loaded `navigation_playbooks/linkedin.yaml` with `load_site_playbook`.
+
+### Task 42/122: Add `navigation_playbooks/x-twitter.yaml`
+
+- Status: complete.
+- Evidence:
+  - `navigation_playbooks/x-twitter.yaml` exists.
+  - It validates through `load_site_playbook`.
+  - It defines the `x-twitter` site ID, two domains, seven flows, and six
+    blocked states.
+- Verification:
+  - Loaded `navigation_playbooks/x-twitter.yaml` with `load_site_playbook`.
