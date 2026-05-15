@@ -70,17 +70,17 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] `SiteFlowStep`.
   - [x] `BlockedState`.
 - [x] Add a YAML loader for `navigation_playbooks/*.yaml`.
-- [ ] Add schema validation:
-  - [ ] Site ID is required and slug-safe.
-  - [ ] At least one domain is required.
-  - [ ] At least one allowed window-title pattern is required.
-  - [ ] Flow IDs are unique.
-  - [ ] Step IDs are unique within each flow.
-  - [ ] Sensitive steps must declare `requires_confirmation: true`.
-  - [ ] References to landmarks must resolve.
-  - [ ] Unsupported actions fail validation before execution.
-  - [ ] Blocked-state definitions must include a detector and user-facing reason.
-- [ ] Add comments only around non-obvious validation and safety decisions.
+- [x] Add schema validation:
+  - [x] Site ID is required and slug-safe.
+  - [x] At least one domain is required.
+  - [x] At least one allowed window-title pattern is required.
+  - [x] Flow IDs are unique.
+  - [x] Step IDs are unique within each flow.
+  - [x] Sensitive steps must declare `requires_confirmation: true`.
+  - [x] References to landmarks must resolve.
+  - [x] Unsupported actions fail validation before execution.
+  - [x] Blocked-state definitions must include a detector and user-facing reason.
+- [x] Add comments only around non-obvious validation and safety decisions.
 
 ## Phase 2: Catalog Layout And Seed Playbooks
 

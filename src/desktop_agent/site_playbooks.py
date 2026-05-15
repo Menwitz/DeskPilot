@@ -2,12 +2,29 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+import re
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import cast
 
 import yaml
+
+from desktop_agent.task_dsl import SUPPORTED_ACTIONS
+
+_SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+_SENSITIVE_CATEGORIES: frozenset[str] = frozenset(
+    {
+        "login",
+        "publish",
+        "engage",
+        "comment",
+        "message",
+        "transaction",
+        "delete",
+        "account_settings",
+    },
+)
 
 
 class SitePlaybookValidationError(ValueError):
@@ -96,7 +113,9 @@ def load_site_playbook(playbook_path: Path) -> SitePlaybook:
         raise SitePlaybookValidationError(f"playbook file not found: {playbook_path}")
     loaded = yaml.safe_load(playbook_path.read_text(encoding="utf-8"))
     data = _mapping(loaded, "playbook file must contain a mapping")
-    return _playbook_from_mapping(data, playbook_path)
+    playbook = _playbook_from_mapping(data, playbook_path)
+    validate_site_playbook(playbook)
+    return playbook
 
 
 def load_site_playbooks(playbook_dir: Path = Path("navigation_playbooks")) -> tuple[
@@ -114,6 +133,34 @@ def load_site_playbooks(playbook_dir: Path = Path("navigation_playbooks")) -> tu
         for path in sorted(playbook_dir.glob("*.yaml"))
         if not path.name.startswith("_")
     )
+
+
+def validate_site_playbook(playbook: SitePlaybook) -> None:
+    """Validate public-site schema rules before a playbook can be compiled."""
+
+    errors: list[str] = []
+    if not _is_slug(playbook.site_id):
+        errors.append("site_id is required and must be slug-safe")
+    if not playbook.domains:
+        errors.append("at least one domain is required")
+    for domain in playbook.domains:
+        if not domain.host:
+            errors.append("domain host is required")
+    if not playbook.allowed_window_titles:
+        errors.append("at least one allowed window-title pattern is required")
+    for title in playbook.allowed_window_titles:
+        if not title:
+            errors.append("allowed window-title pattern must not be empty")
+
+    landmark_ids = {landmark.id for landmark in playbook.landmarks if landmark.id}
+    errors.extend(_validate_landmarks(playbook.landmarks))
+    errors.extend(_validate_unique_ids("flow", (flow.id for flow in playbook.flows)))
+    for flow in playbook.flows:
+        errors.extend(_validate_flow(flow, landmark_ids))
+    errors.extend(_validate_blocked_states(playbook.blocked_states))
+
+    if errors:
+        raise SitePlaybookValidationError("; ".join(errors))
 
 
 def _playbook_from_mapping(
@@ -198,6 +245,79 @@ def _blocked_state_from_mapping(value: object) -> BlockedState:
         reason=str(data.get("reason", "")),
         recovery_hint=_optional_str(data.get("recovery_hint")),
     )
+
+
+def _validate_landmarks(landmarks: tuple[SiteLandmark, ...]) -> list[str]:
+    errors = _validate_unique_ids(
+        "landmark",
+        (landmark.id for landmark in landmarks),
+    )
+    for landmark in landmarks:
+        if landmark.action not in SUPPORTED_ACTIONS:
+            errors.append(f"unknown action: {landmark.action}")
+    return errors
+
+
+def _validate_flow(
+    flow: SiteFlow,
+    landmark_ids: set[str],
+) -> list[str]:
+    errors: list[str] = []
+    if not flow.id:
+        errors.append("flow id is required")
+    errors.extend(_validate_unique_ids("step", (step.id for step in flow.steps)))
+    for step in flow.steps:
+        if not step.id:
+            errors.append(f"flow {flow.id} step id is required")
+        if step.action not in SUPPORTED_ACTIONS:
+            errors.append(f"unknown action: {step.action}")
+        if step.landmark is not None and step.landmark not in landmark_ids:
+            errors.append(f"step {step.id} landmark does not exist: {step.landmark}")
+        if step.retry is not None and step.retry < 0:
+            errors.append(f"step {step.id} retry must not be negative")
+        if step.timeout_seconds is not None and step.timeout_seconds <= 0:
+            errors.append(f"step {step.id} timeout_seconds must be greater than zero")
+        # A sensitive category is an author-declared safety intent; validation
+        # must enforce confirmation even before the compiler sees the step.
+        if step.sensitive_category is not None:
+            if step.sensitive_category not in _SENSITIVE_CATEGORIES:
+                errors.append(f"unknown sensitive category: {step.sensitive_category}")
+            if not step.requires_confirmation:
+                errors.append(
+                    f"step {step.id} sensitive steps require confirmation",
+                )
+    return errors
+
+
+def _validate_blocked_states(
+    blocked_states: tuple[BlockedState, ...],
+) -> list[str]:
+    errors = _validate_unique_ids(
+        "blocked state",
+        (state.id for state in blocked_states),
+    )
+    for state in blocked_states:
+        if not state.detector:
+            errors.append(f"blocked state {state.id} detector is required")
+        if not state.reason:
+            errors.append(f"blocked state {state.id} reason is required")
+    return errors
+
+
+def _validate_unique_ids(label: str, ids: Iterable[str]) -> list[str]:
+    errors: list[str] = []
+    seen: set[str] = set()
+    for item_id in ids:
+        if not item_id:
+            errors.append(f"{label} id is required")
+        elif item_id in seen:
+            errors.append(f"duplicate {label} id: {item_id}")
+        seen.add(item_id)
+    return errors
+
+
+def _is_slug(value: str) -> bool:
+    return bool(_SLUG_PATTERN.fullmatch(value))
 
 
 def _mapping(value: object, message: str) -> Mapping[str, object]:
