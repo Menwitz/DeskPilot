@@ -1784,3 +1784,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "empty_domains_are_rejected"`: 1 passed, 35 deselected.
+
+### Task 130/211: Empty window-title patterns are rejected
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_empty_window_title_patterns_are_rejected`
+    writes a playbook with `allowed_window_titles: []`.
+  - The assertion verifies the window-title validation error is raised.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "empty_window_title_patterns_are_rejected"`: 1 passed, 35 deselected.

@@ -190,7 +190,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Missing site ID is rejected.
 - [x] Invalid site ID is rejected.
 - [x] Empty domains are rejected.
-- [ ] Empty window-title patterns are rejected.
+- [x] Empty window-title patterns are rejected.
 - [ ] Duplicate flow IDs are rejected.
 - [ ] Duplicate flow-step IDs are rejected.
 - [ ] Unknown step action is rejected.
