@@ -2381,3 +2381,17 @@ checking layout, domain, flow, and blocked-state coverage.
   - Verify and tighten each documentation item task by task before checking it.
   - Keep examples grounded in local validation, traces, monitoring artifacts,
     and reports rather than live public-site dependencies.
+
+### Task 176/211: Add playbook authoring docs
+
+- Status: complete.
+- Evidence:
+  - `docs/website-playbooks.md` now includes an `Authoring Workflow` section with
+    the required top-level YAML shape.
+  - The workflow tells authors where playbooks live, how landmarks and flows fit
+    together, how to keep smoke flows read-only, and which regression suites to
+    update for schema, CLI, safety, tracing, monitoring, and reports.
+- Verification:
+  - `rg -n "Authoring Workflow|site_id: example-site|test_site_playbook_tracing"
+    docs/website-playbooks.md`: matched the new authoring section and test
+    guidance.

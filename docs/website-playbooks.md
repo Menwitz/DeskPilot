@@ -23,6 +23,35 @@ For an end-to-end demonstration of the implemented capabilities, see
 - Keep live checks opt-in; normal CI must validate playbooks and compiled tasks
   without contacting public websites.
 
+## Authoring Workflow
+
+1. Start from `navigation_playbooks/_template.yaml` and save the copy as
+   `navigation_playbooks/<site-id>.yaml`.
+2. Fill the required top-level fields: `site_id`, `version`, `domains`,
+   `allowed_window_titles`, `landmarks`, `flows`, and `blocked_states`.
+3. Model landmarks before flows. Flow steps should reference a landmark whenever
+   a stable label, selector, or image target can be reused across flows.
+4. Add at least one read-only smoke flow before sensitive flows. Search,
+   profile, channel, notification, editor, composer, upload, and settings
+   surfaces should stop at navigation unless the operator explicitly approves a
+   sensitive step.
+5. Compile the flow with `desktop-agent compile-site <site-id> <flow-id>` and
+   verify the generated task metadata, allowed-window rules, blocked-state
+   checks, and final report fields.
+6. Add regression coverage in `tests/test_site_playbooks.py`,
+   `tests/test_site_playbook_cli.py`, `tests/test_site_playbook_safety.py`, or
+   `tests/test_site_playbook_tracing.py` depending on the behavior changed.
+
+```yaml
+site_id: example-site
+version: "1"
+domains: []
+allowed_window_titles: []
+landmarks: []
+flows: []
+blocked_states: []
+```
+
 ## New-Site Checklist
 
 - Copy `navigation_playbooks/_template.yaml` to
