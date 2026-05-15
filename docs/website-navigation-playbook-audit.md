@@ -1201,3 +1201,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "list_sites_prints_all_seed_sites"`: 1 passed, 6 deselected.
+
+### Task 94/122: Add `desktop-agent list-flows <site>`
+
+- Status: complete.
+- Evidence:
+  - The CLI parser registers `list-flows` with a required site argument.
+  - `_list_flows()` loads the named site and prints flow IDs with descriptions.
+  - Regression coverage asserts LinkedIn flow output includes `open-search` and
+    its description.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "list_flows_linkedin_prints_flows"`: 1 passed, 6 deselected.
