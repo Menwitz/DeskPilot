@@ -246,7 +246,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   delete actions unless a separate confirmation flag is present.
 - [x] Each seed site has one read-only smoke flow:
   - [x] LinkedIn: open search or profile surface.
-  - [ ] X/Twitter: open search or notifications surface.
+  - [x] X/Twitter: open search or notifications surface.
   - [ ] Instagram: open search or profile surface.
   - [ ] Facebook: open search or notifications surface.
   - [ ] Medium: open search or editor surface without publishing.
