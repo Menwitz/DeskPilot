@@ -693,3 +693,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and printed whether each contains
     `open-messages`.
+
+### Task 58/122: Define open settings flows
+
+- Status: complete.
+- Evidence:
+  - Every seed playbook defines `open-settings`.
+  - LinkedIn uses a two-step profile-menu to settings path, and schema
+    validation confirms both landmark references resolve.
+  - Settings navigation is separated from any actual account, privacy,
+    notification, security, or billing change.
+- Verification:
+  - Loaded all seed playbooks and confirmed each contains `open-settings`.
