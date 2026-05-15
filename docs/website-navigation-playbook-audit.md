@@ -584,3 +584,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and printed domains filtered to `purpose ==
     "primary"`.
+
+### Task 50/122: Define common alternate domains when applicable
+
+- Status: complete.
+- Evidence:
+  - Non-primary domains are present where the seed site has a common alternate
+    surface needed for recognition.
+  - Audited alternates include `linkedin.cn`, `twitter.com`, `mirror.xyz`,
+    `tiktokv.com`, `youtu.be`, `studio.youtube.com`, `messenger.com`, and
+    `accountscenter.instagram.com`.
+  - Each alternate is purpose-tagged so downstream pipeline, monitoring, and
+    report code can explain why the host is allowed.
+- Verification:
+  - Loaded all seed playbooks and printed domains where `purpose != "primary"`.
