@@ -2166,3 +2166,16 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
     "action_log_includes_selected_playbook_version"`: 1 passed,
     9 deselected.
+
+### Task 162/211: Sensitive blocked step appears in trace metadata
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_tracing.py::test_sensitive_blocked_step_appears_in_trace_metadata`
+    runs a site flow with an unconfirmed sensitive action.
+  - The assertions verify the trace metadata records the blocked sensitive step
+    instead of hiding the stop condition.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "sensitive_blocked_step_appears_in_trace_metadata"`: 1 passed,
+    9 deselected.
