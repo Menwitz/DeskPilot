@@ -2871,3 +2871,12 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `git log --oneline --grep="^docs: document website playbook authoring$"`:
     matched `c79a83f`.
+
+### Task 208/211: Commit plan includes website playbook validation tests commit
+
+- Status: complete.
+- Evidence:
+  - `c5ce1c3 test: cover website playbook validation`
+- Verification:
+  - `git log --oneline --grep="^test: cover website playbook validation$"`:
+    matched `c5ce1c3`.
