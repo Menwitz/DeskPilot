@@ -137,3 +137,13 @@ website safety claim before the corresponding roadmap item is checked.
     submitting, or otherwise making content externally visible.
 - Verification:
   - Reviewed `docs/safety.md` lines 66-67.
+
+### Task 12/122: Define engagement actions as sensitive
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` defines `engage` as liking, reacting, clapping,
+    reposting, subscribing, following, friending, connecting, joining, or
+    similar account-visible engagement.
+- Verification:
+  - Reviewed `docs/safety.md` lines 68-69.
