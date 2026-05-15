@@ -2192,3 +2192,16 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
     "blocked_state_reason_appears_in_final_report"`: 1 passed,
     9 deselected.
+
+### Task 164/211: Replay prints site and flow fields when available
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_tracing.py::test_replay_prints_site_and_flow_when_present`
+    replays a site trace with site and flow metadata.
+  - The assertions verify replay output includes the site ID and site flow ID
+    for report review.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "replay_prints_site_and_flow_when_present"`: 1 passed,
+    9 deselected.
