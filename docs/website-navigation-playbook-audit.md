@@ -1153,3 +1153,15 @@ checking layout, domain, flow, and blocked-state coverage.
     35 deselected.
   - `.venv/bin/ruff check tests/test_site_playbooks.py`: all checks passed.
   - `.venv/bin/mypy tests/test_site_playbooks.py`: no issues found.
+
+### Task 92/122: Add playbook version metadata
+
+- Status: complete.
+- Evidence:
+  - Compiled task metadata includes `site_playbook_version`.
+  - Compiled step metadata also includes `site_playbook_version`.
+  - Tracing coverage verifies selected playbook version is included in site-run
+    action metadata.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "action_log_includes_selected_playbook_version"`: 1 passed, 4 deselected.

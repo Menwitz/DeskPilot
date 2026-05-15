@@ -141,7 +141,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Flow ID.
   - [x] Domain.
   - [x] Sensitive step IDs.
-  - [ ] Playbook version.
+  - [x] Playbook version.
 
 ## Phase 4: CLI Commands
 
