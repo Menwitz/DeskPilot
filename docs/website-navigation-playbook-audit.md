@@ -557,3 +557,17 @@ checking layout, domain, flow, and blocked-state coverage.
     message surface without sending content.
 - Verification:
   - Loaded `navigation_playbooks/tiktok.yaml` with `load_site_playbook`.
+
+### Task 48/122: Define domains for each seed playbook
+
+- Status: complete.
+- Evidence:
+  - Every seed playbook includes a non-empty `domains` list validated by the
+    schema loader.
+  - Domain entries are purpose-tagged so later compile, monitoring, deep-search,
+    and report layers can distinguish primary, alternate, account, message, and
+    creator surfaces without hard-coded site exceptions.
+  - The audited catalog contains domain definitions for LinkedIn, X/Twitter,
+    Instagram, Facebook, Medium, YouTube, and TikTok.
+- Verification:
+  - Loaded all seed playbooks and printed each domain host with its purpose.
