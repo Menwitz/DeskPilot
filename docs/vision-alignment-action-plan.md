@@ -29,7 +29,7 @@ teams running approved content workflows.
 - [ ] Seed playbooks support publish-capable LinkedIn and Medium workflows.
 - [ ] Real run path includes Windows UIA perception.
 - [ ] Active-window safety is consistently enforced in real runs.
-- [ ] Approval manifest exists for ops-team preapproval.
+- [x] Approval manifest exists for ops-team preapproval.
 - [ ] Windows package and live smoke evidence are complete.
 
 ## P0 Release Blockers
@@ -38,8 +38,8 @@ teams running approved content workflows.
   this alignment work.
 - [x] Rewrite `README.md` and `docs/project-definition.md` around the revised
   v1 vision.
-- [ ] Add local approval manifest support via `--approval-manifest <path>`.
-- [ ] Require approval manifests for sensitive `run-site` flows.
+- [x] Add local approval manifest support via `--approval-manifest <path>`.
+- [x] Require approval manifests for sensitive `run-site` flows.
 - [ ] Add YAML variable support for content payloads.
 - [ ] Add LinkedIn publish-capable flow using YAML variables.
 - [ ] Add Medium publish-capable flow using YAML variables.
@@ -57,7 +57,7 @@ teams running approved content workflows.
   publish-capable flows.
 - [ ] Update `navigation_playbooks/README.md` with promotion criteria for
   publish-capable sites.
-- [ ] Document the approval manifest schema.
+- [x] Document the approval manifest schema.
 - [ ] Document YAML variable schema for content payloads.
 - [ ] Document local artifact locations for approvals, traces, and reports.
 - [ ] Update troubleshooting docs for approval-manifest failures.
@@ -75,7 +75,7 @@ teams running approved content workflows.
 - [ ] Add regression test: wrong active window stops before actuation.
 - [ ] Add regression test: task allowlist works without duplicating config
   allowlist.
-- [ ] Add regression test: sensitive site action fails without approval
+- [x] Add regression test: sensitive site action fails without approval
   manifest.
 - [ ] Add regression test: manifest scope mismatch fails before input.
 
@@ -85,7 +85,7 @@ teams running approved content workflows.
 - [ ] Add sample LinkedIn content variables file.
 - [ ] Add sample Medium content variables file.
 - [ ] Add dry-run examples for publish-capable flows.
-- [ ] Add trace assertions for approval manifest metadata.
+- [x] Add trace assertions for approval manifest metadata.
 - [ ] Add trace assertions for variable redaction/fingerprints.
 - [ ] Add opt-in Windows smoke command for LinkedIn publish dry-run/live-safe
   path.
@@ -99,7 +99,7 @@ teams running approved content workflows.
   and approval requirements.
 - [ ] `desktop-agent dry-run-site medium <publish-flow>` validates variables and
   approval requirements.
-- [ ] Sensitive site flow without approval manifest exits nonzero with a clear
+- [x] Sensitive site flow without approval manifest exits nonzero with a clear
   message.
 - [ ] Approval manifest with wrong site, flow, step, or content fingerprint
   exits nonzero.
