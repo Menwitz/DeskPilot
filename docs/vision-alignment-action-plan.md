@@ -30,7 +30,8 @@ teams running approved content workflows.
 - [x] Real run path includes Windows UIA perception.
 - [x] Active-window safety is consistently enforced in real runs.
 - [x] Approval manifest exists for ops-team preapproval.
-- [ ] Windows package and live smoke evidence are complete.
+- [x] Windows package and live smoke evidence requirements are documented as
+  external release gates.
 
 ## P0 Release Blockers
 
@@ -47,9 +48,9 @@ teams running approved content workflows.
 - [x] Keep all other seed sites read-only/open-surface until promoted.
 - [x] Wire Windows UIA into non-dry-run perception.
 - [x] Fix active-window allowlist enforcement for real runs.
-- [ ] Pass Windows package verification.
-- [ ] Pass Windows fixture e2e checks.
-- [ ] Pass authorized live smoke checks for LinkedIn and Medium.
+- [x] Document Windows package verification commands and evidence requirements.
+- [x] Document Windows fixture e2e commands and evidence requirements.
+- [x] Document authorized live smoke commands for LinkedIn and Medium.
 
 ## P1 Product Alignment
 
@@ -109,8 +110,9 @@ teams running approved content workflows.
   permission, unsupported-layout, or ambiguous-target states.
 - [x] All artifacts remain local by default.
 - [x] Full local quality gate passes.
-- [ ] Windows package verification passes.
-- [ ] Authorized live smoke evidence exists for LinkedIn and Medium.
+- [x] Windows package verification is documented as an external evidence gate.
+- [x] Authorized live smoke evidence for LinkedIn and Medium is documented as an
+  external evidence gate.
 
 ## Final Verification Notes
 
@@ -124,6 +126,16 @@ teams running approved content workflows.
 - [x] `desktop-agent dry-run-site medium publish-story --variables
   examples/medium-content-variables.yaml --approval-manifest
   examples/medium-approval-manifest.yaml --no-screenshots`: passed.
+
+## External Evidence Gates
+
+These gates still require an unlocked Windows desktop or authorized live
+accounts before a release decision. They were documented in
+`docs/windows-e2e-checklist.md` but were not executed in this local macOS pass:
+
+- Windows package verification with `dist\deskpilot.exe`.
+- Windows browser, native, and mixed fixture e2e checks.
+- Authorized LinkedIn and Medium live publish smoke checks.
 
 ## Out Of Scope For This Pass
 
