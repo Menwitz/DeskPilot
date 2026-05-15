@@ -2142,3 +2142,14 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
     "emergency_stop_behavior_remains_unchanged_for_site_tasks"`: 1 passed,
     7 deselected.
+
+### Task 160/211: Final report includes site ID and flow ID for site runs
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_tracing.py::test_final_report_includes_site_id_and_flow_id`
+    dry-runs a seed site trace and reads `final-report.json`.
+  - The assertions verify `metadata.site_id` and `metadata.site_flow_id`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "final_report_includes_site_id_and_flow_id"`: 1 passed, 9 deselected.

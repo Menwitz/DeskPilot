@@ -232,7 +232,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ### Trace Regression Tests
 
-- [ ] Final report includes site ID and flow ID for site runs.
+- [x] Final report includes site ID and flow ID for site runs.
 - [ ] Action log includes selected playbook version.
 - [ ] Sensitive blocked step appears in trace metadata.
 - [ ] Blocked-state reason appears in final report.
