@@ -959,3 +959,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and scroll_until"`: 1 passed, 32 deselected.
+
+### Task 77/122: Compile `wait_for`
+
+- Status: complete.
+- Evidence:
+  - The action regression matrix includes a `wait_for` site step with a target.
+  - `SiteTaskCompiler` preserves the target in the compiled `TaskStep`, and
+    `BasicTaskValidator` accepts the result.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
+    and wait_for and not branch_if_visible"`: 1 passed, 32 deselected.
