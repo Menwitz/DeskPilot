@@ -64,6 +64,8 @@ agree on the same safety language.
   sign-in, or switching accounts.
 - `publish`: posting, publishing, uploading, submitting, or otherwise making
   content externally visible.
+- `engage`: liking, reacting, clapping, reposting, subscribing, following,
+  friending, connecting, joining, or similar account-visible engagement.
 
 ## Safety Controls Planned For v1
 
