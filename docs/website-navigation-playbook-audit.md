@@ -2675,3 +2675,18 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
     "blocked_state_reason_appears_in_final_report or blocked_state_check_outcome_appears_in_trace"`:
     2 passed, 8 deselected.
+
+## Phase 8 Verification
+
+- Status: complete.
+- Scope:
+  - Acceptance criteria for new-site onboarding, seed validation, read-only
+    coverage, sensitive confirmations, compiled task validation, deterministic
+    CI, opt-in live smoke, and failed-run reports are checked.
+  - Roadmap implementation count is `195/211`.
+- Verification:
+  - `.venv/bin/pytest`: 327 passed, 4 skipped.
+  - `.venv/bin/ruff check .`: all checks passed.
+  - `.venv/bin/mypy`: no issues found in 71 source files.
+  - `.venv/bin/python -m build`: built `deskpilot-0.1.0.tar.gz` and
+    `deskpilot-0.1.0-py3-none-any.whl`.
