@@ -1417,3 +1417,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "missing_confirmation_returns_clear_message"`: 1 passed, 10 deselected.
+
+### Task 111/122: Explain blocked-state detected failures
+
+- Status: complete.
+- Evidence:
+  - Blocked-state checks compile before confirmed sensitive steps.
+  - The runtime abort reason includes `blocked state detected` and the
+    playbook-authored blocked-state reason.
+  - Safety regression coverage verifies CAPTCHA/challenge states fail with a
+    no-bypass message.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "captcha_state_aborts_with_no_bypass_message"`: 1 passed, 7 deselected.
