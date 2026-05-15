@@ -349,3 +349,14 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` window-title validation and
     `tests/test_site_playbooks.py` window-title validation test.
+
+### Task 31/122: Validate flow IDs are unique
+
+- Status: complete.
+- Evidence:
+  - `validate_site_playbook` applies `_validate_unique_ids` to every flow ID.
+  - `_validate_unique_ids` reports duplicate flow IDs.
+  - Regression tests cover duplicate flow IDs.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` flow ID validation and
+    `tests/test_site_playbooks.py` duplicate-flow test.
