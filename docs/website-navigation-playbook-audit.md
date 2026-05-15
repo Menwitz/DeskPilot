@@ -268,3 +268,13 @@ checking roadmap items.
     optional search region, and a tuple of `SiteFlowStep` items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` `SiteFlow` declaration.
+
+### Task 24/122: Add `SiteFlowStep`
+
+- Status: complete.
+- Evidence:
+  - `SiteFlowStep` is an immutable dataclass.
+  - It stores step ID, action, optional landmark/target/text/image fields,
+    confirmation requirement, sensitive category, timeout, and retry override.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` `SiteFlowStep` declaration.
