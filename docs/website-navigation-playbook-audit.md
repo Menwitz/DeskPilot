@@ -1071,3 +1071,19 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and scroll_until"`: 1 passed, 33 deselected.
+
+### Task 86/122: Add blocked-state checks before irreversible actions
+
+- Status: complete.
+- Evidence:
+  - `SiteTaskCompiler.compile()` calls `_blocked_state_checks()` before appending
+    each compiled step.
+  - `_blocked_state_checks()` returns checks only for confirmed sensitive steps,
+    so read-only navigation remains simple while irreversible actions fail
+    closed.
+  - Regression coverage asserts the first compiled step before `publish-post` is
+    `blocked-state-logged-out-before-publish-post`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "blocked_state_checks_compile_before_sensitive_final_actions"`: 1 passed,
+    33 deselected.

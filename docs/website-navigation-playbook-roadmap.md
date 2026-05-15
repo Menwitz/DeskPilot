@@ -135,7 +135,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Retry budget.
   - [x] Confidence threshold.
   - [x] Optional search region.
-- [ ] Add blocked-state checks before irreversible actions.
+- [x] Add blocked-state checks before irreversible actions.
 - [ ] Add task metadata for trace readability:
   - [ ] Site ID.
   - [ ] Flow ID.
