@@ -744,3 +744,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and printed the `logged-out` detector and reason
     for each site.
+
+### Task 62/122: Define consent or cookie interstitial blocked states
+
+- Status: complete.
+- Evidence:
+  - Every seed playbook defines `consent`.
+  - Detectors use site-specific consent text such as `Accept cookies`,
+    `Allow all cookies`, `Accept`, `Accept all`, `cookie`, or `I agree`.
+  - Reasons require manual resolution of the cookie or consent dialog.
+- Verification:
+  - Loaded all seed playbooks and printed the `consent` detector and reason for
+    each site.
