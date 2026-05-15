@@ -1875,3 +1875,14 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "basic_navigation_flow_compiles_to_task_definition"`: 1 passed,
     35 deselected.
+
+### Task 138/211: Compiled task passes `BasicTaskValidator`
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_compiled_task_passes_basic_task_validator`
+    compiles a valid site flow and validates it with `BasicTaskValidator`.
+  - This proves the compiler output conforms to the existing task DSL contract.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "compiled_task_passes_basic_task_validator"`: 1 passed, 35 deselected.
