@@ -2844,3 +2844,12 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `git log --oneline --grep="website playbook schema\|site playbook schema"`:
     matched `a4f1c98`.
+
+### Task 205/211: Commit plan includes site playbook compiler commit
+
+- Status: complete.
+- Evidence:
+  - `d0fecf9 feat: compile site playbooks into tasks`
+- Verification:
+  - `git log --oneline --grep="^feat: compile site playbooks into tasks$"`:
+    matched `d0fecf9`.
