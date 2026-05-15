@@ -45,7 +45,8 @@ uv run desktop-agent demo-linkedin `
 This command demonstrates low-level control against a real browser and real web
 page without OCR, UIA, browser automation APIs, Playwright, or a fixture window.
 The trace records launch metadata, keyboard cadence, pointer frames with
-`GetCursorPos` readback, wheel events, and final status.
+`GetCursorPos` readback, wheel events, post-action screenshots, active-window
+titles, monitoring events in `action-log.jsonl`, and final status.
 
 ## Safety
 

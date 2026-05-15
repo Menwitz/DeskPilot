@@ -22,7 +22,14 @@ from desktop_agent.actuation import (
     SmoothMovementPlanner,
     WindowsInputBackend,
 )
+from desktop_agent.config import RuntimeConfig
 from desktop_agent.sampling import SeededSampler
+from desktop_agent.screen import (
+    MssScreenObserver,
+    ScreenObservation,
+    ScreenObserver,
+    ScreenUnavailableError,
+)
 
 
 class MouseDemoError(RuntimeError):
@@ -93,6 +100,39 @@ class MovementTrace:
 
 
 @dataclass(frozen=True)
+class PostActionEvidence:
+    """Screen and focus evidence captured immediately after a demo step."""
+
+    status: str
+    active_window_title: str | None = None
+    screenshot_path: Path | None = None
+    screenshot_size: tuple[int, int] | None = None
+    cursor_position: tuple[int, int] | None = None
+    warnings: tuple[str, ...] = ()
+    metadata: dict[str, object] | None = None
+    reason: str | None = None
+
+    def metadata_payload(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "status": self.status,
+            "active_window_title": self.active_window_title,
+            "screenshot_path": str(self.screenshot_path)
+            if self.screenshot_path
+            else None,
+            "screenshot_size": list(self.screenshot_size)
+            if self.screenshot_size
+            else None,
+            "cursor_position": list(self.cursor_position)
+            if self.cursor_position
+            else None,
+            "warnings": list(self.warnings),
+            "metadata": self.metadata or {},
+            "reason": self.reason,
+        }
+        return payload
+
+
+@dataclass(frozen=True)
 class MouseDemoStep:
     """One global input action recorded by the demo."""
 
@@ -123,6 +163,55 @@ class InputDemoPoints:
 
 
 type MouseDemoPoints = InputDemoPoints
+
+
+class PostActionEvidenceRecorder:
+    """Captures screenshot, focus, and cursor evidence after each real action."""
+
+    def __init__(
+        self,
+        *,
+        backend: InputBackend,
+        trace_dir: Path,
+        observer: ScreenObserver | None = None,
+    ) -> None:
+        self._backend = backend
+        self._observer = observer or MssScreenObserver()
+        self._config = RuntimeConfig(trace_root=trace_dir, save_screenshots=True)
+
+    def attach(self, step: MouseDemoStep) -> MouseDemoStep:
+        evidence = self.capture(step.step_id)
+        metadata = dict(step.metadata)
+        metadata["post_action_evidence"] = evidence.metadata_payload()
+        return MouseDemoStep(step.step_id, step.action, metadata)
+
+    def capture(self, step_id: str) -> PostActionEvidence:
+        try:
+            observation = self._observer.observe(self._config)
+            return _post_action_evidence_from_observation(
+                observation,
+                cursor_position=self._read_cursor_position(),
+                fallback_active_window_title=self._read_active_window_title(),
+            )
+        except (OSError, ScreenUnavailableError, RuntimeError) as exc:
+            return PostActionEvidence(
+                status="failed",
+                active_window_title=self._read_active_window_title(),
+                cursor_position=self._read_cursor_position(),
+                reason=f"{step_id}: {exc}",
+            )
+
+    def _read_active_window_title(self) -> str | None:
+        try:
+            return self._backend.active_window_title()
+        except (OSError, RuntimeError):
+            return None
+
+    def _read_cursor_position(self) -> tuple[int, int] | None:
+        try:
+            return self._backend.current_position()
+        except (OSError, RuntimeError):
+            return None
 
 
 class RealInputController:
@@ -470,6 +559,10 @@ def run_input_demo(
     profile = _demo_actuation_profile(random_seed, movement_smoothness)
     backend = WindowsInputBackend(move_mode="absolute")
     controller = RealInputController(backend, profile)
+    evidence_recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=trace_dir,
+    )
     steps: list[MouseDemoStep] = []
     status = "passed"
     reason: str | None = None
@@ -477,7 +570,14 @@ def run_input_demo(
     try:
         _countdown(countdown_seconds)
         points = _input_demo_points(_windows_virtual_screen_bounds())
-        steps.extend(_run_global_input_sequence(controller, points, keyboard_text))
+        steps.extend(
+            _run_global_input_sequence(
+                controller,
+                points,
+                keyboard_text,
+                evidence_recorder,
+            )
+        )
     except Exception as exc:  # pragma: no cover - exercised manually on Windows.
         status = "failed"
         reason = str(exc)
@@ -547,6 +647,10 @@ def run_linkedin_demo(
     profile = _demo_actuation_profile(random_seed, movement_smoothness)
     backend = WindowsInputBackend(move_mode="absolute")
     controller = RealInputController(backend, profile)
+    evidence_recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=trace_dir,
+    )
     steps: list[MouseDemoStep] = []
     status = "passed"
     reason: str | None = None
@@ -561,6 +665,7 @@ def run_linkedin_demo(
                 url=url,
                 find_text=find_text,
                 page_load_seconds=page_load_seconds,
+                evidence_recorder=evidence_recorder,
             )
         )
     except Exception as exc:  # pragma: no cover - exercised manually on Windows.
@@ -605,27 +710,46 @@ def _run_global_input_sequence(
     controller: RealInputController,
     points: InputDemoPoints,
     keyboard_text: str,
+    evidence_recorder: PostActionEvidenceRecorder | None = None,
 ) -> tuple[MouseDemoStep, ...]:
     steps: list[MouseDemoStep] = []
 
     # Win+D exposes the desktop so the drag-selection demonstration is harmless.
-    steps.append(controller.press_chord("reveal-desktop", "win+d"))
+    _record_step(
+        steps,
+        controller.press_chord("reveal-desktop", "win+d"),
+        evidence_recorder,
+    )
     controller.pause(0.60)
     for index, point in enumerate(points.waypoints, start=1):
-        steps.append(controller.move_to(f"desktop-waypoint-{index}", point))
+        _record_step(
+            steps,
+            controller.move_to(f"desktop-waypoint-{index}", point),
+            evidence_recorder,
+        )
     controller.pause(0.20)
-    steps.append(
+    _record_step(
+        steps,
         controller.drag(
             "desktop-drag-selection",
             points.drag_start,
             points.drag_end,
-        )
+        ),
+        evidence_recorder,
     )
     controller.pause(0.40)
-    steps.append(_launch_notepad())
+    _record_step(steps, _launch_notepad(), evidence_recorder)
     controller.pause(1.00)
-    steps.append(controller.type_text("type-notepad-text", keyboard_text))
-    steps.append(controller.current_position_step("final-cursor-readback"))
+    _record_step(
+        steps,
+        controller.type_text("type-notepad-text", keyboard_text),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.current_position_step("final-cursor-readback"),
+        evidence_recorder,
+    )
     return tuple(steps)
 
 
@@ -637,28 +761,63 @@ def _run_linkedin_sequence(
     find_text: str,
     page_load_seconds: float,
     launch_edge: Callable[[str], MouseDemoStep] | None = None,
+    evidence_recorder: PostActionEvidenceRecorder | None = None,
 ) -> tuple[MouseDemoStep, ...]:
     steps: list[MouseDemoStep] = []
     edge_launcher = launch_edge or _launch_edge
 
-    steps.append(edge_launcher("about:blank"))
+    _record_step(steps, edge_launcher("about:blank"), evidence_recorder)
     controller.pause(2.0)
-    steps.append(controller.press_chord("focus-edge-address-bar", "ctrl+l"))
-    steps.append(controller.type_text("type-linkedin-url", url))
-    steps.append(controller.press_chord("submit-linkedin-url", "enter"))
+    _record_step(
+        steps,
+        controller.press_chord("focus-edge-address-bar", "ctrl+l"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.type_text("type-linkedin-url", url),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.press_chord("submit-linkedin-url", "enter"),
+        evidence_recorder,
+    )
     controller.pause(page_load_seconds)
-    steps.append(
+    _record_step(
+        steps,
         controller.scroll(
             "scroll-linkedin-page",
             _screen_point(screen_bounds, 0.50, 0.56),
             -3,
-        )
+        ),
+        evidence_recorder,
     )
-    steps.append(controller.press_chord("open-browser-find", "ctrl+f"))
-    steps.append(controller.type_text("type-find-text", find_text))
-    steps.append(controller.press_chord("confirm-find-text", "enter"))
-    steps.append(controller.press_chord("close-browser-find", "esc"))
-    steps.append(controller.current_position_step("final-cursor-readback"))
+    _record_step(
+        steps,
+        controller.press_chord("open-browser-find", "ctrl+f"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.type_text("type-find-text", find_text),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.press_chord("confirm-find-text", "enter"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.press_chord("close-browser-find", "esc"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.current_position_step("final-cursor-readback"),
+        evidence_recorder,
+    )
     return tuple(steps)
 
 
@@ -708,6 +867,35 @@ def _edge_executable_candidates() -> tuple[str, ...]:
     )
 
 
+def _record_step(
+    steps: list[MouseDemoStep],
+    step: MouseDemoStep,
+    evidence_recorder: PostActionEvidenceRecorder | None,
+) -> None:
+    if evidence_recorder is None:
+        steps.append(step)
+        return
+    steps.append(evidence_recorder.attach(step))
+
+
+def _post_action_evidence_from_observation(
+    observation: ScreenObservation,
+    *,
+    cursor_position: tuple[int, int] | None,
+    fallback_active_window_title: str | None,
+) -> PostActionEvidence:
+    return PostActionEvidence(
+        status="passed",
+        active_window_title=observation.active_window_title
+        or fallback_active_window_title,
+        screenshot_path=observation.screenshot_path,
+        screenshot_size=observation.size,
+        cursor_position=cursor_position,
+        warnings=observation.warnings,
+        metadata=observation.metadata,
+    )
+
+
 def _movement_trace_metadata(trace: MovementTrace) -> dict[str, object]:
     plan = trace.plan
     metadata: dict[str, object] = {
@@ -744,12 +932,14 @@ def _write_report(
     *,
     report_name: str,
 ) -> Path:
+    action_log_path = _write_demo_action_log(trace_dir, steps)
     report_path = trace_dir / report_name
     payload: dict[str, object] = {
         "status": status,
         "reason": reason,
         "generated_at": datetime.now(UTC).isoformat(),
         "trace_dir": str(trace_dir),
+        "action_log_path": str(action_log_path),
         "steps": [
             {
                 "step_id": step.step_id,
@@ -761,6 +951,27 @@ def _write_report(
     }
     report_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return report_path
+
+
+def _write_demo_action_log(
+    trace_dir: Path,
+    steps: tuple[MouseDemoStep, ...],
+) -> Path:
+    action_log_path = trace_dir / "action-log.jsonl"
+    with action_log_path.open("w", encoding="utf-8") as file:
+        for index, step in enumerate(steps, start=1):
+            payload = {
+                "index": index,
+                "phase": "demo_step",
+                "message": f"{step.step_id}: {step.action}",
+                "metadata": {
+                    "step_id": step.step_id,
+                    "action": step.action,
+                    "post_action_evidence": step.metadata.get("post_action_evidence"),
+                },
+            }
+            file.write(json.dumps(payload, sort_keys=True) + "\n")
+    return action_log_path
 
 
 def _prepare_trace_dir(trace_root: Path, suffix: str) -> Path:

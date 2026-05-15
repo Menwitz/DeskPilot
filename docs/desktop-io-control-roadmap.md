@@ -87,7 +87,8 @@ Acceptance:
 ## Phase 3: Close The Observe-Actuate-Verify Loop
 
 - [ ] Capture pre-action screenshots for each real action.
-- [ ] Capture post-action screenshots for each real action.
+- [x] Capture post-action screenshots for each real action.
+- [x] Attach post-action active-window title and cursor readback metadata.
 - [ ] Attach active window title before and after each action.
 - [ ] Attach cursor readback before and after each action.
 - [ ] Add verification result per step: `passed`, `failed`, or `inconclusive`.
@@ -176,7 +177,7 @@ Acceptance:
 
 ## Next Three Concrete PRs
 
-- [ ] Add post-action screenshot capture and active-window metadata to
+- [x] Add post-action screenshot capture and active-window metadata to
       `demo-input` and `demo-linkedin` traces.
 - [ ] Add a Windows smoke checklist command that verifies Edge launch, Notepad
       typing, cursor readback, and trace file creation.

@@ -42,7 +42,8 @@ This command exercises `WindowsInputBackend`, `SmoothMovementPlanner`, and
 `ActuationProfile` through a reusable `RealInputController`. The trace records
 planned pointer frames, actual `GetCursorPos` readbacks after every movement
 frame, drift in pixels, button down/up events, keyboard events, sampled cadence,
-and final status.
+post-action screenshots, active-window titles, cursor readbacks, monitoring
+events in `action-log.jsonl`, and final status.
 
 It proves low-level global cursor and keyboard control. It does not prove OCR,
 UIA, screenshots, candidate fusion, YAML planning, or website target selection.

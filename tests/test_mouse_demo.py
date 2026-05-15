@@ -5,16 +5,20 @@ import pytest
 from pytest import MonkeyPatch
 
 from desktop_agent.actuation import ActuationProfile, FakeInputBackend
+from desktop_agent.config import RuntimeConfig
 from desktop_agent.mouse_demo import (
     MouseDemoError,
     MouseDemoStep,
+    PostActionEvidenceRecorder,
     RealInputController,
     _demo_actuation_profile,
     _run_linkedin_sequence,
+    _write_report,
     run_input_demo,
     run_linkedin_demo,
     run_mouse_demo,
 )
+from desktop_agent.screen import ScreenObservation
 
 
 def test_demo_actuation_profile_uses_visible_human_like_motion() -> None:
@@ -93,9 +97,63 @@ def test_real_input_controller_keyboard_cadence_preserves_exact_text() -> None:
     assert intervals == [0.01] * (len(text) - 1)
 
 
+def test_post_action_evidence_recorder_attaches_screenshot_and_focus(
+    tmp_path: Path,
+) -> None:
+    backend = FakeInputBackend(start_position=(12, 14), active_window_title="Fallback")
+    observer = FakeScreenObserver(active_window_title="Observed Window")
+    recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=tmp_path,
+        observer=observer,
+    )
+
+    step = recorder.attach(MouseDemoStep("after-click", "click", {}))
+
+    evidence = cast(dict[str, object], step.metadata["post_action_evidence"])
+    assert evidence["status"] == "passed"
+    assert evidence["active_window_title"] == "Observed Window"
+    assert evidence["screenshot_size"] == [640, 480]
+    assert evidence["cursor_position"] == [12, 14]
+    assert str(evidence["screenshot_path"]).endswith("shot-1.png")
+
+
+def test_demo_report_writes_monitoring_action_log(tmp_path: Path) -> None:
+    step = MouseDemoStep(
+        "scroll-page",
+        "scroll",
+        {
+            "post_action_evidence": {
+                "status": "passed",
+                "active_window_title": "LinkedIn - Edge",
+            },
+        },
+    )
+
+    report_path = _write_report(
+        tmp_path,
+        (step,),
+        "passed",
+        None,
+        report_name="linkedin-demo-report.json",
+    )
+
+    action_log_path = tmp_path / "action-log.jsonl"
+    assert report_path.exists()
+    assert action_log_path.exists()
+    assert "LinkedIn - Edge" in action_log_path.read_text(encoding="utf-8")
+    assert "action_log_path" in report_path.read_text(encoding="utf-8")
+
+
 def test_linkedin_sequence_opens_edge_navigates_and_finds_text() -> None:
     backend = FakeInputBackend(start_position=(0, 0))
     controller = RealInputController(backend, _instant_demo_profile())
+    observer = FakeScreenObserver(active_window_title="LinkedIn - Edge")
+    recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=Path("trace"),
+        observer=observer,
+    )
 
     steps = _run_linkedin_sequence(
         controller,
@@ -103,6 +161,7 @@ def test_linkedin_sequence_opens_edge_navigates_and_finds_text() -> None:
         url="https://www.linkedin.com/",
         find_text="LinkedIn",
         page_load_seconds=0,
+        evidence_recorder=recorder,
         launch_edge=lambda initial_url: MouseDemoStep(
             "open-edge",
             "launch_application",
@@ -128,6 +187,8 @@ def test_linkedin_sequence_opens_edge_navigates_and_finds_text() -> None:
     assert "https://www.linkedin.com/" in typed_text
     assert typed_text.endswith("LinkedIn")
     assert any(event.kind == "scroll" for event in backend.events)
+    assert all("post_action_evidence" in step.metadata for step in steps)
+    assert observer.observe_count == len(steps)
 
 
 def test_run_input_demo_requires_windows(
@@ -170,3 +231,24 @@ def _instant_demo_profile() -> ActuationProfile:
         movement_smoothness=0.5,
         random_seed=12,
     )
+
+
+class FakeScreenObserver:
+    def __init__(self, *, active_window_title: str) -> None:
+        self._active_window_title = active_window_title
+        self.observe_count = 0
+
+    def observe(self, config: RuntimeConfig) -> ScreenObservation:
+        trace_root = config.trace_root
+        self.observe_count += 1
+        screenshot_dir = trace_root / "screenshots"
+        screenshot_dir.mkdir(parents=True, exist_ok=True)
+        screenshot_path = screenshot_dir / f"shot-{self.observe_count}.png"
+        screenshot_path.write_bytes(b"png")
+        return ScreenObservation(
+            screenshot_path=screenshot_path,
+            size=(640, 480),
+            active_window_title=self._active_window_title,
+            warnings=("fake warning",),
+            metadata={"observe_count": self.observe_count},
+        )
