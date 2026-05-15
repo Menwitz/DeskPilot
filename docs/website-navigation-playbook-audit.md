@@ -2920,3 +2920,28 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/mypy`: no issues found in 71 source files.
   - `.venv/bin/python -m build`: built `deskpilot-0.1.0.tar.gz` and
     `deskpilot-0.1.0-py3-none-any.whl`.
+
+## OKR Verification
+
+- Status: complete.
+- Scope:
+  - Checked `12/12` website navigation OKRs after verifying implementation
+    evidence and regression coverage.
+  - Roadmap implementation task count remains `211/211`.
+- Evidence:
+  - `src/desktop_agent/site_playbooks.py` contains the validated schema,
+    playbook loader, flow resolver, and `SiteTaskCompiler`.
+  - `navigation_playbooks/` contains seed playbooks for LinkedIn, X/Twitter,
+    Instagram, Facebook, Medium, YouTube, and TikTok, plus the copyable
+    `_template.yaml`.
+  - `src/desktop_agent/cli.py` exposes `list-sites`, `list-flows`,
+    `compile-site`, `run-site`, and `dry-run-site`.
+  - `docs/website-playbooks.md`, `navigation_playbooks/README.md`, and
+    `docs/task-dsl.md` document the authoring workflow and growth checklist.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py`: 42 passed.
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py`: 17 passed.
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py`: 10 passed.
+  - `.venv/bin/pytest tests/test_site_playbook_live_smoke.py`: 9 passed,
+    1 skipped because authorized live-site smoke checks require
+    `DESKPILOT_LIVE_SITE_SMOKE=1`.

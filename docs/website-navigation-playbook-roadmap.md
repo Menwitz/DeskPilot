@@ -9,33 +9,33 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ### Objective 1: Create a scalable website navigation catalog.
 
-- [ ] KR1: Add a validated playbook schema that supports domains, window titles,
+- [x] KR1: Add a validated playbook schema that supports domains, window titles,
   landmarks, flows, sensitive steps, and known blocked states.
-- [ ] KR2: Add seed playbooks for LinkedIn, X/Twitter, Instagram, Facebook,
+- [x] KR2: Add seed playbooks for LinkedIn, X/Twitter, Instagram, Facebook,
   Medium, YouTube, and TikTok.
-- [ ] KR3: Add documentation that lets a new engineer add a website without
+- [x] KR3: Add documentation that lets a new engineer add a website without
   changing planner internals.
 
 ### Objective 2: Compile website playbooks into deterministic DeskPilot tasks.
 
-- [ ] KR1: Add a loader that reads a site playbook and resolves a requested flow.
-- [ ] KR2: Add a compiler that converts supported playbook flows into the
+- [x] KR1: Add a loader that reads a site playbook and resolves a requested flow.
+- [x] KR2: Add a compiler that converts supported playbook flows into the
   existing `TaskDefinition` model.
-- [ ] KR3: Add CLI commands to list sites, list flows, and run a selected flow.
+- [x] KR3: Add CLI commands to list sites, list flows, and run a selected flow.
 
 ### Objective 3: Keep public-site automation safe and debuggable.
 
-- [ ] KR1: Require explicit confirmation for every sensitive step.
-- [ ] KR2: Detect and stop on logged-out, consent, CAPTCHA, permission, and
+- [x] KR1: Require explicit confirmation for every sensitive step.
+- [x] KR2: Detect and stop on logged-out, consent, CAPTCHA, permission, and
   unsupported-layout states.
-- [ ] KR3: Include site, flow, confirmation, blocked-state, and selector metadata
+- [x] KR3: Include site, flow, confirmation, blocked-state, and selector metadata
   in local traces.
 
 ### Objective 4: Make growth cheap and testable.
 
-- [ ] KR1: Add regression tests that validate every playbook and compiled flow.
-- [ ] KR2: Keep live-site checks opt-in so normal CI is deterministic.
-- [ ] KR3: Provide a copyable new-site template with required checklist items.
+- [x] KR1: Add regression tests that validate every playbook and compiled flow.
+- [x] KR2: Keep live-site checks opt-in so normal CI is deterministic.
+- [x] KR3: Provide a copyable new-site template with required checklist items.
 
 ## Phase 0: Scope And Safety Contract
 
