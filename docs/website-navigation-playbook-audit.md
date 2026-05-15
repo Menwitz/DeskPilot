@@ -2574,3 +2574,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Audit decision:
   - Verify each acceptance criterion with its focused test or documentation
     lookup before checking the roadmap item.
+
+### Task 188/211: New engineer can add a website from template
+
+- Status: complete.
+- Evidence:
+  - `docs/website-playbooks.md` documents copying
+    `navigation_playbooks/_template.yaml`, filling landmarks and flows, and
+    adding schema/compiler tests for the new playbook.
+  - `navigation_playbooks/README.md` documents the catalog fields and new-site
+    template path.
+- Verification:
+  - `rg -n "_template.yaml|landmarks|flows|schema/compiler tests"
+    docs/website-playbooks.md navigation_playbooks/README.md`: matched the
+    onboarding requirements.

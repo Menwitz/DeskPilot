@@ -271,7 +271,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ## Phase 8: Acceptance Criteria
 
-- [ ] A new engineer can add a website by copying `_template.yaml`, filling in
+- [x] A new engineer can add a website by copying `_template.yaml`, filling in
   landmarks and flows, and adding schema/compiler tests.
 - [ ] All seven seed playbooks validate.
 - [ ] Every seed playbook has at least one read-only navigation flow.
