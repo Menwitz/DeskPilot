@@ -44,6 +44,8 @@ Website playbooks must reject unsupported behaviors before they can be compiled
 or executed.
 
 - CAPTCHA solving, CAPTCHA bypass, or challenge workarounds are not supported.
+- Bot-detection bypass, rate-limit evasion, fingerprint masking, and stealth
+  automation techniques are not supported.
 
 ## Safety Controls Planned For v1
 
