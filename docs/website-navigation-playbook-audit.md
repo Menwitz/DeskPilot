@@ -1561,3 +1561,22 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check tests/test_site_playbook_tracing.py`: all checks
     passed.
   - `.venv/bin/mypy tests/test_site_playbook_tracing.py`: no issues found.
+
+### Task 117/211: Record whether each sensitive step was confirmed or blocked
+
+- Status: complete.
+- Evidence:
+  - The planner emits a `confirmation` trace event before each sensitive step.
+  - The event includes `sensitive_step_confirmed` and
+    `sensitive_step_confirmation_state`.
+  - Existing coverage verifies the blocked state for an unconfirmed sensitive
+    step.
+  - Added regression coverage that confirms a sensitive step with
+    `--confirm-step` and verifies the confirmed state in both `action-log.jsonl`
+    and final-report events.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
+    "sensitive_confirmed_step"`: 1 passed, 9 deselected.
+  - `.venv/bin/ruff check tests/test_site_playbook_tracing.py`: all checks
+    passed.
+  - `.venv/bin/mypy tests/test_site_playbook_tracing.py`: no issues found.

@@ -86,6 +86,23 @@ def test_sensitive_blocked_step_appears_in_trace_metadata(tmp_path: Path) -> Non
     assert metadata["sensitive_step_confirmation_state"] == "blocked"
 
 
+def test_sensitive_confirmed_step_appears_in_trace_metadata(tmp_path: Path) -> None:
+    trace_dir = _run_confirmed_sensitive_site_trace(tmp_path, "candidate_count:>1")
+
+    events = _read_action_log(trace_dir)
+    report = _read_final_report(trace_dir)
+    confirmation = next(event for event in events if event["phase"] == "confirmation")
+    report_confirmation = next(
+        event for event in _events(report) if event["phase"] == "confirmation"
+    )
+
+    for payload in (confirmation, report_confirmation):
+        metadata = _metadata(payload)
+        assert metadata["site_sensitive_category"] == "publish"
+        assert metadata["sensitive_step_confirmed"] is True
+        assert metadata["sensitive_step_confirmation_state"] == "confirmed"
+
+
 def test_blocked_state_reason_appears_in_final_report(tmp_path: Path) -> None:
     trace_dir = _run_sensitive_site_trace(tmp_path, "visible_text:challenge")
 
@@ -147,6 +164,27 @@ def _run_seed_site_trace(tmp_path: Path) -> Path:
 
 
 def _run_sensitive_site_trace(tmp_path: Path, detector: str) -> Path:
+    return _run_sensitive_site_trace_with_confirmation(
+        tmp_path,
+        detector,
+        confirm_step=False,
+    )
+
+
+def _run_confirmed_sensitive_site_trace(tmp_path: Path, detector: str) -> Path:
+    return _run_sensitive_site_trace_with_confirmation(
+        tmp_path,
+        detector,
+        confirm_step=True,
+    )
+
+
+def _run_sensitive_site_trace_with_confirmation(
+    tmp_path: Path,
+    detector: str,
+    *,
+    confirm_step: bool,
+) -> Path:
     playbook_dir = tmp_path / "playbooks"
     playbook_dir.mkdir()
     (playbook_dir / "sensitive-site.yaml").write_text(
@@ -154,19 +192,22 @@ def _run_sensitive_site_trace(tmp_path: Path, detector: str) -> Path:
         encoding="utf-8",
     )
     config_path = _write_config(tmp_path)
+    command = [
+        "dry-run-site",
+        "sensitive-site",
+        "publish-post",
+        "--playbook-dir",
+        str(playbook_dir),
+        "--config",
+        str(config_path),
+        "--no-screenshots",
+    ]
+    if confirm_step:
+        command.extend(["--confirm-step", "publish-post"])
     status = main(
-        [
-            "dry-run-site",
-            "sensitive-site",
-            "publish-post",
-            "--playbook-dir",
-            str(playbook_dir),
-            "--config",
-            str(config_path),
-            "--no-screenshots",
-        ],
+        command,
     )
-    assert status == 1
+    assert status == (0 if confirm_step else 1)
     return _single_trace_dir(tmp_path)
 
 
@@ -208,6 +249,10 @@ def _metadata(payload: dict[str, object]) -> dict[str, object]:
 
 def _steps(report: dict[str, object]) -> list[dict[str, object]]:
     return cast(list[dict[str, object]], report["steps"])
+
+
+def _events(report: dict[str, object]) -> list[dict[str, object]]:
+    return cast(list[dict[str, object]], report["events"])
 
 
 def _sensitive_playbook(detector: str) -> str:
