@@ -202,7 +202,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 - [x] Basic navigation flow compiles to `TaskDefinition`.
 - [x] Compiled task passes `BasicTaskValidator`.
-- [ ] Domain and title rules become `allowed_windows`.
+- [x] Domain and title rules become `allowed_windows`.
 - [ ] Flow timeout compiles into task timeout.
 - [ ] Flow retry defaults compile into step retry values.
 - [ ] Sensitive steps preserve `requires_confirmation`.

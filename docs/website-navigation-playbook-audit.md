@@ -1886,3 +1886,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "compiled_task_passes_basic_task_validator"`: 1 passed, 35 deselected.
+
+### Task 139/211: Domain and title rules become `allowed_windows`
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_domain_and_title_rules_compile_to_allowed_windows`
+    compiles a valid flow.
+  - The assertion verifies the compiled task has `("Example", "example.com")`
+    as `allowed_windows`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "domain_and_title_rules_compile_to_allowed_windows"`: 1 passed,
+    35 deselected.
