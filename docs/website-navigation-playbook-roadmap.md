@@ -69,7 +69,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] `SiteFlow`.
   - [x] `SiteFlowStep`.
   - [x] `BlockedState`.
-- [ ] Add a YAML loader for `navigation_playbooks/*.yaml`.
+- [x] Add a YAML loader for `navigation_playbooks/*.yaml`.
 - [ ] Add schema validation:
   - [ ] Site ID is required and slug-safe.
   - [ ] At least one domain is required.
