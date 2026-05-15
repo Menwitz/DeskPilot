@@ -239,6 +239,7 @@ class ExecutionEngine:
                 {
                     "task": task.name,
                     "task_entropy_budget": task.entropy_budget,
+                    **task.metadata,
                 },
             )
             self.task_validator.validate(task, config)

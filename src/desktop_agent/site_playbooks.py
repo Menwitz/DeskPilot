@@ -304,6 +304,13 @@ def _compile_site_step(
         retry=site_step.retry if site_step.retry is not None else flow.retry,
         requires_confirmation=site_step.requires_confirmation,
         category=_site_step_category(site_step),
+        metadata={
+            "site_id": playbook.site_id,
+            "site_flow_id": flow.id,
+            "site_playbook_version": playbook.version,
+            "site_sensitive_category": site_step.sensitive_category,
+            "site_requires_confirmation": site_step.requires_confirmation,
+        },
     )
 
 
