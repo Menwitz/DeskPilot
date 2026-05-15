@@ -263,7 +263,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Composer-open flow that stops before submission.
   - [x] Sensitive confirmed flow.
   - [x] Blocked-state detection.
-- [ ] Update `README.md` documentation links.
+- [x] Update `README.md` documentation links.
 - [ ] Update `docs/architecture.md` with the playbook layer.
 - [ ] Update `docs/task-dsl.md` to explain that playbooks compile into existing
   tasks rather than replacing the DSL.

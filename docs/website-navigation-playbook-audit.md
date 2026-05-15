@@ -2486,3 +2486,15 @@ checking layout, domain, flow, and blocked-state coverage.
   - `rg -n "Blocked-State Detection|blocked-state ID and reason|must not describe bypasses"
     docs/website-playbooks.md`: matched the blocked-state example and reporting
     guidance.
+
+### Task 184/211: Update README documentation links
+
+- Status: complete.
+- Evidence:
+  - `README.md` links the website navigation roadmap, playbook catalog,
+    authoring docs, and capability demo from the main documentation index.
+  - The added catalog link points directly at `navigation_playbooks/README.md`
+    so the growable site selection is discoverable from the project root.
+- Verification:
+  - `rg -n "Website Navigation Playbook Catalog|Website Playbooks|Website Playbook Capability Demo"
+    README.md`: matched the README documentation links.

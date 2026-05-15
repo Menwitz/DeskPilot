@@ -79,6 +79,7 @@ fail with a clear unavailable message on unsupported platforms.
 - [Screen layer](docs/screen.md)
 - [Task DSL](docs/task-dsl.md)
 - [Website Navigation Playbook Roadmap](docs/website-navigation-playbook-roadmap.md)
+- [Website Navigation Playbook Catalog](navigation_playbooks/README.md)
 - [Website Playbooks](docs/website-playbooks.md)
 - [Website Playbook Capability Demo](docs/website-playbook-demo.md)
 - [Vision Alignment Action Plan](docs/vision-alignment-action-plan.md)
