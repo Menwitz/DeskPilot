@@ -258,3 +258,13 @@ checking roadmap items.
     selector, and description.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` `SiteLandmark` declaration.
+
+### Task 23/122: Add `SiteFlow`
+
+- Status: complete.
+- Evidence:
+  - `SiteFlow` is an immutable dataclass.
+  - It stores flow ID, description, timeout, retry, confidence threshold,
+    optional search region, and a tuple of `SiteFlowStep` items.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` `SiteFlow` declaration.
