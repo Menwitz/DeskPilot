@@ -2813,3 +2813,15 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/mypy`: no issues found in 71 source files.
   - `.venv/bin/python -m build`: built `deskpilot-0.1.0.tar.gz` and
     `deskpilot-0.1.0-py3-none-any.whl`.
+
+## Commit Plan Audit
+
+- Status: ready to execute.
+- Roadmap range: Tasks 203-211 of 211.
+- Evidence:
+  - `git log --oneline --grep` found matching or equivalent commits for the
+    roadmap, schema, compiler, CLI, authoring docs, validation tests,
+    compilation tests, safety-gate tests, and approval-manifest feature.
+- Audit decision:
+  - Check each commit-plan item only against a concrete commit hash or exact
+    equivalent implementation commit in history.
