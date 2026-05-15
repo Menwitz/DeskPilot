@@ -1910,3 +1910,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "flow_timeout_compiles_to_task_timeout"`: 1 passed, 35 deselected.
+
+### Task 141/211: Flow retry defaults compile into step retry values
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_flow_retry_defaults_compile_to_steps`
+    changes the flow retry default to `3`.
+  - The assertion verifies the compiled step retry value is `3`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "flow_retry_defaults_compile_to_steps"`: 1 passed, 35 deselected.
