@@ -1598,3 +1598,18 @@ checking layout, domain, flow, and blocked-state coverage.
     src/desktop_agent/cli.py`: all checks passed.
   - `.venv/bin/mypy tests/test_site_playbook_tracing.py
     src/desktop_agent/cli.py`: no issues found.
+
+### Task 119/211: Update troubleshooting docs with public-site failure modes
+
+- Status: complete.
+- Evidence:
+  - `docs/troubleshooting.md` contains a `Public Site Playbook Stops` section.
+  - The section documents trace/report metadata locations and replay output for
+    website playbook failures.
+  - Added a docs regression that requires the public-site section and all six
+    required failure-mode labels.
+- Verification:
+  - `.venv/bin/pytest tests/test_safety_docs.py -k
+    "public_site_failure_modes"`: 1 passed, 5 deselected.
+  - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.

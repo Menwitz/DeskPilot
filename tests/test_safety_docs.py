@@ -52,6 +52,22 @@ def test_troubleshooting_documents_stop_categories_and_report_fields() -> None:
         assert phrase in documentation
 
 
+def test_troubleshooting_documents_public_site_failure_modes() -> None:
+    documentation = Path("docs/troubleshooting.md").read_text(encoding="utf-8")
+
+    for phrase in (
+        "Public Site Playbook Stops",
+        "Logged-out session",
+        "Consent dialog",
+        "Site redesign",
+        "CAPTCHA or suspicious-activity challenge",
+        "Permission restriction",
+        "Ambiguous selector",
+        "desktop-agent replay <trace-dir>",
+    ):
+        assert phrase in documentation
+
+
 def test_release_notes_distinguish_natural_execution_from_impersonation() -> None:
     documentation = Path("docs/release-notes.md").read_text(encoding="utf-8")
 
