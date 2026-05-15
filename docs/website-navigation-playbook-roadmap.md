@@ -194,7 +194,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Duplicate flow IDs are rejected.
 - [x] Duplicate flow-step IDs are rejected.
 - [x] Unknown step action is rejected.
-- [ ] Missing landmark reference is rejected.
+- [x] Missing landmark reference is rejected.
 - [ ] Sensitive step without confirmation is rejected.
 - [ ] Blocked state without a reason is rejected.
 

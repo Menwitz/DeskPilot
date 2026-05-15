@@ -1829,3 +1829,14 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "unknown_step_action_is_rejected"`: 1 passed, 35 deselected.
+
+### Task 134/211: Missing landmark reference is rejected
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_missing_landmark_reference_is_rejected`
+    writes a playbook whose step references `landmark: missing`.
+  - The assertion verifies validation raises `landmark does not exist`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "missing_landmark_reference_is_rejected"`: 1 passed, 35 deselected.
