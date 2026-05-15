@@ -40,7 +40,7 @@ teams running approved content workflows.
   v1 vision.
 - [x] Add local approval manifest support via `--approval-manifest <path>`.
 - [x] Require approval manifests for sensitive `run-site` flows.
-- [ ] Add YAML variable support for content payloads.
+- [x] Add YAML variable support for content payloads.
 - [ ] Add LinkedIn publish-capable flow using YAML variables.
 - [ ] Add Medium publish-capable flow using YAML variables.
 - [ ] Add checkpoints before externally visible publish actions.
@@ -58,7 +58,7 @@ teams running approved content workflows.
 - [ ] Update `navigation_playbooks/README.md` with promotion criteria for
   publish-capable sites.
 - [x] Document the approval manifest schema.
-- [ ] Document YAML variable schema for content payloads.
+- [x] Document YAML variable schema for content payloads.
 - [ ] Document local artifact locations for approvals, traces, and reports.
 - [ ] Update troubleshooting docs for approval-manifest failures.
 - [ ] Update release notes to remove benchmark overclaims.
@@ -82,11 +82,11 @@ teams running approved content workflows.
 ## P2 Evidence And Ops Readiness
 
 - [ ] Add sample approval manifest files under `examples/`.
-- [ ] Add sample LinkedIn content variables file.
-- [ ] Add sample Medium content variables file.
+- [x] Add sample LinkedIn content variables file.
+- [x] Add sample Medium content variables file.
 - [ ] Add dry-run examples for publish-capable flows.
 - [x] Add trace assertions for approval manifest metadata.
-- [ ] Add trace assertions for variable redaction/fingerprints.
+- [x] Add trace assertions for variable redaction/fingerprints.
 - [ ] Add opt-in Windows smoke command for LinkedIn publish dry-run/live-safe
   path.
 - [ ] Add opt-in Windows smoke command for Medium publish dry-run/live-safe
@@ -101,7 +101,7 @@ teams running approved content workflows.
   approval requirements.
 - [x] Sensitive site flow without approval manifest exits nonzero with a clear
   message.
-- [ ] Approval manifest with wrong site, flow, step, or content fingerprint
+- [x] Approval manifest with wrong site, flow, step, or content fingerprint
   exits nonzero.
 - [ ] Real run uses UIA, OCR, and CV candidate fusion.
 - [ ] Real run cannot act outside task/config allowed windows.

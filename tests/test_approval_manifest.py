@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from pathlib import Path
 
 from pytest import CaptureFixture, MonkeyPatch
@@ -39,6 +40,38 @@ def test_approval_manifest_rejects_unknown_approved_step(tmp_path: Path) -> None
         raise AssertionError("approval manifest should reject unknown steps")
 
 
+def test_approval_manifest_rejects_site_scope_mismatch(tmp_path: Path) -> None:
+    task = _compiled_sensitive_task(tmp_path)
+    manifest_path = _write_manifest(
+        tmp_path,
+        approved_steps=("publish-post",),
+        site_id="wrong-site",
+    )
+
+    try:
+        apply_approval_manifest(task, RuntimeConfig(), manifest_path)
+    except ApprovalManifestError as exc:
+        assert "site_id mismatch" in str(exc)
+    else:
+        raise AssertionError("approval manifest should reject wrong site")
+
+
+def test_approval_manifest_rejects_flow_scope_mismatch(tmp_path: Path) -> None:
+    task = _compiled_sensitive_task(tmp_path)
+    manifest_path = _write_manifest(
+        tmp_path,
+        approved_steps=("publish-post",),
+        flow_id="wrong-flow",
+    )
+
+    try:
+        apply_approval_manifest(task, RuntimeConfig(), manifest_path)
+    except ApprovalManifestError as exc:
+        assert "flow_id mismatch" in str(exc)
+    else:
+        raise AssertionError("approval manifest should reject wrong flow")
+
+
 def test_approval_manifest_rejects_missing_sensitive_step(tmp_path: Path) -> None:
     task = _compiled_sensitive_task(tmp_path)
     manifest_path = _write_manifest(tmp_path, approved_steps=("open-preview",))
@@ -49,6 +82,27 @@ def test_approval_manifest_rejects_missing_sensitive_step(tmp_path: Path) -> Non
         assert "missing sensitive step" in str(exc)
     else:
         raise AssertionError("approval manifest should require sensitive approval")
+
+
+def test_approval_manifest_rejects_content_fingerprint_mismatch(
+    tmp_path: Path,
+) -> None:
+    task = _compiled_sensitive_task(tmp_path)
+    task = replace(
+        task,
+        metadata={
+            **task.metadata,
+            "content_variables_fingerprint": "sha256:expected",
+        },
+    )
+    manifest_path = _write_manifest(tmp_path, approved_steps=("publish-post",))
+
+    try:
+        apply_approval_manifest(task, RuntimeConfig(), manifest_path)
+    except ApprovalManifestError as exc:
+        assert "content_fingerprint mismatch" in str(exc)
+    else:
+        raise AssertionError("approval manifest should reject stale content")
 
 
 def test_run_site_requires_manifest_for_sensitive_real_run(
@@ -153,20 +207,27 @@ def _write_config(tmp_path: Path) -> Path:
     return config_path
 
 
-def _write_manifest(tmp_path: Path, *, approved_steps: tuple[str, ...]) -> Path:
+def _write_manifest(
+    tmp_path: Path,
+    *,
+    approved_steps: tuple[str, ...],
+    site_id: str = "sensitive-site",
+    flow_id: str = "publish-post",
+    content_fingerprint: str = "fixture-content-v1",
+) -> Path:
     manifest_path = tmp_path / "approval.yaml"
     approved_step_lines = "\n".join(f"  - {step}" for step in approved_steps)
     manifest_path.write_text(
         "\n".join(
             [
-                "site_id: sensitive-site",
-                "flow_id: publish-post",
+                f"site_id: {site_id}",
+                f"flow_id: {flow_id}",
                 "approved_steps:",
                 approved_step_lines,
                 "approver: qa-lead@example.test",
                 "reason: Preapproved fixture publish flow for regression testing.",
                 "approved_at: 2026-05-15T00:00:00Z",
-                "content_fingerprint: fixture-content-v1",
+                f"content_fingerprint: {content_fingerprint}",
                 "",
             ],
         ),

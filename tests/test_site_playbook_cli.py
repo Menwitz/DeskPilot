@@ -58,6 +58,45 @@ def test_compile_site_writes_valid_task_yaml(
     assert task.metadata["site_id"] == "youtube"
 
 
+def test_compile_site_resolves_content_variables(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    playbook_dir = tmp_path / "playbooks"
+    playbook_dir.mkdir()
+    (playbook_dir / "variable-site.yaml").write_text(
+        _variable_playbook(),
+        encoding="utf-8",
+    )
+    variables_path = tmp_path / "content.yaml"
+    variables_path.write_text(
+        "variables:\n  post_text: Hello team\n",
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "compiled.yaml"
+
+    status = main(
+        [
+            "compile-site",
+            "variable-site",
+            "publish-post",
+            "--playbook-dir",
+            str(playbook_dir),
+            "--variables",
+            str(variables_path),
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    task = YamlTaskLoader().load(output_path)
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "compiled: variable-site publish-post" in output
+    assert task.steps[0].text == "Hello team"
+    assert task.metadata["content_variable_names"] == ["post_text"]
+
+
 def test_dry_run_site_validates_without_desktop_input(
     tmp_path: Path,
     capsys: CaptureFixture[str],
@@ -281,6 +320,32 @@ flows:
       - id: press-enter
         action: press_key
         text: enter
+blocked_states:
+  - id: ambiguous-target
+    detector: "candidate_count:>1"
+    reason: Choose a narrower target before continuing.
+"""
+
+
+def _variable_playbook() -> str:
+    return """site_id: variable-site
+version: "1"
+domains:
+  - host: variable.example
+allowed_window_titles:
+  - Variable
+flows:
+  - id: publish-post
+    timeout_seconds: 30
+    steps:
+      - id: fill-post
+        action: type_text
+        text: "{{post_text}}"
+      - id: publish-post
+        action: press_key
+        text: enter
+        requires_confirmation: true
+        sensitive_category: publish
 blocked_states:
   - id: ambiguous-target
     detector: "candidate_count:>1"

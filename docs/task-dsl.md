@@ -139,6 +139,12 @@ same strict task YAML shape documented here. The compiled task keeps
 confirmation gates, blocked-state checks, and site metadata visible to the
 planner and trace reports.
 
+Site playbook steps may use content variables in `target`, `text`, or `image`
+fields with `{{variable_name}}` placeholders. Pass a local YAML variable file
+with `--variables <content.yaml>` when compiling or running the site flow.
+Variables are resolved before execution; traces record variable names and a
+content fingerprint instead of raw payload values.
+
 ## Complete Example
 
 ```yaml

@@ -30,6 +30,7 @@ from desktop_agent.config import (
     YamlConfigLoader,
     resolve_runtime_config,
 )
+from desktop_agent.content_variables import load_content_variables
 from desktop_agent.ocr import (
     OcrPerceptionEngine,
     OcrTextBlock,
@@ -159,6 +160,7 @@ def _build_parser() -> argparse.ArgumentParser:
     compile_site_parser.add_argument("site")
     compile_site_parser.add_argument("flow")
     compile_site_parser.add_argument("--output", required=True, type=Path)
+    compile_site_parser.add_argument("--variables", type=Path)
     _add_site_catalog_options(compile_site_parser)
 
     run_site_parser = subparsers.add_parser(
@@ -235,6 +237,7 @@ def _add_site_catalog_options(parser: argparse.ArgumentParser) -> None:
 def _add_site_run_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("site")
     parser.add_argument("flow")
+    parser.add_argument("--variables", type=Path)
     _add_site_catalog_options(parser)
     _add_runtime_options(parser)
 
@@ -316,7 +319,12 @@ def _list_flows(args: argparse.Namespace) -> int:
 
 
 def _compile_site(args: argparse.Namespace) -> int:
-    task = _compile_site_flow(args.playbook_dir, args.site, args.flow)
+    task = _compile_site_flow(
+        args.playbook_dir,
+        args.site,
+        args.flow,
+        variables_path=args.variables,
+    )
     task = replace(
         task,
         metadata={
@@ -335,7 +343,12 @@ def _compile_site(args: argparse.Namespace) -> int:
 
 
 def _run_site_task(args: argparse.Namespace, *, dry_run: bool) -> int:
-    task = _compile_site_flow(args.playbook_dir, args.site, args.flow)
+    task = _compile_site_flow(
+        args.playbook_dir,
+        args.site,
+        args.flow,
+        variables_path=args.variables,
+    )
     return _run_loaded_task(
         args,
         task,
@@ -349,10 +362,13 @@ def _compile_site_flow(
     playbook_dir: Path,
     site_id: str,
     flow_id: str,
+    *,
+    variables_path: Path | None = None,
 ) -> TaskDefinition:
     playbook = _load_named_site(playbook_dir, site_id)
     resolve_site_flow(playbook, flow_id)
-    return SiteTaskCompiler().compile(playbook, flow_id)
+    variables = load_content_variables(variables_path)
+    return SiteTaskCompiler(variables).compile(playbook, flow_id)
 
 
 def _load_named_site(playbook_dir: Path, site_id: str) -> SitePlaybook:

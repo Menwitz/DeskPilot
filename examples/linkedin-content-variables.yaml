@@ -1,0 +1,7 @@
+# Example content payload for a future LinkedIn publish-capable site flow.
+variables:
+  post_text: "DeskPilot keeps approved content workflows local and auditable."
+  post_url: "https://example.test/deskpilot"
+  post_tags:
+    - "#ops"
+    - "#automation"

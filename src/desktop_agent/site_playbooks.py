@@ -11,6 +11,7 @@ from typing import cast
 import yaml
 
 from desktop_agent.config import ConfigOverrides
+from desktop_agent.content_variables import ContentVariables, load_content_variables
 from desktop_agent.task_dsl import (
     SUPPORTED_ACTIONS,
     TaskDefinition,
@@ -117,12 +118,20 @@ class SitePlaybook:
 class SiteTaskCompiler:
     """Compiles validated website playbook flows into DeskPilot tasks."""
 
+    def __init__(self, variables: ContentVariables | None = None) -> None:
+        self._variables = variables or load_content_variables(None)
+
     def compile(self, playbook: SitePlaybook, flow_id: str) -> TaskDefinition:
         validate_site_playbook(playbook)
         flow = resolve_site_flow(playbook, flow_id)
         steps: list[TaskStep] = []
         for site_step in flow.steps:
-            compiled_step = _compile_site_step(playbook, flow, site_step)
+            compiled_step = _compile_site_step(
+                playbook,
+                flow,
+                site_step,
+                self._variables,
+            )
             steps.extend(_blocked_state_checks(playbook, compiled_step))
             steps.append(compiled_step)
         return TaskDefinition(
@@ -133,7 +142,12 @@ class SiteTaskCompiler:
             config_overrides=ConfigOverrides(
                 confidence_threshold=flow.confidence_threshold,
             ),
-            metadata=_compiled_task_metadata(playbook, flow, tuple(steps)),
+            metadata=_compiled_task_metadata(
+                playbook,
+                flow,
+                tuple(steps),
+                self._variables,
+            ),
         )
 
 
@@ -292,14 +306,43 @@ def _compile_site_step(
     playbook: SitePlaybook,
     flow: SiteFlow,
     site_step: SiteFlowStep,
+    variables: ContentVariables,
 ) -> TaskStep:
     landmark = _landmark_by_id(playbook, site_step.landmark)
-    image = site_step.image or (landmark.image if landmark else None)
+    target = variables.resolve(site_step.target or _landmark_target(landmark))
+    text = variables.resolve(site_step.text or (landmark.text if landmark else None))
+    image_template = variables.resolve(
+        site_step.image or (landmark.image if landmark else None),
+    )
+    image = image_template.value
+    variable_names = tuple(
+        dict.fromkeys(
+            (
+                *target.variable_names,
+                *text.variable_names,
+                *image_template.variable_names,
+            )
+        )
+    )
+    metadata: dict[str, object] = {
+        "site_id": playbook.site_id,
+        "site_flow_id": flow.id,
+        "site_playbook_version": playbook.version,
+        "site_sensitive_category": site_step.sensitive_category,
+        "site_requires_confirmation": site_step.requires_confirmation,
+    }
+    if variable_names:
+        metadata.update(
+            {
+                "content_variable_names": list(variable_names),
+                "content_variables_redacted": True,
+            }
+        )
     return TaskStep(
         id=site_step.id,
         action=site_step.action,
-        target=site_step.target or _landmark_target(landmark),
-        text=site_step.text or (landmark.text if landmark else None),
+        target=target.value,
+        text=text.value,
         image=Path(image) if image else None,
         region=flow.search_region,
         timeout_seconds=site_step.timeout_seconds,
@@ -307,13 +350,7 @@ def _compile_site_step(
         on_failure=site_step.on_failure,
         requires_confirmation=site_step.requires_confirmation,
         category=_site_step_category(site_step),
-        metadata={
-            "site_id": playbook.site_id,
-            "site_flow_id": flow.id,
-            "site_playbook_version": playbook.version,
-            "site_sensitive_category": site_step.sensitive_category,
-            "site_requires_confirmation": site_step.requires_confirmation,
-        },
+        metadata=metadata,
     )
 
 
@@ -393,8 +430,9 @@ def _compiled_task_metadata(
     playbook: SitePlaybook,
     flow: SiteFlow,
     steps: tuple[TaskStep, ...],
+    variables: ContentVariables,
 ) -> dict[str, object]:
-    return {
+    metadata: dict[str, object] = {
         "site_id": playbook.site_id,
         "site_flow_id": flow.id,
         "site_playbook_version": playbook.version,
@@ -411,6 +449,28 @@ def _compiled_task_metadata(
             f"{playbook.site_id}:{flow.id} ({len(steps)} steps)"
         ),
     }
+    variable_names = _compiled_content_variable_names(steps)
+    if variable_names:
+        metadata.update(
+            {
+                "content_variable_names": list(variable_names),
+                "content_variables_fingerprint": variables.fingerprint(variable_names),
+                "content_variables_redacted": True,
+                "content_variables_source_path": str(variables.source_path)
+                if variables.source_path
+                else None,
+            }
+        )
+    return metadata
+
+
+def _compiled_content_variable_names(steps: tuple[TaskStep, ...]) -> tuple[str, ...]:
+    names: list[str] = []
+    for step in steps:
+        raw_names = step.metadata.get("content_variable_names")
+        if isinstance(raw_names, list):
+            names.extend(name for name in raw_names if isinstance(name, str))
+    return tuple(dict.fromkeys(names))
 
 
 def _validate_landmarks(landmarks: tuple[SiteLandmark, ...]) -> list[str]:

@@ -97,6 +97,43 @@ flows:
         sensitive_category: publish
 ```
 
+## Content Variables
+
+Publish-capable playbooks can use `{{variable_name}}` placeholders in step
+`target`, `text`, or `image` fields. Operators provide values through a local
+YAML variables file, and the compiler resolves placeholders before execution.
+The compiled task records variable names and a stable content fingerprint in
+trace metadata, but treats the variable values as redacted content payloads.
+
+```yaml
+variables:
+  post_text: "Reviewed launch note."
+  post_url: "https://example.test/launch"
+  post_tags:
+    - "#ops"
+    - "#automation"
+```
+
+```yaml
+flows:
+  - id: publish-post
+    steps:
+      - id: fill-post
+        action: type_text
+        text: "{{post_text}} {{post_url}} {{post_tags}}"
+      - id: publish-post
+        action: click_text
+        target: Publish
+        requires_confirmation: true
+        sensitive_category: publish
+```
+
+```bash
+desktop-agent compile-site example-site publish-post \
+  --variables content.yaml \
+  --output /private/tmp/example-publish.yaml
+```
+
 Run it only after reviewing the task and confirming the exact step:
 
 ```bash
@@ -122,7 +159,9 @@ content_fingerprint: reviewed-content-v1
 ```
 
 ```bash
-desktop-agent run-site example-site publish-post --approval-manifest approval.yaml
+desktop-agent run-site example-site publish-post \
+  --variables content.yaml \
+  --approval-manifest approval.yaml
 ```
 
 ## Blocked-State Detection

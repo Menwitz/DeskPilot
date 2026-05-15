@@ -1,0 +1,6 @@
+# Example content payload for a future Medium publish-capable site flow.
+variables:
+  article_title: "Local-first automation for approved ops workflows"
+  article_subtitle: "How DeskPilot uses YAML, approvals, and local traces."
+  article_body: "Draft body goes here. Replace with reviewed content before approval."
+  canonical_url: "https://example.test/deskpilot"

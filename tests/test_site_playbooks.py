@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from desktop_agent.config import RuntimeConfig
+from desktop_agent.content_variables import ContentVariableError, ContentVariables
 from desktop_agent.site_playbooks import (
     SitePlaybookValidationError,
     SiteTaskCompiler,
@@ -314,6 +315,44 @@ def test_compiled_task_metadata_includes_sensitive_step_ids(
     assert task.metadata["site_sensitive_step_ids"] == ["publish-post"]
 
 
+def test_site_flow_resolves_content_variables_and_records_fingerprint(
+    tmp_path: Path,
+) -> None:
+    playbook = load_site_playbook(
+        _write_playbook(tmp_path, _variable_playbook()),
+    )
+    variables = ContentVariables(
+        {
+            "post_text": "DeskPilot launch note",
+            "post_url": "https://example.test/launch",
+        },
+        source_path=tmp_path / "content.yaml",
+    )
+
+    task = SiteTaskCompiler(variables).compile(playbook, "publish-post")
+
+    assert task.steps[0].text == "DeskPilot launch note https://example.test/launch"
+    assert task.steps[0].metadata["content_variable_names"] == [
+        "post_text",
+        "post_url",
+    ]
+    assert task.metadata["content_variable_names"] == ["post_text", "post_url"]
+    assert str(task.metadata["content_variables_fingerprint"]).startswith("sha256:")
+    assert task.metadata["content_variables_redacted"] is True
+
+
+def test_site_flow_rejects_missing_content_variables(tmp_path: Path) -> None:
+    playbook = load_site_playbook(
+        _write_playbook(tmp_path, _variable_playbook()),
+    )
+
+    with pytest.raises(ContentVariableError, match="post_url"):
+        SiteTaskCompiler(ContentVariables({"post_text": "DeskPilot"})).compile(
+            playbook,
+            "publish-post",
+        )
+
+
 def test_sensitive_steps_preserve_confirmation(tmp_path: Path) -> None:
     playbook = load_site_playbook(
         _write_playbook(tmp_path, _sensitive_playbook("publish")),
@@ -445,6 +484,32 @@ def _sensitive_playbook(category: str) -> str:
         requires_confirmation: true
         sensitive_category: {category}""",
     )
+
+
+def _variable_playbook() -> str:
+    return """site_id: example-site
+version: "1"
+domains:
+  - host: example.com
+allowed_window_titles:
+  - Example
+flows:
+  - id: publish-post
+    timeout_seconds: 30
+    steps:
+      - id: fill-post
+        action: type_text
+        text: "{{post_text}} {{post_url}}"
+      - id: publish-post
+        action: press_key
+        text: enter
+        requires_confirmation: true
+        sensitive_category: publish
+blocked_states:
+  - id: logged-out
+    detector: "visible_text:Sign in"
+    reason: Sign in manually before running this flow.
+"""
 
 
 def _action_playbook(
