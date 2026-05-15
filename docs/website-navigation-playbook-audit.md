@@ -183,3 +183,12 @@ website safety claim before the corresponding roadmap item is checked.
     or retracting user or account content.
 - Verification:
   - Reviewed `docs/safety.md` lines 76-77.
+
+### Task 17/122: Define account and settings changes as sensitive
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` defines `account_settings` as changing account, privacy,
+    notification, security, billing, identity, or permission settings.
+- Verification:
+  - Reviewed `docs/safety.md` lines 78-79.
