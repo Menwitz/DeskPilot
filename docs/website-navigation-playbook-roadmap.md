@@ -224,7 +224,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Login step is blocked without `--confirm-step`.
 - [x] Post or publish step is blocked without `--confirm-step`.
 - [x] Message-send step is blocked without `--confirm-step`.
-- [ ] Delete step is blocked without `--confirm-step`.
+- [x] Delete step is blocked without `--confirm-step`.
 - [ ] Settings-change step is blocked without `--confirm-step`.
 - [ ] CAPTCHA state aborts with a no-bypass message.
 - [ ] Active-window mismatch aborts before action.

@@ -1446,6 +1446,18 @@ checking layout, domain, flow, and blocked-state coverage.
     "sensitive_site_steps_are_blocked_without_confirmation and message"`:
     1 passed, 7 deselected.
 
+### Task 155/211: Delete step is blocked without `--confirm-step`
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_safety.py::test_sensitive_site_steps_are_blocked_without_confirmation`
+    includes the `delete` sensitive category.
+  - The focused delete case verifies safety rejection before action.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
+    "sensitive_site_steps_are_blocked_without_confirmation and delete"`:
+    1 passed, 7 deselected.
+
 ### Task 110/211: Explain missing confirmation failures
 
 - Status: complete.
