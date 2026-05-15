@@ -1213,3 +1213,17 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "list_flows_linkedin_prints_flows"`: 1 passed, 6 deselected.
+
+### Task 95/122: Add `desktop-agent compile-site <site> <flow> --output <task.yaml>`
+
+- Status: complete.
+- Evidence:
+  - The CLI parser registers `compile-site` with site, flow, and required
+    `--output`.
+  - `_compile_site()` compiles the named playbook flow, records the output path
+    in metadata, writes task YAML, and prints the compiled site/flow.
+  - Regression coverage loads the generated YAML and validates it with
+    `BasicTaskValidator`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "compile_site_writes_valid_task_yaml"`: 1 passed, 6 deselected.

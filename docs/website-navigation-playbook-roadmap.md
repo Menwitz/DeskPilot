@@ -147,7 +147,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 - [x] Add `desktop-agent list-sites`.
 - [x] Add `desktop-agent list-flows <site>`.
-- [ ] Add `desktop-agent compile-site <site> <flow> --output <task.yaml>`.
+- [x] Add `desktop-agent compile-site <site> <flow> --output <task.yaml>`.
 - [ ] Add `desktop-agent run-site <site> <flow>`.
 - [ ] Add `desktop-agent dry-run-site <site> <flow>`.
 - [ ] Support existing runtime safety flags:
