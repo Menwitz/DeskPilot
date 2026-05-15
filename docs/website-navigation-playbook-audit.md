@@ -719,3 +719,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and filtered flows to `open-composer`,
     `open-editor`, or `open-upload`.
+
+### Task 60/122: Define blocked states for each seed playbook
+
+- Status: complete.
+- Evidence:
+  - Every seed playbook has a validated `blocked_states` list.
+  - The audited matrix includes `logged-out`, `consent`, `captcha`,
+    `permission`, `unsupported-layout`, and `ambiguous-target` for each seed.
+  - Each blocked state has both a detector and a user-facing reason, giving
+    future runtime, monitoring, deep-search, and report layers enough context to
+    stop and explain the condition.
+- Verification:
+  - Loaded all seed playbooks and printed each blocked-state ID by site.
