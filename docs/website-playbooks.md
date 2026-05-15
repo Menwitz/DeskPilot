@@ -4,6 +4,9 @@ Website playbooks define authorized public-site navigation in a catalog format
 that compiles into the existing DeskPilot task DSL. They do not replace task
 YAML; they provide a safer, reusable layer for common site navigation flows.
 
+For an end-to-end demonstration of the implemented capabilities, see
+[Website Playbook Capability Demo](website-playbook-demo.md).
+
 ## Authoring Rules
 
 - Use a slug-safe `site_id`, for example `example-site`.

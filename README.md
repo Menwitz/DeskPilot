@@ -74,6 +74,7 @@ clear unavailable message on unsupported platforms.
 - [Task DSL](docs/task-dsl.md)
 - [Website Navigation Playbook Roadmap](docs/website-navigation-playbook-roadmap.md)
 - [Website Playbooks](docs/website-playbooks.md)
+- [Website Playbook Capability Demo](docs/website-playbook-demo.md)
 - [Safety](docs/safety.md)
 - [Tracing](docs/tracing.md)
 - [Troubleshooting](docs/troubleshooting.md)
