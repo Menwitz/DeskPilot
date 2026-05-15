@@ -783,3 +783,16 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and printed the `permission` detector and reason
     for each site.
+
+### Task 65/122: Define unsupported-layout blocked states
+
+- Status: complete.
+- Evidence:
+  - Every seed playbook defines `unsupported-layout`.
+  - Detectors cover unsupported browser/layout text or a site-level failure
+    surface such as X/Twitter's `Something went wrong`.
+  - Reasons explain that the current layout does not match the playbook,
+    allowing runtime, monitoring, and report layers to fail closed on redesigns.
+- Verification:
+  - Loaded all seed playbooks and printed the `unsupported-layout` detector and
+    reason for each site.

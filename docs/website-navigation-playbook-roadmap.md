@@ -111,7 +111,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Consent or cookie interstitial.
   - [x] CAPTCHA or suspicious-activity challenge.
   - [x] Permission or account restriction.
-  - [ ] Unsupported layout.
+  - [x] Unsupported layout.
   - [ ] Ambiguous target.
 
 ## Phase 3: Compiler Into Existing Task DSL
