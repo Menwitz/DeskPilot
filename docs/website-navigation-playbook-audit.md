@@ -1457,3 +1457,30 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check .`: all checks passed.
   - `.venv/bin/mypy`: no issues in 67 source files.
   - `.venv/bin/python -m build`: built source distribution and wheel.
+
+## Phase 5 Pre-Implementation Audit: Tracing And Debuggability
+
+- Status: ready.
+- Scope:
+  - Phase 5 covers trace metadata, replay output, and troubleshooting guidance
+    for website playbook runs.
+- Evidence:
+  - `FileTraceSink.prepare_run()` writes compiled `task.json` before execution
+    and stores task metadata for the final report.
+  - `FileTraceSink.record_event()` writes event metadata to `action-log.jsonl`.
+  - `FileTraceSink.write_final_report()` writes task metadata to
+    `final-report.json` and renders a Markdown report.
+  - `_run_report_markdown()` prints the site and flow when both are present.
+  - `_replay()` prints site and flow fields from final-report metadata.
+  - `SiteTaskCompiler` currently records site ID, flow ID, domain, version,
+    validation status, compilation summary, sensitive-step IDs, and
+    blocked-state IDs in compiled task metadata.
+  - The planner records confirmation events for sensitive steps and blocked
+    state reasons on failed step reports.
+  - `docs/troubleshooting.md` already has a public-site troubleshooting section
+    that names the requested failure modes.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_tracing.py`: 5 passed.
+- Plan:
+  - Each Phase 5 item will be checked only after its trace/report/docs evidence
+    is recorded below and committed separately.
