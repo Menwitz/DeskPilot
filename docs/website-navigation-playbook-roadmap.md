@@ -95,7 +95,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] `navigation_playbooks/youtube.yaml`.
   - [x] `navigation_playbooks/tiktok.yaml`.
 - [x] For each seed playbook, define domains:
-  - [ ] Primary domain.
+  - [x] Primary domain.
   - [ ] Common alternate domain when applicable.
   - [ ] Account or auth domain only when needed for recognition.
 - [ ] For each seed playbook, define navigation flows:

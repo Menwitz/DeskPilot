@@ -571,3 +571,16 @@ checking layout, domain, flow, and blocked-state coverage.
     Instagram, Facebook, Medium, YouTube, and TikTok.
 - Verification:
   - Loaded all seed playbooks and printed each domain host with its purpose.
+
+### Task 49/122: Define primary domains
+
+- Status: complete.
+- Evidence:
+  - Each seed playbook has a `purpose: primary` domain.
+  - Primary domains are `linkedin.com`, `x.com`, `instagram.com`,
+    `facebook.com`, `medium.com`, `youtube.com`, and `tiktok.com`.
+  - The template also demonstrates the required primary-domain format for future
+    site additions.
+- Verification:
+  - Loaded all seed playbooks and printed domains filtered to `purpose ==
+    "primary"`.
