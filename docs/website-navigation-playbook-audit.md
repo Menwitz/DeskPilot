@@ -2853,3 +2853,12 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `git log --oneline --grep="^feat: compile site playbooks into tasks$"`:
     matched `d0fecf9`.
+
+### Task 206/211: Commit plan includes site playbook CLI commit
+
+- Status: complete.
+- Evidence:
+  - `a2b3d52 feat: add site playbook cli commands`
+- Verification:
+  - `git log --oneline --grep="^feat: add site playbook cli commands$"`:
+    matched `a2b3d52`.
