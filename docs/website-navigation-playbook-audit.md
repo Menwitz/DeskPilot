@@ -640,3 +640,15 @@ checking layout, domain, flow, and blocked-state coverage.
     flow ID for basic entry-surface checks across sites.
 - Verification:
   - Loaded all seed playbooks and confirmed each contains `open-home`.
+
+### Task 54/122: Define open search flows
+
+- Status: complete.
+- Evidence:
+  - Every seed playbook defines an `open-search` flow.
+  - The search-flow descriptions explicitly stop at opening the search surface
+    without submitting a query.
+  - The shared `open-search` flow ID gives deterministic smoke, deep-search,
+    monitoring, and report hooks a read-only path for each seed site.
+- Verification:
+  - Loaded all seed playbooks and confirmed each contains `open-search`.

@@ -100,7 +100,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Account or auth domain only when needed for recognition.
 - [x] For each seed playbook, define navigation flows:
   - [x] Open home or feed.
-  - [ ] Open search.
+  - [x] Open search.
   - [ ] Open profile or channel page.
   - [ ] Open notifications.
   - [ ] Open messages when the site has messages.
