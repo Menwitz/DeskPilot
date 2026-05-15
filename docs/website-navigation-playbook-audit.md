@@ -5,12 +5,16 @@ This file records evidence before roadmap tasks are checked. A checkbox in
 the related code, docs, tests, monitoring, or report behavior is inspected or
 implemented and the evidence is recorded here.
 
+Task numbering uses the 211 implementation checklist items that start at Phase
+0. The OKR checkboxes above the phase roadmap are tracked separately as outcome
+criteria.
+
 ## Phase 0 Audit: Scope And Safety Contract
 
 Phase 0 starts from the existing safety documentation and validates each public
 website safety claim before the corresponding roadmap item is checked.
 
-### Task 1/122: Confirm public-site scope in `docs/safety.md`
+### Task 1/211: Confirm public-site scope in `docs/safety.md`
 
 - Status: complete.
 - Evidence:
@@ -25,7 +29,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 21-40.
 
-### Task 2/122: Document third-party website authorization and rule compliance
+### Task 2/211: Document third-party website authorization and rule compliance
 
 - Status: complete.
 - Evidence:
@@ -40,7 +44,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 23-25 and 36-40.
 
-### Task 3/122: Document unsupported behavior
+### Task 3/211: Document unsupported behavior
 
 - Status: complete.
 - Evidence:
@@ -53,7 +57,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 42-56.
 
-### Task 4/122: Document CAPTCHA solving or bypass as unsupported
+### Task 4/211: Document CAPTCHA solving or bypass as unsupported
 
 - Status: complete.
 - Evidence:
@@ -65,7 +69,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 42-47.
 
-### Task 5/122: Document bot-detection bypass as unsupported
+### Task 5/211: Document bot-detection bypass as unsupported
 
 - Status: complete.
 - Evidence:
@@ -76,7 +80,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 42-49.
 
-### Task 6/122: Document credential abuse as unsupported
+### Task 6/211: Document credential abuse as unsupported
 
 - Status: complete.
 - Evidence:
@@ -87,7 +91,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 42-51.
 
-### Task 7/122: Document stealth automation as unsupported
+### Task 7/211: Document stealth automation as unsupported
 
 - Status: complete.
 - Evidence:
@@ -97,7 +101,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 42-53.
 
-### Task 8/122: Document unconfirmed externally visible actions as unsupported
+### Task 8/211: Document unconfirmed externally visible actions as unsupported
 
 - Status: complete.
 - Evidence:
@@ -108,7 +112,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 42-56.
 
-### Task 9/122: Define shared sensitive website action categories
+### Task 9/211: Define shared sensitive website action categories
 
 - Status: complete.
 - Evidence:
@@ -120,7 +124,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 58-79.
 
-### Task 10/122: Define login as a sensitive category
+### Task 10/211: Define login as a sensitive category
 
 - Status: complete.
 - Evidence:
@@ -129,7 +133,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 64-65.
 
-### Task 11/122: Define post, publish, upload, or submit as sensitive
+### Task 11/211: Define post, publish, upload, or submit as sensitive
 
 - Status: complete.
 - Evidence:
@@ -138,7 +142,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 66-67.
 
-### Task 12/122: Define engagement actions as sensitive
+### Task 12/211: Define engagement actions as sensitive
 
 - Status: complete.
 - Evidence:
@@ -148,7 +152,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 68-69.
 
-### Task 13/122: Define comment or reply as sensitive
+### Task 13/211: Define comment or reply as sensitive
 
 - Status: complete.
 - Evidence:
@@ -157,7 +161,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 70-71.
 
-### Task 14/122: Define message or send as sensitive
+### Task 14/211: Define message or send as sensitive
 
 - Status: complete.
 - Evidence:
@@ -166,7 +170,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 72-73.
 
-### Task 15/122: Define transaction and application actions as sensitive
+### Task 15/211: Define transaction and application actions as sensitive
 
 - Status: complete.
 - Evidence:
@@ -175,7 +179,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 74-75.
 
-### Task 16/122: Define deleting content as sensitive
+### Task 16/211: Define deleting content as sensitive
 
 - Status: complete.
 - Evidence:
@@ -184,7 +188,7 @@ website safety claim before the corresponding roadmap item is checked.
 - Verification:
   - Reviewed `docs/safety.md` lines 76-77.
 
-### Task 17/122: Define account and settings changes as sensitive
+### Task 17/211: Define account and settings changes as sensitive
 
 - Status: complete.
 - Evidence:
@@ -208,7 +212,7 @@ Phase 1 starts by inspecting the existing playbook schema module and then
 verifying each model, loader, validation rule, and safety comment before
 checking roadmap items.
 
-### Task 18/122: Add `src/desktop_agent/site_playbooks.py`
+### Task 18/211: Add `src/desktop_agent/site_playbooks.py`
 
 - Status: complete.
 - Evidence:
@@ -219,7 +223,7 @@ checking roadmap items.
   - Reviewed `src/desktop_agent/site_playbooks.py` module header and top-level
     contracts.
 
-### Task 19/122: Add immutable data models
+### Task 19/211: Add immutable data models
 
 - Status: complete.
 - Evidence:
@@ -229,7 +233,7 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` model declarations.
 
-### Task 20/122: Add `SitePlaybook`
+### Task 20/211: Add `SitePlaybook`
 
 - Status: complete.
 - Evidence:
@@ -239,7 +243,7 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` `SitePlaybook` declaration.
 
-### Task 21/122: Add `SiteDomain`
+### Task 21/211: Add `SiteDomain`
 
 - Status: complete.
 - Evidence:
@@ -249,7 +253,7 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` `SiteDomain` declaration.
 
-### Task 22/122: Add `SiteLandmark`
+### Task 22/211: Add `SiteLandmark`
 
 - Status: complete.
 - Evidence:
@@ -259,7 +263,7 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` `SiteLandmark` declaration.
 
-### Task 23/122: Add `SiteFlow`
+### Task 23/211: Add `SiteFlow`
 
 - Status: complete.
 - Evidence:
@@ -269,7 +273,7 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` `SiteFlow` declaration.
 
-### Task 24/122: Add `SiteFlowStep`
+### Task 24/211: Add `SiteFlowStep`
 
 - Status: complete.
 - Evidence:
@@ -279,7 +283,7 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` `SiteFlowStep` declaration.
 
-### Task 25/122: Add `BlockedState`
+### Task 25/211: Add `BlockedState`
 
 - Status: complete.
 - Evidence:
@@ -289,7 +293,7 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` `BlockedState` declaration.
 
-### Task 26/122: Add YAML loader for `navigation_playbooks/*.yaml`
+### Task 26/211: Add YAML loader for `navigation_playbooks/*.yaml`
 
 - Status: complete.
 - Evidence:
@@ -302,7 +306,7 @@ checking roadmap items.
   - Reviewed `src/desktop_agent/site_playbooks.py` loader functions and loader
     call sites in `src/desktop_agent/cli.py`.
 
-### Task 27/122: Add schema validation
+### Task 27/211: Add schema validation
 
 - Status: complete.
 - Evidence:
@@ -316,7 +320,7 @@ checking roadmap items.
   - Reviewed `src/desktop_agent/site_playbooks.py` validation entrypoint and
     `tests/test_site_playbooks.py`.
 
-### Task 28/122: Validate site ID is required and slug-safe
+### Task 28/211: Validate site ID is required and slug-safe
 
 - Status: complete.
 - Evidence:
@@ -327,7 +331,7 @@ checking roadmap items.
   - Reviewed `src/desktop_agent/site_playbooks.py` site ID validation and
     `tests/test_site_playbooks.py` site ID tests.
 
-### Task 29/122: Validate at least one domain is required
+### Task 29/211: Validate at least one domain is required
 
 - Status: complete.
 - Evidence:
@@ -338,7 +342,7 @@ checking roadmap items.
   - Reviewed `src/desktop_agent/site_playbooks.py` domain validation and
     `tests/test_site_playbooks.py` domain validation test.
 
-### Task 30/122: Validate at least one allowed window-title pattern is required
+### Task 30/211: Validate at least one allowed window-title pattern is required
 
 - Status: complete.
 - Evidence:
@@ -350,7 +354,7 @@ checking roadmap items.
   - Reviewed `src/desktop_agent/site_playbooks.py` window-title validation and
     `tests/test_site_playbooks.py` window-title validation test.
 
-### Task 31/122: Validate flow IDs are unique
+### Task 31/211: Validate flow IDs are unique
 
 - Status: complete.
 - Evidence:
@@ -361,7 +365,7 @@ checking roadmap items.
   - Reviewed `src/desktop_agent/site_playbooks.py` flow ID validation and
     `tests/test_site_playbooks.py` duplicate-flow test.
 
-### Task 32/122: Validate step IDs are unique within each flow
+### Task 32/211: Validate step IDs are unique within each flow
 
 - Status: complete.
 - Evidence:
@@ -372,7 +376,7 @@ checking roadmap items.
   - Reviewed `src/desktop_agent/site_playbooks.py` flow-step ID validation and
     `tests/test_site_playbooks.py` duplicate-step test.
 
-### Task 33/122: Validate sensitive steps require confirmation
+### Task 33/211: Validate sensitive steps require confirmation
 
 - Status: complete.
 - Evidence:
@@ -385,7 +389,7 @@ checking roadmap items.
   - Reviewed `src/desktop_agent/site_playbooks.py` sensitive-step validation and
     `tests/test_site_playbooks.py` sensitive confirmation test.
 
-### Task 34/122: Validate landmark references resolve
+### Task 34/211: Validate landmark references resolve
 
 - Status: complete.
 - Evidence:
@@ -396,7 +400,7 @@ checking roadmap items.
   - Reviewed `src/desktop_agent/site_playbooks.py` landmark-reference
     validation and `tests/test_site_playbooks.py` missing-landmark test.
 
-### Task 35/122: Validate unsupported actions fail before execution
+### Task 35/211: Validate unsupported actions fail before execution
 
 - Status: complete.
 - Evidence:
@@ -407,7 +411,7 @@ checking roadmap items.
   - Reviewed `src/desktop_agent/site_playbooks.py` action validation and
     `tests/test_site_playbooks.py` unknown-action test.
 
-### Task 36/122: Validate blocked states include detector and reason
+### Task 36/211: Validate blocked states include detector and reason
 
 - Status: complete.
 - Evidence:
@@ -418,7 +422,7 @@ checking roadmap items.
   - Reviewed `src/desktop_agent/site_playbooks.py` blocked-state validation and
     `tests/test_site_playbooks.py` blocked-state reason test.
 
-### Task 37/122: Add comments only around non-obvious validation and safety decisions
+### Task 37/211: Add comments only around non-obvious validation and safety decisions
 
 - Status: complete.
 - Evidence:
@@ -443,7 +447,7 @@ checking roadmap items.
 Phase 2 starts by inspecting the catalog files and seed playbooks before
 checking layout, domain, flow, and blocked-state coverage.
 
-### Task 38/122: Add `navigation_playbooks/README.md`
+### Task 38/211: Add `navigation_playbooks/README.md`
 
 - Status: complete.
 - Evidence:
@@ -454,7 +458,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Reviewed `navigation_playbooks/README.md` lines 1-42.
 
-### Task 39/122: Add `navigation_playbooks/_template.yaml`
+### Task 39/211: Add `navigation_playbooks/_template.yaml`
 
 - Status: complete.
 - Evidence:
@@ -466,7 +470,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Reviewed `navigation_playbooks/_template.yaml` lines 1-29.
 
-### Task 40/122: Add seed playbooks
+### Task 40/211: Add seed playbooks
 
 - Status: complete.
 - Evidence:
@@ -478,7 +482,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Ran `load_site_playbooks()` and reviewed the seed catalog files.
 
-### Task 41/122: Add `navigation_playbooks/linkedin.yaml`
+### Task 41/211: Add `navigation_playbooks/linkedin.yaml`
 
 - Status: complete.
 - Evidence:
@@ -489,7 +493,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded `navigation_playbooks/linkedin.yaml` with `load_site_playbook`.
 
-### Task 42/122: Add `navigation_playbooks/x-twitter.yaml`
+### Task 42/211: Add `navigation_playbooks/x-twitter.yaml`
 
 - Status: complete.
 - Evidence:
@@ -500,7 +504,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded `navigation_playbooks/x-twitter.yaml` with `load_site_playbook`.
 
-### Task 43/122: Add `navigation_playbooks/instagram.yaml`
+### Task 43/211: Add `navigation_playbooks/instagram.yaml`
 
 - Status: complete.
 - Evidence:
@@ -511,7 +515,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded `navigation_playbooks/instagram.yaml` with `load_site_playbook`.
 
-### Task 44/122: Add `navigation_playbooks/facebook.yaml`
+### Task 44/211: Add `navigation_playbooks/facebook.yaml`
 
 - Status: complete.
 - Evidence:
@@ -522,7 +526,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded `navigation_playbooks/facebook.yaml` with `load_site_playbook`.
 
-### Task 45/122: Add `navigation_playbooks/medium.yaml`
+### Task 45/211: Add `navigation_playbooks/medium.yaml`
 
 - Status: complete.
 - Evidence:
@@ -534,7 +538,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded `navigation_playbooks/medium.yaml` with `load_site_playbook`.
 
-### Task 46/122: Add `navigation_playbooks/youtube.yaml`
+### Task 46/211: Add `navigation_playbooks/youtube.yaml`
 
 - Status: complete.
 - Evidence:
@@ -546,7 +550,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded `navigation_playbooks/youtube.yaml` with `load_site_playbook`.
 
-### Task 47/122: Add `navigation_playbooks/tiktok.yaml`
+### Task 47/211: Add `navigation_playbooks/tiktok.yaml`
 
 - Status: complete.
 - Evidence:
@@ -558,7 +562,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded `navigation_playbooks/tiktok.yaml` with `load_site_playbook`.
 
-### Task 48/122: Define domains for each seed playbook
+### Task 48/211: Define domains for each seed playbook
 
 - Status: complete.
 - Evidence:
@@ -572,7 +576,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and printed each domain host with its purpose.
 
-### Task 49/122: Define primary domains
+### Task 49/211: Define primary domains
 
 - Status: complete.
 - Evidence:
@@ -585,7 +589,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Loaded all seed playbooks and printed domains filtered to `purpose ==
     "primary"`.
 
-### Task 50/122: Define common alternate domains when applicable
+### Task 50/211: Define common alternate domains when applicable
 
 - Status: complete.
 - Evidence:
@@ -599,7 +603,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and printed domains where `purpose != "primary"`.
 
-### Task 51/122: Define account or auth domains only when needed
+### Task 51/211: Define account or auth domains only when needed
 
 - Status: complete.
 - Evidence:
@@ -615,7 +619,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Loaded all seed playbooks and filtered domains whose purpose contains
     `account` or `auth`.
 
-### Task 52/122: Define navigation flows for each seed playbook
+### Task 52/211: Define navigation flows for each seed playbook
 
 - Status: complete.
 - Evidence:
@@ -628,7 +632,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and printed each flow ID by site.
 
-### Task 53/122: Define open home or feed flows
+### Task 53/211: Define open home or feed flows
 
 - Status: complete.
 - Evidence:
@@ -641,7 +645,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and confirmed each contains `open-home`.
 
-### Task 54/122: Define open search flows
+### Task 54/211: Define open search flows
 
 - Status: complete.
 - Evidence:
@@ -653,7 +657,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and confirmed each contains `open-search`.
 
-### Task 55/122: Define open profile or channel flows
+### Task 55/211: Define open profile or channel flows
 
 - Status: complete.
 - Evidence:
@@ -667,7 +671,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Loaded all seed playbooks and filtered flows to `open-profile` or
     `open-channel`.
 
-### Task 56/122: Define open notifications flows
+### Task 56/211: Define open notifications flows
 
 - Status: complete.
 - Evidence:
@@ -679,7 +683,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and confirmed each contains `open-notifications`.
 
-### Task 57/122: Define open messages flows when the site has messages
+### Task 57/211: Define open messages flows when the site has messages
 
 - Status: complete.
 - Evidence:
@@ -694,7 +698,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Loaded all seed playbooks and printed whether each contains
     `open-messages`.
 
-### Task 58/122: Define open settings flows
+### Task 58/211: Define open settings flows
 
 - Status: complete.
 - Evidence:
@@ -706,7 +710,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and confirmed each contains `open-settings`.
 
-### Task 59/122: Define composer, upload, or editor flows without final submission
+### Task 59/211: Define composer, upload, or editor flows without final submission
 
 - Status: complete.
 - Evidence:
@@ -720,7 +724,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Loaded all seed playbooks and filtered flows to `open-composer`,
     `open-editor`, or `open-upload`.
 
-### Task 60/122: Define blocked states for each seed playbook
+### Task 60/211: Define blocked states for each seed playbook
 
 - Status: complete.
 - Evidence:
@@ -733,7 +737,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Loaded all seed playbooks and printed each blocked-state ID by site.
 
-### Task 61/122: Define logged-out blocked states
+### Task 61/211: Define logged-out blocked states
 
 - Status: complete.
 - Evidence:
@@ -745,7 +749,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Loaded all seed playbooks and printed the `logged-out` detector and reason
     for each site.
 
-### Task 62/122: Define consent or cookie interstitial blocked states
+### Task 62/211: Define consent or cookie interstitial blocked states
 
 - Status: complete.
 - Evidence:
@@ -757,7 +761,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Loaded all seed playbooks and printed the `consent` detector and reason for
     each site.
 
-### Task 63/122: Define CAPTCHA or suspicious-activity blocked states
+### Task 63/211: Define CAPTCHA or suspicious-activity blocked states
 
 - Status: complete.
 - Evidence:
@@ -771,7 +775,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Loaded all seed playbooks and printed the `captcha` detector and reason for
     each site.
 
-### Task 64/122: Define permission or account-restriction blocked states
+### Task 64/211: Define permission or account-restriction blocked states
 
 - Status: complete.
 - Evidence:
@@ -784,7 +788,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Loaded all seed playbooks and printed the `permission` detector and reason
     for each site.
 
-### Task 65/122: Define unsupported-layout blocked states
+### Task 65/211: Define unsupported-layout blocked states
 
 - Status: complete.
 - Evidence:
@@ -797,7 +801,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Loaded all seed playbooks and printed the `unsupported-layout` detector and
     reason for each site.
 
-### Task 66/122: Define ambiguous-target blocked states
+### Task 66/211: Define ambiguous-target blocked states
 
 - Status: complete.
 - Evidence:
@@ -835,7 +839,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Phase 3 roadmap items are still unchecked, so each item will be verified,
     tested, documented here, checked in the roadmap, and committed separately.
 
-### Task 67/122: Add `SiteTaskCompiler`
+### Task 67/211: Add `SiteTaskCompiler`
 
 - Status: complete.
 - Evidence:
@@ -848,7 +852,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Imported `SiteTaskCompiler`, compiled `linkedin:open-search`, and confirmed
     the result is a `TaskDefinition`.
 
-### Task 68/122: Compile domains and window-title patterns into `allowed_windows`
+### Task 68/211: Compile domains and window-title patterns into `allowed_windows`
 
 - Status: complete.
 - Evidence:
@@ -862,7 +866,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Compiled one flow for every seed playbook and printed each task's
     `allowed_windows`.
 
-### Task 69/122: Compile playbook steps into existing task actions
+### Task 69/211: Compile playbook steps into existing task actions
 
 - Status: complete.
 - Evidence:
@@ -879,7 +883,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/mypy src/desktop_agent/site_playbooks.py
     tests/test_site_playbooks.py`: no issues found.
 
-### Task 70/122: Compile `click_text`
+### Task 70/211: Compile `click_text`
 
 - Status: complete.
 - Evidence:
@@ -891,7 +895,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and click_text"`: 1 passed, 32 deselected.
 
-### Task 71/122: Compile `click_image`
+### Task 71/211: Compile `click_image`
 
 - Status: complete.
 - Evidence:
@@ -903,7 +907,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and click_image"`: 1 passed, 32 deselected.
 
-### Task 72/122: Compile `click_uia`
+### Task 72/211: Compile `click_uia`
 
 - Status: complete.
 - Evidence:
@@ -915,7 +919,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and click_uia"`: 1 passed, 32 deselected.
 
-### Task 73/122: Compile `type_text`
+### Task 73/211: Compile `type_text`
 
 - Status: complete.
 - Evidence:
@@ -926,7 +930,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and type_text"`: 1 passed, 32 deselected.
 
-### Task 74/122: Compile `press_key`
+### Task 74/211: Compile `press_key`
 
 - Status: complete.
 - Evidence:
@@ -937,7 +941,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and press_key"`: 1 passed, 32 deselected.
 
-### Task 75/122: Compile `scroll`
+### Task 75/211: Compile `scroll`
 
 - Status: complete.
 - Evidence:
@@ -948,7 +952,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and scroll and not scroll_until"`: 1 passed, 32 deselected.
 
-### Task 76/122: Compile `scroll_until`
+### Task 76/211: Compile `scroll_until`
 
 - Status: complete.
 - Evidence:
@@ -960,7 +964,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and scroll_until"`: 1 passed, 32 deselected.
 
-### Task 77/122: Compile `wait_for`
+### Task 77/211: Compile `wait_for`
 
 - Status: complete.
 - Evidence:
@@ -971,7 +975,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and wait_for and not branch_if_visible"`: 1 passed, 32 deselected.
 
-### Task 78/122: Compile `assert_visible`
+### Task 78/211: Compile `assert_visible`
 
 - Status: complete.
 - Evidence:
@@ -983,7 +987,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and assert_visible"`: 1 passed, 32 deselected.
 
-### Task 79/122: Compile `branch_if_visible`
+### Task 79/211: Compile `branch_if_visible`
 
 - Status: complete.
 - Evidence:
@@ -995,7 +999,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and branch_if_visible"`: 1 passed, 32 deselected.
 
-### Task 80/122: Preserve confirmation requirements for sensitive steps
+### Task 80/211: Preserve confirmation requirements for sensitive steps
 
 - Status: complete.
 - Evidence:
@@ -1009,7 +1013,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "sensitive_steps_preserve_confirmation"`: 1 passed, 32 deselected.
 
-### Task 81/122: Add flow-level defaults
+### Task 81/211: Add flow-level defaults
 
 - Status: complete.
 - Evidence:
@@ -1022,7 +1026,7 @@ checking layout, domain, flow, and blocked-state coverage.
     The compiled task printed timeout `42`, retry `5`, confidence `0.77`, and
     search-region width `300`.
 
-### Task 82/122: Compile flow timeout defaults
+### Task 82/211: Compile flow timeout defaults
 
 - Status: complete.
 - Evidence:
@@ -1034,7 +1038,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "flow_timeout_compiles_to_task_timeout"`: 1 passed, 32 deselected.
 
-### Task 83/122: Compile flow retry budget defaults
+### Task 83/211: Compile flow retry budget defaults
 
 - Status: complete.
 - Evidence:
@@ -1046,7 +1050,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "flow_retry_defaults_compile_to_steps"`: 1 passed, 32 deselected.
 
-### Task 84/122: Compile flow confidence threshold defaults
+### Task 84/211: Compile flow confidence threshold defaults
 
 - Status: complete.
 - Evidence:
@@ -1061,7 +1065,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check tests/test_site_playbooks.py`: all checks passed.
   - `.venv/bin/mypy tests/test_site_playbooks.py`: no issues found.
 
-### Task 85/122: Compile optional search region defaults
+### Task 85/211: Compile optional search region defaults
 
 - Status: complete.
 - Evidence:
@@ -1072,7 +1076,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and scroll_until"`: 1 passed, 33 deselected.
 
-### Task 86/122: Add blocked-state checks before irreversible actions
+### Task 86/211: Add blocked-state checks before irreversible actions
 
 - Status: complete.
 - Evidence:
@@ -1088,7 +1092,7 @@ checking layout, domain, flow, and blocked-state coverage.
     "blocked_state_checks_compile_before_sensitive_final_actions"`: 1 passed,
     33 deselected.
 
-### Task 87/122: Add task metadata for trace readability
+### Task 87/211: Add task metadata for trace readability
 
 - Status: complete.
 - Evidence:
@@ -1101,7 +1105,7 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - Compiled `linkedin:open-search` and printed the resulting task metadata.
 
-### Task 88/122: Add site ID metadata
+### Task 88/211: Add site ID metadata
 
 - Status: complete.
 - Evidence:
@@ -1113,7 +1117,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
     "final_report_includes_site_id_and_flow_id"`: 1 passed, 4 deselected.
 
-### Task 89/122: Add flow ID metadata
+### Task 89/211: Add flow ID metadata
 
 - Status: complete.
 - Evidence:
@@ -1125,7 +1129,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_tracing.py -k
     "final_report_includes_site_id_and_flow_id"`: 1 passed, 4 deselected.
 
-### Task 90/122: Add domain metadata
+### Task 90/211: Add domain metadata
 
 - Status: complete.
 - Evidence:
@@ -1139,7 +1143,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check tests/test_site_playbooks.py`: all checks passed.
   - `.venv/bin/mypy tests/test_site_playbooks.py`: no issues found.
 
-### Task 91/122: Add sensitive step ID metadata
+### Task 91/211: Add sensitive step ID metadata
 
 - Status: complete.
 - Evidence:
@@ -1154,7 +1158,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check tests/test_site_playbooks.py`: all checks passed.
   - `.venv/bin/mypy tests/test_site_playbooks.py`: no issues found.
 
-### Task 92/122: Add playbook version metadata
+### Task 92/211: Add playbook version metadata
 
 - Status: complete.
 - Evidence:
@@ -1191,7 +1195,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - Unknown-site, unknown-flow, blocked-state, and unsupported-live-state
     messages will be verified before their roadmap items are checked.
 
-### Task 93/122: Add `desktop-agent list-sites`
+### Task 93/211: Add `desktop-agent list-sites`
 
 - Status: complete.
 - Evidence:
@@ -1202,7 +1206,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "list_sites_prints_all_seed_sites"`: 1 passed, 6 deselected.
 
-### Task 94/122: Add `desktop-agent list-flows <site>`
+### Task 94/211: Add `desktop-agent list-flows <site>`
 
 - Status: complete.
 - Evidence:
@@ -1214,7 +1218,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "list_flows_linkedin_prints_flows"`: 1 passed, 6 deselected.
 
-### Task 95/122: Add `desktop-agent compile-site <site> <flow> --output <task.yaml>`
+### Task 95/211: Add `desktop-agent compile-site <site> <flow> --output <task.yaml>`
 
 - Status: complete.
 - Evidence:
@@ -1228,7 +1232,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "compile_site_writes_valid_task_yaml"`: 1 passed, 6 deselected.
 
-### Task 96/122: Add `desktop-agent run-site <site> <flow>`
+### Task 96/211: Add `desktop-agent run-site <site> <flow>`
 
 - Status: complete.
 - Evidence:
@@ -1242,7 +1246,7 @@ checking layout, domain, flow, and blocked-state coverage.
     "run_site_returns_nonzero_when_platform_actuation_is_unavailable"`:
     1 passed, 6 deselected.
 
-### Task 97/122: Add `desktop-agent dry-run-site <site> <flow>`
+### Task 97/211: Add `desktop-agent dry-run-site <site> <flow>`
 
 - Status: complete.
 - Evidence:
@@ -1255,7 +1259,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_validates_without_desktop_input"`: 1 passed, 6 deselected.
 
-### Task 98/122: Support existing runtime safety flags
+### Task 98/211: Support existing runtime safety flags
 
 - Status: complete.
 - Evidence:
@@ -1271,7 +1275,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check tests/test_site_playbook_cli.py`: all checks passed.
   - `.venv/bin/mypy tests/test_site_playbook_cli.py`: no issues found.
 
-### Task 99/122: Support `--config`
+### Task 99/211: Support `--config`
 
 - Status: complete.
 - Evidence:
@@ -1283,7 +1287,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
 
-### Task 100/122: Support `--verbose`
+### Task 100/211: Support `--verbose`
 
 - Status: complete.
 - Evidence:
@@ -1295,7 +1299,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
 
-### Task 101/122: Support `--no-screenshots`
+### Task 101/211: Support `--no-screenshots`
 
 - Status: complete.
 - Evidence:
@@ -1306,7 +1310,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
 
-### Task 102/122: Support `--max-runtime-seconds`
+### Task 102/211: Support `--max-runtime-seconds`
 
 - Status: complete.
 - Evidence:
@@ -1317,7 +1321,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
 
-### Task 103/122: Support `--confidence-threshold`
+### Task 103/211: Support `--confidence-threshold`
 
 - Status: complete.
 - Evidence:
@@ -1328,7 +1332,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
 
-### Task 104/122: Support `--allowed-window`
+### Task 104/211: Support `--allowed-window`
 
 - Status: complete.
 - Evidence:
@@ -1340,7 +1344,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
 
-### Task 105/122: Support `--confirm-step`
+### Task 105/211: Support `--confirm-step`
 
 - Status: complete.
 - Evidence:
@@ -1355,7 +1359,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/ruff check tests/test_site_playbook_cli.py`: all checks passed.
   - `.venv/bin/mypy tests/test_site_playbook_cli.py`: no issues found.
 
-### Task 106/122: Ensure CLI failures explain
+### Task 106/211: Ensure CLI failures explain
 
 - Status: complete.
 - Evidence:
@@ -1371,7 +1375,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/mypy tests/test_site_playbook_cli.py
     tests/test_site_playbook_safety.py`: no issues found.
 
-### Task 107/122: Explain unknown site failures
+### Task 107/211: Explain unknown site failures
 
 - Status: complete.
 - Evidence:
@@ -1382,7 +1386,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "unknown_site_returns_clear_message"`: 1 passed, 10 deselected.
 
-### Task 108/122: Explain unknown flow failures
+### Task 108/211: Explain unknown flow failures
 
 - Status: complete.
 - Evidence:
@@ -1393,7 +1397,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "unknown_flow_returns_clear_message"`: 1 passed, 10 deselected.
 
-### Task 109/122: Explain invalid playbook failures
+### Task 109/211: Explain invalid playbook failures
 
 - Status: complete.
 - Evidence:
@@ -1405,7 +1409,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "invalid_playbook_returns_validation_error"`: 1 passed, 10 deselected.
 
-### Task 110/122: Explain missing confirmation failures
+### Task 110/211: Explain missing confirmation failures
 
 - Status: complete.
 - Evidence:
@@ -1418,7 +1422,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
     "missing_confirmation_returns_clear_message"`: 1 passed, 10 deselected.
 
-### Task 111/122: Explain blocked-state detected failures
+### Task 111/211: Explain blocked-state detected failures
 
 - Status: complete.
 - Evidence:
@@ -1431,7 +1435,7 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_site_playbook_safety.py -k
     "captcha_state_aborts_with_no_bypass_message"`: 1 passed, 7 deselected.
 
-### Task 112/122: Explain unsupported live-site state failures
+### Task 112/211: Explain unsupported live-site state failures
 
 - Status: complete.
 - Evidence:
