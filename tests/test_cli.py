@@ -4,12 +4,13 @@ from pathlib import Path
 from pytest import CaptureFixture, MonkeyPatch
 
 from desktop_agent.actuation import ActuationProfile, DryRunActuator
-from desktop_agent.cli import main
+from desktop_agent.cli import _perception_engine_for_mode, main
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.ocr import OcrTextBlock
 from desktop_agent.perception import ElementCandidate
 from desktop_agent.safety import EmergencyStopMonitor
 from desktop_agent.screen import Bounds, ScreenObservation, ScreenUnavailableError
+from desktop_agent.task_dsl import TaskStep
 
 
 def write_task(path: Path) -> None:
@@ -297,6 +298,102 @@ class AmbiguousUiaAdapter:
                 confidence=0.94,
             ),
         )
+
+
+class FixtureUiaPerceptionEngine:
+    def detect(
+        self,
+        step: TaskStep,
+        observation: ScreenObservation,
+        config: RuntimeConfig,
+    ) -> tuple[ElementCandidate, ...]:
+        _ = step, observation, config
+        return (
+            ElementCandidate(
+                id="uia-submit",
+                source="uia",
+                label="Submit",
+                bounds=Bounds(x=10, y=20, width=90, height=28),
+                confidence=0.95,
+            ),
+        )
+
+
+class EmptyPerceptionEngine:
+    def detect(
+        self,
+        step: TaskStep,
+        observation: ScreenObservation,
+        config: RuntimeConfig,
+    ) -> tuple[ElementCandidate, ...]:
+        _ = step, observation, config
+        return ()
+
+
+class FixtureOcrPerceptionEngine:
+    def detect(
+        self,
+        step: TaskStep,
+        observation: ScreenObservation,
+        config: RuntimeConfig,
+    ) -> tuple[ElementCandidate, ...]:
+        _ = step, observation, config
+        return (
+            ElementCandidate(
+                id="ocr-submit",
+                source="ocr",
+                label="Submit",
+                bounds=Bounds(x=120, y=20, width=90, height=28),
+                confidence=0.91,
+            ),
+        )
+
+
+def test_real_mode_perception_includes_uia_source(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "desktop_agent.cli.WindowsUiaPerceptionEngine",
+        FixtureUiaPerceptionEngine,
+    )
+    monkeypatch.setattr("desktop_agent.cli.OcrPerceptionEngine", EmptyPerceptionEngine)
+    monkeypatch.setattr(
+        "desktop_agent.cli.OpenCvTemplatePerceptionEngine",
+        EmptyPerceptionEngine,
+    )
+
+    candidates = _perception_engine_for_mode(False).detect(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        ScreenObservation(),
+        RuntimeConfig(confidence_threshold=0.8),
+    )
+
+    assert [candidate.source for candidate in candidates] == ["uia"]
+
+
+def test_real_mode_perception_keeps_ocr_fallback_when_uia_empty(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "desktop_agent.cli.WindowsUiaPerceptionEngine",
+        EmptyPerceptionEngine,
+    )
+    monkeypatch.setattr(
+        "desktop_agent.cli.OcrPerceptionEngine",
+        FixtureOcrPerceptionEngine,
+    )
+    monkeypatch.setattr(
+        "desktop_agent.cli.OpenCvTemplatePerceptionEngine",
+        EmptyPerceptionEngine,
+    )
+
+    candidates = _perception_engine_for_mode(False).detect(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        ScreenObservation(),
+        RuntimeConfig(confidence_threshold=0.8),
+    )
+
+    assert [candidate.source for candidate in candidates] == ["ocr"]
 
 
 def test_cli_inspect_screen_writes_success_report(

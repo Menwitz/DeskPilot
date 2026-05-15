@@ -50,6 +50,7 @@ from desktop_agent.perception import (
 from desktop_agent.planner import ExecutionEngine
 from desktop_agent.platforms.windows.uia import (
     WindowsUiaAdapter,
+    WindowsUiaPerceptionEngine,
     WindowsUiaUnavailableError,
     write_uia_tree_snapshot,
 )
@@ -425,6 +426,7 @@ def _perception_engine_for_mode(dry_run: bool) -> CompositePerceptionEngine:
         return CompositePerceptionEngine((DryRunPerceptionEngine(),))
     return CompositePerceptionEngine(
         (
+            WindowsUiaPerceptionEngine(),
             OcrPerceptionEngine(),
             OpenCvTemplatePerceptionEngine(),
         ),

@@ -19,3 +19,8 @@ uv sync --extra dev --extra windows
 
 UIA candidates receive a high default confidence and the shared selector prefers
 them over OCR or image candidates when confidence values are close.
+
+Real `run` and `run-site` executions include `WindowsUiaPerceptionEngine` in the
+composite perception pipeline before OCR and image-template matching. When UIA
+is unavailable, the UIA engine returns no candidates and the same OCR and CV
+fallbacks continue to run.

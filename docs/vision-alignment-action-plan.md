@@ -27,8 +27,8 @@ teams running approved content workflows.
 - [x] Benchmark harness runs locally.
 - [x] Product docs identify the revised ops-team content-automation vision.
 - [ ] Seed playbooks support publish-capable LinkedIn and Medium workflows.
-- [ ] Real run path includes Windows UIA perception.
-- [ ] Active-window safety is consistently enforced in real runs.
+- [x] Real run path includes Windows UIA perception.
+- [x] Active-window safety is consistently enforced in real runs.
 - [x] Approval manifest exists for ops-team preapproval.
 - [ ] Windows package and live smoke evidence are complete.
 
@@ -45,8 +45,8 @@ teams running approved content workflows.
 - [ ] Add Medium publish-capable flow using YAML variables.
 - [ ] Add checkpoints before externally visible publish actions.
 - [ ] Keep all other seed sites read-only/open-surface until promoted.
-- [ ] Wire Windows UIA into non-dry-run perception.
-- [ ] Fix active-window allowlist enforcement for real runs.
+- [x] Wire Windows UIA into non-dry-run perception.
+- [x] Fix active-window allowlist enforcement for real runs.
 - [ ] Pass Windows package verification.
 - [ ] Pass Windows fixture e2e checks.
 - [ ] Pass authorized live smoke checks for LinkedIn and Medium.
@@ -103,8 +103,8 @@ teams running approved content workflows.
   message.
 - [x] Approval manifest with wrong site, flow, step, or content fingerprint
   exits nonzero.
-- [ ] Real run uses UIA, OCR, and CV candidate fusion.
-- [ ] Real run cannot act outside task/config allowed windows.
+- [x] Real run uses UIA, OCR, and CV candidate fusion.
+- [x] Real run cannot act outside task/config allowed windows.
 - [ ] LinkedIn and Medium publish flows stop on logged-out, consent, CAPTCHA,
   permission, unsupported-layout, or ambiguous-target states.
 - [ ] All artifacts remain local by default.
