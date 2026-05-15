@@ -178,7 +178,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Logged-out session.
   - [x] Consent dialog.
   - [x] Site redesign.
-  - [ ] CAPTCHA or suspicious-activity challenge.
+  - [x] CAPTCHA or suspicious-activity challenge.
   - [ ] Permission restriction.
   - [ ] Ambiguous selector.
 

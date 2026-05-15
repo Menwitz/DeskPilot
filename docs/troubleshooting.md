@@ -151,8 +151,9 @@ Symptoms:
 - Site redesign: an unsupported-layout blocked state, missing landmark, or
   repeated target mismatch appears in the action log; inspect the page and
   update the playbook landmarks or flow.
-- CAPTCHA or suspicious-activity challenge: the report says the challenge is not
-  automated and the run stops.
+- CAPTCHA or suspicious-activity challenge: the report says the challenge is
+  not automated; do not solve or bypass it with DeskPilot, and either resolve it
+  manually or abandon the run.
 - Permission restriction: account, policy, or unavailable-action text appears in
   the blocked-state reason.
 - Ambiguous selector: candidate rankings show multiple matching controls and the

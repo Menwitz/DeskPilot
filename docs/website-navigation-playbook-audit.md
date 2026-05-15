@@ -1656,3 +1656,18 @@ checking layout, domain, flow, and blocked-state coverage.
     "public_site_failure_modes"`: 1 passed, 5 deselected.
   - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
   - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.
+
+### Task 123/211: CAPTCHA or suspicious-activity challenge
+
+- Status: complete.
+- Evidence:
+  - `docs/troubleshooting.md` now states that CAPTCHA or suspicious-activity
+    challenges are not automated by DeskPilot.
+  - The remediation explicitly prohibits solving or bypassing the challenge
+    with DeskPilot and directs the operator to resolve it manually or abandon
+    the run.
+- Verification:
+  - `.venv/bin/pytest tests/test_safety_docs.py -k
+    "public_site_failure_modes"`: 1 passed, 5 deselected.
+  - `.venv/bin/ruff check tests/test_safety_docs.py`: all checks passed.
+  - `.venv/bin/mypy tests/test_safety_docs.py`: no issues found.
