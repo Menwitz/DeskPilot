@@ -477,3 +477,14 @@ checking layout, domain, flow, and blocked-state coverage.
   - `tests/test_site_playbooks.py` asserts the expected seed-site ID set.
 - Verification:
   - Ran `load_site_playbooks()` and reviewed the seed catalog files.
+
+### Task 41/122: Add `navigation_playbooks/linkedin.yaml`
+
+- Status: complete.
+- Evidence:
+  - `navigation_playbooks/linkedin.yaml` exists.
+  - It validates through `load_site_playbook`.
+  - It defines the `linkedin` site ID, two domains, seven flows, and six blocked
+    states.
+- Verification:
+  - Loaded `navigation_playbooks/linkedin.yaml` with `load_site_playbook`.
