@@ -947,3 +947,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and scroll and not scroll_until"`: 1 passed, 32 deselected.
+
+### Task 76/122: Compile `scroll_until`
+
+- Status: complete.
+- Evidence:
+  - The action regression matrix includes a `scroll_until` site step.
+  - The playbook flow supplies a `search_region`, which `SiteTaskCompiler`
+    carries into the compiled `TaskStep.region`.
+  - `BasicTaskValidator` accepts the compiled result.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
+    and scroll_until"`: 1 passed, 32 deselected.

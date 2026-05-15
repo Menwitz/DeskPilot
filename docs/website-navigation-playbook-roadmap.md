@@ -125,7 +125,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] `type_text`.
   - [x] `press_key`.
   - [x] `scroll`.
-  - [ ] `scroll_until`.
+  - [x] `scroll_until`.
   - [ ] `wait_for`.
   - [ ] `assert_visible`.
   - [ ] `branch_if_visible`.
