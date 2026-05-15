@@ -60,6 +60,7 @@ class RunReport:
     steps: tuple[StepReport, ...]
     abort_reason: str | None = None
     trace_dir: Path | None = None
+    metadata: dict[str, object] = field(default_factory=dict)
 
 
 class TraceSink(Protocol):
@@ -85,11 +86,13 @@ class MemoryTraceSink(TraceSink):
 
     def __init__(self) -> None:
         self._task_name = "unknown"
+        self._task_metadata: dict[str, object] = {}
         self.events: list[TraceEvent] = []
         self.steps: list[StepReport] = []
 
     def prepare_run(self, task: TaskDefinition, config: RuntimeConfig) -> RuntimeConfig:
         self._task_name = task.name
+        self._task_metadata = dict(task.metadata)
         self.events = []
         self.steps = []
         return config
@@ -111,6 +114,7 @@ class MemoryTraceSink(TraceSink):
             events=tuple(self.events),
             steps=tuple(self.steps),
             abort_reason=abort_reason,
+            metadata=dict(self._task_metadata),
         )
 
 
@@ -119,6 +123,7 @@ class FileTraceSink(TraceSink):
 
     def __init__(self) -> None:
         self._task_name = "unknown"
+        self._task_metadata: dict[str, object] = {}
         self._run_dir: Path | None = None
         self.events: list[TraceEvent] = []
         self.steps: list[StepReport] = []
@@ -129,6 +134,7 @@ class FileTraceSink(TraceSink):
 
     def prepare_run(self, task: TaskDefinition, config: RuntimeConfig) -> RuntimeConfig:
         self._task_name = task.name
+        self._task_metadata = dict(task.metadata)
         self.events = []
         self.steps = []
         self._run_dir = _run_directory(config.trace_root, task.name)
@@ -174,6 +180,7 @@ class FileTraceSink(TraceSink):
             steps=tuple(self.steps),
             abort_reason=abort_reason,
             trace_dir=self._run_dir,
+            metadata=dict(self._task_metadata),
         )
         if self._run_dir is not None:
             _write_json(
@@ -323,6 +330,7 @@ def _run_report_to_dict(report: RunReport) -> dict[str, object]:
         "status": report.status,
         "abort_reason": report.abort_reason,
         "trace_dir": str(report.trace_dir) if report.trace_dir else None,
+        "metadata": _json_safe(report.metadata),
         "steps": [_step_report_to_dict(step) for step in report.steps],
         "events": [_event_to_dict(event) for event in report.events],
     }
@@ -359,9 +367,12 @@ def _run_report_markdown(report: RunReport) -> str:
         f"- Trace directory: `{report.trace_dir}`"
         if report.trace_dir
         else "- Trace directory: memory",
-        "",
-        "## Steps",
     ]
+    site_id = report.metadata.get("site_id")
+    flow_id = report.metadata.get("site_flow_id")
+    if isinstance(site_id, str) and isinstance(flow_id, str):
+        lines.append(f"- Site flow: `{site_id}` / `{flow_id}`")
+    lines.extend(["", "## Steps"])
     for step in report.steps:
         failure_category = step.metadata.get("failure_category")
         category_suffix = (
@@ -404,6 +415,13 @@ def _event_markdown_suffix(event: TraceEvent) -> str:
         str,
     ):
         details.append(f"input blocked by {actuation_guard}")
+    blocked_state = event.metadata.get("site_blocked_state_id")
+    blocked_reason = event.metadata.get("site_blocked_state_reason")
+    if isinstance(blocked_state, str):
+        if isinstance(blocked_reason, str):
+            details.append(f"blocked state {blocked_state}: {blocked_reason}")
+        else:
+            details.append(f"blocked state {blocked_state}")
     if not details:
         return ""
     return " - " + "; ".join(details)

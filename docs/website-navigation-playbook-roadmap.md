@@ -168,19 +168,19 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ## Phase 5: Tracing And Debuggability
 
-- [ ] Extend trace output with site-playbook metadata.
-- [ ] Record playbook validation results in trace metadata.
-- [ ] Record compiled task path or in-memory task summary.
-- [ ] Record blocked-state checks and outcomes.
-- [ ] Record whether each sensitive step was confirmed or blocked.
-- [ ] Update replay output to include site and flow when present.
-- [ ] Update troubleshooting docs with public-site failure modes:
-  - [ ] Logged-out session.
-  - [ ] Consent dialog.
-  - [ ] Site redesign.
-  - [ ] CAPTCHA or suspicious-activity challenge.
-  - [ ] Permission restriction.
-  - [ ] Ambiguous selector.
+- [x] Extend trace output with site-playbook metadata.
+- [x] Record playbook validation results in trace metadata.
+- [x] Record compiled task path or in-memory task summary.
+- [x] Record blocked-state checks and outcomes.
+- [x] Record whether each sensitive step was confirmed or blocked.
+- [x] Update replay output to include site and flow when present.
+- [x] Update troubleshooting docs with public-site failure modes:
+  - [x] Logged-out session.
+  - [x] Consent dialog.
+  - [x] Site redesign.
+  - [x] CAPTCHA or suspicious-activity challenge.
+  - [x] Permission restriction.
+  - [x] Ambiguous selector.
 
 ## Phase 6: Regression Tests
 

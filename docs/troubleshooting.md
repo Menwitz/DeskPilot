@@ -134,6 +134,35 @@ Actions:
 - If `emergency_stop` fired, inspect the keyboard state and rerun only after
   the stop chord is no longer active.
 
+## Public Site Playbook Stops
+
+Website playbook runs include `site_id`, `site_flow_id`, playbook version,
+domain, sensitive-step, and blocked-state metadata in `task.json`,
+`action-log.jsonl`, and `final-report.json`. `desktop-agent replay <trace-dir>`
+prints the site and flow when those fields are present.
+
+Symptoms:
+
+- Logged-out session: a blocked-state step reports that sign-in is required.
+- Consent dialog: a blocked-state step reports a cookie or consent interstitial.
+- Site redesign: an unsupported-layout blocked state or repeated target
+  mismatch appears in the action log.
+- CAPTCHA or suspicious-activity challenge: the report says the challenge is not
+  automated and the run stops.
+- Permission restriction: account, policy, or unavailable-action text appears in
+  the blocked-state reason.
+- Ambiguous selector: candidate rankings show multiple matching controls and the
+  run stops before acting.
+
+Actions:
+
+- Resolve logged-out, consent, permission, and account states manually, then
+  rerun the same flow.
+- Do not attempt CAPTCHA solving, bot-detection bypass, or stealth workarounds.
+- Update the playbook landmark or flow when a site redesign changes labels.
+- Add a narrower landmark, search region, or flow-specific target when selector
+  ambiguity is expected.
+
 ## Packaged Executable Fails
 
 Run `deskpilot.exe --help` first. If that works, run a `dry-run` with

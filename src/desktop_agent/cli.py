@@ -300,6 +300,13 @@ def _list_flows(args: argparse.Namespace) -> int:
 
 def _compile_site(args: argparse.Namespace) -> int:
     task = _compile_site_flow(args.playbook_dir, args.site, args.flow)
+    task = replace(
+        task,
+        metadata={
+            **task.metadata,
+            "site_compiled_task_path": str(args.output),
+        },
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         yaml.safe_dump(_task_to_yaml_dict(task), sort_keys=False),
@@ -725,6 +732,13 @@ def _replay(args: argparse.Namespace) -> int:
         return 1
 
     print(f"trace: {args.trace_dir}")
+    metadata = report.get("metadata")
+    if isinstance(metadata, dict):
+        site_id = metadata.get("site_id")
+        flow_id = metadata.get("site_flow_id")
+        if isinstance(site_id, str) and isinstance(flow_id, str):
+            print(f"site: {site_id}")
+            print(f"flow: {flow_id}")
     if report.get("task_name"):
         print(f"task: {report['task_name']}")
     print(f"status: {report.get('status', 'unknown')}")

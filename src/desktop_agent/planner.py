@@ -622,6 +622,21 @@ class ExecutionEngine:
                 config,
                 observation,
             )
+            if step.requires_confirmation:
+                confirmed = step.id in config.confirmed_steps
+                self._record(
+                    "confirmation",
+                    "sensitive step confirmed"
+                    if confirmed
+                    else "sensitive step blocked",
+                    _step_metadata(
+                        step,
+                        sensitive_step_confirmed=confirmed,
+                        sensitive_step_confirmation_state="confirmed"
+                        if confirmed
+                        else "blocked",
+                    ),
+                )
             if not safety.allowed:
                 self._record(
                     "recover",

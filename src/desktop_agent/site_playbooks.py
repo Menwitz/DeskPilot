@@ -393,7 +393,12 @@ def _compiled_task_metadata(
             step.id for step in steps if step.requires_confirmation
         ],
         "site_blocked_state_ids": [state.id for state in playbook.blocked_states],
+        "site_playbook_validation_status": "passed",
+        "site_compilation_source": "in_memory",
         "site_compiled_step_count": len(steps),
+        "site_compiled_task_summary": (
+            f"{playbook.site_id}:{flow.id} ({len(steps)} steps)"
+        ),
     }
 
 
