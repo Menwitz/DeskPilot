@@ -25,3 +25,11 @@ Every seed playbook declares a primary public domain and any common alternate
 domain that is needed for recognition, such as legacy, regional, messaging, or
 creator-studio hosts. Account or auth-related domains should appear only when a
 playbook needs them to recognize an allowed settings or account surface.
+
+## Seed Flow Coverage
+
+Seed playbooks include read-only navigation flows for home or feed, search,
+profile or channel surfaces, notifications, settings, and a composer, upload, or
+editor surface that stops before final submission. Sites with direct-message
+surfaces also include an `open-messages` flow that opens the surface without
+sending content.

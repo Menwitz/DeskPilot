@@ -98,14 +98,14 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Primary domain.
   - [x] Common alternate domain when applicable.
   - [x] Account or auth domain only when needed for recognition.
-- [ ] For each seed playbook, define navigation flows:
-  - [ ] Open home or feed.
-  - [ ] Open search.
-  - [ ] Open profile or channel page.
-  - [ ] Open notifications.
-  - [ ] Open messages when the site has messages.
-  - [ ] Open settings.
-  - [ ] Open composer, upload, or editor surface without final submission.
+- [x] For each seed playbook, define navigation flows:
+  - [x] Open home or feed.
+  - [x] Open search.
+  - [x] Open profile or channel page.
+  - [x] Open notifications.
+  - [x] Open messages when the site has messages.
+  - [x] Open settings.
+  - [x] Open composer, upload, or editor surface without final submission.
 - [ ] For each seed playbook, define blocked states:
   - [ ] Logged out.
   - [ ] Consent or cookie interstitial.
