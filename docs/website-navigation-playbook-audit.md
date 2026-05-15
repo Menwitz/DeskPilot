@@ -301,3 +301,17 @@ checking roadmap items.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` loader functions and loader
     call sites in `src/desktop_agent/cli.py`.
+
+### Task 27/122: Add schema validation
+
+- Status: complete.
+- Evidence:
+  - `validate_site_playbook` aggregates validation errors for site identity,
+    domains, allowed window titles, landmarks, flows, flow steps, sensitive
+    steps, and blocked states.
+  - Loader functions call validation before returning playbooks.
+  - `tests/test_site_playbooks.py` contains validation regressions for the
+    individual schema rules audited below.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` validation entrypoint and
+    `tests/test_site_playbooks.py`.
