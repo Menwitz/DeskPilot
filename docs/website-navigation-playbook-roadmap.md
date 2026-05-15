@@ -101,7 +101,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] For each seed playbook, define navigation flows:
   - [x] Open home or feed.
   - [x] Open search.
-  - [ ] Open profile or channel page.
+  - [x] Open profile or channel page.
   - [ ] Open notifications.
   - [ ] Open messages when the site has messages.
   - [ ] Open settings.

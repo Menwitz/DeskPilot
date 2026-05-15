@@ -652,3 +652,17 @@ checking layout, domain, flow, and blocked-state coverage.
     monitoring, and report hooks a read-only path for each seed site.
 - Verification:
   - Loaded all seed playbooks and confirmed each contains `open-search`.
+
+### Task 55/122: Define open profile or channel flows
+
+- Status: complete.
+- Evidence:
+  - LinkedIn, X/Twitter, Instagram, Facebook, Medium, and TikTok define
+    `open-profile`.
+  - YouTube defines `open-channel`, matching its channel terminology while
+    preserving the same profile/channel navigation intent.
+  - These flow IDs give reports and monitoring a stable way to describe the
+    identity-surface navigation path without mixing it with account settings.
+- Verification:
+  - Loaded all seed playbooks and filtered flows to `open-profile` or
+    `open-channel`.
