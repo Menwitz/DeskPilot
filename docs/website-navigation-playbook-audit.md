@@ -2588,3 +2588,15 @@ checking layout, domain, flow, and blocked-state coverage.
   - `rg -n "_template.yaml|landmarks|flows|schema/compiler tests"
     docs/website-playbooks.md navigation_playbooks/README.md`: matched the
     onboarding requirements.
+
+### Task 189/211: All seven seed playbooks validate
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_all_seed_playbooks_validate` loads the
+    seed catalog and asserts the seven supported site IDs.
+  - The validation covers LinkedIn, X/Twitter, Instagram, Facebook, Medium,
+    YouTube, and TikTok.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "all_seed_playbooks_validate"`: 1 passed, 41 deselected.

@@ -273,7 +273,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 - [x] A new engineer can add a website by copying `_template.yaml`, filling in
   landmarks and flows, and adding schema/compiler tests.
-- [ ] All seven seed playbooks validate.
+- [x] All seven seed playbooks validate.
 - [ ] Every seed playbook has at least one read-only navigation flow.
 - [ ] Every seed playbook has sensitive actions marked with explicit
   confirmation.
