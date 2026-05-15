@@ -121,7 +121,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Compile playbook steps into existing task actions:
   - [x] `click_text`.
   - [x] `click_image`.
-  - [ ] `click_uia`.
+  - [x] `click_uia`.
   - [ ] `type_text`.
   - [ ] `press_key`.
   - [ ] `scroll`.

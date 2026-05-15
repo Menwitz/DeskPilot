@@ -902,3 +902,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and click_image"`: 1 passed, 32 deselected.
+
+### Task 72/122: Compile `click_uia`
+
+- Status: complete.
+- Evidence:
+  - The action regression matrix includes a `click_uia` site step with a UIA
+    target.
+  - `SiteTaskCompiler` preserves the `click_uia` action and target in the
+    compiled `TaskStep`, and `BasicTaskValidator` accepts the result.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
+    and click_uia"`: 1 passed, 32 deselected.
