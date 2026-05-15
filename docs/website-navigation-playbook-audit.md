@@ -1270,3 +1270,15 @@ checking layout, domain, flow, and blocked-state coverage.
     "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
   - `.venv/bin/ruff check tests/test_site_playbook_cli.py`: all checks passed.
   - `.venv/bin/mypy tests/test_site_playbook_cli.py`: no issues found.
+
+### Task 99/122: Support `--config`
+
+- Status: complete.
+- Evidence:
+  - `--config` is registered through `_add_runtime_options()`.
+  - `_run_loaded_task()` loads the provided config path through
+    `YamlConfigLoader`.
+  - The runtime-flag regression passes a config file to `dry-run-site`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "dry_run_site_accepts_runtime_safety_flags"`: 1 passed, 7 deselected.
