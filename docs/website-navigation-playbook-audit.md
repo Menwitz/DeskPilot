@@ -982,3 +982,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and assert_visible"`: 1 passed, 32 deselected.
+
+### Task 79/122: Compile `branch_if_visible`
+
+- Status: complete.
+- Evidence:
+  - The action regression matrix includes a `branch_if_visible` site step with a
+    target and `on_failure` fallback.
+  - `SiteTaskCompiler` preserves the target and fallback in the compiled
+    `TaskStep`, and `BasicTaskValidator` accepts the result.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
+    and branch_if_visible"`: 1 passed, 32 deselected.
