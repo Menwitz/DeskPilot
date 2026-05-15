@@ -2626,3 +2626,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k
     "seed_sensitive_actions_require_confirmation"`: 1 passed, 41 deselected.
+
+### Task 192/211: Compiled flows pass the existing task validator
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbooks.py::test_all_seed_flows_compile_and_validate`
+    compiles every flow from every seed playbook.
+  - Each compiled task is validated with `BasicTaskValidator`, keeping the
+    playbook compiler inside the existing task validation pipeline.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k
+    "all_seed_flows_compile_and_validate"`: 1 passed, 41 deselected.

@@ -277,7 +277,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Every seed playbook has at least one read-only navigation flow.
 - [x] Every seed playbook has sensitive actions marked with explicit
   confirmation.
-- [ ] Compiled flows pass the existing task validator.
+- [x] Compiled flows pass the existing task validator.
 - [ ] Normal CI remains deterministic and does not depend on live public sites.
 - [ ] Opt-in live smoke tests can be run manually for the seed sites.
 - [ ] Failed site runs produce clear local traces and final reports.
