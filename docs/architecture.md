@@ -45,6 +45,18 @@ configuration, task loading, task validation, screen observation, deep candidate
 search, target selection, actuation, safety, verification, tracing, and final
 reporting.
 
+## Website Playbook Layer
+
+Website playbooks live in `navigation_playbooks/` and compile into normal
+`TaskDefinition` objects before execution. The layer adds reusable site domains,
+allowed window-title patterns, landmarks, flows, blocked states, and site
+metadata without bypassing the planner, deep-search perception pipeline, safety
+checks, tracing, or reports.
+
+The compiler preserves confirmation requirements, inserts blocked-state checks
+before confirmation-gated site actions, and writes site ID, flow ID, domains,
+version, sensitive step IDs, and blocked-state IDs into task metadata.
+
 ## Observability
 
 Every runtime phase should leave enough local trace data to diagnose a failed

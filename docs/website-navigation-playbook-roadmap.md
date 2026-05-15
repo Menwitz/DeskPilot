@@ -255,19 +255,19 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 
 ## Phase 7: Documentation
 
-- [ ] Add playbook authoring docs.
-- [ ] Add a new-site checklist.
-- [ ] Add examples for:
-  - [ ] Read-only navigation flow.
-  - [ ] Search flow.
-  - [ ] Composer-open flow that stops before submission.
-  - [ ] Sensitive confirmed flow.
-  - [ ] Blocked-state detection.
-- [ ] Update `README.md` documentation links.
-- [ ] Update `docs/architecture.md` with the playbook layer.
-- [ ] Update `docs/task-dsl.md` to explain that playbooks compile into existing
+- [x] Add playbook authoring docs.
+- [x] Add a new-site checklist.
+- [x] Add examples for:
+  - [x] Read-only navigation flow.
+  - [x] Search flow.
+  - [x] Composer-open flow that stops before submission.
+  - [x] Sensitive confirmed flow.
+  - [x] Blocked-state detection.
+- [x] Update `README.md` documentation links.
+- [x] Update `docs/architecture.md` with the playbook layer.
+- [x] Update `docs/task-dsl.md` to explain that playbooks compile into existing
   tasks rather than replacing the DSL.
-- [ ] Update `docs/safety.md` with third-party website guardrails.
+- [x] Update `docs/safety.md` with third-party website guardrails.
 
 ## Phase 8: Acceptance Criteria
 

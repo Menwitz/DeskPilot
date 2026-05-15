@@ -31,6 +31,7 @@ allowed windows are required, sensitive steps need explicit confirmation, and
 blocked states such as logged-out sessions, consent dialogs, CAPTCHA
 challenges, permission restrictions, unsupported layouts, or ambiguous targets
 must stop execution with a local report.
+See `docs/website-playbooks.md` for the authoring checklist and safe examples.
 
 For third-party websites, the operator is responsible for confirming that the
 account, organization, and target site's terms permit the intended automation.

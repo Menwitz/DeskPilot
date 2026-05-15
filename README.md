@@ -72,6 +72,8 @@ clear unavailable message on unsupported platforms.
 - [Post-v1 Backlog](docs/post-v1-backlog.md)
 - [Screen layer](docs/screen.md)
 - [Task DSL](docs/task-dsl.md)
+- [Website Navigation Playbook Roadmap](docs/website-navigation-playbook-roadmap.md)
+- [Website Playbooks](docs/website-playbooks.md)
 - [Safety](docs/safety.md)
 - [Tracing](docs/tracing.md)
 - [Troubleshooting](docs/troubleshooting.md)

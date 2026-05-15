@@ -130,6 +130,15 @@ Task YAML can include a `config` block for task-level runtime overrides. The
 final precedence is CLI overrides, then task `config`, then project config, then
 defaults.
 
+## Website Playbooks Compile Into Tasks
+
+Website playbooks are an authoring layer above this DSL. `desktop-agent
+compile-site <site> <flow> --output <task.yaml>` resolves a site flow into the
+same strict task YAML shape documented here. The compiled task keeps
+`allowed_windows`, step actions, retry defaults, confidence-threshold overrides,
+confirmation gates, blocked-state checks, and site metadata visible to the
+planner and trace reports.
+
 ## Complete Example
 
 ```yaml
