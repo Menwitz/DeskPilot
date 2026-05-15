@@ -2310,3 +2310,16 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest
     'tests/test_site_playbook_live_smoke.py::test_seed_site_read_only_smoke_flow[facebook]'`:
     1 passed.
+
+### Task 173/211: Medium read-only smoke flow
+
+- Status: complete.
+- Evidence:
+  - `tests/test_site_playbook_live_smoke.py::test_seed_site_read_only_smoke_flow[medium]`
+    resolves the Medium `open-editor` smoke flow.
+  - The parameterized assertions verify the editor surface can be opened as a
+    non-sensitive, no-confirmation smoke flow without publishing.
+- Verification:
+  - `.venv/bin/pytest
+    'tests/test_site_playbook_live_smoke.py::test_seed_site_read_only_smoke_flow[medium]'`:
+    1 passed.
