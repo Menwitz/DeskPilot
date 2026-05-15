@@ -2774,3 +2774,14 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_approval_manifest.py -k
     "dry_run_site_records_manifest_metadata_in_report"`: 1 passed,
     9 deselected.
+
+### Task 201/211: Add approval manifest regression coverage
+
+- Status: complete.
+- Evidence:
+  - `tests/test_approval_manifest.py` covers required fields, invalid timestamp,
+    unknown step, site mismatch, flow mismatch, missing sensitive step, stale
+    content fingerprint, missing real-run manifest, accepted manifest no-prompt
+    execution, and manifest metadata recording.
+- Verification:
+  - `.venv/bin/pytest tests/test_approval_manifest.py`: 10 passed.

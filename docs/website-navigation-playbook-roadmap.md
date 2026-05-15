@@ -294,7 +294,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   prompts for site runs.
 - [x] Record manifest validation, approved step IDs, approver, reason,
   timestamp, and content fingerprint in local traces and reports.
-- [ ] Add regression coverage for missing, invalid, and accepted approval
+- [x] Add regression coverage for missing, invalid, and accepted approval
   manifests.
 - [ ] Document approval manifest usage in website playbook and safety docs.
 
