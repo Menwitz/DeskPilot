@@ -68,7 +68,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] `SiteLandmark`.
   - [x] `SiteFlow`.
   - [x] `SiteFlowStep`.
-  - [ ] `BlockedState`.
+  - [x] `BlockedState`.
 - [ ] Add a YAML loader for `navigation_playbooks/*.yaml`.
 - [ ] Add schema validation:
   - [ ] Site ID is required and slug-safe.

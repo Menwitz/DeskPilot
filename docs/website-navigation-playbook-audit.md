@@ -278,3 +278,13 @@ checking roadmap items.
     confirmation requirement, sensitive category, timeout, and retry override.
 - Verification:
   - Reviewed `src/desktop_agent/site_playbooks.py` `SiteFlowStep` declaration.
+
+### Task 25/122: Add `BlockedState`
+
+- Status: complete.
+- Evidence:
+  - `BlockedState` is an immutable dataclass.
+  - It stores blocked-state ID, detector, user-facing reason, and optional
+    recovery hint.
+- Verification:
+  - Reviewed `src/desktop_agent/site_playbooks.py` `BlockedState` declaration.
