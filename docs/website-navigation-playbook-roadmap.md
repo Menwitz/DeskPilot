@@ -120,7 +120,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
 - [x] Compile site domains and window-title patterns into task `allowed_windows`.
 - [x] Compile playbook steps into existing task actions:
   - [x] `click_text`.
-  - [ ] `click_image`.
+  - [x] `click_image`.
   - [ ] `click_uia`.
   - [ ] `type_text`.
   - [ ] `press_key`.

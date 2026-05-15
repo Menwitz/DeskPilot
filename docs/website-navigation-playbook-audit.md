@@ -890,3 +890,15 @@ checking layout, domain, flow, and blocked-state coverage.
 - Verification:
   - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
     and click_text"`: 1 passed, 32 deselected.
+
+### Task 71/122: Compile `click_image`
+
+- Status: complete.
+- Evidence:
+  - The action regression matrix includes a `click_image` site step with an
+    image path.
+  - `SiteTaskCompiler` converts the image value into the compiled `TaskStep`
+    image field, and `BasicTaskValidator` accepts the result.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbooks.py -k "supported_task_actions
+    and click_image"`: 1 passed, 32 deselected.
