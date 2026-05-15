@@ -128,3 +128,12 @@ website safety claim before the corresponding roadmap item is checked.
     authentication flow, approving sign-in, or switching accounts.
 - Verification:
   - Reviewed `docs/safety.md` lines 64-65.
+
+### Task 11/122: Define post, publish, upload, or submit as sensitive
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` defines `publish` as posting, publishing, uploading,
+    submitting, or otherwise making content externally visible.
+- Verification:
+  - Reviewed `docs/safety.md` lines 66-67.
