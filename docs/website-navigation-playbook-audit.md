@@ -510,3 +510,14 @@ checking layout, domain, flow, and blocked-state coverage.
     blocked states.
 - Verification:
   - Loaded `navigation_playbooks/instagram.yaml` with `load_site_playbook`.
+
+### Task 44/122: Add `navigation_playbooks/facebook.yaml`
+
+- Status: complete.
+- Evidence:
+  - `navigation_playbooks/facebook.yaml` exists.
+  - It validates through `load_site_playbook`.
+  - It defines the `facebook` site ID, two domains, seven flows, and six
+    blocked states.
+- Verification:
+  - Loaded `navigation_playbooks/facebook.yaml` with `load_site_playbook`.
