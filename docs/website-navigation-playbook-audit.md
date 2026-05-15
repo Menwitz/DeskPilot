@@ -2735,3 +2735,16 @@ checking layout, domain, flow, and blocked-state coverage.
   - `.venv/bin/pytest tests/test_approval_manifest.py -k
     "approval_manifest_loads_required_fields or approval_manifest_rejects_invalid_approved_at or approval_manifest_rejects_unknown_approved_step or approval_manifest_rejects_site_scope_mismatch or approval_manifest_rejects_flow_scope_mismatch or approval_manifest_rejects_content_fingerprint_mismatch"`:
     6 passed, 4 deselected.
+
+### Task 198/211: Require approval manifests for sensitive real site runs
+
+- Status: complete.
+- Evidence:
+  - `src/desktop_agent/approval_manifest.py::require_approval_manifest_if_needed`
+    rejects sensitive compiled site tasks when no manifest is provided.
+  - `tests/test_approval_manifest.py::test_run_site_requires_manifest_for_sensitive_real_run`
+    runs `run-site` for a sensitive flow and verifies a clear nonzero failure.
+- Verification:
+  - `.venv/bin/pytest tests/test_approval_manifest.py -k
+    "run_site_requires_manifest_for_sensitive_real_run"`: 1 passed,
+    9 deselected.

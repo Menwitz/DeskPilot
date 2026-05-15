@@ -288,7 +288,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   workflows.
 - [x] Validate manifest site ID, flow ID, approved step IDs, approver, reason,
   ISO timestamp, and content fingerprint before execution.
-- [ ] Require approval manifests for real `run-site` execution when a compiled
+- [x] Require approval manifests for real `run-site` execution when a compiled
   site task contains sensitive or submission steps.
 - [ ] Merge approved step IDs into runtime confirmation without interactive
   prompts for site runs.
