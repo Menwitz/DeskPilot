@@ -96,3 +96,14 @@ website safety claim before the corresponding roadmap item is checked.
     disguise automation from the local user.
 - Verification:
   - Reviewed `docs/safety.md` lines 42-53.
+
+### Task 8/122: Document unconfirmed externally visible actions as unsupported
+
+- Status: complete.
+- Evidence:
+  - `docs/safety.md` states that unconfirmed posting, messaging, purchasing,
+    applying, deleting, or settings changes are not supported.
+  - The same bullet states those steps must stop until the operator confirms the
+    exact step.
+- Verification:
+  - Reviewed `docs/safety.md` lines 42-56.

@@ -47,7 +47,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] Bot-detection bypass.
   - [x] Credential abuse.
   - [x] Stealth automation.
-  - [ ] Unconfirmed posting, messaging, purchasing, applying, deleting, or
+  - [x] Unconfirmed posting, messaging, purchasing, applying, deleting, or
     settings changes.
 - [ ] Define sensitive action categories shared by all site playbooks:
   - [ ] Login.
