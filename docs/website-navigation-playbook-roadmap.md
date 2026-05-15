@@ -154,7 +154,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] `--config`.
   - [x] `--verbose`.
   - [x] `--no-screenshots`.
-  - [ ] `--max-runtime-seconds`.
+  - [x] `--max-runtime-seconds`.
   - [ ] `--confidence-threshold`.
   - [ ] `--allowed-window`.
   - [ ] `--confirm-step`.
