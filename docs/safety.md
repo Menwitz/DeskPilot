@@ -43,6 +43,8 @@ the site or account owner does not permit.
 Website playbooks must reject unsupported behaviors before they can be compiled
 or executed.
 
+- CAPTCHA solving, CAPTCHA bypass, or challenge workarounds are not supported.
+
 ## Safety Controls Planned For v1
 
 - Active-window allowlist checks before every action, with a final actuator
