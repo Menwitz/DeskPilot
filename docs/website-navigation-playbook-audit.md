@@ -1370,3 +1370,14 @@ checking layout, domain, flow, and blocked-state coverage.
     tests/test_site_playbook_safety.py`: all checks passed.
   - `.venv/bin/mypy tests/test_site_playbook_cli.py
     tests/test_site_playbook_safety.py`: no issues found.
+
+### Task 107/122: Explain unknown site failures
+
+- Status: complete.
+- Evidence:
+  - `_load_named_site()` raises `SitePlaybookValidationError` with
+    `unknown site: <site>` when the requested site is absent.
+  - CLI error handling prints the message and returns status `2`.
+- Verification:
+  - `.venv/bin/pytest tests/test_site_playbook_cli.py -k
+    "unknown_site_returns_clear_message"`: 1 passed, 10 deselected.

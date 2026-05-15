@@ -159,7 +159,7 @@ bot-detection bypass, no credential abuse, and no unconfirmed sensitive actions.
   - [x] `--allowed-window`.
   - [x] `--confirm-step`.
 - [x] Ensure CLI failures explain:
-  - [ ] Unknown site.
+  - [x] Unknown site.
   - [ ] Unknown flow.
   - [ ] Invalid playbook.
   - [ ] Missing confirmation.
