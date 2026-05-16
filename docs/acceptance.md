@@ -8,6 +8,8 @@ logged-in Windows desktop session.
 - `desktop-agent dry-run` validates YAML tasks, prints a preview of timing
   bounds and recovery paths, runs the planner with a dry-run actuator, prints
   planned step results, and does not send input.
+- Repository example YAML tasks validate, compile to `desktop_io_v1`, and pass
+  the dry-run execution pipeline with synthetic perception.
 - `desktop-agent inspect-screen` writes `inspect-screen.json` with screenshot
   metadata, OCR blocks, UIA tree/candidates when available, fused candidates,
   and candidate rankings.

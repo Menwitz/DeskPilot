@@ -1,11 +1,30 @@
 from pathlib import Path
 
+from desktop_agent.actuation import DryRunActuator
 from desktop_agent.approval_manifest import load_approval_manifest
-from desktop_agent.config import RuntimeConfig
+from desktop_agent.config import (
+    RuntimeConfig,
+    StaticConfigLoader,
+    resolve_runtime_config,
+)
 from desktop_agent.content_variables import load_content_variables
+from desktop_agent.perception import (
+    CompositePerceptionEngine,
+    ConfidenceTargetSelector,
+    DryRunPerceptionEngine,
+)
+from desktop_agent.planner import ExecutionEngine
+from desktop_agent.safety import LocalSafetyPolicy
+from desktop_agent.screen import StaticScreenObserver
 from desktop_agent.site_playbooks import SiteTaskCompiler, load_site_playbook
 from desktop_agent.task_compiler import TaskCompiler
-from desktop_agent.task_dsl import BasicTaskValidator, YamlTaskLoader
+from desktop_agent.task_dsl import (
+    BasicTaskValidator,
+    StaticTaskLoader,
+    TaskDefinition,
+    YamlTaskLoader,
+)
+from desktop_agent.tracing import MemoryTraceSink, RunReport
 
 EXAMPLE_TASKS = (
     Path("examples/adversarial-task.yaml"),
@@ -53,6 +72,25 @@ def test_example_tasks_validate() -> None:
         assert task.allowed_windows
         assert task.steps
         assert len(compiled.desktop_io_steps) == len(task.steps)
+
+
+def test_example_tasks_validate_and_dry_run() -> None:
+    loader = YamlTaskLoader()
+    validator = BasicTaskValidator()
+
+    for task_path in EXAMPLE_TASKS:
+        task = loader.load(task_path)
+        config = resolve_runtime_config(
+            RuntimeConfig(max_steps=100),
+            task_overrides=task.config_overrides,
+        )
+        validator.validate(task, config)
+
+        report = _dry_run_report(task, task_path, config)
+
+        assert report.status == "passed", task_path
+        assert report.steps, task_path
+        assert all(step.status == "passed" for step in report.steps), task_path
 
 
 def test_publish_example_manifests_match_content_fingerprints() -> None:
@@ -132,3 +170,21 @@ def test_capability_showcase_covers_full_dry_run_action_surface() -> None:
     assert any(step.recovery for step in task.steps)
     assert any(step.checkpoint is not None for step in task.steps)
     assert any(step.safe_action_variants for step in task.steps)
+
+
+def _dry_run_report(
+    task: TaskDefinition,
+    task_path: Path,
+    config: RuntimeConfig,
+) -> RunReport:
+    return ExecutionEngine(
+        config_loader=StaticConfigLoader(config),
+        task_loader=StaticTaskLoader(task),
+        task_validator=BasicTaskValidator(),
+        trace_sink=MemoryTraceSink(),
+        safety_policy=LocalSafetyPolicy(),
+        screen_observer=StaticScreenObserver(),
+        perception_engine=CompositePerceptionEngine((DryRunPerceptionEngine(),)),
+        target_selector=ConfidenceTargetSelector(),
+        actuator=DryRunActuator(),
+    ).run(task_path)

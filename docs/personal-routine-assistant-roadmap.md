@@ -254,7 +254,7 @@ abuse, and hidden automation are not supported.
       is present.
 - [x] Emergency stop can interrupt long movement, drag, typing, scroll, and wait
       actions.
-- [ ] Existing examples continue to validate and dry-run.
+- [x] Existing examples continue to validate and dry-run.
 
 ## Phase 4: Recorder Alpha
 
