@@ -456,7 +456,7 @@ abuse, and hidden automation are not supported.
 
 ### OKRs
 
-- [ ] O1: Build a usable local operator app.
+- [x] O1: Build a usable local operator app.
 - [ ] KR1: App can list, search, inspect, dry-run, and run routines.
 - [ ] KR2: App can start, pause, resume, cancel, and emergency-stop a run.
 - [ ] KR3: App can review and approve high-risk actions.
