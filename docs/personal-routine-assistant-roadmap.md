@@ -476,7 +476,7 @@ abuse, and hidden automation are not supported.
       selected target, next action, elapsed time, status, and stop controls.
 - [x] Add approval dialog with routine ID, step ID, risk class, checkpoint
       evidence, content fingerprint, and approve/deny actions.
-- [ ] Add recorder review UI with generated YAML, selected targets, screenshots,
+- [x] Add recorder review UI with generated YAML, selected targets, screenshots,
       and verification suggestions.
 - [ ] Add trace viewer timeline with video, screenshots, action log, candidate
       reasoning, state delta, and final report.

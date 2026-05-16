@@ -26,6 +26,10 @@ The Approvals page includes the approval dialog contract. It shows routine ID,
 step ID, risk class, checkpoint evidence, content fingerprint, current status,
 and explicit approve/deny actions before high-risk work can continue.
 
+The Record page includes the recorder review panel. It shows generated YAML,
+selected targets, screenshot paths, verification suggestions, and review status
+before the operator saves a routine.
+
 `deskpilot-app --describe-shell` prints this shell contract without importing
 PySide6. `deskpilot-app --check` verifies that the entry point is installed and
 reports whether PySide6 is available.

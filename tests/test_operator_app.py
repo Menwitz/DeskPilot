@@ -7,11 +7,13 @@ from desktop_agent.operator_app import main
 from desktop_agent.operator_app_shell import (
     ApprovalDialogState,
     LiveRunPanelState,
+    RecorderReviewPanelState,
     default_live_run_panel_state,
     operator_app_shell_spec,
     render_approval_dialog_text,
     render_live_run_panel_text,
     render_operator_app_shell_text,
+    render_recorder_review_text,
 )
 
 
@@ -49,6 +51,8 @@ def test_operator_app_shell_exposes_required_pages() -> None:
         "help",
     ]
     assert shell.pages[0].panel_ids == ("live_run",)
+    record_page = next(page for page in shell.pages if page.page_id == "record")
+    assert record_page.panel_ids == ("recorder_review",)
     approvals_page = next(page for page in shell.pages if page.page_id == "approvals")
     assert approvals_page.panel_ids == ("approval_dialog",)
     assert shell.metadata()["pages"]
@@ -126,3 +130,30 @@ def test_approval_dialog_state_tracks_required_review_fields() -> None:
     assert metadata["content_fingerprint"] == "sha256:abc123"
     assert metadata["actions"] == ["approve", "deny"]
     assert "Actions: approve, deny" in text
+
+
+def test_recorder_review_panel_tracks_generated_yaml_and_evidence(
+    tmp_path: Path,
+) -> None:
+    state = RecorderReviewPanelState(
+        generated_yaml="name: recorded routine",
+        selected_targets=("Search box", "Submit"),
+        screenshot_paths=(tmp_path / "before.png", tmp_path / "after.png"),
+        verification_suggestions=("visible_text: Success",),
+        status="review",
+    )
+
+    metadata = state.metadata()
+    text = render_recorder_review_text(state)
+
+    assert metadata["generated_yaml"] == "name: recorded routine"
+    assert metadata["selected_targets"] == ["Search box", "Submit"]
+    assert metadata["screenshot_paths"] == [
+        str(tmp_path / "before.png"),
+        str(tmp_path / "after.png"),
+    ]
+    assert metadata["verification_suggestions"] == ["visible_text: Success"]
+    assert metadata["status"] == "review"
+    assert "Recorder Review" in text
+    assert "Generated YAML" in text
+    assert "Search box, Submit" in text

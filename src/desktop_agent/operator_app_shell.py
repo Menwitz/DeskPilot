@@ -104,6 +104,26 @@ class ApprovalDialogState:
         }
 
 
+@dataclass(frozen=True)
+class RecorderReviewPanelState:
+    """Recorder review fields shown before saving generated YAML."""
+
+    generated_yaml: str
+    selected_targets: tuple[str, ...] = ()
+    screenshot_paths: tuple[Path, ...] = ()
+    verification_suggestions: tuple[str, ...] = ()
+    status: str = "draft"
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "generated_yaml": self.generated_yaml,
+            "selected_targets": list(self.selected_targets),
+            "screenshot_paths": [str(path) for path in self.screenshot_paths],
+            "verification_suggestions": list(self.verification_suggestions),
+            "status": self.status,
+        }
+
+
 def operator_app_shell_spec() -> OperatorAppShell:
     """Return the Phase 8 native app shell page contract."""
     pages = (
@@ -122,6 +142,7 @@ def operator_app_shell_spec() -> OperatorAppShell:
             page_id="record",
             title="Record",
             purpose="Capture a demonstrated routine and review generated YAML.",
+            panel_ids=("recorder_review",),
         ),
         OperatorAppPage(
             page_id="run_queue",
@@ -197,6 +218,26 @@ def render_approval_dialog_text(state: ApprovalDialogState) -> str:
             f"- Content fingerprint: {state.content_fingerprint}",
             f"- Status: {state.status}",
             f"- Actions: {', '.join(state.actions)}",
+        ],
+    ) + "\n"
+
+
+def render_recorder_review_text(state: RecorderReviewPanelState) -> str:
+    """Render recorder review details for diagnostics and tests."""
+    screenshots = (
+        ", ".join(str(path) for path in state.screenshot_paths)
+        if state.screenshot_paths
+        else "none"
+    )
+    return "\n".join(
+        [
+            "Recorder Review",
+            f"- Status: {state.status}",
+            f"- Generated YAML: {state.generated_yaml}",
+            f"- Selected targets: {', '.join(state.selected_targets) or 'none'}",
+            f"- Screenshots: {screenshots}",
+            "- Verification suggestions: "
+            f"{', '.join(state.verification_suggestions) or 'none'}",
         ],
     ) + "\n"
 
@@ -278,5 +319,11 @@ def _page_widget(qt_widgets: Any, page: OperatorAppPage) -> Any:
         layout.addWidget(qt_widgets.QLabel("Checkpoint evidence: pending"))
         layout.addWidget(qt_widgets.QLabel("Content fingerprint: pending"))
         layout.addWidget(qt_widgets.QLabel("Actions: approve, deny"))
+    if "recorder_review" in page.panel_ids:
+        layout.addWidget(qt_widgets.QLabel("Recorder Review"))
+        layout.addWidget(qt_widgets.QLabel("Generated YAML: pending"))
+        layout.addWidget(qt_widgets.QLabel("Selected targets: pending"))
+        layout.addWidget(qt_widgets.QLabel("Screenshots: pending"))
+        layout.addWidget(qt_widgets.QLabel("Verification suggestions: pending"))
     layout.addStretch(1)
     return widget
