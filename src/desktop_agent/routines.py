@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections import Counter
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, cast
@@ -25,6 +26,52 @@ SUPPORTED_QUARANTINE_STATUSES: frozenset[str] = frozenset(
 )
 ROUTINE_QUARANTINE_FAILURE_THRESHOLD = 3
 RoutineReferenceKind = Literal["task", "playbook"]
+ROUTINE_DOCUMENTATION_TEMPLATE = """# <Routine Name>
+
+## Routine Contract
+
+- [ ] Routine ID:
+- [ ] Pack:
+- [ ] Owner:
+- [ ] Goal:
+- [ ] Required app:
+- [ ] Required site:
+- [ ] Safety class:
+- [ ] Schedule policy:
+- [ ] Approval policy:
+
+## Inputs And Outputs
+
+- [ ] Inputs are named and bounded:
+- [ ] Outputs are observable:
+- [ ] Local files, browser pages, or native windows touched:
+
+## Execution Surface
+
+- [ ] YAML task or playbook reference:
+- [ ] Allowed windows:
+- [ ] Target selectors:
+- [ ] Recovery rules:
+- [ ] Stop conditions:
+
+## Verification And Reports
+
+- [ ] Dry-run report path:
+- [ ] Fixture test path:
+- [ ] Trace replay summary:
+- [ ] Before screenshot:
+- [ ] After screenshot:
+- [ ] Windows proof path, when applicable:
+- [ ] Approval manifest path, when applicable:
+- [ ] Redaction review:
+
+## Monitoring
+
+- [ ] Promotion gates reviewed:
+- [ ] Failed evidence count:
+- [ ] Quarantine status:
+- [ ] Follow-up owner and date:
+"""
 
 
 class RoutineDefinitionError(ValueError):
@@ -320,6 +367,195 @@ def routine_quarantine_status(routine: RoutineDefinition) -> str:
     if routine.failed_evidence_count >= ROUTINE_QUARANTINE_FAILURE_THRESHOLD:
         return "quarantined"
     return "active"
+
+
+def render_routine_documentation_template() -> str:
+    """Return the reusable checklist template for one routine review page."""
+    return ROUTINE_DOCUMENTATION_TEMPLATE
+
+
+def render_routine_catalog_index(catalog: RoutineCatalog) -> str:
+    """Render a deterministic Markdown index and quality report for a catalog."""
+    routines = tuple(sorted(catalog.routines, key=lambda routine: routine.id))
+    lines = [
+        "# DeskPilot Routine Catalog Index",
+        "",
+        "Generated from `routine_packs/` routine definitions. Regenerate this",
+        "file with `desktop-agent generate-routine-docs` after routine metadata",
+        "changes.",
+        "",
+        "## Catalog Summary",
+        "",
+        f"- Total routines: {len(routines)}",
+        f"- Packs: {_format_counter(_pack_counts(catalog, routines))}",
+        f"- Safety classes: {_format_counter(_field_counts(routines, 'safety_class'))}",
+        "- Approval policies: "
+        f"{_format_counter(_field_counts(routines, 'approval_policy'))}",
+        "- Schedule policies: "
+        f"{_format_counter(_field_counts(routines, 'schedule_policy'))}",
+        f"- Windows proof required: {_windows_proof_required_count(routines)}",
+        f"- Quarantined routines: {_quarantined_count(routines)}",
+        f"- Approval gaps: {_approval_gap_summary(routines)}",
+        "",
+        "## Routine Index",
+        "",
+        "| ID | Pack | Name | Surface | Safety | Approval | Schedule | "
+        "Gates | Status | Reference |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for routine in routines:
+        lines.append(_routine_index_row(catalog, routine))
+    lines.extend(
+        [
+            "",
+            "## Search Coverage",
+            "",
+            "The local catalog search indexes routine IDs, names, tags, required app,",
+            "required site, descriptions, goals, inputs, and outputs. Use these",
+            "query seeds when checking deep catalog search behavior:",
+            "",
+            *_search_seed_lines(catalog, routines),
+            "",
+            "## Monitoring Fields",
+            "",
+            "- Promotion gates: schema validation, dry-run, fixture test, trace",
+            "  replay review, documentation, and Windows proof when applicable.",
+            "- Report metadata: routine ID, name, tags, safety class, schedule",
+            "  policy, approval policy, expected duration, reference kind, failed",
+            "  evidence count, quarantine status, and promotion gates.",
+            "- Quarantine rule: routines are quarantined when explicitly marked or",
+            "  when failed evidence count reaches three.",
+            "",
+        ],
+    )
+    return "\n".join(lines)
+
+
+def _pack_counts(
+    catalog: RoutineCatalog,
+    routines: Iterable[RoutineDefinition],
+) -> Counter[str]:
+    return Counter(_routine_pack_name(catalog, routine) for routine in routines)
+
+
+def _field_counts(
+    routines: Iterable[RoutineDefinition],
+    field_name: str,
+) -> Counter[str]:
+    return Counter(str(getattr(routine, field_name)) for routine in routines)
+
+
+def _format_counter(counter: Counter[str]) -> str:
+    if not counter:
+        return "none"
+    return ", ".join(
+        f"{name} {count}" for name, count in sorted(counter.items())
+    )
+
+
+def _windows_proof_required_count(routines: Iterable[RoutineDefinition]) -> int:
+    return sum(
+        any(
+            gate.id == "windows_proof" and gate.required
+            for gate in routine_promotion_gates(routine)
+        )
+        for routine in routines
+    )
+
+
+def _quarantined_count(routines: Iterable[RoutineDefinition]) -> int:
+    return sum(
+        1 for routine in routines if routine_quarantine_status(routine) == "quarantined"
+    )
+
+
+def _approval_gap_summary(routines: Iterable[RoutineDefinition]) -> str:
+    gaps = sorted(
+        routine.id
+        for routine in routines
+        if routine.safety_class in {"high", "sensitive"}
+        and routine.approval_policy == "none"
+    )
+    return "none" if not gaps else ", ".join(gaps)
+
+
+def _routine_index_row(catalog: RoutineCatalog, routine: RoutineDefinition) -> str:
+    gates = ",".join(
+        gate.id for gate in routine_promotion_gates(routine) if gate.required
+    )
+    surface = ", ".join(routine.tags) or "untagged"
+    cells = (
+        routine.id,
+        _routine_pack_name(catalog, routine),
+        routine.name,
+        surface,
+        routine.safety_class,
+        routine.approval_policy,
+        routine.schedule_policy,
+        gates,
+        routine_quarantine_status(routine),
+        _routine_reference_label(routine),
+    )
+    return "| " + " | ".join(_markdown_cell(cell) for cell in cells) + " |"
+
+
+def _search_seed_lines(
+    catalog: RoutineCatalog,
+    routines: Iterable[RoutineDefinition],
+) -> list[str]:
+    seed_values: list[str] = []
+    by_pack = _pack_counts(catalog, routines)
+    for pack in sorted(by_pack):
+        seed_values.append(pack)
+    tag_counter: Counter[str] = Counter()
+    site_counter: Counter[str] = Counter()
+    app_counter: Counter[str] = Counter()
+    for routine in routines:
+        tag_counter.update(routine.tags)
+        if routine.required_site:
+            site_counter.update((routine.required_site,))
+        if routine.required_app:
+            app_counter.update((routine.required_app,))
+    for value in _top_counter_values(tag_counter):
+        seed_values.append(value)
+    for value in _top_counter_values(site_counter):
+        seed_values.append(value)
+    for value in _top_counter_values(app_counter):
+        seed_values.append(value)
+    seeds = list(dict.fromkeys(seed_values))
+    return [f"- `{seed}`" for seed in seeds] or ["- `no routines indexed`"]
+
+
+def _top_counter_values(counter: Counter[str], *, limit: int = 12) -> tuple[str, ...]:
+    return tuple(
+        value
+        for value, _count in sorted(
+            counter.items(),
+            key=lambda item: (-item[1], item[0]),
+        )[:limit]
+    )
+
+
+def _routine_pack_name(catalog: RoutineCatalog, routine: RoutineDefinition) -> str:
+    if routine.source_path is not None:
+        try:
+            parts = routine.source_path.relative_to(catalog.root).parts
+        except ValueError:
+            parts = ()
+        if parts:
+            return parts[0]
+    return routine.id.split(".", maxsplit=1)[0]
+
+
+def _routine_reference_label(routine: RoutineDefinition) -> str:
+    reference = routine.reference
+    if reference.kind == "task":
+        return f"task:{reference.task_path}" if reference.task_path else "task:"
+    return f"playbook:{reference.playbook_site}/{reference.playbook_flow}"
+
+
+def _markdown_cell(value: str) -> str:
+    return value.replace("|", "\\|").replace("\n", " ")
 
 
 def _reference_from_value(value: object, base_dir: Path) -> RoutineReference:

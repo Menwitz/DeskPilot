@@ -81,6 +81,8 @@ from desktop_agent.routines import (
     RoutineDefinition,
     RoutineDefinitionError,
     load_routine_catalog,
+    render_routine_catalog_index,
+    render_routine_documentation_template,
     routine_promotion_gates,
     routine_quarantine_status,
 )
@@ -144,6 +146,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _compile_routine(args)
         if args.command == "export-routine":
             return _export_routine(args)
+        if args.command == "generate-routine-docs":
+            return _generate_routine_docs(args)
         if args.command == "run-routine":
             return _run_routine(args, dry_run=False)
         if args.command == "dry-run-routine":
@@ -261,6 +265,22 @@ def _build_parser() -> argparse.ArgumentParser:
     export_routine_parser.add_argument("routine_id")
     export_routine_parser.add_argument("--output", required=True, type=Path)
     _add_routine_catalog_options(export_routine_parser)
+
+    generate_routine_docs_parser = subparsers.add_parser(
+        "generate-routine-docs",
+        help="write routine catalog index and routine documentation template",
+    )
+    generate_routine_docs_parser.add_argument(
+        "--index-output",
+        default=Path("docs/routine-catalog-index.md"),
+        type=Path,
+    )
+    generate_routine_docs_parser.add_argument(
+        "--template-output",
+        default=Path("docs/routine-documentation-template.md"),
+        type=Path,
+    )
+    _add_routine_catalog_options(generate_routine_docs_parser)
 
     run_routine_parser = subparsers.add_parser(
         "run-routine",
@@ -784,6 +804,23 @@ def _export_routine(args: argparse.Namespace) -> int:
     )
     print(f"exported routine: {routine.id}")
     print(f"routine: {args.output}")
+    return 0
+
+
+def _generate_routine_docs(args: argparse.Namespace) -> int:
+    catalog = load_routine_catalog(args.routine_pack_root)
+    args.index_output.parent.mkdir(parents=True, exist_ok=True)
+    args.template_output.parent.mkdir(parents=True, exist_ok=True)
+    args.index_output.write_text(
+        render_routine_catalog_index(catalog),
+        encoding="utf-8",
+    )
+    args.template_output.write_text(
+        render_routine_documentation_template(),
+        encoding="utf-8",
+    )
+    print(f"routine catalog index: {args.index_output}")
+    print(f"routine documentation template: {args.template_output}")
     return 0
 
 

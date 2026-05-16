@@ -98,6 +98,7 @@ desktop-agent list-routines --query "browser search"
 desktop-agent show-routine browser.search
 desktop-agent compile-routine browser.search --output traces/browser-search.yaml
 desktop-agent export-routine browser.search --output traces/browser-search.routine.yaml
+desktop-agent generate-routine-docs
 desktop-agent dry-run-routine browser.search --no-screenshots
 desktop-agent run-routine browser.search
 ```
@@ -105,6 +106,12 @@ desktop-agent run-routine browser.search
 `compile-routine`, `dry-run-routine`, and `run-routine` attach
 `RoutineDefinition.report_metadata()` to the resulting task so traces and
 reports preserve the routine ID, safety class, policies, and reference kind.
+
+`generate-routine-docs` writes `docs/routine-catalog-index.md` and
+`docs/routine-documentation-template.md` by default. The generated catalog index
+summarizes routine counts, approval gaps, Windows proof requirements,
+quarantine status, promotion gates, report metadata, and search seed coverage.
+The template is the checklist copied when a routine needs its own review page.
 
 ## Promotion Gates
 

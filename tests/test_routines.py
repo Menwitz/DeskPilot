@@ -10,6 +10,8 @@ from desktop_agent.routines import (
     RoutineDefinitionError,
     load_routine_catalog,
     load_routine_definition,
+    render_routine_catalog_index,
+    render_routine_documentation_template,
     routine_definition_from_mapping,
     routine_promotion_gates,
     routine_quarantine_status,
@@ -378,6 +380,57 @@ def test_routine_cli_lists_shows_compiles_exports_and_dry_runs(
         == 0
     )
     assert "task: Browser search" in capsys.readouterr().out
+
+
+def test_routine_docs_generation_renders_index_and_template(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    root = tmp_path / "routine_packs"
+    routine_path = root / "browser" / "search.routine.yaml"
+    index_path = tmp_path / "docs" / "routine-catalog-index.md"
+    template_path = tmp_path / "docs" / "routine-documentation-template.md"
+    _write_routine(
+        routine_path,
+        routine_id="browser.search",
+        name="Browser search",
+        description="Search from a browser input.",
+        goal="Reach browser search results.",
+        tags=("browser", "search"),
+        required_app="Microsoft Edge",
+        required_site="example.com",
+        task_path="tasks/browser-search.yaml",
+    )
+    catalog = load_routine_catalog(root)
+
+    index = render_routine_catalog_index(catalog)
+    template = render_routine_documentation_template()
+
+    assert "# DeskPilot Routine Catalog Index" in index
+    assert "- Total routines: 1" in index
+    assert "| browser.search | browser | Browser search |" in index
+    assert "Promotion gates" in index
+    assert "# <Routine Name>" in template
+    assert "- [ ] Dry-run report path:" in template
+
+    assert (
+        main(
+            [
+                "generate-routine-docs",
+                "--routine-pack-root",
+                str(root),
+                "--index-output",
+                str(index_path),
+                "--template-output",
+                str(template_path),
+            ],
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "routine catalog index:" in output
+    assert index_path.read_text(encoding="utf-8") == index
+    assert template_path.read_text(encoding="utf-8") == template
 
 
 def _write_task(path: Path) -> None:
