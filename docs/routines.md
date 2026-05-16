@@ -93,3 +93,16 @@ desktop-agent run-routine browser.search
 `compile-routine`, `dry-run-routine`, and `run-routine` attach
 `RoutineDefinition.report_metadata()` to the resulting task so traces and
 reports preserve the routine ID, safety class, policies, and reference kind.
+
+## Promotion Gates
+
+Every routine exposes promotion gates through `routine_promotion_gates()` and in
+`RoutineDefinition.report_metadata()`:
+
+- `schema_validation`: the routine definition validates.
+- `dry_run`: the compiled routine passes dry-run without desktop input.
+- `fixture_test`: the routine has browser, native, or synthetic fixture coverage.
+- `trace_replay_review`: a replay summary is reviewed.
+- `documentation`: inputs, outputs, risk, and proof expectations are documented.
+- `windows_proof`: an owned Windows proof is required when the routine needs a
+  native app or has `high`/`sensitive` safety class.

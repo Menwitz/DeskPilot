@@ -11,6 +11,7 @@ from desktop_agent.routines import (
     load_routine_catalog,
     load_routine_definition,
     routine_definition_from_mapping,
+    routine_promotion_gates,
 )
 from desktop_agent.task_dsl import BasicTaskValidator, YamlTaskLoader
 
@@ -179,6 +180,46 @@ def test_routine_catalog_loads_definitions_and_searches_metadata(
     assert notepad_results[0].routine.id == "native.notepad-draft"
 
 
+def test_routine_promotion_gates_include_required_review_steps() -> None:
+    routine = routine_definition_from_mapping(
+        {
+            "id": "native.notepad-draft",
+            "name": "Notepad draft",
+            "description": "Draft text in a native app.",
+            "goal": "Prepare local text.",
+            "required_app": "Notepad",
+            "tags": ["native"],
+            "inputs": ["draft text"],
+            "outputs": ["saved draft"],
+            "safety_class": "low",
+            "schedule_policy": "manual",
+            "approval_policy": "none",
+            "expected_duration_seconds": 30,
+            "reference": {
+                "type": "task",
+                "path": "tasks/notepad.yaml",
+            },
+        },
+    )
+
+    gates = {gate.id: gate for gate in routine_promotion_gates(routine)}
+    metadata = routine.report_metadata()
+
+    assert set(gates) == {
+        "schema_validation",
+        "dry_run",
+        "fixture_test",
+        "trace_replay_review",
+        "documentation",
+        "windows_proof",
+    }
+    assert gates["windows_proof"].required is True
+    gate_metadata = metadata["routine_promotion_gates"]
+    assert isinstance(gate_metadata, list)
+    assert isinstance(gate_metadata[-1], dict)
+    assert gate_metadata[-1]["id"] == "windows_proof"
+
+
 def test_routine_catalog_rejects_duplicate_ids(tmp_path: Path) -> None:
     _write_routine(
         tmp_path / "browser" / "search.routine.yaml",
@@ -255,6 +296,8 @@ def test_routine_cli_lists_shows_compiles_exports_and_dry_runs(
     show_output = capsys.readouterr().out
     assert "safety_class: low" in show_output
     assert "reference: task:" in show_output
+    assert "promotion_gates:" in show_output
+    assert "windows_proof: required" in show_output
 
     assert (
         main(

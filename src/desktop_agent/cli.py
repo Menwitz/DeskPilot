@@ -81,6 +81,7 @@ from desktop_agent.routines import (
     RoutineDefinition,
     RoutineDefinitionError,
     load_routine_catalog,
+    routine_promotion_gates,
 )
 from desktop_agent.safety import (
     LocalSafetyPolicy,
@@ -749,6 +750,10 @@ def _show_routine(args: argparse.Namespace) -> int:
     print(f"approval_policy: {routine.approval_policy}")
     print(f"expected_duration_seconds: {routine.expected_duration_seconds:g}")
     print(f"reference: {_routine_reference_summary(routine)}")
+    print("promotion_gates:")
+    for gate in routine_promotion_gates(routine):
+        requirement = "required" if gate.required else "not_required"
+        print(f"  - {gate.id}: {requirement}")
     return 0
 
 

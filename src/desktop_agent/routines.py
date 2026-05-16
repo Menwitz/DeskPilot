@@ -68,6 +68,9 @@ class RoutineDefinition:
             "routine_approval_policy": self.approval_policy,
             "routine_expected_duration_seconds": self.expected_duration_seconds,
             "routine_reference_kind": self.reference.kind,
+            "routine_promotion_gates": [
+                gate.metadata() for gate in routine_promotion_gates(self)
+            ],
         }
 
 
@@ -78,6 +81,22 @@ class RoutineSearchResult:
     routine: RoutineDefinition
     score: int
     matched_fields: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RoutinePromotionGate:
+    """Promotion requirement used before a routine enters the main catalog."""
+
+    id: str
+    description: str
+    required: bool = True
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "description": self.description,
+            "required": self.required,
+        }
 
 
 @dataclass(frozen=True)
@@ -233,6 +252,42 @@ def search_routine_catalog(
     )
 
 
+def routine_promotion_gates(
+    routine: RoutineDefinition,
+) -> tuple[RoutinePromotionGate, ...]:
+    """Return the required promotion gates for a routine definition."""
+    gates = [
+        RoutinePromotionGate(
+            id="schema_validation",
+            description="RoutineDefinition schema validates.",
+        ),
+        RoutinePromotionGate(
+            id="dry_run",
+            description="Compiled routine passes dry-run without desktop input.",
+        ),
+        RoutinePromotionGate(
+            id="fixture_test",
+            description="Routine has a browser, native, or synthetic fixture test.",
+        ),
+        RoutinePromotionGate(
+            id="trace_replay_review",
+            description="Trace replay summary is reviewed for expected behavior.",
+        ),
+        RoutinePromotionGate(
+            id="documentation",
+            description="Routine docs describe inputs, outputs, risk, and proof.",
+        ),
+    ]
+    gates.append(
+        RoutinePromotionGate(
+            id="windows_proof",
+            description="Owned Windows desktop proof is collected when applicable.",
+            required=_windows_proof_applicable(routine),
+        ),
+    )
+    return tuple(gates)
+
+
 def _reference_from_value(value: object, base_dir: Path) -> RoutineReference:
     data = _mapping(value, "reference must be a mapping")
     kind_value = _required_string(data, "type")
@@ -269,6 +324,10 @@ def _routine_search_fields(
 
 def _query_tokens(value: str) -> set[str]:
     return set(re.findall(r"[a-z0-9]+", value.lower()))
+
+
+def _windows_proof_applicable(routine: RoutineDefinition) -> bool:
+    return bool(routine.required_app) or routine.safety_class in {"high", "sensitive"}
 
 
 def _reference_errors(reference: RoutineReference) -> list[str]:

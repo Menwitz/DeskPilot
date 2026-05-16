@@ -331,7 +331,7 @@ abuse, and hidden automation are not supported.
 - [x] Add catalog loader, validator, and search index.
 - [x] Add commands: `list-routines`, `show-routine`, `compile-routine`,
       `dry-run-routine`, `run-routine`, and `export-routine`.
-- [ ] Add routine promotion gates: schema validation, dry-run, fixture test,
+- [x] Add routine promotion gates: schema validation, dry-run, fixture test,
       Windows proof when applicable, trace replay review, and documentation.
 - [ ] Add routine quarantine status for routines with repeated failed evidence.
 - [ ] Add browser routines for navigation, forms, search, reading, content
