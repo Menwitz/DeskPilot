@@ -503,7 +503,7 @@ abuse, and hidden automation are not supported.
 ### OKRs
 
 - [x] O1: Add robust recovery planning.
-- [ ] KR1: Recover from loading delays, stale observations, duplicated labels,
+- [x] KR1: Recover from loading delays, stale observations, duplicated labels,
       disabled controls, occlusion, focus loss, and minor layout changes.
 - [ ] KR2: Recovery choices stay inside retry, timeout, approval, and
       allowed-window bounds.
