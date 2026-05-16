@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol, cast
 
@@ -94,6 +95,39 @@ class OperatorRunStartResult:
 
 
 @dataclass(frozen=True)
+class OperatorApprovalDecision:
+    """Evidence-backed approve or deny decision made in the operator app."""
+
+    routine_id: str
+    step_id: str
+    action: str
+    risk_class: str
+    checkpoint_evidence: str
+    content_fingerprint: str
+    approver: str
+    reason: str
+    decided_at: str
+
+    @property
+    def approved(self) -> bool:
+        return self.action == "approve"
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "routine_id": self.routine_id,
+            "step_id": self.step_id,
+            "action": self.action,
+            "approved": self.approved,
+            "risk_class": self.risk_class,
+            "checkpoint_evidence": self.checkpoint_evidence,
+            "content_fingerprint": self.content_fingerprint,
+            "approver": self.approver,
+            "reason": self.reason,
+            "decided_at": self.decided_at,
+        }
+
+
+@dataclass(frozen=True)
 class RoutinePackListItem:
     """Small routine-pack row for app install and removal views."""
 
@@ -160,6 +194,26 @@ class ApprovalService(Protocol):
 
     def routines_requiring_approval(self) -> tuple[RoutineListItem, ...]:
         """Return routines that need operator approval before mutation."""
+        ...
+
+    def resolve_step_approval(
+        self,
+        *,
+        routine_id: str,
+        step_id: str,
+        action: str,
+        risk_class: str,
+        checkpoint_evidence: str,
+        content_fingerprint: str,
+        approver: str,
+        reason: str,
+        decided_at: str | None = None,
+    ) -> OperatorApprovalDecision:
+        """Record an evidence-backed operator decision for a sensitive step."""
+        ...
+
+    def approval_decisions(self) -> tuple[OperatorApprovalDecision, ...]:
+        """Return recorded app approval decisions for monitoring views."""
         ...
 
 
@@ -363,6 +417,7 @@ class LocalApprovalService:
 
     def __init__(self, catalog_service: LocalCatalogService) -> None:
         self._catalog_service = catalog_service
+        self._decisions: list[OperatorApprovalDecision] = []
 
     def routines_requiring_approval(self) -> tuple[RoutineListItem, ...]:
         catalog = self._catalog_service._load_catalog()
@@ -373,6 +428,46 @@ class LocalApprovalService:
             and routine_quarantine_status(routine) == "active"
         ]
         return tuple(_routine_list_item(routine) for routine in routines)
+
+    def resolve_step_approval(
+        self,
+        *,
+        routine_id: str,
+        step_id: str,
+        action: str,
+        risk_class: str,
+        checkpoint_evidence: str,
+        content_fingerprint: str,
+        approver: str,
+        reason: str,
+        decided_at: str | None = None,
+    ) -> OperatorApprovalDecision:
+        if action not in {"approve", "deny"}:
+            raise OperatorServiceError(f"unsupported approval action: {action}")
+        if self._catalog_service._load_catalog().by_id(routine_id) is None:
+            raise OperatorServiceError(f"unknown routine: {routine_id}")
+        if not checkpoint_evidence.strip():
+            raise OperatorServiceError("checkpoint evidence is required")
+        if not content_fingerprint.strip():
+            raise OperatorServiceError("content fingerprint is required")
+        if not approver.strip():
+            raise OperatorServiceError("approver is required")
+        decision = OperatorApprovalDecision(
+            routine_id=routine_id,
+            step_id=step_id,
+            action=action,
+            risk_class=risk_class,
+            checkpoint_evidence=checkpoint_evidence,
+            content_fingerprint=content_fingerprint,
+            approver=approver,
+            reason=reason,
+            decided_at=decided_at or datetime.now(UTC).isoformat(),
+        )
+        self._decisions.append(decision)
+        return decision
+
+    def approval_decisions(self) -> tuple[OperatorApprovalDecision, ...]:
+        return tuple(self._decisions)
 
 
 class LocalTraceService:

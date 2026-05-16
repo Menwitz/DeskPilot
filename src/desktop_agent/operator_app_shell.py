@@ -95,6 +95,9 @@ class ApprovalDialogState:
     checkpoint_evidence: str
     content_fingerprint: str
     status: str = "pending"
+    approver: str | None = None
+    reason: str | None = None
+    decided_at: str | None = None
     actions: tuple[str, ...] = ("approve", "deny")
 
     def metadata(self) -> dict[str, object]:
@@ -105,6 +108,9 @@ class ApprovalDialogState:
             "checkpoint_evidence": self.checkpoint_evidence,
             "content_fingerprint": self.content_fingerprint,
             "status": self.status,
+            "approver": self.approver,
+            "reason": self.reason,
+            "decided_at": self.decided_at,
             "actions": list(self.actions),
         }
 
@@ -358,6 +364,9 @@ def render_approval_dialog_text(state: ApprovalDialogState) -> str:
             f"- Checkpoint evidence: {state.checkpoint_evidence}",
             f"- Content fingerprint: {state.content_fingerprint}",
             f"- Status: {state.status}",
+            f"- Approver: {state.approver or 'none'}",
+            f"- Reason: {state.reason or 'none'}",
+            f"- Decided at: {state.decided_at or 'none'}",
             f"- Actions: {', '.join(state.actions)}",
         ],
     ) + "\n"

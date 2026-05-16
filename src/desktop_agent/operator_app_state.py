@@ -12,7 +12,7 @@ from desktop_agent.operator_app_shell import (
     TraceViewerTimelineState,
     operator_app_shell_spec,
 )
-from desktop_agent.operator_services import RunnerService
+from desktop_agent.operator_services import ApprovalService, RunnerService
 
 
 class OperatorAppStateError(ValueError):
@@ -57,10 +57,12 @@ class OperatorAppController:
         self,
         runner: RunnerService,
         *,
+        approvals: ApprovalService | None = None,
         shell: OperatorAppShell | None = None,
         state: OperatorAppState | None = None,
     ) -> None:
         self._runner = runner
+        self._approvals = approvals
         active_shell = shell or operator_app_shell_spec()
         self.state = state or OperatorAppState(
             shell=active_shell,
@@ -136,16 +138,38 @@ class OperatorAppController:
         )
         return self.state
 
-    def resolve_approval(self, action: str) -> OperatorAppState:
+    def resolve_approval(
+        self,
+        action: str,
+        *,
+        approver: str = "local-operator",
+        reason: str = "operator app decision",
+    ) -> OperatorAppState:
         if self.state.approval_dialog is None:
             raise OperatorAppStateError("approval dialog is not active")
         if action not in self.state.approval_dialog.actions:
             raise OperatorAppStateError(f"unsupported approval action: {action}")
+        decision = None
+        if self._approvals is not None:
+            dialog = self.state.approval_dialog
+            decision = self._approvals.resolve_step_approval(
+                routine_id=dialog.routine_id,
+                step_id=dialog.step_id,
+                action=action,
+                risk_class=dialog.risk_class,
+                checkpoint_evidence=dialog.checkpoint_evidence,
+                content_fingerprint=dialog.content_fingerprint,
+                approver=approver,
+                reason=reason,
+            )
         self.state = replace(
             self.state,
             approval_dialog=replace(
                 self.state.approval_dialog,
                 status=action,
+                approver=None if decision is None else decision.approver,
+                reason=None if decision is None else decision.reason,
+                decided_at=None if decision is None else decision.decided_at,
             ),
         )
         return self.state

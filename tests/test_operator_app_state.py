@@ -11,7 +11,11 @@ from desktop_agent.operator_app_state import (
     OperatorAppController,
     OperatorAppStateError,
 )
-from desktop_agent.operator_services import OperatorRunStartResult
+from desktop_agent.operator_services import (
+    OperatorApprovalDecision,
+    OperatorRunStartResult,
+    RoutineListItem,
+)
 from desktop_agent.routines import RoutineExecutionGate
 
 
@@ -75,7 +79,8 @@ def test_operator_app_controller_selects_pages_and_rejects_unknown_page() -> Non
 
 
 def test_operator_app_controller_resolves_approval_dialog() -> None:
-    controller = OperatorAppController(_FakeRunnerService({}))
+    approvals = _FakeApprovalService()
+    controller = OperatorAppController(_FakeRunnerService({}), approvals=approvals)
     dialog = ApprovalDialogState(
         routine_id="social.publish",
         step_id="submit-post",
@@ -85,13 +90,21 @@ def test_operator_app_controller_resolves_approval_dialog() -> None:
     )
 
     pending = controller.request_approval(dialog)
-    approved = controller.resolve_approval("approve")
+    approved = controller.resolve_approval(
+        "approve",
+        approver="qa@example.test",
+        reason="Checkpoint matches approved draft.",
+    )
 
     assert pending.current_page_id == "approvals"
     assert pending.approval_dialog is not None
     assert pending.approval_dialog.status == "pending"
     assert approved.approval_dialog is not None
     assert approved.approval_dialog.status == "approve"
+    assert approved.approval_dialog.approver == "qa@example.test"
+    assert approved.approval_dialog.reason == "Checkpoint matches approved draft."
+    assert approved.approval_dialog.decided_at == "2026-05-16T00:00:00+00:00"
+    assert approvals.decisions[0].approved is True
     with pytest.raises(OperatorAppStateError, match="unsupported approval action"):
         controller.resolve_approval("maybe")
 
@@ -166,3 +179,41 @@ class _FakeRunnerService:
             next_action="observe_screen",
             execution_gate=gate,
         )
+
+
+class _FakeApprovalService:
+    def __init__(self) -> None:
+        self.decisions: list[OperatorApprovalDecision] = []
+
+    def routines_requiring_approval(self) -> tuple[RoutineListItem, ...]:
+        return ()
+
+    def resolve_step_approval(
+        self,
+        *,
+        routine_id: str,
+        step_id: str,
+        action: str,
+        risk_class: str,
+        checkpoint_evidence: str,
+        content_fingerprint: str,
+        approver: str,
+        reason: str,
+        decided_at: str | None = None,
+    ) -> OperatorApprovalDecision:
+        decision = OperatorApprovalDecision(
+            routine_id=routine_id,
+            step_id=step_id,
+            action=action,
+            risk_class=risk_class,
+            checkpoint_evidence=checkpoint_evidence,
+            content_fingerprint=content_fingerprint,
+            approver=approver,
+            reason=reason,
+            decided_at=decided_at or "2026-05-16T00:00:00+00:00",
+        )
+        self.decisions.append(decision)
+        return decision
+
+    def approval_decisions(self) -> tuple[OperatorApprovalDecision, ...]:
+        return tuple(self.decisions)

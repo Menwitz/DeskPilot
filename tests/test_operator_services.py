@@ -38,6 +38,28 @@ def test_local_operator_services_expose_catalog_runner_approvals_and_queue(
     all_routines = services.catalog.list_routines()
     search_results = services.catalog.list_routines("search")
     approval_rows = services.approvals.routines_requiring_approval()
+    approval = services.approvals.resolve_step_approval(
+        routine_id="social.publish",
+        step_id="submit-post",
+        action="approve",
+        risk_class="high",
+        checkpoint_evidence="checkpoint screenshot present",
+        content_fingerprint="sha256:abc123",
+        approver="qa@example.test",
+        reason="Reviewed approved draft.",
+        decided_at="2026-05-16T00:00:00+00:00",
+    )
+    denial = services.approvals.resolve_step_approval(
+        routine_id="social.publish",
+        step_id="submit-post",
+        action="deny",
+        risk_class="high",
+        checkpoint_evidence="checkpoint screenshot changed",
+        content_fingerprint="sha256:def456",
+        approver="qa@example.test",
+        reason="Draft changed.",
+        decided_at="2026-05-16T00:01:00+00:00",
+    )
     gate = services.runner.execution_gate("browser.search")
     unknown_gate = services.runner.execution_gate("browser.unknown")
     run = services.runner.start_routine("browser.search")
@@ -51,6 +73,16 @@ def test_local_operator_services_expose_catalog_runner_approvals_and_queue(
     ]
     assert search_results[0].routine_id == "browser.search"
     assert [item.routine_id for item in approval_rows] == ["social.publish"]
+    assert approval.approved is True
+    assert approval.metadata()["content_fingerprint"] == "sha256:abc123"
+    assert denial.approved is False
+    decision_actions = [
+        decision.action for decision in services.approvals.approval_decisions()
+    ]
+    assert decision_actions == [
+        "approve",
+        "deny",
+    ]
     assert gate.allowed is True
     assert gate.reason == "validated_catalog_routine"
     assert unknown_gate.allowed is False
@@ -64,6 +96,53 @@ def test_local_operator_services_expose_catalog_runner_approvals_and_queue(
     assert queue_entries[0]["status"] == "running"
     assert "generate_yaml" in services.recorder.capabilities()
     assert services.routine_packs.list_packs() == ()
+
+
+def test_approval_service_rejects_invalid_app_decisions(tmp_path: Path) -> None:
+    root = tmp_path / "routine_packs"
+    _write_routine(
+        root / "social" / "publish.routine.yaml",
+        routine_id="social.publish",
+        approval_policy="manifest_required",
+    )
+    services = default_local_operator_services(
+        routine_pack_root=root,
+        trace_root=tmp_path / "traces",
+    )
+
+    with pytest.raises(OperatorServiceError, match="unsupported approval action"):
+        services.approvals.resolve_step_approval(
+            routine_id="social.publish",
+            step_id="submit-post",
+            action="maybe",
+            risk_class="high",
+            checkpoint_evidence="checkpoint screenshot present",
+            content_fingerprint="sha256:abc123",
+            approver="qa@example.test",
+            reason="Reviewed approved draft.",
+        )
+    with pytest.raises(OperatorServiceError, match="checkpoint evidence is required"):
+        services.approvals.resolve_step_approval(
+            routine_id="social.publish",
+            step_id="submit-post",
+            action="approve",
+            risk_class="high",
+            checkpoint_evidence="",
+            content_fingerprint="sha256:abc123",
+            approver="qa@example.test",
+            reason="Reviewed approved draft.",
+        )
+    with pytest.raises(OperatorServiceError, match="unknown routine"):
+        services.approvals.resolve_step_approval(
+            routine_id="social.missing",
+            step_id="submit-post",
+            action="approve",
+            risk_class="high",
+            checkpoint_evidence="checkpoint screenshot present",
+            content_fingerprint="sha256:abc123",
+            approver="qa@example.test",
+            reason="Reviewed approved draft.",
+        )
 
 
 def test_operator_app_service_interface_groups_local_boundaries(

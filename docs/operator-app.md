@@ -26,7 +26,8 @@ cancel, and emergency stop.
 
 The Approvals page includes the approval dialog contract. It shows routine ID,
 step ID, risk class, checkpoint evidence, content fingerprint, current status,
-and explicit approve/deny actions before high-risk work can continue.
+approver, decision reason, decision timestamp, and explicit approve/deny
+actions before high-risk work can continue.
 
 The Record page includes the recorder review panel. It shows generated YAML,
 selected targets, screenshot paths, verification suggestions, and review status
@@ -79,7 +80,9 @@ project modules:
   run panel.
 - Scheduler service: expose shared run queue metadata so app-started runs are
   visible in monitoring without using CLI commands.
-- Approval service: list active routines requiring operator approval.
+- Approval service: list active routines requiring operator approval and record
+  evidence-backed approve or deny decisions with checkpoint evidence, content
+  fingerprint, approver, reason, and decision timestamp.
 - Trace service: list local trace directories and read JSON reports.
 - Routine-pack service: list installed packs, install validated local packs,
   and remove installed packs.

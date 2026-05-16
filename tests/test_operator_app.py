@@ -143,6 +143,9 @@ def test_approval_dialog_state_tracks_required_review_fields() -> None:
         risk_class="high",
         checkpoint_evidence="checkpoint screenshot present",
         content_fingerprint="sha256:abc123",
+        approver="operator@example.test",
+        reason="Reviewed checkpoint.",
+        decided_at="2026-05-16T00:00:00+00:00",
     )
 
     metadata = state.metadata()
@@ -153,7 +156,11 @@ def test_approval_dialog_state_tracks_required_review_fields() -> None:
     assert metadata["risk_class"] == "high"
     assert metadata["checkpoint_evidence"] == "checkpoint screenshot present"
     assert metadata["content_fingerprint"] == "sha256:abc123"
+    assert metadata["approver"] == "operator@example.test"
+    assert metadata["reason"] == "Reviewed checkpoint."
+    assert metadata["decided_at"] == "2026-05-16T00:00:00+00:00"
     assert metadata["actions"] == ["approve", "deny"]
+    assert "Approver: operator@example.test" in text
     assert "Actions: approve, deny" in text
 
 
