@@ -3,6 +3,7 @@ from pathlib import Path
 
 from pytest import CaptureFixture
 
+from desktop_agent.action_safety import action_safety_profile
 from desktop_agent.cli import main
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.routines import load_routine_catalog
@@ -134,6 +135,56 @@ def test_builtin_routines_have_cli_dry_run_coverage(
     }
     assert len(reports) == len(catalog.routines)
     assert reported_routine_ids == {routine.id for routine in catalog.routines}
+
+
+def test_high_risk_builtin_routines_require_approval_and_checkpoints(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    pack_root = Path("routine_packs")
+    catalog = load_routine_catalog(pack_root)
+    high_risk_routines = [
+        routine
+        for routine in catalog.routines
+        if routine.safety_class in {"high", "sensitive"}
+    ]
+
+    assert high_risk_routines
+    for routine in high_risk_routines:
+        output_path = tmp_path / f"{routine.id.replace('.', '_')}.compiled.yaml"
+        assert routine.approval_policy in {
+            "confirm",
+            "manifest_required",
+            "manual_handoff",
+        }
+        assert (
+            main(
+                [
+                    "compile-routine",
+                    routine.id,
+                    "--routine-pack-root",
+                    str(pack_root),
+                    "--output",
+                    str(output_path),
+                ],
+            )
+            == 0
+        )
+        capsys.readouterr()
+
+        task = YamlTaskLoader().load(output_path)
+        approval_steps = [
+            step
+            for step in task.steps
+            if action_safety_profile(
+                step,
+                allowed_windows=task.allowed_windows,
+            ).approval_required
+        ]
+        assert approval_steps
+        for step in approval_steps:
+            assert step.requires_confirmation is True
+            assert step.checkpoint is not None
 
 
 def test_browser_routine_pack_contains_seed_categories() -> None:
