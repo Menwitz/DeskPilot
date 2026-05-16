@@ -666,7 +666,7 @@ abuse, and hidden automation are not supported.
 
 - [x] `RoutineDefinition`: user-facing routine metadata and task/playbook
       reference.
-- [ ] `DesktopIoAction`: compiled low-level observe, input, verify, and handoff
+- [x] `DesktopIoAction`: compiled low-level observe, input, verify, and handoff
       action model.
 - [ ] `TraceSchemaV2`: versioned evidence model for video, before/after
       observations, target reasoning, input events, verification, state deltas,

@@ -33,7 +33,11 @@ def test_desktop_io_plan_uses_first_class_action_schema() -> None:
         "window_scope": [],
         "allowed_region": None,
     }
-    action_metadata = plan.actions[1].to_metadata()
+    action = plan.actions[1]
+    action_metadata = action.to_metadata()
+    assert isinstance(action, DesktopIoAction)
+    assert action.step_id == "type-query"
+    assert action.source_action == "type_text"
     assert action_metadata == {
         "id": "type-query:2:type",
         "step_id": "type-query",
