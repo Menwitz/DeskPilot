@@ -139,6 +139,10 @@ DESKTOP_IO_OPERATIONS_BY_ACTION: dict[str, tuple[str, ...]] = {
 }
 
 
+class DesktopIoValidationError(ValueError):
+    """Raised when a compiled desktop I/O action schema is invalid."""
+
+
 @dataclass(frozen=True)
 class DesktopIoAction:
     """One low-level desktop I/O operation derived from a semantic step."""
@@ -207,11 +211,13 @@ def compile_desktop_io_plan(
         )
         for index, operation in enumerate(operations, start=1)
     )
-    return DesktopIoPlan(
+    plan = DesktopIoPlan(
         step_id=step.id,
         source_action=step.action,
         actions=actions,
     )
+    validate_desktop_io_plan(plan)
+    return plan
 
 
 def desktop_io_operations_for_action(action: str) -> tuple[str, ...]:
@@ -227,3 +233,56 @@ def desktop_io_kind_spec(kind: str) -> DesktopIoKindSpec | None:
     """Return the contract for a supported low-level operation kind."""
 
     return DESKTOP_IO_KIND_SPECS.get(kind)
+
+
+def validate_desktop_io_plan(plan: DesktopIoPlan) -> None:
+    """Validate action identity, ordering, support, and safety metadata."""
+
+    errors: list[str] = []
+    if not plan.step_id.strip():
+        errors.append("desktop I/O plan step_id must not be empty")
+    if not plan.source_action.strip():
+        errors.append("desktop I/O plan source_action must not be empty")
+    if not plan.actions:
+        errors.append("desktop I/O plan must contain at least one action")
+    expected_order = tuple(range(1, len(plan.actions) + 1))
+    actual_order = tuple(action.order for action in plan.actions)
+    if actual_order != expected_order:
+        errors.append("desktop I/O action order must be contiguous from 1")
+    for action in plan.actions:
+        errors.extend(_desktop_io_action_errors(action, plan))
+    if errors:
+        raise DesktopIoValidationError("; ".join(errors))
+
+
+def validate_desktop_io_action(action: DesktopIoAction) -> None:
+    """Validate one standalone desktop I/O action."""
+
+    errors = _desktop_io_action_errors(action)
+    if errors:
+        raise DesktopIoValidationError("; ".join(errors))
+
+
+def _desktop_io_action_errors(
+    action: DesktopIoAction,
+    plan: DesktopIoPlan | None = None,
+) -> list[str]:
+    errors: list[str] = []
+    if not action.id.strip():
+        errors.append("desktop I/O action id must not be empty")
+    if not action.step_id.strip():
+        errors.append("desktop I/O action step_id must not be empty")
+    if not action.source_action.strip():
+        errors.append("desktop I/O action source_action must not be empty")
+    if action.order <= 0:
+        errors.append("desktop I/O action order must be greater than zero")
+    if desktop_io_kind_spec(action.kind) is None:
+        errors.append(f"unsupported desktop I/O action kind: {action.kind}")
+    if "safety" not in action.metadata:
+        errors.append(f"desktop I/O action {action.id} missing safety metadata")
+    if plan is not None:
+        if action.step_id != plan.step_id:
+            errors.append(f"desktop I/O action {action.id} step_id mismatch")
+        if action.source_action != plan.source_action:
+            errors.append(f"desktop I/O action {action.id} source_action mismatch")
+    return errors

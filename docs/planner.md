@@ -20,7 +20,10 @@ defines operation contracts for `observe`, `move`, `click`, `double_click`,
 the input channel and whether the operation emits desktop input. Every compiled
 low-level action also carries the resolved step safety metadata so monitoring
 can review mutation risk, approval state, reversibility, idempotence, and
-window or region scope at the operation level.
+window or region scope at the operation level. The compiler validates the
+desktop I/O plan before exposing it in traces: action IDs, source step/action,
+supported operation kind, contiguous order, and safety metadata must all be
+present.
 
 After target selection and before timing, the engine chooses an execution path.
 Stable first-attempt actions with exactly one visible, enabled, high-confidence

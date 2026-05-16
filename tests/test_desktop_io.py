@@ -1,8 +1,13 @@
 from desktop_agent.desktop_io import (
     DESKTOP_IO_MODEL_VERSION,
     SUPPORTED_DESKTOP_IO_KINDS,
+    DesktopIoAction,
+    DesktopIoPlan,
+    DesktopIoValidationError,
     compile_desktop_io_plan,
     desktop_io_kind_spec,
+    validate_desktop_io_action,
+    validate_desktop_io_plan,
 )
 from desktop_agent.task_dsl import TaskStep
 
@@ -93,3 +98,46 @@ def test_desktop_io_actions_carry_safety_metadata() -> None:
         assert safety["action_safety_class"] == "message_or_publish"
         assert safety["approval_required"] is True
         assert safety["window_scope"] == ["DeskPilot Fixture"]
+
+
+def test_desktop_io_validation_rejects_unsupported_action_kind() -> None:
+    action = DesktopIoAction(
+        id="step:1:unsupported",
+        step_id="step",
+        kind="unsupported",
+        order=1,
+        source_action="custom",
+        metadata={"safety": {}},
+    )
+
+    try:
+        validate_desktop_io_action(action)
+    except DesktopIoValidationError as exc:
+        assert "unsupported desktop I/O action kind" in str(exc)
+    else:
+        raise AssertionError("expected DesktopIoValidationError")
+
+
+def test_desktop_io_validation_rejects_ordering_and_missing_safety() -> None:
+    plan = DesktopIoPlan(
+        step_id="step",
+        source_action="click_text",
+        actions=(
+            DesktopIoAction(
+                id="step:2:click",
+                step_id="step",
+                kind="click",
+                order=2,
+                source_action="click_text",
+            ),
+        ),
+    )
+
+    try:
+        validate_desktop_io_plan(plan)
+    except DesktopIoValidationError as exc:
+        message = str(exc)
+        assert "order must be contiguous" in message
+        assert "missing safety metadata" in message
+    else:
+        raise AssertionError("expected DesktopIoValidationError")

@@ -231,7 +231,7 @@ abuse, and hidden automation are not supported.
 
 ### Tasks
 
-- [ ] Add `DesktopIoAction` dataclasses and validation.
+- [x] Add `DesktopIoAction` dataclasses and validation.
 - [ ] Compile existing `click_text`, `click_image`, `click_uia`, `type_text`,
       `press_key`, `scroll`, `scroll_until`, `wait_for`, `assert_visible`,
       `branch_if_visible`, and `drag` into low-level I/O actions.
