@@ -75,8 +75,10 @@ class TraceSchemaV2:
                     "description": "post-action checks and observed state changes",
                     "typical_fields": [
                         "verification_type",
+                        "verification_outcome",
                         "verification_status",
                         "post_action_evidence",
+                        "manual_handoff_required",
                     ],
                 },
                 "state_delta": {

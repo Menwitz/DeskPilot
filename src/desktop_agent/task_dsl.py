@@ -93,6 +93,7 @@ SUPPORTED_RECOVERY_ACTIONS: frozenset[str] = frozenset(
         "reobserve_screen",
         "retry_alternate_candidate",
         "retry_with_fresh_candidates",
+        "manual_handoff",
         "scroll_search_region",
         "wait_and_reobserve",
         "wait_for_enabled",

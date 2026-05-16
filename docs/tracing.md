@@ -72,6 +72,10 @@ reports can show what changed after input.
 After verification, the planner emits `state_delta` with before/after screenshot
 paths, focus changes, visible text additions/removals, target
 appearance/disappearance, and scroll movement metadata from the emitted input.
+`verify_result` events include `verification_outcome` with `passed`, `failed`,
+or `inconclusive`. Inconclusive verification uses bounded retry recovery while
+retry budget remains; exhausted inconclusive checks emit `manual_handoff` with
+`manual_handoff_required: true`.
 
 The `compile_task` event records static step order, dependency edges, and
 expected UI state transitions before the planner observes the screen or attempts

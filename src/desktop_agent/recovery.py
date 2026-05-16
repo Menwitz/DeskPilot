@@ -99,6 +99,15 @@ RECOVERY_POLICIES: dict[str, RecoveryPolicy] = {
             "abort_with_trace",
         ),
     ),
+    "verification_inconclusive": RecoveryPolicy(
+        name="recover_verification_inconclusive",
+        reason="verification_inconclusive",
+        actions=(
+            "wait_and_reobserve",
+            "manual_handoff",
+            "abort_with_trace",
+        ),
+    ),
 }
 
 

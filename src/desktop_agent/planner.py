@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Protocol
+from typing import Literal, Protocol
 
 from desktop_agent.actuation import ActionResult, Actuator
 from desktop_agent.config import ConfigLoader, RuntimeConfig
@@ -24,6 +24,7 @@ from desktop_agent.perception import (
     ui_state_snapshot_metadata,
 )
 from desktop_agent.recovery import (
+    RECOVERY_POLICIES,
     RecoveryPolicy,
     constrain_recovery_policy,
     recovery_policy_for_action_result,
@@ -77,6 +78,7 @@ TARGETED_ACTIONS: frozenset[str] = frozenset(
     },
 )
 POLL_INTERVAL_SECONDS = 0.1
+VerificationOutcome = Literal["passed", "failed", "inconclusive"]
 RECOVERABLE_SELECTION_REASONS: frozenset[str] = frozenset(
     {
         "stale_observation",
@@ -94,6 +96,13 @@ class VerificationResult:
 
     passed: bool
     message: str
+    outcome: VerificationOutcome | None = None
+
+    @property
+    def resolved_outcome(self) -> VerificationOutcome:
+        if self.outcome is not None:
+            return self.outcome
+        return "passed" if self.passed else "failed"
 
 
 @dataclass(frozen=True)
@@ -838,7 +847,11 @@ class ExecutionEngine:
             self._record(
                 "verify_result",
                 verification.message,
-                _step_metadata(step, passed=verification.passed),
+                _step_metadata(
+                    step,
+                    passed=verification.passed,
+                    verification_outcome=verification.resolved_outcome,
+                ),
             )
             self._record(
                 "state_delta",
@@ -855,6 +868,65 @@ class ExecutionEngine:
                     ),
                 ),
             )
+
+            if verification.resolved_outcome == "inconclusive":
+                last_message = verification.message
+                last_failure_category = "verification_inconclusive"
+                if attempt < total_attempts:
+                    retry_timing = timing_controller.before_retry(
+                        retry_index=attempt,
+                        retry_budget=retry_budget,
+                        backoff_strategy=RECOVERY_POLICIES[
+                            "verification_inconclusive"
+                        ].backoff_strategy,
+                    )
+                    recover_metadata = _recovery_metadata(
+                        step,
+                        RECOVERY_POLICIES["verification_inconclusive"],
+                        failed_attempt=attempt,
+                        failure_observation_phase="observe_after_action",
+                        next_attempt=attempt + 1,
+                        retry_reason=last_message,
+                        retry_delay_seconds=retry_timing.delay_seconds,
+                        verification_outcome=verification.resolved_outcome,
+                    )
+                    recover_metadata.update(_retry_backoff_metadata(retry_timing))
+                    self._record(
+                        "recover",
+                        "retrying inconclusive verification",
+                        recover_metadata,
+                    )
+                    if config.execution_profile.enabled:
+                        timing_metadata = retry_timing.metadata()
+                        timing_metadata["step_id"] = step.id
+                        timing_metadata["step_category"] = step_category(step)
+                        timing_metadata["next_attempt"] = attempt + 1
+                        self._record(
+                            "execution_timing",
+                            retry_timing.reason,
+                            timing_metadata,
+                        )
+                    self._consume_timing_delay(retry_timing)
+                    continue
+                self._record(
+                    "manual_handoff",
+                    "verification inconclusive; manual handoff required",
+                    _step_metadata(
+                        step,
+                        attempt=attempt,
+                        verification_outcome=verification.resolved_outcome,
+                        manual_handoff_required=True,
+                    ),
+                )
+                return StepExecutionOutcome(
+                    self._step_failed(
+                        step,
+                        attempt,
+                        f"manual handoff required: {verification.message}",
+                        last_candidate_id,
+                        failure_category="manual_handoff",
+                    ),
+                )
 
             if action_result.success and verification.passed:
                 return StepExecutionOutcome(
@@ -951,7 +1023,11 @@ class ExecutionEngine:
             self._record(
                 "verify_result",
                 verification.message,
-                _step_metadata(step, passed=verification.passed),
+                _step_metadata(
+                    step,
+                    passed=verification.passed,
+                    verification_outcome=verification.resolved_outcome,
+                ),
             )
             if verification.passed:
                 return StepExecutionOutcome(
@@ -1152,7 +1228,11 @@ class ExecutionEngine:
         self._record(
             "verify_result",
             verification.message,
-            _step_metadata(step, passed=verification.passed),
+            _step_metadata(
+                step,
+                passed=verification.passed,
+                verification_outcome=verification.resolved_outcome,
+            ),
         )
         if verification.passed:
             return StepExecutionOutcome(

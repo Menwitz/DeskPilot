@@ -195,7 +195,7 @@ abuse, and hidden automation are not supported.
       confidence values, and coordinate conversion.
 - [x] Add visual state delta summaries for focus changes, visible text changes,
       target appearance/disappearance, and scroll movement.
-- [ ] Add verification outcome `inconclusive` and route it to retry or manual
+- [x] Add verification outcome `inconclusive` and route it to retry or manual
       handoff.
 - [ ] Add trace replay timeline output for each step.
 - [ ] Add trace replay Markdown or HTML summary with screenshots and state

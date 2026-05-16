@@ -8,7 +8,11 @@ from desktop_agent.perception import (
     ElementCandidate,
     PerceptionEngine,
 )
-from desktop_agent.planner import ExecutionEngine
+from desktop_agent.planner import (
+    ExecutionEngine,
+    PassingStepVerifier,
+    VerificationResult,
+)
 from desktop_agent.safety import LocalSafetyPolicy
 from desktop_agent.screen import (
     Bounds,
@@ -91,6 +95,26 @@ class SequenceActuator:
 
     def current_position(self) -> tuple[int, int]:
         return (333, 444)
+
+
+class SequenceVerifier:
+    def __init__(self, results: tuple[VerificationResult, ...]) -> None:
+        self._results = results
+        self.calls = 0
+
+    def verify(
+        self,
+        step: TaskStep,
+        observation: ScreenObservation,
+        target: ElementCandidate | None,
+        action_result: ActionResult,
+        config: RuntimeConfig,
+        candidates: tuple[ElementCandidate, ...] = (),
+    ) -> VerificationResult:
+        _ = step, observation, target, action_result, config, candidates
+        index = min(self.calls, len(self._results) - 1)
+        self.calls += 1
+        return self._results[index]
 
 
 class AdvancingActuator:
@@ -735,6 +759,110 @@ def test_execution_engine_records_scroll_state_delta() -> None:
     assert delta.metadata["scroll_step_clicks"] == [-1, -1, -1]
 
 
+def test_execution_engine_retries_inconclusive_verification() -> None:
+    task = TaskDefinition(
+        name="inconclusive-retry",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="click-submit",
+                action="click_text",
+                target="Submit",
+                retry=1,
+                verify=VerificationDefinition(type="visible_text", text="Success"),
+            ),
+        ),
+    )
+    verifier = SequenceVerifier(
+        (
+            VerificationResult(
+                False,
+                "verification evidence was inconclusive",
+                outcome="inconclusive",
+            ),
+            VerificationResult(True, "verified"),
+        ),
+    )
+    actuator = SequenceActuator(
+        (
+            ActionResult(True, "clicked"),
+            ActionResult(True, "clicked"),
+        ),
+    )
+    engine = _engine(
+        task,
+        perception=SequencePerceptionEngine(
+            (
+                _candidate_tuple("Submit"),
+                (),
+                _candidate_tuple("Submit"),
+                _candidate_tuple("Success"),
+            ),
+        ),
+        actuator=actuator,
+        verifier=verifier,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    recover = next(event for event in report.events if event.phase == "recover")
+    outcomes = [
+        event.metadata["verification_outcome"]
+        for event in report.events
+        if event.phase == "verify_result"
+    ]
+    assert report.status == "passed"
+    assert report.steps[0].attempts == 2
+    assert verifier.calls == 2
+    assert actuator.calls == 2
+    assert outcomes == ["inconclusive", "passed"]
+    assert recover.metadata["recovery_reason"] == "verification_inconclusive"
+    assert recover.metadata["recovery_chosen_action"] == "wait_and_reobserve"
+
+
+def test_execution_engine_routes_inconclusive_verification_to_handoff() -> None:
+    task = TaskDefinition(
+        name="inconclusive-handoff",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="click-submit",
+                action="click_text",
+                target="Submit",
+                retry=0,
+                verify=VerificationDefinition(type="visible_text", text="Success"),
+            ),
+        ),
+    )
+    engine = _engine(
+        task,
+        perception=SequencePerceptionEngine((_candidate_tuple("Submit"), ())),
+        actuator=SequenceActuator((ActionResult(True, "clicked"),)),
+        verifier=SequenceVerifier(
+            (
+                VerificationResult(
+                    False,
+                    "verification evidence was inconclusive",
+                    outcome="inconclusive",
+                ),
+            ),
+        ),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    handoff = next(event for event in report.events if event.phase == "manual_handoff")
+    assert report.status == "failed"
+    assert report.steps[0].metadata["failure_category"] == "manual_handoff"
+    assert report.steps[0].message == (
+        "manual handoff required: verification evidence was inconclusive"
+    )
+    assert handoff.metadata["verification_outcome"] == "inconclusive"
+    assert handoff.metadata["manual_handoff_required"] is True
+
+
 def test_execution_engine_runs_checkpoint_before_irreversible_action() -> None:
     task = TaskDefinition(
         name="checkpoint-pass",
@@ -1355,6 +1483,7 @@ def _engine(
     clock: FakeClock | None = None,
     trace_sink: MemoryTraceSink | None = None,
     screen_observer: ScreenObserver | None = None,
+    verifier: SequenceVerifier | None = None,
 ) -> ExecutionEngine:
     return ExecutionEngine(
         config_loader=StaticConfigLoader(
@@ -1373,6 +1502,7 @@ def _engine(
         ),
         target_selector=ConfidenceTargetSelector(),
         actuator=actuator or DryRunActuator(),
+        verifier=verifier if verifier is not None else PassingStepVerifier(),
         clock=clock or FakeClock(),
     )
 
