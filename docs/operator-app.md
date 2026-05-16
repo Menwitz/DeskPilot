@@ -31,7 +31,9 @@ actions before high-risk work can continue.
 
 The Record page includes the recorder review panel. It shows generated YAML,
 selected targets, screenshot paths, verification suggestions, and review status
-before the operator saves a routine.
+before the operator saves a routine. The recorder service can save the reviewed
+capture into the local `recorded` routine pack and hand the saved routine ID
+back to the runner for rerun through the same app service boundary.
 
 The Routine Packs page includes the routine-pack manager contract. It shows
 installed pack IDs, selected pack, install source, pending action, trust
@@ -74,7 +76,9 @@ service boundary. The initial concrete bundle is local-only and wraps existing
 project modules:
 
 - Catalog service: list, search, and inspect routine definitions.
-- Recorder service: expose supported recording operations.
+- Recorder service: start capture, append captured events, generate editable
+  YAML for review, save the reviewed capture as a routine, and expose the saved
+  routine for rerun.
 - Runner service: apply the validated routine execution gate, start approved
   app run requests, and publish the first `observe_screen` action for the live
   run panel. It also handles pause, resume, cancel, and stop requests so the

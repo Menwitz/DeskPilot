@@ -13,6 +13,7 @@ from desktop_agent.operator_services import (
     OperatorServiceError,
     default_local_operator_services,
 )
+from desktop_agent.recorder import RecorderCandidateContext, RecorderEvent
 from desktop_agent.scheduler import RunQueue
 
 
@@ -108,7 +109,52 @@ def test_local_operator_services_expose_catalog_runner_approvals_and_queue(
     assert queue_entries[0]["status"] == "canceled"
     assert queue_entries[1]["status"] == "stopped"
     assert "generate_yaml" in services.recorder.capabilities()
+    assert "save_as_routine" in services.recorder.capabilities()
     assert services.routine_packs.list_packs() == ()
+
+
+def test_operator_recorder_service_saves_and_reruns_recorded_routine(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "routine_packs"
+    services = default_local_operator_services(
+        routine_pack_root=root,
+        trace_root=tmp_path / "traces",
+    )
+
+    session = services.recorder.start_recording("Search Fixture", overwrite=True)
+    services.recorder.record_event(
+        RecorderEvent.create(
+            "selected_point",
+            active_window="DeskPilot Fixture",
+            screenshot_path=str(tmp_path / "screenshots" / "click.png"),
+            selected_point=(20, 30),
+            candidate_context=(
+                RecorderCandidateContext(
+                    source="ocr",
+                    label="Search",
+                    bounds={"x": 10, "y": 20, "width": 80, "height": 24},
+                ),
+            ),
+        ),
+    )
+
+    review = services.recorder.review_recording()
+    saved = services.recorder.save_recording_as_routine()
+    rerun = services.runner.start_routine(saved.routine_id)
+
+    assert session.status == "recording"
+    assert review.session_id == session.session_id
+    assert "click_text" in review.generated_yaml
+    assert review.selected_targets == ("Search",)
+    assert review.screenshot_paths == (tmp_path / "screenshots" / "click.png",)
+    assert review.status == "ready_for_save"
+    assert saved.routine_id == "recorded.search-fixture"
+    assert saved.routine_path.exists()
+    assert saved.task_path.exists()
+    assert saved.saved_recording_path.exists()
+    assert rerun.status == "running"
+    assert rerun.next_action == "observe_screen"
 
 
 def test_approval_service_rejects_invalid_app_decisions(tmp_path: Path) -> None:

@@ -489,7 +489,7 @@ abuse, and hidden automation are not supported.
 - [x] A user can run a routine without CLI.
 - [x] A user can approve or deny a sensitive step in the app.
 - [x] A user can pause, resume, cancel, and stop a run.
-- [ ] A user can record, review, save, and rerun a simple routine.
+- [x] A user can record, review, save, and rerun a simple routine.
 - [ ] A user can inspect a failed trace and understand why it failed.
 
 ## Phase 9: Recovery And Self-Healing
