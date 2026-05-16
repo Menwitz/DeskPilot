@@ -24,6 +24,7 @@ from desktop_agent.task_dsl import (
     StaticTaskLoader,
     TaskDefinition,
     TaskStep,
+    VerificationDefinition,
 )
 from desktop_agent.timing import ExecutionTimingController
 from desktop_agent.tracing import MemoryTraceSink, RunReport, TraceEvent
@@ -223,6 +224,10 @@ def test_regression_operator_approval_stops_sensitive_step_before_observation() 
             action="click_text",
             target="Submit",
             category="submission",
+            checkpoint=VerificationDefinition(
+                type="visible_text",
+                text="Submit",
+            ),
         ),
     )
     report = run_fixture(
@@ -253,6 +258,10 @@ def test_acceptance_risky_actions_require_confirmation_before_input() -> None:
             action="click_text",
             target="Submit",
             category="submission",
+            checkpoint=VerificationDefinition(
+                type="visible_text",
+                text="Submit",
+            ),
         ),
     )
     blocked_actuator = CountingActuator()

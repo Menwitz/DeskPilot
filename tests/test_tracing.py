@@ -116,6 +116,10 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
                 target="Submit",
                 category="submission",
                 entropy_budget=1.0,
+                checkpoint=VerificationDefinition(
+                    type="visible_text",
+                    text="Submit",
+                ),
                 verify=VerificationDefinition(type="visible_text", text="Success"),
             ),
         ),

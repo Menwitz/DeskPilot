@@ -586,6 +586,10 @@ def test_execution_engine_records_action_safety_for_submission_scope() -> None:
                 target="Submit",
                 category="submission",
                 requires_confirmation=True,
+                checkpoint=VerificationDefinition(
+                    type="visible_text",
+                    text="Submit",
+                ),
                 metadata={"site_sensitive_category": "publish"},
             ),
         ),

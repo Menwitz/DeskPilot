@@ -12,6 +12,7 @@ from desktop_agent.approval_manifest import (
 )
 from desktop_agent.cli import main
 from desktop_agent.config import RuntimeConfig
+from desktop_agent.perception import DryRunPerceptionEngine
 from desktop_agent.safety import EmergencyStopMonitor
 from desktop_agent.site_playbooks import SiteTaskCompiler, load_site_playbook
 from desktop_agent.task_dsl import TaskDefinition
@@ -158,6 +159,10 @@ def test_run_site_uses_manifest_without_operator_prompt(
     config_path = _write_config(tmp_path)
     monkeypatch.setattr("builtins.input", lambda _prompt: "no")
     monkeypatch.setattr("desktop_agent.cli.create_platform_actuator", _dry_actuator)
+    monkeypatch.setattr(
+        "desktop_agent.cli._perception_engine_for_mode",
+        lambda _dry_run: DryRunPerceptionEngine(),
+    )
 
     status = main(
         [
@@ -297,6 +302,9 @@ flows:
         text: enter
         requires_confirmation: true
         sensitive_category: publish
+        checkpoint:
+          type: visible_text
+          text: Publish
 blocked_states:
   - id: captcha
     detector: "candidate_count:>1"

@@ -563,6 +563,8 @@ def _validate_flow(
                 errors.append(
                     f"step {step.id} sensitive steps require confirmation",
                 )
+            if step.checkpoint is None:
+                errors.append(f"step {step.id} sensitive steps require checkpoint")
     return errors
 
 

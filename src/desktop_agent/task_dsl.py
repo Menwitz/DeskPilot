@@ -295,6 +295,8 @@ class BasicTaskValidator(TaskValidator):
             errors.extend(_validate_action_shape(step))
             errors.extend(_validate_verification_shape(step))
             errors.extend(_validate_checkpoint_shape(step))
+            if step_category(step) == "submission" and step.checkpoint is None:
+                errors.append(f"step {step.id} submission steps require checkpoint")
 
         if (
             task.entropy_budget is not None

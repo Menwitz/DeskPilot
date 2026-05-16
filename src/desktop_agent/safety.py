@@ -7,6 +7,7 @@ import sys
 from dataclasses import dataclass
 from typing import Any, Protocol, cast
 
+from desktop_agent.action_safety import action_safety_profile
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.screen import ScreenObservation
 from desktop_agent.task_dsl import TaskDefinition, TaskStep, step_category
@@ -20,6 +21,9 @@ from desktop_agent.window_allowlist import (
 STRICT_QA_CONFIRMATION_CATEGORIES: frozenset[str] = frozenset({"submission"})
 EXPLORATORY_BLOCKED_CATEGORIES: frozenset[str] = frozenset({"submission"})
 OPERATOR_APPROVAL_CATEGORIES: frozenset[str] = frozenset({"submission"})
+EXTERNAL_MUTATION_RISKS: frozenset[str] = frozenset(
+    {"external", "sensitive_external"}
+)
 
 
 @dataclass(frozen=True)
@@ -117,7 +121,6 @@ class LocalSafetyPolicy(SafetyPolicy):
         config: RuntimeConfig,
         observation: ScreenObservation | None = None,
     ) -> SafetyDecision:
-        _ = step
         if not task.allowed_windows:
             return SafetyDecision(False, "task must declare allowed windows")
         if (
@@ -152,6 +155,11 @@ class LocalSafetyPolicy(SafetyPolicy):
                 False,
                 f"step {step.id} is blocked by exploratory_testing policy",
             )
+        if _external_mutation_requires_checkpoint(step):
+            return SafetyDecision(
+                False,
+                f"step {step.id} requires checkpoint before external mutation",
+            )
         if (
             observation
             and observation.active_window_title
@@ -180,6 +188,11 @@ def _operator_approval_required(step: TaskStep) -> bool:
         step.requires_confirmation
         or step_category(step) in OPERATOR_APPROVAL_CATEGORIES
     )
+
+
+def _external_mutation_requires_checkpoint(step: TaskStep) -> bool:
+    profile = action_safety_profile(step)
+    return profile.mutation_risk in EXTERNAL_MUTATION_RISKS and step.checkpoint is None
 
 
 def create_platform_emergency_stop_monitor() -> EmergencyStopMonitor:

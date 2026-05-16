@@ -163,7 +163,8 @@ For real `run-site` commands, sensitive public-site flows require a local
 approval manifest. The manifest preapproves the exact sensitive step IDs for the
 site and flow, records approver/reason/timestamp/content fingerprint metadata,
 and is included in local traces and final reports.
-Sensitive or irreversible steps can also declare `checkpoint`; the planner must
+Externally mutating steps, including `submission` category and sensitive
+publish/login/payment/delete steps, must declare `checkpoint`. The planner must
 pass that read-only verification before timing or action execution.
 Each resolved step also carries action-safety metadata in traces and reports:
 the safety class, mutation risk, approval requirement, reversibility,

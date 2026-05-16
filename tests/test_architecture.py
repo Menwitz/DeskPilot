@@ -18,6 +18,7 @@ from desktop_agent.task_dsl import (
     StaticTaskLoader,
     TaskDefinition,
     TaskStep,
+    VerificationDefinition,
     YamlTaskLoader,
 )
 from desktop_agent.tracing import MemoryTraceSink
@@ -182,6 +183,10 @@ def test_execution_engine_runs_pipeline_and_reports_success() -> None:
                 action="click_text",
                 target="Submit",
                 category="submission",
+                checkpoint=VerificationDefinition(
+                    type="visible_text",
+                    text="Submit",
+                ),
             ),
         ),
     )

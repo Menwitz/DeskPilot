@@ -712,7 +712,7 @@ abuse, and hidden automation are not supported.
       native app.
 - [ ] A 300-routine catalog validates and carries safety metadata.
 - [x] Optional local Ollama assistance is useful but never required.
-- [ ] All high-risk external mutations require approval and checkpoint evidence.
+- [x] All high-risk external mutations require approval and checkpoint evidence.
 - [ ] Failed runs are diagnosable from local artifacts without rerunning desktop
       input.
 - [ ] The product remains local-first and authorized-use only.

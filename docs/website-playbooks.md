@@ -15,8 +15,8 @@ For an end-to-end demonstration of the implemented capabilities, see
   `regex:` only when a site needs a stable regular-expression boundary.
 - Define landmarks for stable navigation labels or selectors.
 - Keep read-only navigation flows separate from sensitive flows.
-- Mark every sensitive step with `requires_confirmation: true` and a
-  `sensitive_category`.
+- Mark every sensitive step with `requires_confirmation: true`, a
+  `sensitive_category`, and a pre-action `checkpoint`.
 - Add blocked states for logged-out sessions, consent dialogs, CAPTCHA or
   suspicious-activity challenges, permission restrictions, unsupported layouts,
   and ambiguous targets.

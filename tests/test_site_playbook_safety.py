@@ -167,6 +167,9 @@ flows:
         timeout_seconds: 0.1
         requires_confirmation: true
         sensitive_category: {category}
+        checkpoint:
+          type: visible_text
+          text: Continue
 blocked_states:
   - id: captcha
     detector: "{detector}"

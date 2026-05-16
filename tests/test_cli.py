@@ -12,7 +12,7 @@ from desktop_agent.cli import (
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.local_models import LocalModelInfo, LocalModelStatus
 from desktop_agent.ocr import OcrTextBlock
-from desktop_agent.perception import ElementCandidate
+from desktop_agent.perception import DryRunPerceptionEngine, ElementCandidate
 from desktop_agent.safety import EmergencyStopMonitor
 from desktop_agent.screen import (
     Bounds,
@@ -98,6 +98,9 @@ def _write_submission_task(path: Path) -> None:
                 "    action: press_key",
                 "    text: enter",
                 "    category: submission",
+                "    checkpoint:",
+                "      type: visible_text",
+                "      text: Submit",
                 "",
             ],
         ),
@@ -336,6 +339,10 @@ def test_cli_run_stops_when_operator_denies_submission_approval(
         return DryRunActuator()
 
     monkeypatch.setattr("desktop_agent.cli.create_platform_actuator", create_actuator)
+    monkeypatch.setattr(
+        "desktop_agent.cli._perception_engine_for_mode",
+        lambda _dry_run: DryRunPerceptionEngine(),
+    )
 
     status = main(["run", str(task_path), "--allowed-window", "DeskPilot Fixture"])
 
@@ -365,6 +372,10 @@ def test_cli_run_uses_operator_approval_for_submission_steps(
         return DryRunActuator()
 
     monkeypatch.setattr("desktop_agent.cli.create_platform_actuator", create_actuator)
+    monkeypatch.setattr(
+        "desktop_agent.cli._perception_engine_for_mode",
+        lambda _dry_run: DryRunPerceptionEngine(),
+    )
 
     status = main(["run", str(task_path), "--allowed-window", "DeskPilot Fixture"])
 

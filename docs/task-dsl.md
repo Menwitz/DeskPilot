@@ -120,8 +120,8 @@ Supported verification types:
 - `region` restricts perception to `{x, y, width, height}`.
 - `verify` declares a post-action verification.
 - `checkpoint` declares a read-only verification that must pass before action
-  timing and actuation. Use it for irreversible or sensitive actions such as
-  submissions.
+  timing and actuation. It is required for `submission` steps and sensitive
+  external mutations.
 - `timeout_seconds` overrides the step timeout. Enabled execution profiles
   budget planned action and retry waits against this value before desktop input.
 - `retry` overrides the per-step retry budget.

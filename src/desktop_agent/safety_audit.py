@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+from desktop_agent.action_safety import action_safety_profile
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.task_dsl import TaskDefinition, TaskStep, step_category
+
+EXTERNAL_MUTATION_RISKS: frozenset[str] = frozenset(
+    {"external", "sensitive_external"}
+)
 
 
 def build_safety_audit(
@@ -109,12 +114,14 @@ def _audit_findings(
             }
         )
     for step in task.steps:
-        if step_category(step) == "submission" and step.checkpoint is None:
+        if _external_mutation_missing_checkpoint(step):
             findings.append(
                 {
                     "severity": "medium",
                     "step_id": step.id,
-                    "message": "submission step has no pre-action checkpoint",
+                    "message": (
+                        "external mutation step has no pre-action checkpoint"
+                    ),
                 }
             )
         if step.requires_confirmation and step.id not in config.confirmed_steps:
@@ -138,6 +145,11 @@ def _audit_findings(
 
 def _sensitive_step(step: TaskStep) -> bool:
     return step.requires_confirmation or step_category(step) == "submission"
+
+
+def _external_mutation_missing_checkpoint(step: TaskStep) -> bool:
+    profile = action_safety_profile(step)
+    return profile.mutation_risk in EXTERNAL_MUTATION_RISKS and step.checkpoint is None
 
 
 def _object_list(value: object) -> list[dict[str, object]]:

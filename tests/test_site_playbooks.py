@@ -139,6 +139,25 @@ def test_sensitive_step_without_confirmation_is_rejected(tmp_path: Path) -> None
         load_site_playbook(playbook_path)
 
 
+def test_sensitive_step_without_checkpoint_is_rejected(tmp_path: Path) -> None:
+    playbook_path = _write_playbook(
+        tmp_path,
+        _valid_playbook().replace(
+            "landmark: search",
+            "\n".join(
+                [
+                    "landmark: search",
+                    "        requires_confirmation: true",
+                    "        sensitive_category: publish",
+                ]
+            ),
+        ),
+    )
+
+    with pytest.raises(SitePlaybookValidationError, match="require checkpoint"):
+        load_site_playbook(playbook_path)
+
+
 def test_blocked_state_without_reason_is_rejected(tmp_path: Path) -> None:
     playbook_path = _write_playbook(
         tmp_path,
@@ -590,7 +609,10 @@ def _sensitive_playbook(category: str) -> str:
         action: click_text
         landmark: search
         requires_confirmation: true
-        sensitive_category: {category}""",
+        sensitive_category: {category}
+        checkpoint:
+          type: visible_text
+          text: Publish""",
     )
 
 
@@ -613,6 +635,9 @@ flows:
         text: enter
         requires_confirmation: true
         sensitive_category: publish
+        checkpoint:
+          type: visible_text
+          text: "{{post_text}}"
 blocked_states:
   - id: logged-out
     detector: "visible_text:Sign in"

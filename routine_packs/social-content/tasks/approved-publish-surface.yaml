@@ -8,6 +8,9 @@ steps:
     target: Publish
     category: submission
     requires_confirmation: true
+    checkpoint:
+      type: visible_text
+      text: Publish
     verify:
       type: visible_text
       text: Published

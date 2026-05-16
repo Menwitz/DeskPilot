@@ -366,6 +366,32 @@ def test_step_category_uses_explicit_or_action_default() -> None:
     assert step_category(TaskStep(id="type", action="type_text")) == "data_entry"
 
 
+def test_task_dsl_requires_checkpoint_for_submission_steps(tmp_path: Path) -> None:
+    task_path = tmp_path / "task.yaml"
+    task_path.write_text(
+        "\n".join(
+            [
+                "name: missing-checkpoint",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "steps:",
+                "  - id: submit",
+                "    action: click_text",
+                "    target: Submit",
+                "    category: submission",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        TaskValidationError,
+        match="submission steps require checkpoint",
+    ):
+        validate_task(task_path)
+
+
 def test_task_dsl_rejects_unknown_verification_type(tmp_path: Path) -> None:
     task_path = tmp_path / "task.yaml"
     task_path.write_text(

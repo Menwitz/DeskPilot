@@ -516,6 +516,9 @@ flows:
         landmark: publish
         requires_confirmation: true
         sensitive_category: publish
+        checkpoint:
+          type: visible_text
+          text: Publish
 blocked_states:
   - id: ambiguous-target
     detector: "candidate_count:>1"
@@ -564,6 +567,9 @@ flows:
         text: enter
         requires_confirmation: true
         sensitive_category: publish
+        checkpoint:
+          type: visible_text
+          text: "{{post_text}}"
 blocked_states:
   - id: ambiguous-target
     detector: "candidate_count:>1"

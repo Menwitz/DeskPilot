@@ -67,6 +67,40 @@ def test_safety_audit_flags_missing_checkpoint_and_approval() -> None:
     rendered = render_safety_audit_markdown(audit)
 
     assert audit["audit_status"] == "attention"
-    assert "submission step has no pre-action checkpoint" in rendered
+    assert "external mutation step has no pre-action checkpoint" in rendered
     assert "confirmation-required step is not pre-confirmed" in rendered
     assert "operator approval prompts are not required by config" in rendered
+
+
+def test_safety_audit_flags_sensitive_external_missing_checkpoint() -> None:
+    task = TaskDefinition(
+        name="audit findings",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="publish",
+                action="click_text",
+                target="Publish",
+                requires_confirmation=True,
+                metadata={"site_sensitive_category": "publish"},
+            ),
+        ),
+    )
+
+    audit = build_safety_audit(
+        task,
+        RuntimeConfig(
+            confirmed_steps=("publish",),
+            execution_profile=ExecutionProfile(enabled=True),
+        ),
+    )
+
+    assert audit["audit_status"] == "attention"
+    findings = audit["findings"]
+    assert isinstance(findings, list)
+    first_finding = findings[0]
+    assert isinstance(first_finding, dict)
+    assert first_finding["message"] == (
+        "external mutation step has no pre-action checkpoint"
+    )

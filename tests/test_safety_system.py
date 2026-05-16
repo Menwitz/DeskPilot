@@ -22,6 +22,7 @@ from desktop_agent.task_dsl import (
     StaticTaskLoader,
     TaskDefinition,
     TaskStep,
+    VerificationDefinition,
 )
 from desktop_agent.tracing import MemoryTraceSink
 
@@ -126,6 +127,10 @@ def test_strict_qa_policy_requires_confirmation_for_submission_steps() -> None:
                 action="click_text",
                 target="Submit",
                 category="submission",
+                checkpoint=VerificationDefinition(
+                    type="visible_text",
+                    text="Submit",
+                ),
             ),
         ),
     )
@@ -153,6 +158,10 @@ def test_operator_approval_gate_blocks_unapproved_submission_steps() -> None:
                 action="click_text",
                 target="Submit",
                 category="submission",
+                checkpoint=VerificationDefinition(
+                    type="visible_text",
+                    text="Submit",
+                ),
             ),
         ),
     )
@@ -181,6 +190,10 @@ def test_operator_approval_gate_allows_approved_submission_steps() -> None:
                 action="click_text",
                 target="Submit",
                 category="submission",
+                checkpoint=VerificationDefinition(
+                    type="visible_text",
+                    text="Submit",
+                ),
             ),
         ),
     )
@@ -198,6 +211,38 @@ def test_operator_approval_gate_allows_approved_submission_steps() -> None:
     assert report.status == "passed"
 
 
+def test_external_mutation_requires_checkpoint_after_approval() -> None:
+    task = TaskDefinition(
+        name="operator approval",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="submit-payment",
+                action="click_text",
+                target="Submit",
+                requires_confirmation=True,
+                metadata={"site_sensitive_category": "publish"},
+            ),
+        ),
+    )
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            require_operator_approval=True,
+            confirmed_steps=("submit-payment",),
+        ),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    assert report.status == "failed"
+    assert report.steps[0].message == (
+        "step submit-payment requires checkpoint before external mutation"
+    )
+
+
 def test_strict_qa_policy_allows_confirmed_submission_steps() -> None:
     task = TaskDefinition(
         name="strict qa",
@@ -209,6 +254,10 @@ def test_strict_qa_policy_allows_confirmed_submission_steps() -> None:
                 action="click_text",
                 target="Submit",
                 category="submission",
+                checkpoint=VerificationDefinition(
+                    type="visible_text",
+                    text="Submit",
+                ),
             ),
         ),
     )
@@ -237,6 +286,10 @@ def test_exploratory_policy_blocks_submission_steps() -> None:
                 action="click_text",
                 target="Submit",
                 category="submission",
+                checkpoint=VerificationDefinition(
+                    type="visible_text",
+                    text="Submit",
+                ),
             ),
         ),
     )
