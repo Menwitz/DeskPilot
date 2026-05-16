@@ -25,7 +25,7 @@ abuse, and hidden automation are not supported.
 - [ ] DeskPilot becomes a personal local routine assistant.
 - [x] DeskPilot ships a native PySide6 operator app.
 - [ ] DeskPilot supports a 300-routine catalog.
-- [ ] DeskPilot supports recorder-generated editable YAML and playbooks.
+- [x] DeskPilot supports recorder-generated editable YAML and playbooks.
 - [x] DeskPilot supports goal-to-routine planning.
 - [x] DeskPilot supports optional local Ollama planning and ranking.
 - [ ] DeskPilot provides video plus trace proof for real Windows workflows.
