@@ -541,6 +541,12 @@ def _event_markdown_suffix(event: TraceEvent) -> str:
             details.append(f"approval {approval_label}")
         if isinstance(window_scope, list):
             details.append(f"scope {len(window_scope)} window(s)")
+    if event.phase == "scheduler":
+        details.extend(_scheduler_event_details(event))
+    if event.phase == "scheduler_safety_gate":
+        details.extend(_scheduler_safety_details(event))
+    if event.phase == "scheduler_approval_gate":
+        details.extend(_scheduler_approval_details(event))
     blocked_state = event.metadata.get("site_blocked_state_id")
     blocked_reason = event.metadata.get("site_blocked_state_reason")
     if isinstance(blocked_state, str):
@@ -551,6 +557,53 @@ def _event_markdown_suffix(event: TraceEvent) -> str:
     if not details:
         return ""
     return " - " + "; ".join(details)
+
+
+def _scheduler_event_details(event: TraceEvent) -> list[str]:
+    details: list[str] = []
+    scheduler_event = event.metadata.get("scheduler_event")
+    scheduler_reason = event.metadata.get("scheduler_reason")
+    if isinstance(scheduler_event, str):
+        details.append(f"scheduler {scheduler_event}")
+    if isinstance(scheduler_reason, str):
+        details.append(f"reason {scheduler_reason}")
+    for key, label in (
+        ("selected_time", "selected"),
+        ("wait_reason", "wait"),
+        ("skip_reason", "skip"),
+        ("retry_later_until", "retry later"),
+        ("operator_intervention", "operator"),
+    ):
+        value = event.metadata.get(key)
+        if isinstance(value, str):
+            details.append(f"{label} {value}")
+    return details
+
+
+def _scheduler_safety_details(event: TraceEvent) -> list[str]:
+    details: list[str] = []
+    allowed = event.metadata.get("scheduler_safety_allowed")
+    reason = event.metadata.get("scheduler_safety_reason")
+    if isinstance(allowed, bool):
+        details.append(
+            "scheduler safety allowed" if allowed else "scheduler safety blocked"
+        )
+    if isinstance(reason, str):
+        details.append(f"reason {reason}")
+    return details
+
+
+def _scheduler_approval_details(event: TraceEvent) -> list[str]:
+    details: list[str] = []
+    allowed = event.metadata.get("scheduler_approval_allowed")
+    reason = event.metadata.get("scheduler_approval_reason")
+    if isinstance(allowed, bool):
+        details.append(
+            "scheduler approval allowed" if allowed else "scheduler approval blocked"
+        )
+    if isinstance(reason, str):
+        details.append(f"reason {reason}")
+    return details
 
 
 def _json_safe(value: object) -> object:

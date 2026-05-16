@@ -414,6 +414,37 @@ def test_file_trace_sink_renders_decision_details_in_markdown(
             },
         )
     )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="scheduler",
+            message="scheduler wait for run-0001",
+            metadata={
+                "scheduler_event": "wait",
+                "scheduler_reason": "cooldown active",
+                "wait_reason": "cooldown_active",
+            },
+        )
+    )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="scheduler_safety_gate",
+            message="scheduled safety gate blocked",
+            metadata={
+                "scheduler_safety_allowed": False,
+                "scheduler_safety_reason": "active_window_unavailable",
+            },
+        )
+    )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="scheduler_approval_gate",
+            message="scheduled approval gate blocked",
+            metadata={
+                "scheduler_approval_allowed": False,
+                "scheduler_approval_reason": "manual_approval_required",
+            },
+        )
+    )
 
     report = trace_sink.write_final_report("failed")
 
@@ -429,3 +460,8 @@ def test_file_trace_sink_renders_decision_details_in_markdown(
     assert "safety local_mutation; approval not required; scope 1 window(s)" in (
         final_report
     )
+    assert "scheduler wait; reason cooldown active; wait cooldown_active" in (
+        final_report
+    )
+    assert "scheduler safety blocked; reason active_window_unavailable" in final_report
+    assert "scheduler approval blocked; reason manual_approval_required" in final_report
