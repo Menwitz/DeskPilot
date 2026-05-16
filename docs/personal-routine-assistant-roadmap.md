@@ -590,7 +590,7 @@ abuse, and hidden automation are not supported.
 - [x] O1: Harden privacy and packaging.
 - [x] KR1: Redaction policies cover screenshots, OCR text, typed text,
       variables, reports, and video.
-- [ ] KR2: Users can choose full evidence, metadata-only traces, or routine-level
+- [x] KR2: Users can choose full evidence, metadata-only traces, or routine-level
       redaction rules.
 - [ ] KR3: Windows installer includes CLI, PySide6 app, default config, examples,
       and docs.
