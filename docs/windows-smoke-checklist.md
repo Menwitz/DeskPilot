@@ -48,6 +48,10 @@ Expected files:
 
 Use [Windows Proof Evidence Checklist](windows-proof-evidence-checklist.md) to
 record the manual video, trace, manifest, and replay evidence for review.
+The opt-in `pytest -m windows_smoke` proof-suite test also exercises the
+review-gated promotion path by validating a completed smoke review template,
+rerunning suite validation with `--require-review`, and archiving
+`proof-suite-review-status.json`.
 
 ## Acceptance
 
@@ -59,3 +63,6 @@ record the manual video, trace, manifest, and replay evidence for review.
       environment metadata, and trace directory.
 - [ ] `action-log.jsonl` contains one line per smoke check.
 - [ ] `screenshots/` contains post-action screenshots.
+- [ ] Opt-in proof-suite smoke validation writes `proof-suite-review-status.json`
+      and reruns `validate-suite --require-preflight --require-review` before
+      archiving promotion artifacts.

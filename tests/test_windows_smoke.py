@@ -3,6 +3,7 @@
 import json
 import os
 import sys
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -162,8 +163,62 @@ def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> No
     assert (trace_root / "proof-suite-report.md").exists()
     assert (trace_root / "proof-suite-status.json").exists()
     assert (trace_root / "proof-suite-next-actions.md").exists()
-    assert (trace_root / "proof-suite-artifacts.zip").exists()
     assert (trace_root / "proof-suite-review.md").exists()
+
+    review_path = trace_root / "proof-suite-review.md"
+    _complete_smoke_review_template(review_path)
+    review_exit_code = main(
+        [
+            "proof",
+            "validate-review",
+            str(review_path),
+            "--write-status-json",
+        ],
+    )
+    assert review_exit_code == 0, "proof suite review validation failed"
+
+    promotion_exit_code = main(
+        [
+            "proof",
+            "validate-suite",
+            str(trace_root),
+            "--allow-missing-video",
+            "--require-preflight",
+            "--require-review",
+            "--write-status-json",
+            "--write-archive",
+        ],
+    )
+    assert promotion_exit_code == 0, "proof suite review-gated promotion failed"
+    status_payload = json.loads(
+        (trace_root / "proof-suite-status.json").read_text(encoding="utf-8"),
+    )
+    assert status_payload["status"] == "passed"
+    assert status_payload["review_status_path"] == str(
+        trace_root / "proof-suite-review-status.json",
+    )
+    assert (trace_root / "proof-suite-artifacts.zip").exists()
+    with zipfile.ZipFile(trace_root / "proof-suite-artifacts.zip") as archive:
+        assert "proof-suite-review-status.json" in archive.namelist()
+
+
+def _complete_smoke_review_template(review_path: Path) -> None:
+    # The opt-in smoke test completes the generated template only to exercise
+    # review-gated promotion mechanics; final proof acceptance still requires a
+    # real human review of the collected Windows video and trace bundle.
+    lines = []
+    for line in review_path.read_text(encoding="utf-8").splitlines():
+        if line == "- Reviewer:":
+            lines.append("- Reviewer: Windows smoke pipeline")
+        elif line == "- Review date:":
+            lines.append("- Review date: 2026-05-16")
+        elif line == "- [ ] Pass":
+            lines.append("- [x] Pass")
+        elif line.startswith("- [ ] ") and line != "- [ ] Fail":
+            lines.append(line.replace("- [ ] ", "- [x] ", 1))
+        else:
+            lines.append(line)
+    review_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _require_windows_smoke() -> None:

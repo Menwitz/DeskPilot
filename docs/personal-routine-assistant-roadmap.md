@@ -182,6 +182,9 @@ abuse, and hidden automation are not supported.
       sign-off records.
 - [x] Add `--require-review` suite validation so proof promotion can fail when
       completed human review sign-off is missing or failed.
+- [x] Add review-gated promotion coverage to the opt-in Windows smoke pipeline
+      so `--require-review` and review status archives are exercised on owned
+      Windows runs.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.
