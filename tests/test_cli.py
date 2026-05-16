@@ -10,6 +10,7 @@ from desktop_agent.cli import (
     main,
 )
 from desktop_agent.config import RuntimeConfig
+from desktop_agent.local_models import LocalModelInfo, LocalModelStatus
 from desktop_agent.ocr import OcrTextBlock
 from desktop_agent.perception import ElementCandidate
 from desktop_agent.safety import EmergencyStopMonitor
@@ -267,6 +268,55 @@ def test_cli_run_fails_when_platform_actuation_is_unavailable(
     phases = [event["phase"] for event in report["events"]]
     assert phases == ["platform_preflight"]
     assert report["events"][0]["metadata"]["deep_search_skipped"] is True
+
+
+def test_cli_local_model_status_reports_disabled_default(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    output_path = tmp_path / "local-model-status.json"
+
+    status = main(["local-model", "status", "--output", str(output_path)])
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "status: disabled" in output
+    assert "available: False" in output
+    assert "report:" in output
+    report = json.loads(output_path.read_text(encoding="utf-8"))
+    assert report["status"] == "disabled"
+    assert report["model_count"] == 0
+
+
+def test_cli_local_model_list_probes_and_prints_models(
+    monkeypatch: MonkeyPatch,
+    capsys: CaptureFixture[str],
+) -> None:
+    class FakeOllamaProvider:
+        def __init__(self, config: object) -> None:
+            self.config = config
+
+        def status(self, *, probe_when_disabled: bool = False) -> LocalModelStatus:
+            assert probe_when_disabled is True
+            return LocalModelStatus(
+                enabled=False,
+                provider="ollama",
+                endpoint="http://127.0.0.1:11434",
+                status="available",
+                available=True,
+                models=(LocalModelInfo(name="llama3.2:latest"),),
+            )
+
+    monkeypatch.setattr(
+        "desktop_agent.cli.OllamaLocalModelProvider",
+        FakeOllamaProvider,
+    )
+
+    status = main(["local-model", "list"])
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert output == "llama3.2:latest\n"
 
 
 def test_cli_run_stops_when_operator_denies_submission_approval(

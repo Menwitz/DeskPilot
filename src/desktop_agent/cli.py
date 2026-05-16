@@ -52,6 +52,11 @@ from desktop_agent.goal_planning import (
     route_goal_to_routine,
 )
 from desktop_agent.goal_reporting import write_goal_plan_trace
+from desktop_agent.local_models import (
+    LocalModelStatus,
+    OllamaLocalModelProvider,
+    write_local_model_status_report,
+)
 from desktop_agent.mouse_demo import (
     MouseDemoError,
     run_browser_fixture,
@@ -172,6 +177,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_routine(args, dry_run=True)
         if args.command == "plan-goal":
             return _plan_goal(args)
+        if args.command == "local-model":
+            return _local_model(args)
         if args.command == "inspect-screen":
             return _inspect_screen(args)
         if args.command == "calibrate-target":
@@ -348,6 +355,29 @@ def _build_parser() -> argparse.ArgumentParser:
     plan_goal_parser.add_argument("--config", type=Path)
     plan_goal_parser.add_argument("--trace-root", type=Path)
     _add_routine_catalog_options(plan_goal_parser)
+
+    local_model_parser = subparsers.add_parser(
+        "local-model",
+        help="inspect optional local Ollama health and model inventory",
+    )
+    local_model_subparsers = local_model_parser.add_subparsers(
+        dest="local_model_command",
+    )
+    local_model_status_parser = local_model_subparsers.add_parser(
+        "status",
+        help="check configured local model status",
+    )
+    _add_local_model_options(local_model_status_parser)
+    local_model_status_parser.add_argument(
+        "--probe-disabled",
+        action="store_true",
+        help="probe Ollama even when local_model.enabled is false",
+    )
+    local_model_list_parser = local_model_subparsers.add_parser(
+        "list",
+        help="list models advertised by the configured local Ollama endpoint",
+    )
+    _add_local_model_options(local_model_list_parser)
 
     inspect_parser = subparsers.add_parser(
         "inspect-screen",
@@ -551,6 +581,15 @@ def _add_runtime_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--allowed-window", action="append", default=[])
     parser.add_argument("--confirm-step", action="append", default=[])
     parser.add_argument("--approval-manifest", type=Path)
+
+
+def _add_local_model_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--config", type=Path)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="optional JSON report path for local model monitoring",
+    )
 
 
 def _add_input_demo_options(parser: argparse.ArgumentParser) -> None:
@@ -982,6 +1021,58 @@ def _plan_goal(args: argparse.Namespace) -> int:
     trace_dir = write_goal_plan_trace(plan, args.trace_root or config.trace_root)
     print(f"trace: {trace_dir}")
     return 0
+
+
+def _local_model(args: argparse.Namespace) -> int:
+    if args.local_model_command is None:
+        print("error: local-model requires a subcommand")
+        return 2
+
+    config = resolve_runtime_config(YamlConfigLoader().load(args.config))
+    provider = OllamaLocalModelProvider(config.local_model)
+    probe_when_disabled = args.local_model_command == "list" or bool(
+        getattr(args, "probe_disabled", False),
+    )
+    status = provider.status(probe_when_disabled=probe_when_disabled)
+
+    if args.local_model_command == "status":
+        _print_local_model_status(status)
+        if args.output is not None:
+            report_path = write_local_model_status_report(status, args.output)
+            print(f"report: {report_path}")
+        return 0 if status.status in {"available", "disabled"} else 1
+
+    if args.local_model_command == "list":
+        if not status.available:
+            _print_local_model_status(status)
+            if args.output is not None:
+                report_path = write_local_model_status_report(status, args.output)
+                print(f"report: {report_path}")
+            return 1
+        if status.models:
+            for model in status.models:
+                print(model.name)
+        else:
+            print("no local models")
+        if args.output is not None:
+            report_path = write_local_model_status_report(status, args.output)
+            print(f"report: {report_path}")
+        return 0
+
+    print(f"error: unsupported local-model command: {args.local_model_command}")
+    return 2
+
+
+def _print_local_model_status(status: LocalModelStatus) -> None:
+    print("local model:")
+    print(f"  provider: {status.provider}")
+    print(f"  endpoint: {status.endpoint}")
+    print(f"  enabled: {status.enabled}")
+    print(f"  status: {status.status}")
+    print(f"  available: {status.available}")
+    print(f"  models: {len(status.models)}")
+    if status.error:
+        print(f"  error: {status.error}")
 
 
 def _load_routine(args: argparse.Namespace) -> RoutineDefinition:

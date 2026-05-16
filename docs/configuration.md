@@ -298,6 +298,19 @@ local_model:
 Only local loopback Ollama endpoints are accepted: `127.0.0.1`, `localhost`, or
 `::1`.
 
+Local model health can be checked without running a routine:
+
+```bash
+desktop-agent local-model status --config config.yaml
+desktop-agent local-model status --probe-disabled --output traces/local-model.json
+desktop-agent local-model list --config config.yaml
+```
+
+`status` does not contact Ollama while `local_model.enabled` is false unless
+`--probe-disabled` is passed. `list` is an explicit inventory command, so it
+probes the configured local endpoint and prints the model names advertised by
+Ollama. `--output` writes the same status as JSON for local monitoring reports.
+
 ## Sensitive Step Confirmation
 
 Tasks can mark a step with `requires_confirmation: true`. Those steps are

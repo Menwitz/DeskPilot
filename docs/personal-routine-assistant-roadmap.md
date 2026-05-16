@@ -557,7 +557,7 @@ abuse, and hidden automation are not supported.
 ### Tasks
 
 - [x] Add local model config with disabled default.
-- [ ] Add Ollama health check and model listing.
+- [x] Add Ollama health check and model listing.
 - [ ] Add prompt classes for routine ranking, missing-input extraction, trace
       summarization, screen summary, and YAML improvement suggestions.
 - [ ] Add local screenshot captioning path only for review and authoring, not
