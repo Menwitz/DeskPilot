@@ -575,7 +575,7 @@ abuse, and hidden automation are not supported.
 - [x] Ollama-assisted routine ranking can be enabled locally.
 - [x] Invalid model output is rejected safely.
 - [x] Model-assisted plans are traceable.
-- [ ] No model output sends raw desktop input outside validated routines.
+- [x] No model output sends raw desktop input outside validated routines.
 
 ## Phase 11: Privacy, Redaction, And Packaging Hardening
 
