@@ -1,4 +1,5 @@
 from desktop_agent.actuation import (
+    ActuationGuardBlocked,
     ActuationProfile,
     DesktopActuator,
     FakeInputBackend,
@@ -30,6 +31,25 @@ class SequenceEmergencyStopMonitor:
         index = min(self.calls, len(self._states) - 1)
         self.calls += 1
         return self._states[index]
+
+
+class SequenceActiveWindowBackend(FakeInputBackend):
+    """Fake backend that can change foreground titles between guard checks."""
+
+    def __init__(self, titles: tuple[str | None, ...]) -> None:
+        super().__init__(
+            start_position=(0, 0),
+            active_window_title=titles[0] if titles else None,
+        )
+        self._titles = titles
+        self.active_window_calls = 0
+
+    def active_window_title(self) -> str | None:
+        if not self._titles:
+            return None
+        index = min(self.active_window_calls, len(self._titles) - 1)
+        self.active_window_calls += 1
+        return self._titles[index]
 
 
 def test_desktop_actuator_clicks_converted_target_center() -> None:
@@ -349,6 +369,40 @@ def test_desktop_actuator_blocks_disallowed_active_window() -> None:
     assert backend.events == []
 
 
+def test_desktop_actuator_rechecks_active_window_before_low_level_input() -> None:
+    backend = SequenceActiveWindowBackend(
+        ("DeskPilot Fixture", "Unexpected Window"),
+    )
+    actuator = DesktopActuator(
+        backend,
+        ActuationProfile(
+            movement_duration_seconds=(0.0, 0.0),
+            timing_variation_seconds=(0.0, 0.0),
+            movement_steps=1,
+            movement_smoothness=0.0,
+        ),
+    )
+    target = ElementCandidate(
+        id="target-1",
+        source="uia",
+        label="Submit",
+        bounds=Bounds(x=10, y=10, width=10, height=10),
+        confidence=0.9,
+    )
+
+    result = actuator.execute(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        target,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    assert result.success is False
+    assert result.metadata["actuation_guard"] == "active_window"
+    assert result.metadata["active_window_title"] == "Unexpected Window"
+    assert [event.kind for event in backend.events] == ["move"]
+
+
 def test_desktop_actuator_allows_case_insensitive_contains_window_match() -> None:
     backend = FakeInputBackend(active_window_title="LinkedIn - Google Chrome")
     actuator = DesktopActuator(backend, _instant_profile())
@@ -406,6 +460,35 @@ def test_desktop_actuator_blocks_target_outside_step_region() -> None:
     assert "step region" in result.message
     assert result.metadata["actuation_guard"] == "allowed_region"
     assert backend.events == []
+
+
+def test_desktop_actuator_blocks_low_level_point_outside_allowed_region() -> None:
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    actuator = DesktopActuator(
+        backend,
+        ActuationProfile(
+            movement_duration_seconds=(0.0, 0.0),
+            timing_variation_seconds=(0.0, 0.0),
+            movement_steps=1,
+            movement_smoothness=0.0,
+        ),
+    )
+
+    try:
+        actuator.click(
+            (30, 30),
+            allowed_region=Bounds(x=0, y=0, width=20, height=20),
+            config=RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+        )
+    except ActuationGuardBlocked as exc:
+        result = exc.result
+    else:
+        raise AssertionError("expected final allowed-region guard to block input")
+
+    assert result.success is False
+    assert result.metadata["actuation_guard"] == "allowed_region"
+    assert result.metadata["input_point"] == [30, 30]
+    assert [event.kind for event in backend.events] == ["move"]
 
 
 def test_desktop_actuator_blocks_emergency_stop_before_input() -> None:

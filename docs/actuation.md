@@ -79,14 +79,18 @@ active window does not match, no input is sent and the action returns a failed
 result. Real actuation also applies a final step-region guard for targeted click
 and scroll actions, and `create_platform_actuator` can receive the same
 emergency-stop monitor used by the planner so the input adapter blocks before
-desktop input when the stop chord is active. The actuator also polls the
+desktop input when the stop chord is active. The actuator rechecks the active
+window at each low-level input boundary, and targeted clicks and scrolls also
+recheck the final physical input point against the resolved allowed region
+immediately before sending mouse or wheel input. The actuator also polls the
 emergency-stop monitor between bounded low-level input events: movement path
 points, movement waits, mouse down/up events, drag phases, scroll chunks, typed
 characters, key chord phases, and cadence waits. If the guard trips mid-action,
 the action returns `input_blocked`, `actuation_guard: emergency_stop`, and an
-`emergency_stop_boundary` naming where input stopped. If a stop fires while a
-drag button is held, the actuator releases the button before returning the
-blocked result so the local desktop is not left inside an active drag gesture.
+`emergency_stop_boundary` naming where input stopped. If a stop or late guard
+fires while a mouse button is held, the actuator releases the button before
+returning the blocked result so the local desktop is not left inside an active
+drag or click gesture.
 
 ## Testing
 

@@ -244,7 +244,7 @@ abuse, and hidden automation are not supported.
       resume verification.
 - [x] Add emergency-stop checks between mouse path points, drag path points,
       typed characters, scroll chunks, and retry waits.
-- [ ] Add final active-window and allowed-region checks at the low-level action
+- [x] Add final active-window and allowed-region checks at the low-level action
       boundary.
 
 ### Acceptance Criteria

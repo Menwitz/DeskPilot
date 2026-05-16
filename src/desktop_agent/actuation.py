@@ -544,6 +544,8 @@ class DesktopActuator(Actuator):
                 return self._execute_scroll(step, target, observation, config)
             if step.action == "drag":
                 return self._execute_drag(step, target, observation, config)
+        except ActuationGuardBlocked as exc:
+            return exc.result
         except ActuationEmergencyStop as exc:
             return _emergency_stop_result(exc.boundary)
         except ActuationError as exc:
@@ -581,12 +583,23 @@ class DesktopActuator(Actuator):
         button: MouseButton = "left",
         *,
         target_size_pixels: tuple[float, float] | None = None,
+        allowed_region: Bounds | None = None,
         config: RuntimeConfig | None = None,
     ) -> MovementPlan:
         plan = self.move_mouse(point, target_size_pixels, config)
+        self._raise_if_active_window_blocked(config)
+        self._raise_if_point_outside_allowed_region(point, allowed_region)
         self._raise_if_emergency_stopped(config, "mouse_down")
         self._backend.mouse_down(point, button)
-        self._raise_if_emergency_stopped(config, "mouse_up")
+        try:
+            self._raise_if_active_window_blocked(config)
+            self._raise_if_point_outside_allowed_region(point, allowed_region)
+            self._raise_if_emergency_stopped(config, "mouse_up")
+        except (ActuationGuardBlocked, ActuationEmergencyStop):
+            # A late guard can fire after mouse-down; release before returning
+            # the guard result so the desktop is not left with a held button.
+            self._backend.mouse_up(self._backend.current_position(), button)
+            raise
         self._backend.mouse_up(point, button)
         return plan
 
@@ -596,19 +609,31 @@ class DesktopActuator(Actuator):
         button: MouseButton = "left",
         *,
         target_size_pixels: tuple[float, float] | None = None,
+        allowed_region: Bounds | None = None,
         config: RuntimeConfig | None = None,
     ) -> MovementPlan:
         plan = self.click(
             point,
             button,
             target_size_pixels=target_size_pixels,
+            allowed_region=allowed_region,
             config=config,
         )
+        self._raise_if_active_window_blocked(config)
+        self._raise_if_point_outside_allowed_region(point, allowed_region)
         self._raise_if_emergency_stopped(config, "double_click_wait")
         self._backend.sleep(0.05)
+        self._raise_if_active_window_blocked(config)
+        self._raise_if_point_outside_allowed_region(point, allowed_region)
         self._raise_if_emergency_stopped(config, "double_click_mouse_down")
         self._backend.mouse_down(point, button)
-        self._raise_if_emergency_stopped(config, "double_click_mouse_up")
+        try:
+            self._raise_if_active_window_blocked(config)
+            self._raise_if_point_outside_allowed_region(point, allowed_region)
+            self._raise_if_emergency_stopped(config, "double_click_mouse_up")
+        except (ActuationGuardBlocked, ActuationEmergencyStop):
+            self._backend.mouse_up(self._backend.current_position(), button)
+            raise
         self._backend.mouse_up(point, button)
         return plan
 
@@ -623,12 +648,14 @@ class DesktopActuator(Actuator):
         config: RuntimeConfig | None = None,
     ) -> MovementPlan:
         plan = self.move_mouse(start, start_target_size_pixels, config)
+        self._raise_if_active_window_blocked(config)
         self._raise_if_emergency_stopped(config, "drag_mouse_down")
         self._backend.mouse_down(start, button)
         try:
             drag_plan = self.move_mouse(end, end_target_size_pixels, config)
+            self._raise_if_active_window_blocked(config)
             self._raise_if_emergency_stopped(config, "drag_mouse_up")
-        except ActuationEmergencyStop:
+        except (ActuationGuardBlocked, ActuationEmergencyStop):
             # Release the held button before propagating the stop so the local
             # desktop is not left in a drag gesture after an emergency abort.
             self._backend.mouse_up(self._backend.current_position(), button)
@@ -655,11 +682,14 @@ class DesktopActuator(Actuator):
         point: tuple[int, int],
         clicks: int,
         target_size_pixels: tuple[float, float] | None = None,
+        allowed_region: Bounds | None = None,
         config: RuntimeConfig | None = None,
     ) -> ScrollCadencePlan:
         self.move_mouse(point, target_size_pixels, config)
         interval_bounds = self._profile.scroll_interval_seconds
         if clicks == 0 or abs(clicks) <= 1 or interval_bounds == (0.0, 0.0):
+            self._raise_if_active_window_blocked(config)
+            self._raise_if_point_outside_allowed_region(point, allowed_region)
             self._raise_if_emergency_stopped(config, "scroll")
             self._backend.scroll(point, clicks)
             return ScrollCadencePlan(
@@ -673,6 +703,8 @@ class DesktopActuator(Actuator):
         step_clicks: list[int] = []
         intervals: list[float] = []
         for index in range(abs(clicks)):
+            self._raise_if_active_window_blocked(config)
+            self._raise_if_point_outside_allowed_region(point, allowed_region)
             self._raise_if_emergency_stopped(config, "scroll")
             self._backend.scroll(point, direction)
             step_clicks.append(direction)
@@ -698,6 +730,7 @@ class DesktopActuator(Actuator):
         interval_bounds = self._profile.keyboard_interval_seconds
         if len(text) <= 1:
             # Preserve the legacy single-call path unless a cadence profile is active.
+            self._raise_if_active_window_blocked(config)
             self._raise_if_emergency_stopped(config, "type_text")
             self._backend.type_text(text)
             return KeyboardCadencePlan(
@@ -705,6 +738,7 @@ class DesktopActuator(Actuator):
                 random_seed=self._keyboard_sampler.seed,
             )
         if interval_bounds == (0.0, 0.0) and self._emergency_stop_monitor is None:
+            self._raise_if_active_window_blocked(config)
             self._backend.type_text(text)
             return KeyboardCadencePlan(
                 text=text,
@@ -714,6 +748,7 @@ class DesktopActuator(Actuator):
         sample_start = self._keyboard_sampler.sample_count
         intervals: list[float] = []
         for index, character in enumerate(text):
+            self._raise_if_active_window_blocked(config)
             self._raise_if_emergency_stopped(config, "type_character")
             self._backend.type_text(character)
             if index == len(text) - 1:
@@ -757,6 +792,7 @@ class DesktopActuator(Actuator):
         if not parts:
             raise ActuationError("key value must not be blank")
         if len(parts) == 1:
+            self._raise_if_active_window_blocked(config)
             self._raise_if_emergency_stopped(config, "press_key")
             self._backend.press_key(parts[0])
             return
@@ -764,9 +800,11 @@ class DesktopActuator(Actuator):
         modifiers = parts[:-1]
         key = parts[-1]
         for modifier in modifiers:
+            self._raise_if_active_window_blocked(config)
             self._raise_if_emergency_stopped(config, "key_down")
             self._backend.key_down(modifier)
         try:
+            self._raise_if_active_window_blocked(config)
             self._raise_if_emergency_stopped(config, "press_key")
             self._backend.press_key(key)
         finally:
@@ -784,6 +822,7 @@ class DesktopActuator(Actuator):
         plan = self.click(
             point,
             target_size_pixels=_target_size_pixels(target, observation),
+            allowed_region=_input_region_bounds(step.region, observation),
             config=config,
         )
         return ActionResult(
@@ -826,7 +865,13 @@ class DesktopActuator(Actuator):
         point = _target_or_region_point(target, step.region, observation)
         clicks = _scroll_clicks(step)
         target_size = _target_or_region_size_pixels(target, step.region, observation)
-        cadence = self.scroll(point, clicks, target_size, config)
+        cadence = self.scroll(
+            point,
+            clicks,
+            target_size_pixels=target_size,
+            allowed_region=_input_region_bounds(step.region, observation),
+            config=config,
+        )
         return ActionResult(
             True,
             "scrolled",
@@ -933,6 +978,34 @@ class DesktopActuator(Actuator):
         ):
             return None
         return _emergency_stop_result("before_action")
+
+    def _raise_if_active_window_blocked(self, config: RuntimeConfig | None) -> None:
+        if config is None:
+            return
+        blocked = self._blocked_by_active_window(config)
+        if blocked is not None:
+            raise ActuationGuardBlocked(blocked)
+
+    def _raise_if_point_outside_allowed_region(
+        self,
+        point: tuple[int, int],
+        allowed_region: Bounds | None,
+    ) -> None:
+        if allowed_region is None or _point_inside_bounds(point, allowed_region):
+            return
+        raise ActuationGuardBlocked(
+            ActionResult(
+                False,
+                "input point is outside the final allowed region",
+                {
+                    "input_blocked": True,
+                    "actuation_guard": "allowed_region",
+                    "input_point": list(point),
+                    "allowed_region": _bounds_metadata(allowed_region),
+                    "allowed_region_coordinate_space": "physical",
+                },
+            ),
+        )
 
     def _raise_if_emergency_stopped(
         self,
@@ -1127,6 +1200,14 @@ class ActuationError(RuntimeError):
     """Raised when an action cannot be represented safely as local input."""
 
 
+class ActuationGuardBlocked(ActuationError):
+    """Raised when a final input-boundary guard blocks desktop input."""
+
+    def __init__(self, result: ActionResult) -> None:
+        super().__init__(result.message)
+        self.result = result
+
+
 class ActuationEmergencyStop(ActuationError):
     """Raised when the emergency-stop guard trips during bounded input."""
 
@@ -1261,11 +1342,30 @@ def _region_center(
     return _bounds_center(bounds, observation)
 
 
+def _input_region_bounds(
+    region: TaskRegion | None,
+    observation: ScreenObservation,
+) -> Bounds | None:
+    if region is None:
+        return None
+    bounds = Bounds(region.x, region.y, region.width, region.height)
+    if observation.monitor is None:
+        return bounds
+    return screenshot_bounds_to_physical(bounds, observation.monitor)
+
+
 def _bounds_center_inside_region(bounds: Bounds, region: TaskRegion) -> bool:
     center_x, center_y = bounds.center
     return (
         region.x <= center_x <= region.x + region.width
         and region.y <= center_y <= region.y + region.height
+    )
+
+
+def _point_inside_bounds(point: tuple[int, int], bounds: Bounds) -> bool:
+    return (
+        bounds.x <= point[0] <= bounds.x + bounds.width
+        and bounds.y <= point[1] <= bounds.y + bounds.height
     )
 
 
@@ -1275,6 +1375,15 @@ def _region_metadata(region: TaskRegion) -> dict[str, int]:
         "y": region.y,
         "width": region.width,
         "height": region.height,
+    }
+
+
+def _bounds_metadata(bounds: Bounds) -> dict[str, int]:
+    return {
+        "x": bounds.x,
+        "y": bounds.y,
+        "width": bounds.width,
+        "height": bounds.height,
     }
 
 
