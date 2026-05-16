@@ -188,6 +188,14 @@ def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> No
         ],
     )
     assert promotion_exit_code == 0, "proof suite review-gated promotion failed"
+    verification_exit_code = main(
+        [
+            "proof",
+            "verify-promotion",
+            str(trace_root / "proof-suite-promotion.json"),
+        ],
+    )
+    assert verification_exit_code == 0, "proof promotion digest verification failed"
     promotion_payload = json.loads(
         (trace_root / "proof-suite-promotion.json").read_text(encoding="utf-8"),
     )

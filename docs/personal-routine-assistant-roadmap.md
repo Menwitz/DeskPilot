@@ -194,6 +194,7 @@ abuse, and hidden automation are not supported.
       records for later archive integrity checks.
 - [x] Add a proof promotion verifier that rejects missing or tampered promoted
       evidence artifacts before release evidence is trusted.
+- [x] Add promotion digest verification to the opt-in Windows smoke pipeline.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.
