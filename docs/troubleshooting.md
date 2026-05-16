@@ -4,6 +4,9 @@ Start every investigation from the trace directory printed by the CLI. Use
 `desktop-agent replay <trace-dir>` for a quick summary, then inspect
 `final-report.md`, `action-log.jsonl`, `task.json`, `config.json`, and any
 benchmark reports if the failure came from `benchmark-run`.
+For real-input proof bundles, use `desktop-agent proof replay <trace-dir>` to
+review `proof-manifest.json`, linked artifacts, and optional artifact opening
+without rerunning desktop input.
 
 ## Desktop Session Is Locked
 

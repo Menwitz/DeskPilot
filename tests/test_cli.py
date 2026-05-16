@@ -42,6 +42,48 @@ def write_task(path: Path) -> None:
     )
 
 
+def write_proof_manifest(trace_dir: Path) -> dict[str, Path]:
+    trace_dir.mkdir()
+    screenshot_dir = trace_dir / "screenshots"
+    screenshot_dir.mkdir()
+    report_path = trace_dir / "linkedin-demo-report.json"
+    action_log_path = trace_dir / "action-log.jsonl"
+    manifest_path = trace_dir / "proof-manifest.json"
+    screenshot_path = screenshot_dir / "shot-1.png"
+    video_path = trace_dir / "missing-video.mp4"
+    report_path.write_text("{}", encoding="utf-8")
+    action_log_path.write_text("", encoding="utf-8")
+    screenshot_path.write_bytes(b"png")
+    manifest = {
+        "schema_version": 1,
+        "proof_name": "linkedin-demo",
+        "command": ["desktop-agent", "demo-linkedin", "--trace-root", "traces"],
+        "status": "passed",
+        "started_at": "2026-05-16T00:00:00+00:00",
+        "completed_at": "2026-05-16T00:00:01+00:00",
+        "executable_version": "0.1.0",
+        "python_version": "3.12.0",
+        "platform": "win32",
+        "artifacts": {
+            "trace_dir": str(trace_dir),
+            "report_path": str(report_path),
+            "action_log_path": str(action_log_path),
+            "proof_manifest_path": str(manifest_path),
+            "screenshots": [str(screenshot_path)],
+            "video_path": str(video_path),
+        },
+    }
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    return {
+        "trace_dir": trace_dir,
+        "report_path": report_path,
+        "action_log_path": action_log_path,
+        "proof_manifest_path": manifest_path,
+        "screenshot_path": screenshot_path,
+        "video_path": video_path,
+    }
+
+
 def _write_submission_task(path: Path) -> None:
     path.write_text(
         "\n".join(
@@ -808,6 +850,64 @@ def test_cli_replay_summarizes_final_report(
     assert status == 0
     assert "status: failed" in output
     assert "reason: fixture" in output
+
+
+def test_cli_replay_points_to_proof_replay_for_manifest_trace(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    trace_dir.mkdir()
+    (trace_dir / "proof-manifest.json").write_text("{}", encoding="utf-8")
+
+    status = main(["replay", str(trace_dir)])
+
+    output = capsys.readouterr().out
+    assert status == 1
+    assert f"hint: use desktop-agent proof replay {trace_dir}" in output
+
+
+def test_cli_proof_replay_summarizes_manifest_and_artifacts(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    manifest = write_proof_manifest(trace_dir)
+
+    status = main(["proof", "replay", str(trace_dir)])
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "proof: linkedin-demo" in output
+    assert "command: desktop-agent demo-linkedin --trace-root traces" in output
+    assert "status: passed" in output
+    assert "started_at: 2026-05-16T00:00:00+00:00" in output
+    assert f"artifact report_path: {manifest['report_path']}" in output
+    assert f"artifact screenshot_1: {manifest['screenshot_path']}" in output
+
+
+def test_cli_proof_replay_opens_existing_artifacts_when_requested(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    trace_dir = tmp_path / "trace"
+    manifest = write_proof_manifest(trace_dir)
+    opened: list[Path] = []
+    monkeypatch.setattr("desktop_agent.cli._open_path", opened.append)
+
+    status = main(["proof", "replay", str(trace_dir), "--open-artifacts"])
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert manifest["trace_dir"] in opened
+    assert manifest["report_path"] in opened
+    assert manifest["action_log_path"] in opened
+    assert manifest["proof_manifest_path"] in opened
+    assert manifest["screenshot_path"] in opened
+    assert manifest["video_path"] not in opened
+    assert f"artifact video_path: {manifest['video_path']} (missing)" in output
+    assert f"opened artifact: {trace_dir}" in output
 
 
 def test_cli_benchmark_run_writes_metrics_and_report(

@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shlex
+import subprocess
 import sys
 from collections.abc import Sequence
 from dataclasses import replace
@@ -129,6 +132,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _windows_smoke_checklist(args)
         if args.command == "replay":
             return _replay(args)
+        if args.command == "proof":
+            return _proof(args)
         parser.print_help()
         return 2
     except (
@@ -213,6 +218,20 @@ def _build_parser() -> argparse.ArgumentParser:
     replay_parser = subparsers.add_parser("replay", help="summarize a trace directory")
     replay_parser.add_argument("trace_dir", type=Path)
     replay_parser.add_argument("--verbose", action="store_true")
+
+    proof_parser = subparsers.add_parser("proof", help="proof artifact tools")
+    proof_subparsers = proof_parser.add_subparsers(dest="proof_command")
+    proof_replay_parser = proof_subparsers.add_parser(
+        "replay",
+        help="summarize a proof manifest without rerunning input",
+    )
+    proof_replay_parser.add_argument("trace_dir", type=Path)
+    proof_replay_parser.add_argument("--verbose", action="store_true")
+    proof_replay_parser.add_argument(
+        "--open-artifacts",
+        action="store_true",
+        help="open existing proof artifact paths with the OS file manager",
+    )
 
     benchmark_parser = subparsers.add_parser(
         "benchmark-run",
@@ -946,6 +965,8 @@ def _replay(args: argparse.Namespace) -> int:
     report_path = args.trace_dir / "final-report.json"
     if not report_path.exists():
         print(f"error: final report not found: {report_path}")
+        if (args.trace_dir / "proof-manifest.json").exists():
+            print(f"hint: use desktop-agent proof replay {args.trace_dir}")
         return 1
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
@@ -969,6 +990,133 @@ def _replay(args: argparse.Namespace) -> int:
     if args.verbose:
         print(json.dumps(report, indent=2, sort_keys=True))
     return 0
+
+
+def _proof(args: argparse.Namespace) -> int:
+    if args.proof_command == "replay":
+        return _proof_replay(args)
+    print("error: proof subcommand required")
+    return 2
+
+
+def _proof_replay(args: argparse.Namespace) -> int:
+    manifest_path = args.trace_dir / "proof-manifest.json"
+    if not manifest_path.exists():
+        print(f"error: proof manifest not found: {manifest_path}")
+        return 1
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict):
+        print("error: proof manifest must contain a JSON object")
+        return 1
+
+    print(f"trace: {args.trace_dir}")
+    _print_manifest_value("proof", manifest, "proof_name")
+    command_line = _manifest_command_line(manifest.get("command"))
+    if command_line:
+        print(f"command: {command_line}")
+    print(f"status: {manifest.get('status', 'unknown')}")
+    _print_manifest_value("reason", manifest, "reason")
+    _print_manifest_value("started_at", manifest, "started_at")
+    _print_manifest_value("completed_at", manifest, "completed_at")
+    _print_manifest_value("desktop-agent", manifest, "executable_version")
+    _print_manifest_value("python", manifest, "python_version")
+    _print_manifest_value("platform", manifest, "platform")
+
+    artifacts = _proof_artifact_paths(manifest)
+    for label, path in artifacts:
+        suffix = "" if path.exists() else " (missing)"
+        print(f"artifact {label}: {path}{suffix}")
+
+    if args.open_artifacts:
+        opened = _open_existing_artifacts(artifacts)
+        if opened:
+            for path in opened:
+                print(f"opened artifact: {path}")
+        else:
+            print("opened artifact: none")
+
+    if args.verbose:
+        print(json.dumps(manifest, indent=2, sort_keys=True))
+    return 0
+
+
+def _print_manifest_value(
+    label: str,
+    manifest: dict[object, object],
+    key: str,
+) -> None:
+    value = manifest.get(key)
+    if isinstance(value, str) and value:
+        print(f"{label}: {value}")
+
+
+def _manifest_command_line(command: object) -> str | None:
+    if not isinstance(command, list):
+        return None
+    parts = [part for part in command if isinstance(part, str)]
+    if len(parts) != len(command):
+        return None
+    return shlex.join(parts)
+
+
+def _proof_artifact_paths(
+    manifest: dict[object, object],
+) -> tuple[tuple[str, Path], ...]:
+    artifacts = manifest.get("artifacts")
+    if not isinstance(artifacts, dict):
+        return ()
+
+    paths: list[tuple[str, Path]] = []
+    for label in (
+        "trace_dir",
+        "report_path",
+        "action_log_path",
+        "proof_manifest_path",
+        "video_path",
+    ):
+        value = artifacts.get(label)
+        if isinstance(value, str) and value:
+            paths.append((label, Path(value)))
+
+    screenshots = artifacts.get("screenshots")
+    if isinstance(screenshots, list):
+        for index, screenshot in enumerate(screenshots, start=1):
+            if isinstance(screenshot, str) and screenshot:
+                paths.append((f"screenshot_{index}", Path(screenshot)))
+    return tuple(paths)
+
+
+def _open_existing_artifacts(artifacts: Sequence[tuple[str, Path]]) -> tuple[Path, ...]:
+    opened: list[Path] = []
+    for _, path in artifacts:
+        if not path.exists():
+            continue
+        _open_path(path)
+        opened.append(path)
+    return tuple(opened)
+
+
+def _open_path(path: Path) -> None:
+    # Proof replay opens already-recorded artifacts only; it never reruns desktop
+    # input or launches a task command.
+    if sys.platform == "win32":
+        startfile = getattr(os, "startfile", None)
+        if startfile is None:
+            raise OSError("os.startfile is unavailable")
+        startfile(str(path))
+        return
+    command = (
+        ("open", str(path))
+        if sys.platform == "darwin"
+        else ("xdg-open", str(path))
+    )
+    subprocess.run(
+        command,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
 
 
 def _print_report(report: RunReport, *, verbose: bool) -> None:

@@ -140,3 +140,8 @@ outside region, target mismatch, or ambiguity gate.
 
 `desktop-agent replay <trace-dir>` reads `final-report.json` and prints a
 summary without rerunning actions.
+
+`desktop-agent proof replay <trace-dir>` reads `proof-manifest.json` and prints
+the proof name, original command, status, environment metadata, and artifact
+paths without rerunning desktop input. Add `--open-artifacts` to open existing
+artifact paths with the local OS file manager for manual review.

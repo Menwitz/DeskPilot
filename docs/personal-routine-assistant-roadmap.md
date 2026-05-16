@@ -145,7 +145,7 @@ abuse, and hidden automation are not supported.
 - [x] Add `proof-manifest.json` with command, executable version, Python version,
       Windows version, monitor geometry, DPI, started-at time, completed-at time,
       and artifact paths.
-- [ ] Add a proof replay command that prints proof status and opens artifact
+- [x] Add a proof replay command that prints proof status and opens artifact
       paths without re-executing input.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
