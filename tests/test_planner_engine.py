@@ -497,6 +497,76 @@ def test_execution_engine_records_pre_action_observation_evidence(
     assert phases.index("observe_screen") < phases.index("execute_action")
 
 
+def test_execution_engine_records_post_action_observation_evidence(
+    tmp_path: Path,
+) -> None:
+    task = TaskDefinition(
+        name="post-action-evidence",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+    )
+    pre_action = ScreenObservation(active_window_title="DeskPilot Fixture")
+    post_action = ScreenObservation(
+        screenshot_path=tmp_path / "after.png",
+        size=(1024, 768),
+        active_window_title="DeskPilot Fixture - Complete",
+        monitor=MonitorInfo(
+            left=0,
+            top=0,
+            width=1024,
+            height=768,
+            scale_x=1.0,
+            scale_y=1.25,
+            is_primary=True,
+        ),
+        warnings=("focus moved after click",),
+        metadata={
+            "active_window_process": {
+                "process_id": 4321,
+                "process_name": "msedge.exe",
+            },
+            "focused_element": {
+                "name": "Done",
+                "class_name": "Button",
+            },
+        },
+    )
+    engine = _engine(
+        task,
+        screen_observer=SequenceScreenObserver((pre_action, post_action)),
+        perception=SequencePerceptionEngine((_candidate_tuple("Submit"),)),
+        actuator=SequenceActuator((ActionResult(True, "clicked"),)),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    phases = [event.phase for event in report.events]
+    observe_event = next(
+        event for event in report.events if event.phase == "observe_after_action"
+    )
+    evidence = observe_event.metadata["post_action_evidence"]
+    assert isinstance(evidence, dict)
+    assert report.status == "passed"
+    assert observe_event.metadata["trace_schema_section"] == "verification"
+    assert observe_event.metadata["observation_role"] == "post_action"
+    assert evidence["screenshot_path"] == str(tmp_path / "after.png")
+    assert evidence["active_window_title"] == "DeskPilot Fixture - Complete"
+    assert evidence["active_window_process"] == {
+        "process_id": 4321,
+        "process_name": "msedge.exe",
+    }
+    assert evidence["focused_element"] == {
+        "name": "Done",
+        "class_name": "Button",
+    }
+    assert evidence["cursor_position"] == [333, 444]
+    assert evidence["warnings"] == ["focus moved after click"]
+    assert evidence["dpi_scale"] == {"scale_x": 1.0, "scale_y": 1.25}
+    assert phases.index("execute_action") < phases.index("observe_after_action")
+    assert phases.index("observe_after_action") < phases.index("verify_result")
+
+
 def test_execution_engine_runs_checkpoint_before_irreversible_action() -> None:
     task = TaskDefinition(
         name="checkpoint-pass",
@@ -915,12 +985,19 @@ def test_execution_engine_recovers_when_verification_target_disappears() -> None
     report = engine.run(Path("task.yaml"))
 
     recover = next(event for event in report.events if event.phase == "recover")
+    reobserve = next(
+        event for event in report.events if event.phase == "reobserve_after_failure"
+    )
+    post_failure_evidence = reobserve.metadata["post_action_evidence"]
     assert report.status == "passed"
     assert report.steps[0].attempts == 2
     assert actuator.calls == 2
     assert "recover_candidates" in {event.phase for event in report.events}
     assert recover.metadata["recovery_reason"] == "missed_target"
     assert recover.metadata["recovery_chosen_action"] == "wait_and_reobserve"
+    assert reobserve.metadata["failure_observation"] is True
+    assert isinstance(post_failure_evidence, dict)
+    assert post_failure_evidence["active_window_title"] == "DeskPilot Fixture"
 
 
 def test_execution_engine_scroll_until_scrolls_search_region() -> None:

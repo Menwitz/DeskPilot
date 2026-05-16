@@ -65,6 +65,10 @@ screenshot path, active-window title, active-window process metadata when
 available, focused element metadata when available, cursor readback and cursor
 position, monitor geometry, and DPI scale. These fields are also stored as event
 metadata in `final-report.json` for report and replay tooling.
+Post-action `observe_after_action` events and failed-attempt
+`reobserve_after_failure` events include `post_action_evidence` with the same
+desktop evidence fields plus observer warnings, so verification and recovery
+reports can show what changed after input.
 
 The `compile_task` event records static step order, dependency edges, and
 expected UI state transitions before the planner observes the screen or attempts

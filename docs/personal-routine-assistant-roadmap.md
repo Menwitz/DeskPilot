@@ -189,7 +189,7 @@ abuse, and hidden automation are not supported.
       verification, and state-delta sections.
 - [x] Capture pre-action screenshot, active window title, process metadata,
       focused element, cursor position, monitor geometry, and DPI.
-- [ ] Capture post-action screenshot, active window title, process metadata,
+- [x] Capture post-action screenshot, active window title, process metadata,
       focused element, cursor position, and warnings.
 - [ ] Record selected candidate, rejected candidates, rejection reasons,
       confidence values, and coordinate conversion.

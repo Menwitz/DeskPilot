@@ -1167,7 +1167,11 @@ class ExecutionEngine:
         attempt: int,
     ) -> tuple[ScreenObservation, tuple[ElementCandidate, ...]]:
         observation = self.screen_observer.observe(config)
-        observation_metadata = _observation_metadata(step.id, observation, attempt)
+        observation_metadata = self._post_action_observation_metadata(
+            step,
+            observation,
+            attempt,
+        )
         observation_metadata["step_category"] = step_category(step)
         self._record(
             "observe_after_action",
@@ -1237,10 +1241,11 @@ class ExecutionEngine:
         next_attempt: int,
     ) -> tuple[ScreenObservation, tuple[ElementCandidate, ...]]:
         observation = self.screen_observer.observe(config)
-        observation_metadata = _observation_metadata(
-            step.id,
+        observation_metadata = self._post_action_observation_metadata(
+            step,
             observation,
             failed_attempt,
+            failure_observation=True,
         )
         observation_metadata["step_category"] = step_category(step)
         observation_metadata["failed_attempt"] = failed_attempt
@@ -1400,6 +1405,26 @@ class ExecutionEngine:
             observation,
             cursor_readback,
         )
+        return metadata
+
+    def _post_action_observation_metadata(
+        self,
+        step: TaskStep,
+        observation: ScreenObservation,
+        attempt: int,
+        *,
+        failure_observation: bool = False,
+    ) -> dict[str, object]:
+        metadata = _observation_metadata(step.id, observation, attempt)
+        cursor_readback = self._cursor_readback_metadata()
+        metadata["trace_schema_section"] = "verification"
+        metadata["observation_role"] = "post_action"
+        metadata["post_action_evidence"] = _observation_evidence(
+            observation,
+            cursor_readback,
+        )
+        if failure_observation:
+            metadata["failure_observation"] = True
         return metadata
 
     def _step_passed(
@@ -1752,6 +1777,7 @@ def _observation_evidence(
         "cursor_readback": cursor_readback,
         "monitor": _monitor_metadata(observation),
         "dpi_scale": _dpi_metadata(observation),
+        "warnings": list(observation.warnings),
     }
 
 
