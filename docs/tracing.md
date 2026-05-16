@@ -32,6 +32,9 @@ Failed metadata-only runs must still keep enough local report metadata to debug
 the failure path: final reports retain the abort reason, failed step status,
 candidate ID, failure category, candidate rankings, before/after observation
 metadata, cursor/focus details when available, and the action-log event stream.
+Leaving `redaction_policy` unset, or explicitly setting `evidence_mode: full`,
+keeps screenshot and OCR artifact capture enabled when the matching
+`save_screenshots` and `save_ocr_text` settings are also enabled.
 
 ## Report Contents
 

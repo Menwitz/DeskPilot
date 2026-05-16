@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from desktop_agent.actuation import DryRunActuator
 from desktop_agent.config import ExecutionProfile, RuntimeConfig, StaticConfigLoader
 from desktop_agent.perception import (
@@ -246,6 +248,48 @@ def test_file_trace_sink_applies_metadata_only_trace_mode(tmp_path: Path) -> Non
     assert config_payload["save_screenshots"] is False
     assert config_payload["save_ocr_text"] is False
     assert config_payload["redaction_policy"]["evidence_mode"] == "metadata_only"
+
+
+@pytest.mark.parametrize(
+    "redaction_policy",
+    [
+        pytest.param(None, id="default-full-evidence"),
+        pytest.param(
+            RedactionPolicy(evidence_mode="full"),
+            id="explicit-full-evidence",
+        ),
+    ],
+)
+def test_file_trace_sink_keeps_full_evidence_enabled_by_default_or_explicit_policy(
+    tmp_path: Path,
+    redaction_policy: RedactionPolicy | None,
+) -> None:
+    task = TaskDefinition(
+        name="full evidence",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="wait", action="wait_for", target="Ready"),),
+    )
+    config = RuntimeConfig(trace_root=tmp_path / "traces")
+    if redaction_policy is not None:
+        config = RuntimeConfig(
+            trace_root=tmp_path / "traces",
+            redaction_policy=redaction_policy,
+        )
+    trace_sink = FileTraceSink()
+
+    runtime_config = trace_sink.prepare_run(task, config)
+
+    assert runtime_config.save_screenshots is True
+    assert runtime_config.save_ocr_text is True
+    assert runtime_config.redaction_policy.evidence_mode == "full"
+    assert trace_sink.run_dir is not None
+    config_payload = json.loads((trace_sink.run_dir / "config.json").read_text())
+    assert config_payload["save_screenshots"] is True
+    assert config_payload["save_ocr_text"] is True
+    assert config_payload["redaction_policy"]["evidence_mode"] == "full"
+    assert config_payload["redaction_policy"]["screenshots"] == "full"
+    assert config_payload["redaction_policy"]["ocr_text"] == "full"
 
 
 def test_metadata_only_failed_trace_keeps_debuggable_report_metadata(
