@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -16,6 +17,7 @@ from desktop_agent.routines import (
     require_validated_routine_for_execution,
     routine_definition_from_mapping,
     routine_execution_gate,
+    routine_failure_counters_from_trace_root,
     routine_promotion_gates,
     routine_quarantine_status,
 )
@@ -390,6 +392,40 @@ def test_routine_quarantine_status_uses_failed_evidence_count() -> None:
     assert routine.report_metadata()["routine_quarantine_status"] == "quarantined"
 
 
+def test_routine_failure_counters_scan_trace_reports(tmp_path: Path) -> None:
+    _write_final_report(
+        tmp_path / "traces" / "run-1" / "final-report.json",
+        routine_id="browser.search",
+        status="failed",
+    )
+    _write_final_report(
+        tmp_path / "traces" / "run-2" / "final-report.json",
+        routine_id="browser.search",
+        status="aborted",
+    )
+    _write_final_report(
+        tmp_path / "traces" / "run-3" / "final-report.json",
+        routine_id="browser.search",
+        status="passed",
+    )
+    _write_final_report(
+        tmp_path / "traces" / "run-4" / "final-report.json",
+        routine_id="native.notepad",
+        status="emergency_stopped",
+    )
+
+    counters = routine_failure_counters_from_trace_root(tmp_path / "traces")
+
+    browser = counters["browser.search"]
+    native = counters["native.notepad"]
+    assert browser.total_runs == 3
+    assert browser.passed_runs == 1
+    assert browser.failure_count == 2
+    assert browser.metadata()["routine_historical_failure_count"] == 2
+    assert native.total_runs == 1
+    assert native.failure_count == 1
+
+
 def test_routine_execution_gate_allows_only_validated_catalog_routines() -> None:
     routine = routine_definition_from_mapping(
         {
@@ -596,6 +632,7 @@ def test_routine_docs_generation_renders_index_and_template(
 ) -> None:
     root = tmp_path / "routine_packs"
     routine_path = root / "browser" / "search.routine.yaml"
+    history_root = tmp_path / "traces"
     index_path = tmp_path / "docs" / "routine-catalog-index.md"
     template_path = tmp_path / "docs" / "routine-documentation-template.md"
     _write_routine(
@@ -609,13 +646,20 @@ def test_routine_docs_generation_renders_index_and_template(
         required_site="example.com",
         task_path="tasks/browser-search.yaml",
     )
+    _write_final_report(
+        history_root / "failed-search" / "final-report.json",
+        routine_id="browser.search",
+        status="failed",
+    )
     catalog = load_routine_catalog(root)
+    counters = routine_failure_counters_from_trace_root(history_root)
 
-    index = render_routine_catalog_index(catalog)
+    index = render_routine_catalog_index(catalog, counters)
     template = render_routine_documentation_template()
 
     assert "# DeskPilot Routine Catalog Index" in index
     assert "- Total routines: 1" in index
+    assert "- Historical failed runs: 1" in index
     assert "| browser.search | browser | Browser search |" in index
     assert "Promotion gates" in index
     assert "# <Routine Name>" in template
@@ -631,6 +675,8 @@ def test_routine_docs_generation_renders_index_and_template(
                 str(index_path),
                 "--template-output",
                 str(template_path),
+                "--failure-history-root",
+                str(history_root),
             ],
         )
         == 0
@@ -659,6 +705,21 @@ def _write_task(path: Path) -> None:
                 "      text: Results",
                 "",
             ],
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_final_report(path: Path, *, routine_id: str, status: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "status": status,
+                "metadata": {"routine_id": routine_id},
+                "steps": [],
+                "events": [],
+            },
         ),
         encoding="utf-8",
     )

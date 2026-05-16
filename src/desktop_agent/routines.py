@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from collections import Counter
 from collections.abc import Iterable, Mapping
@@ -224,6 +225,57 @@ class RoutineExecutionGate:
 
 
 @dataclass(frozen=True)
+class RoutineFailureCounters:
+    """Historical run counters derived from local routine trace reports."""
+
+    routine_id: str
+    total_runs: int = 0
+    passed_runs: int = 0
+    failed_runs: int = 0
+    aborted_runs: int = 0
+    emergency_stopped_runs: int = 0
+
+    @property
+    def failure_count(self) -> int:
+        return self.failed_runs + self.aborted_runs + self.emergency_stopped_runs
+
+    def record_status(self, status: str) -> RoutineFailureCounters:
+        if status == "passed":
+            return self._replace(passed_runs=self.passed_runs + 1)
+        if status == "failed":
+            return self._replace(failed_runs=self.failed_runs + 1)
+        if status == "aborted":
+            return self._replace(aborted_runs=self.aborted_runs + 1)
+        if status == "emergency_stopped":
+            return self._replace(
+                emergency_stopped_runs=self.emergency_stopped_runs + 1,
+            )
+        return self
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "routine_id": self.routine_id,
+            "routine_historical_total_runs": self.total_runs,
+            "routine_historical_passed_runs": self.passed_runs,
+            "routine_historical_failed_runs": self.failed_runs,
+            "routine_historical_aborted_runs": self.aborted_runs,
+            "routine_historical_emergency_stopped_runs": self.emergency_stopped_runs,
+            "routine_historical_failure_count": self.failure_count,
+        }
+
+    def _replace(self, **changes: int) -> RoutineFailureCounters:
+        values = {
+            "total_runs": self.total_runs + 1,
+            "passed_runs": self.passed_runs,
+            "failed_runs": self.failed_runs,
+            "aborted_runs": self.aborted_runs,
+            "emergency_stopped_runs": self.emergency_stopped_runs,
+            **changes,
+        }
+        return RoutineFailureCounters(routine_id=self.routine_id, **values)
+
+
+@dataclass(frozen=True)
 class RoutineCatalog:
     """Loaded routine catalog with ID lookup and local search."""
 
@@ -267,6 +319,30 @@ def load_routine_catalog(root: Path = Path("routine_packs")) -> RoutineCatalog:
     )
     validate_routine_catalog(catalog)
     return catalog
+
+
+def routine_failure_counters_from_trace_root(
+    trace_root: Path,
+) -> dict[str, RoutineFailureCounters]:
+    """Build routine run counters from local final-report JSON artifacts."""
+    if not trace_root.exists():
+        return {}
+
+    counters: dict[str, RoutineFailureCounters] = {}
+    for report_path in sorted(trace_root.rglob("final-report.json")):
+        report = _json_report(report_path)
+        if report is None:
+            continue
+        routine_id = _routine_id_from_report(report)
+        status = report.get("status")
+        if routine_id is None or not isinstance(status, str):
+            continue
+        counter = counters.get(
+            routine_id,
+            RoutineFailureCounters(routine_id=routine_id),
+        )
+        counters[routine_id] = counter.record_status(status)
+    return counters
 
 
 def routine_definition_from_mapping(
@@ -497,8 +573,12 @@ def render_routine_documentation_template() -> str:
     return ROUTINE_DOCUMENTATION_TEMPLATE
 
 
-def render_routine_catalog_index(catalog: RoutineCatalog) -> str:
+def render_routine_catalog_index(
+    catalog: RoutineCatalog,
+    failure_counters: Mapping[str, RoutineFailureCounters] | None = None,
+) -> str:
     """Render a deterministic Markdown index and quality report for a catalog."""
+    counters = failure_counters or {}
     routines = tuple(sorted(catalog.routines, key=lambda routine: routine.id))
     lines = [
         "# DeskPilot Routine Catalog Index",
@@ -519,16 +599,17 @@ def render_routine_catalog_index(catalog: RoutineCatalog) -> str:
         f"- Schedule-constrained routines: {_schedule_constrained_count(routines)}",
         f"- Windows proof required: {_windows_proof_required_count(routines)}",
         f"- Quarantined routines: {_quarantined_count(routines)}",
+        f"- Historical failed runs: {_historical_failure_count(routines, counters)}",
         f"- Approval gaps: {_approval_gap_summary(routines)}",
         "",
         "## Routine Index",
         "",
         "| ID | Pack | Name | Surface | Safety | Approval | Schedule | "
-        "Gates | Status | Reference |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "Gates | Status | Historical Failures | Reference |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for routine in routines:
-        lines.append(_routine_index_row(catalog, routine))
+        lines.append(_routine_index_row(catalog, routine, counters))
     lines.extend(
         [
             "",
@@ -547,8 +628,8 @@ def render_routine_catalog_index(catalog: RoutineCatalog) -> str:
             "  replay review, documentation, and Windows proof when applicable.",
             "- Report metadata: routine ID, name, tags, safety class, schedule",
             "  policy, schedule constraints, approval policy, expected duration,",
-            "  reference kind, failed evidence count, quarantine status, and",
-            "  promotion gates.",
+            "  reference kind, failed evidence count, historical failure count,",
+            "  quarantine status, and promotion gates.",
             "- Quarantine rule: routines are quarantined when explicitly marked or",
             "  when failed evidence count reaches three.",
             "",
@@ -599,6 +680,16 @@ def _schedule_constrained_count(routines: Iterable[RoutineDefinition]) -> int:
     return sum(1 for routine in routines if routine.schedule != RoutineSchedule())
 
 
+def _historical_failure_count(
+    routines: Iterable[RoutineDefinition],
+    counters: Mapping[str, RoutineFailureCounters],
+) -> int:
+    return sum(
+        counters.get(routine.id, _empty_counter(routine.id)).failure_count
+        for routine in routines
+    )
+
+
 def _approval_gap_summary(routines: Iterable[RoutineDefinition]) -> str:
     gaps = sorted(
         routine.id
@@ -609,7 +700,11 @@ def _approval_gap_summary(routines: Iterable[RoutineDefinition]) -> str:
     return "none" if not gaps else ", ".join(gaps)
 
 
-def _routine_index_row(catalog: RoutineCatalog, routine: RoutineDefinition) -> str:
+def _routine_index_row(
+    catalog: RoutineCatalog,
+    routine: RoutineDefinition,
+    counters: Mapping[str, RoutineFailureCounters],
+) -> str:
     gates = ",".join(
         gate.id for gate in routine_promotion_gates(routine) if gate.required
     )
@@ -624,9 +719,14 @@ def _routine_index_row(catalog: RoutineCatalog, routine: RoutineDefinition) -> s
         routine.schedule_policy,
         gates,
         routine_quarantine_status(routine),
+        str(counters.get(routine.id, _empty_counter(routine.id)).failure_count),
         _routine_reference_label(routine),
     )
     return "| " + " | ".join(_markdown_cell(cell) for cell in cells) + " |"
+
+
+def _empty_counter(routine_id: str) -> RoutineFailureCounters:
+    return RoutineFailureCounters(routine_id=routine_id)
 
 
 def _search_seed_lines(
@@ -682,6 +782,22 @@ def _routine_reference_label(routine: RoutineDefinition) -> str:
     if reference.kind == "task":
         return f"task:{reference.task_path}" if reference.task_path else "task:"
     return f"playbook:{reference.playbook_site}/{reference.playbook_flow}"
+
+
+def _json_report(path: Path) -> dict[str, object] | None:
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return loaded if isinstance(loaded, dict) else None
+
+
+def _routine_id_from_report(report: Mapping[str, object]) -> str | None:
+    metadata = report.get("metadata")
+    if not isinstance(metadata, dict):
+        return None
+    routine_id = metadata.get("routine_id")
+    return routine_id if isinstance(routine_id, str) else None
 
 
 def _markdown_cell(value: str) -> str:

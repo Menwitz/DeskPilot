@@ -96,6 +96,7 @@ from desktop_agent.routines import (
     render_routine_catalog_index,
     render_routine_documentation_template,
     require_validated_routine_for_execution,
+    routine_failure_counters_from_trace_root,
     routine_promotion_gates,
     routine_quarantine_status,
 )
@@ -294,6 +295,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--template-output",
         default=Path("docs/routine-documentation-template.md"),
         type=Path,
+    )
+    generate_routine_docs_parser.add_argument(
+        "--failure-history-root",
+        type=Path,
+        help="optional trace root containing final-report.json files",
     )
     _add_routine_catalog_options(generate_routine_docs_parser)
 
@@ -855,10 +861,15 @@ def _export_routine(args: argparse.Namespace) -> int:
 
 def _generate_routine_docs(args: argparse.Namespace) -> int:
     catalog = load_routine_catalog(args.routine_pack_root)
+    failure_counters = (
+        routine_failure_counters_from_trace_root(args.failure_history_root)
+        if args.failure_history_root is not None
+        else None
+    )
     args.index_output.parent.mkdir(parents=True, exist_ok=True)
     args.template_output.parent.mkdir(parents=True, exist_ok=True)
     args.index_output.write_text(
-        render_routine_catalog_index(catalog),
+        render_routine_catalog_index(catalog, failure_counters),
         encoding="utf-8",
     )
     args.template_output.write_text(

@@ -97,6 +97,14 @@ records. Quarantined status is included in compiled task metadata and
 `show-routine` output so catalog reports can hold unstable routines back from
 promotion or unattended use.
 
+## Historical Counters
+
+`routine_failure_counters_from_trace_root()` scans local `final-report.json`
+artifacts, groups reports by `metadata.routine_id`, and counts passed, failed,
+aborted, and emergency-stopped runs. `generate-routine-docs` can receive
+`--failure-history-root <trace-root>` to include historical failure counts in
+the routine catalog index without rewriting reviewed routine YAML.
+
 ## Catalog Loading
 
 Routine catalogs load files named `*.routine.yaml` or `*.routine.yml` under
