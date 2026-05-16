@@ -197,7 +197,7 @@ abuse, and hidden automation are not supported.
       target appearance/disappearance, and scroll movement.
 - [x] Add verification outcome `inconclusive` and route it to retry or manual
       handoff.
-- [ ] Add trace replay timeline output for each step.
+- [x] Add trace replay timeline output for each step.
 - [ ] Add trace replay Markdown or HTML summary with screenshots and state
       deltas.
 

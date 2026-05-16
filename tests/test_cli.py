@@ -1200,6 +1200,66 @@ def test_cli_replay_summarizes_final_report(
     assert "reason: fixture" in output
 
 
+def test_cli_replay_prints_step_timeline(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    trace_dir.mkdir()
+    (trace_dir / "final-report.json").write_text(
+        json.dumps(
+            {
+                "status": "passed",
+                "steps": [
+                    {
+                        "step_id": "click-submit",
+                        "action": "click_text",
+                        "status": "passed",
+                        "attempts": 1,
+                    },
+                ],
+                "events": [
+                    {
+                        "phase": "observe_screen",
+                        "message": "screen observed",
+                        "metadata": {
+                            "step_id": "click-submit",
+                            "observation_role": "pre_action",
+                        },
+                    },
+                    {
+                        "phase": "select_target",
+                        "message": "target selected",
+                        "metadata": {
+                            "step_id": "click-submit",
+                            "candidate_id": "candidate-submit",
+                        },
+                    },
+                    {
+                        "phase": "verify_result",
+                        "message": "verified",
+                        "metadata": {
+                            "step_id": "click-submit",
+                            "verification_outcome": "passed",
+                        },
+                    },
+                ],
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    status = main(["replay", str(trace_dir)])
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "timeline:" in output
+    assert "- step click-submit (click_text) passed after 1 attempt(s)" in output
+    assert "1. observe_screen: screen observed [observation pre_action]" in output
+    assert "2. select_target: target selected [candidate candidate-submit]" in output
+    assert "3. verify_result: verified [outcome passed]" in output
+
+
 def test_cli_replay_points_to_proof_replay_for_manifest_trace(
     tmp_path: Path,
     capsys: CaptureFixture[str],

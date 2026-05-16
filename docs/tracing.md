@@ -162,7 +162,10 @@ bounds to physical desktop coordinates when monitor metadata is available.
 ## Replay
 
 `desktop-agent replay <trace-dir>` reads `final-report.json` and prints a
-summary without rerunning actions.
+summary and per-step timeline without rerunning actions. Timeline rows group
+trace events by `step_id` and include compact markers for observations,
+selected candidates, verification outcomes, recovery reasons, manual handoff,
+state-delta changes, and scroll movement.
 
 `desktop-agent proof replay <trace-dir>` reads `proof-manifest.json` and prints
 the proof name, original command, status, environment metadata, and artifact

@@ -1105,9 +1105,89 @@ def _replay(args: argparse.Namespace) -> int:
     print(f"status: {report.get('status', 'unknown')}")
     if report.get("abort_reason"):
         print(f"reason: {report['abort_reason']}")
+    for line in _replay_timeline_lines(report):
+        print(line)
     if args.verbose:
         print(json.dumps(report, indent=2, sort_keys=True))
     return 0
+
+
+def _replay_timeline_lines(report: dict[str, object]) -> list[str]:
+    steps = report.get("steps")
+    events = report.get("events")
+    if not isinstance(steps, list) or not isinstance(events, list) or not steps:
+        return []
+
+    event_rows = [event for event in events if isinstance(event, dict)]
+    lines = ["timeline:"]
+    for step in steps:
+        if not isinstance(step, dict):
+            continue
+        step_id = step.get("step_id")
+        if not isinstance(step_id, str):
+            continue
+        action = step.get("action") if isinstance(step.get("action"), str) else "?"
+        status = step.get("status") if isinstance(step.get("status"), str) else "?"
+        attempts = (
+            step.get("attempts") if isinstance(step.get("attempts"), int) else "?"
+        )
+        lines.append(
+            f"- step {step_id} ({action}) {status} after {attempts} attempt(s)"
+        )
+        step_events = [
+            event for event in event_rows if _event_step_id(event) == step_id
+        ]
+        if not step_events:
+            lines.append("  1. no step events recorded")
+            continue
+        for index, event in enumerate(step_events, start=1):
+            phase = event.get("phase") if isinstance(event.get("phase"), str) else "?"
+            message = (
+                event.get("message") if isinstance(event.get("message"), str) else ""
+            )
+            lines.append(
+                f"  {index}. {phase}: {message}{_replay_event_suffix(event)}"
+            )
+    return lines
+
+
+def _event_step_id(event: dict[str, object]) -> str | None:
+    metadata = event.get("metadata")
+    if not isinstance(metadata, dict):
+        return None
+    for key in ("step_id", "recovery_for_step_id", "checkpoint_for_step_id"):
+        value = metadata.get(key)
+        if isinstance(value, str):
+            return value
+    return None
+
+
+def _replay_event_suffix(event: dict[str, object]) -> str:
+    metadata = event.get("metadata")
+    if not isinstance(metadata, dict):
+        return ""
+    details: list[str] = []
+    for key, label in (
+        ("verification_outcome", "outcome"),
+        ("candidate_id", "candidate"),
+        ("recovery_reason", "recovery"),
+        ("observation_role", "observation"),
+        ("failure_category", "failure"),
+    ):
+        value = metadata.get(key)
+        if isinstance(value, str):
+            details.append(f"{label} {value}")
+    if metadata.get("manual_handoff_required") is True:
+        details.append("manual handoff")
+    if metadata.get("target_appeared") is True:
+        details.append("target appeared")
+    if metadata.get("target_disappeared") is True:
+        details.append("target disappeared")
+    if metadata.get("scroll_moved") is True:
+        details.append("scroll moved")
+    if not details:
+        return ""
+    return " [" + "; ".join(details) + "]"
 
 
 def _proof(args: argparse.Namespace) -> int:
