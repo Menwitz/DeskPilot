@@ -20,6 +20,7 @@ RunQueueStatus = Literal[
     "completed",
     "failed",
     "canceled",
+    "stopped",
     "handed_off",
 ]
 SchedulerTraceKind = Literal[
@@ -41,22 +42,38 @@ RUN_QUEUE_STATUSES: frozenset[str] = frozenset(
         "completed",
         "failed",
         "canceled",
+        "stopped",
         "handed_off",
     },
 )
 TERMINAL_RUN_QUEUE_STATUSES: frozenset[str] = frozenset(
-    {"completed", "failed", "canceled", "handed_off"},
+    {"completed", "failed", "canceled", "stopped", "handed_off"},
 )
 RUN_QUEUE_TRANSITIONS: dict[RunQueueStatus, frozenset[RunQueueStatus]] = {
-    "pending": frozenset({"running", "paused", "blocked", "canceled", "handed_off"}),
-    "running": frozenset(
-        {"paused", "blocked", "completed", "failed", "canceled", "handed_off"},
+    "pending": frozenset(
+        {"running", "paused", "blocked", "canceled", "stopped", "handed_off"},
     ),
-    "paused": frozenset({"pending", "running", "canceled", "handed_off"}),
-    "blocked": frozenset({"pending", "running", "failed", "canceled", "handed_off"}),
+    "running": frozenset(
+        {
+            "paused",
+            "blocked",
+            "completed",
+            "failed",
+            "canceled",
+            "stopped",
+            "handed_off",
+        },
+    ),
+    "paused": frozenset(
+        {"pending", "running", "canceled", "stopped", "handed_off"},
+    ),
+    "blocked": frozenset(
+        {"pending", "running", "failed", "canceled", "stopped", "handed_off"},
+    ),
     "completed": frozenset(),
     "failed": frozenset(),
     "canceled": frozenset(),
+    "stopped": frozenset(),
     "handed_off": frozenset(),
 }
 SCHEDULER_TRACE_KINDS: frozenset[str] = frozenset(

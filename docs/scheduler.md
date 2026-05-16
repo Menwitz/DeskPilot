@@ -15,6 +15,7 @@ and reports a shared state contract for routine runs.
 - `completed`: terminal success.
 - `failed`: terminal failure.
 - `canceled`: terminal operator or policy cancellation.
+- `stopped`: terminal operator stop from the native app run controls.
 - `handed_off`: terminal manual handoff to the operator.
 
 Valid transitions are enforced by `desktop_agent.scheduler.RunQueue`. Terminal

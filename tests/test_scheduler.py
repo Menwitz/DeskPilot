@@ -62,7 +62,7 @@ def test_run_queue_transitions_record_history_and_attempts() -> None:
 
 @pytest.mark.parametrize(
     "terminal_status",
-    ["failed", "canceled", "handed_off"],
+    ["failed", "canceled", "stopped", "handed_off"],
 )
 def test_run_queue_terminal_states_stop_later_transitions(
     terminal_status: str,

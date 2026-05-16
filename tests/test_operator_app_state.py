@@ -13,6 +13,7 @@ from desktop_agent.operator_app_state import (
 )
 from desktop_agent.operator_services import (
     OperatorApprovalDecision,
+    OperatorRunControlResult,
     OperatorRunStartResult,
     RoutineListItem,
 )
@@ -20,17 +21,16 @@ from desktop_agent.routines import RoutineExecutionGate
 
 
 def test_operator_app_controller_transitions_run_state_with_fake_runner() -> None:
-    controller = OperatorAppController(
-        _FakeRunnerService(
-            {
-                "browser.search": RoutineExecutionGate(
-                    routine_id="browser.search",
-                    allowed=True,
-                    reason="validated_catalog_routine",
-                ),
-            },
-        ),
+    runner = _FakeRunnerService(
+        {
+            "browser.search": RoutineExecutionGate(
+                routine_id="browser.search",
+                allowed=True,
+                reason="validated_catalog_routine",
+            ),
+        },
     )
+    controller = OperatorAppController(runner)
 
     running = controller.start_routine("browser.search")
     paused = controller.pause_run()
@@ -45,7 +45,29 @@ def test_operator_app_controller_transitions_run_state_with_fake_runner() -> Non
     assert paused.live_run.status == "paused"
     assert resumed.live_run.status == "running"
     assert canceled.live_run.status == "canceled"
-    assert canceled.live_run.next_action == "none"
+    assert canceled.live_run.next_action is None
+    assert runner.run_statuses["run-0001"] == "canceled"
+
+
+def test_operator_app_controller_stops_run_with_fake_runner() -> None:
+    runner = _FakeRunnerService(
+        {
+            "browser.search": RoutineExecutionGate(
+                routine_id="browser.search",
+                allowed=True,
+                reason="validated_catalog_routine",
+            ),
+        },
+    )
+    controller = OperatorAppController(runner)
+
+    controller.start_routine("browser.search")
+    stopped = controller.stop_run()
+
+    assert stopped.live_run.run_id == "run-0001"
+    assert stopped.live_run.status == "stopped"
+    assert stopped.live_run.next_action is None
+    assert runner.run_statuses["run-0001"] == "stopped"
 
 
 def test_operator_app_controller_blocks_run_when_fake_gate_rejects() -> None:
@@ -149,6 +171,8 @@ def test_operator_app_controller_tracks_trace_viewer_state(tmp_path: Path) -> No
 class _FakeRunnerService:
     def __init__(self, gates: dict[str, RoutineExecutionGate]) -> None:
         self._gates = gates
+        self.run_statuses: dict[str, str] = {}
+        self.run_routines: dict[str, str] = {}
 
     def execution_gate(self, routine_id: str) -> RoutineExecutionGate:
         return self._gates.get(
@@ -171,6 +195,8 @@ class _FakeRunnerService:
                 next_action=None,
                 execution_gate=gate,
             )
+        self.run_statuses["run-0001"] = "running"
+        self.run_routines["run-0001"] = routine_id
         return OperatorRunStartResult(
             run_id="run-0001",
             routine_id=routine_id,
@@ -178,6 +204,36 @@ class _FakeRunnerService:
             reason="operator_app_start",
             next_action="observe_screen",
             execution_gate=gate,
+        )
+
+    def pause_run(self, run_id: str) -> OperatorRunControlResult:
+        return self._transition_run(run_id, "paused", "operator_app_pause")
+
+    def resume_run(self, run_id: str) -> OperatorRunControlResult:
+        return self._transition_run(run_id, "running", "operator_app_resume")
+
+    def cancel_run(self, run_id: str) -> OperatorRunControlResult:
+        return self._transition_run(run_id, "canceled", "operator_app_cancel")
+
+    def stop_run(self, run_id: str) -> OperatorRunControlResult:
+        return self._transition_run(run_id, "stopped", "operator_app_stop")
+
+    def _transition_run(
+        self,
+        run_id: str,
+        status: str,
+        reason: str,
+    ) -> OperatorRunControlResult:
+        self.run_statuses[run_id] = status
+        next_action = "observe_screen" if status == "running" else None
+        if status == "paused":
+            next_action = "resume_or_cancel"
+        return OperatorRunControlResult(
+            run_id=run_id,
+            routine_id=self.run_routines[run_id],
+            status=status,
+            reason=reason,
+            next_action=next_action,
         )
 
 

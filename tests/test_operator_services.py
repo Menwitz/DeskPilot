@@ -63,7 +63,14 @@ def test_local_operator_services_expose_catalog_runner_approvals_and_queue(
     gate = services.runner.execution_gate("browser.search")
     unknown_gate = services.runner.execution_gate("browser.unknown")
     run = services.runner.start_routine("browser.search")
+    assert run.run_id is not None
+    pause = services.runner.pause_run(run.run_id)
+    resume = services.runner.resume_run(run.run_id)
     blocked_run = services.runner.start_routine("browser.unknown")
+    cancel = services.runner.cancel_run(run.run_id)
+    stopped_run = services.runner.start_routine("browser.search")
+    assert stopped_run.run_id is not None
+    stop = services.runner.stop_run(stopped_run.run_id)
     queue_metadata = services.scheduler.queue_metadata()
     queue_entries = cast(list[dict[str, object]], queue_metadata["run_queue_entries"])
 
@@ -89,11 +96,17 @@ def test_local_operator_services_expose_catalog_runner_approvals_and_queue(
     assert run.run_id == "run-0001"
     assert run.status == "running"
     assert run.next_action == "observe_screen"
+    assert pause.status == "paused"
+    assert pause.next_action == "resume_or_cancel"
+    assert resume.status == "running"
+    assert cancel.status == "canceled"
+    assert stop.status == "stopped"
     assert blocked_run.status == "blocked"
     assert blocked_run.reason == "unknown_routine_id"
-    assert queue_metadata["run_queue_size"] == 1
+    assert queue_metadata["run_queue_size"] == 2
     assert queue_entries[0]["routine_id"] == "browser.search"
-    assert queue_entries[0]["status"] == "running"
+    assert queue_entries[0]["status"] == "canceled"
+    assert queue_entries[1]["status"] == "stopped"
     assert "generate_yaml" in services.recorder.capabilities()
     assert services.routine_packs.list_packs() == ()
 

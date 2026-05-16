@@ -27,7 +27,7 @@ from desktop_agent.routines import (
     routine_execution_gate,
     routine_quarantine_status,
 )
-from desktop_agent.scheduler import RunQueue
+from desktop_agent.scheduler import RunQueue, RunQueueStatus
 
 
 class OperatorServiceError(ValueError):
@@ -91,6 +91,26 @@ class OperatorRunStartResult:
             "reason": self.reason,
             "next_action": self.next_action,
             "execution_gate": self.execution_gate.metadata(),
+        }
+
+
+@dataclass(frozen=True)
+class OperatorRunControlResult:
+    """Result of a pause, resume, cancel, or stop request from the app."""
+
+    run_id: str
+    routine_id: str
+    status: str
+    reason: str
+    next_action: str | None
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "run_id": self.run_id,
+            "routine_id": self.routine_id,
+            "status": self.status,
+            "reason": self.reason,
+            "next_action": self.next_action,
         }
 
 
@@ -178,6 +198,22 @@ class RunnerService(Protocol):
 
     def start_routine(self, routine_id: str) -> OperatorRunStartResult:
         """Start a local run request without shelling out to the CLI."""
+        ...
+
+    def pause_run(self, run_id: str) -> OperatorRunControlResult:
+        """Pause a monitored app run."""
+        ...
+
+    def resume_run(self, run_id: str) -> OperatorRunControlResult:
+        """Resume a paused app run."""
+        ...
+
+    def cancel_run(self, run_id: str) -> OperatorRunControlResult:
+        """Cancel a monitored app run."""
+        ...
+
+    def stop_run(self, run_id: str) -> OperatorRunControlResult:
+        """Stop a monitored app run."""
         ...
 
 
@@ -379,6 +415,8 @@ class LocalRunnerService:
             )
         queued = self._queue_store.queue.enqueue(
             routine_id,
+            # App pauses and resumes share the retry-aware queue transition path.
+            max_attempts=100,
             reason="operator_app_start",
         )
         run_id = queued.entries[-1].id
@@ -394,6 +432,65 @@ class LocalRunnerService:
             reason="operator_app_start",
             next_action="observe_screen",
             execution_gate=gate,
+        )
+
+    def pause_run(self, run_id: str) -> OperatorRunControlResult:
+        return self._transition_run(
+            run_id,
+            "paused",
+            reason="operator_app_pause",
+            next_action="resume_or_cancel",
+        )
+
+    def resume_run(self, run_id: str) -> OperatorRunControlResult:
+        return self._transition_run(
+            run_id,
+            "running",
+            reason="operator_app_resume",
+            next_action="observe_screen",
+        )
+
+    def cancel_run(self, run_id: str) -> OperatorRunControlResult:
+        return self._transition_run(
+            run_id,
+            "canceled",
+            reason="operator_app_cancel",
+            next_action=None,
+        )
+
+    def stop_run(self, run_id: str) -> OperatorRunControlResult:
+        return self._transition_run(
+            run_id,
+            "stopped",
+            reason="operator_app_stop",
+            next_action=None,
+        )
+
+    def _transition_run(
+        self,
+        run_id: str,
+        status: RunQueueStatus,
+        *,
+        reason: str,
+        next_action: str | None,
+    ) -> OperatorRunControlResult:
+        entry = self._queue_store.queue.by_id(run_id)
+        if entry is None:
+            raise OperatorServiceError(f"unknown run id: {run_id}")
+        self._queue_store.queue = self._queue_store.queue.transition(
+            run_id,
+            status,
+            reason=reason,
+        )
+        updated = self._queue_store.queue.by_id(run_id)
+        if updated is None:
+            raise OperatorServiceError(f"unknown run id after transition: {run_id}")
+        return OperatorRunControlResult(
+            run_id=run_id,
+            routine_id=updated.routine_id,
+            status=updated.status,
+            reason=reason,
+            next_action=next_action,
         )
 
 

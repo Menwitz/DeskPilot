@@ -103,29 +103,53 @@ class OperatorAppController:
         return self.state
 
     def pause_run(self) -> OperatorAppState:
-        self._require_started_run()
-        self.state = replace(
-            self.state,
-            live_run=replace(self.state.live_run, status="paused"),
-        )
-        return self.state
-
-    def resume_run(self) -> OperatorAppState:
-        self._require_started_run()
-        self.state = replace(
-            self.state,
-            live_run=replace(self.state.live_run, status="running"),
-        )
-        return self.state
-
-    def cancel_run(self) -> OperatorAppState:
-        self._require_started_run()
+        run_id = self._active_run_id()
+        run = self._runner.pause_run(run_id)
         self.state = replace(
             self.state,
             live_run=replace(
                 self.state.live_run,
-                status="canceled",
-                next_action="none",
+                status=run.status,
+                next_action=run.next_action,
+            ),
+        )
+        return self.state
+
+    def resume_run(self) -> OperatorAppState:
+        run_id = self._active_run_id()
+        run = self._runner.resume_run(run_id)
+        self.state = replace(
+            self.state,
+            live_run=replace(
+                self.state.live_run,
+                status=run.status,
+                next_action=run.next_action,
+            ),
+        )
+        return self.state
+
+    def cancel_run(self) -> OperatorAppState:
+        run_id = self._active_run_id()
+        run = self._runner.cancel_run(run_id)
+        self.state = replace(
+            self.state,
+            live_run=replace(
+                self.state.live_run,
+                status=run.status,
+                next_action=run.next_action,
+            ),
+        )
+        return self.state
+
+    def stop_run(self) -> OperatorAppState:
+        run_id = self._active_run_id()
+        run = self._runner.stop_run(run_id)
+        self.state = replace(
+            self.state,
+            live_run=replace(
+                self.state.live_run,
+                status=run.status,
+                next_action=run.next_action,
             ),
         )
         return self.state
@@ -196,3 +220,9 @@ class OperatorAppController:
     def _require_started_run(self) -> None:
         if self.state.live_run.current_routine_id is None:
             raise OperatorAppStateError("no active run")
+
+    def _active_run_id(self) -> str:
+        self._require_started_run()
+        if self.state.live_run.run_id is None:
+            raise OperatorAppStateError("active run is missing a run id")
+        return self.state.live_run.run_id
