@@ -82,6 +82,7 @@ from desktop_agent.routines import (
     RoutineDefinitionError,
     load_routine_catalog,
     routine_promotion_gates,
+    routine_quarantine_status,
 )
 from desktop_agent.safety import (
     LocalSafetyPolicy,
@@ -749,6 +750,10 @@ def _show_routine(args: argparse.Namespace) -> int:
     print(f"schedule_policy: {routine.schedule_policy}")
     print(f"approval_policy: {routine.approval_policy}")
     print(f"expected_duration_seconds: {routine.expected_duration_seconds:g}")
+    print(f"failed_evidence_count: {routine.failed_evidence_count}")
+    print(f"quarantine_status: {routine_quarantine_status(routine)}")
+    if routine.quarantine_reason:
+        print(f"quarantine_reason: {routine.quarantine_reason}")
     print(f"reference: {_routine_reference_summary(routine)}")
     print("promotion_gates:")
     for gate in routine_promotion_gates(routine):
@@ -852,9 +857,12 @@ def _routine_to_yaml_dict(routine: RoutineDefinition) -> dict[str, object]:
         "approval_policy": routine.approval_policy,
         "expected_duration_seconds": routine.expected_duration_seconds,
         "reference": _routine_reference_to_yaml_dict(routine),
+        "failed_evidence_count": routine.failed_evidence_count,
+        "quarantine_status": routine.quarantine_status,
     }
     _put_optional(payload, "required_app", routine.required_app)
     _put_optional(payload, "required_site", routine.required_site)
+    _put_optional(payload, "quarantine_reason", routine.quarantine_reason)
     return payload
 
 

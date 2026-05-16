@@ -25,6 +25,8 @@ safety_class: low
 schedule_policy: manual
 approval_policy: none
 expected_duration_seconds: 30
+failed_evidence_count: 0
+quarantine_status: active
 reference:
   type: task
   path: tasks/browser-search.yaml
@@ -55,6 +57,16 @@ Supported approval policies are `none`, `confirm`, `manifest_required`, and
 
 `RoutineDefinition.report_metadata()` returns JSON-safe fields for future trace,
 monitoring, search, and catalog quality reports.
+
+## Quarantine
+
+Routine definitions can carry `failed_evidence_count`, `quarantine_status`, and
+`quarantine_reason`. `quarantine_status` supports `active` and `quarantined`.
+Routines are computed as quarantined when they are explicitly marked
+`quarantined` or when `failed_evidence_count` reaches three failed evidence
+records. Quarantined status is included in compiled task metadata and
+`show-routine` output so catalog reports can hold unstable routines back from
+promotion or unattended use.
 
 ## Catalog Loading
 

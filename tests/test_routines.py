@@ -12,6 +12,7 @@ from desktop_agent.routines import (
     load_routine_definition,
     routine_definition_from_mapping,
     routine_promotion_gates,
+    routine_quarantine_status,
 )
 from desktop_agent.task_dsl import BasicTaskValidator, YamlTaskLoader
 
@@ -220,6 +221,32 @@ def test_routine_promotion_gates_include_required_review_steps() -> None:
     assert gate_metadata[-1]["id"] == "windows_proof"
 
 
+def test_routine_quarantine_status_uses_failed_evidence_count() -> None:
+    routine = routine_definition_from_mapping(
+        {
+            "id": "browser.flaky",
+            "name": "Flaky browser routine",
+            "description": "A routine with repeated failed evidence.",
+            "goal": "Show quarantine status.",
+            "tags": ["browser"],
+            "inputs": [],
+            "outputs": [],
+            "safety_class": "low",
+            "schedule_policy": "manual",
+            "approval_policy": "none",
+            "expected_duration_seconds": 30,
+            "failed_evidence_count": 3,
+            "reference": {
+                "type": "task",
+                "path": "tasks/flaky.yaml",
+            },
+        },
+    )
+
+    assert routine_quarantine_status(routine) == "quarantined"
+    assert routine.report_metadata()["routine_quarantine_status"] == "quarantined"
+
+
 def test_routine_catalog_rejects_duplicate_ids(tmp_path: Path) -> None:
     _write_routine(
         tmp_path / "browser" / "search.routine.yaml",
@@ -295,6 +322,7 @@ def test_routine_cli_lists_shows_compiles_exports_and_dry_runs(
     )
     show_output = capsys.readouterr().out
     assert "safety_class: low" in show_output
+    assert "quarantine_status: active" in show_output
     assert "reference: task:" in show_output
     assert "promotion_gates:" in show_output
     assert "windows_proof: required" in show_output
@@ -333,6 +361,7 @@ def test_routine_cli_lists_shows_compiles_exports_and_dry_runs(
     exported = yaml.safe_load(exported_path.read_text(encoding="utf-8"))
     assert exported["id"] == "browser.search"
     assert exported["reference"]["type"] == "task"
+    assert exported["quarantine_status"] == "active"
 
     assert (
         main(

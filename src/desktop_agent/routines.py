@@ -20,6 +20,10 @@ SUPPORTED_SCHEDULE_POLICIES: frozenset[str] = frozenset(
 SUPPORTED_APPROVAL_POLICIES: frozenset[str] = frozenset(
     {"none", "confirm", "manifest_required", "manual_handoff"},
 )
+SUPPORTED_QUARANTINE_STATUSES: frozenset[str] = frozenset(
+    {"active", "quarantined"},
+)
+ROUTINE_QUARANTINE_FAILURE_THRESHOLD = 3
 RoutineReferenceKind = Literal["task", "playbook"]
 
 
@@ -55,10 +59,14 @@ class RoutineDefinition:
     approval_policy: str
     expected_duration_seconds: float
     reference: RoutineReference
+    failed_evidence_count: int = 0
+    quarantine_status: str = "active"
+    quarantine_reason: str | None = None
     source_path: Path | None = None
 
     def report_metadata(self) -> dict[str, object]:
         """Return JSON-safe routine fields for traces and catalog reports."""
+        quarantine = routine_quarantine_status(self)
         return {
             "routine_id": self.id,
             "routine_name": self.name,
@@ -68,6 +76,9 @@ class RoutineDefinition:
             "routine_approval_policy": self.approval_policy,
             "routine_expected_duration_seconds": self.expected_duration_seconds,
             "routine_reference_kind": self.reference.kind,
+            "routine_failed_evidence_count": self.failed_evidence_count,
+            "routine_quarantine_status": quarantine,
+            "routine_quarantine_reason": self.quarantine_reason,
             "routine_promotion_gates": [
                 gate.metadata() for gate in routine_promotion_gates(self)
             ],
@@ -170,6 +181,14 @@ def routine_definition_from_mapping(
             "expected_duration_seconds",
         ),
         reference=_reference_from_value(data.get("reference"), base_dir),
+        failed_evidence_count=_optional_non_negative_int(
+            data.get("failed_evidence_count"),
+            "failed_evidence_count",
+        ),
+        quarantine_status=(
+            _optional_string(data, "quarantine_status") or "active"
+        ),
+        quarantine_reason=_optional_string(data, "quarantine_reason"),
         source_path=source_path,
     )
     validate_routine_definition(routine)
@@ -212,6 +231,12 @@ def validate_routine_definition(routine: RoutineDefinition) -> None:
         errors.append(f"unsupported approval_policy: {routine.approval_policy}")
     if routine.expected_duration_seconds <= 0:
         errors.append("expected_duration_seconds must be greater than zero")
+    if routine.failed_evidence_count < 0:
+        errors.append("failed_evidence_count must not be negative")
+    if routine.quarantine_status not in SUPPORTED_QUARANTINE_STATUSES:
+        errors.append(f"unsupported quarantine_status: {routine.quarantine_status}")
+    if routine.quarantine_status == "quarantined" and not routine.quarantine_reason:
+        errors.append("quarantine_reason is required when routine is quarantined")
     errors.extend(_reference_errors(routine.reference))
     if errors:
         raise RoutineDefinitionError("; ".join(errors))
@@ -286,6 +311,15 @@ def routine_promotion_gates(
         ),
     )
     return tuple(gates)
+
+
+def routine_quarantine_status(routine: RoutineDefinition) -> str:
+    """Return active/quarantined from explicit state and failed evidence count."""
+    if routine.quarantine_status == "quarantined":
+        return "quarantined"
+    if routine.failed_evidence_count >= ROUTINE_QUARANTINE_FAILURE_THRESHOLD:
+        return "quarantined"
+    return "active"
 
 
 def _reference_from_value(value: object, base_dir: Path) -> RoutineReference:
@@ -387,3 +421,13 @@ def _positive_float(value: object, key: str) -> float:
     if result <= 0:
         raise RoutineDefinitionError(f"{key} must be greater than zero")
     return result
+
+
+def _optional_non_negative_int(value: object, key: str) -> int:
+    if value is None:
+        return 0
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise RoutineDefinitionError(f"{key} must be an integer")
+    if value < 0:
+        raise RoutineDefinitionError(f"{key} must not be negative")
+    return value

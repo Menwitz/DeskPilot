@@ -333,7 +333,7 @@ abuse, and hidden automation are not supported.
       `dry-run-routine`, `run-routine`, and `export-routine`.
 - [x] Add routine promotion gates: schema validation, dry-run, fixture test,
       Windows proof when applicable, trace replay review, and documentation.
-- [ ] Add routine quarantine status for routines with repeated failed evidence.
+- [x] Add routine quarantine status for routines with repeated failed evidence.
 - [ ] Add browser routines for navigation, forms, search, reading, content
       extraction, writing surfaces, downloads, and settings pages.
 - [ ] Add native routines for Notepad, Calculator, Settings, File Explorer,
