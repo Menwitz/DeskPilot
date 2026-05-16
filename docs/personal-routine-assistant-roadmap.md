@@ -583,7 +583,7 @@ abuse, and hidden automation are not supported.
 
 - [x] Keep full local evidence available by default.
 - [x] Add redaction controls for sensitive personal data.
-- [ ] Package the CLI and native app for repeatable Windows installation.
+- [x] Package the CLI and native app for repeatable Windows installation.
 
 ### OKRs
 
