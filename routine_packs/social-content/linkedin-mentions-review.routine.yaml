@@ -1,0 +1,14 @@
+id: social-content.linkedin-mentions-review
+name: LinkedIn mentions review
+description: Review visible LinkedIn mentions without replying, reacting, or posting.
+goal: Inspect LinkedIn mention activity and leave local trace evidence.
+required_app: Browser
+required_site: linkedin.com
+tags: [social, linkedin, mentions, read-only]
+inputs: [linkedin mentions]
+outputs: [mentions reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/mentions-review-surface.yaml}

@@ -1,0 +1,19 @@
+name: Social audience review surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: open-audience-surface
+    action: click_text
+    target: Audience
+    verify:
+      type: visible_text
+      text: Audience
+  - id: review-visible-audience
+    action: scroll
+    text: "-2"
+  - id: confirm-audience-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Audience

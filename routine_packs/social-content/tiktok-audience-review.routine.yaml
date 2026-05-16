@@ -1,0 +1,14 @@
+id: social-content.tiktok-audience-review
+name: TikTok audience review
+description: Review visible TikTok audience information without changing content or account settings.
+goal: Inspect TikTok audience signals and leave local trace evidence.
+required_app: Browser
+required_site: tiktok.com
+tags: [social, tiktok, audience, read-only]
+inputs: [tiktok audience]
+outputs: [audience reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/audience-review-surface.yaml}

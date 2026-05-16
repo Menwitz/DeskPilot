@@ -376,6 +376,9 @@ abuse, and hidden automation are not supported.
 - [x] Add third social/content scale-out batch for comments and analytics
       review routines across LinkedIn, Medium, X/Twitter, Instagram, Facebook,
       YouTube, and TikTok.
+- [x] Add fourth social/content scale-out batch for mentions and audience
+      review routines across LinkedIn, Medium, X/Twitter, Instagram, Facebook,
+      YouTube, and TikTok.
 - [x] Add routine documentation templates and generated catalog index docs.
 
 ### Acceptance Criteria

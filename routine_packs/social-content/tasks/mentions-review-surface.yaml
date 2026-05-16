@@ -1,0 +1,19 @@
+name: Social mentions review surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: open-mentions-surface
+    action: click_text
+    target: Mentions
+    verify:
+      type: visible_text
+      text: Mentions
+  - id: review-visible-mentions
+    action: scroll
+    text: "-2"
+  - id: confirm-mentions-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Mentions

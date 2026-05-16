@@ -46,7 +46,7 @@ def test_builtin_routine_catalog_has_broad_reusable_surface_coverage() -> None:
     assert len(catalog.routines) >= 30
     assert pack_counts["browser"] >= 65
     assert pack_counts["native"] >= 65
-    assert pack_counts["social-content"] >= 70
+    assert pack_counts["social-content"] >= 84
 
 
 def test_builtin_routines_are_listable_inspectable_and_compilable_from_cli(
@@ -417,6 +417,8 @@ def test_social_content_routine_pack_contains_platform_surface_matrix() -> None:
         "saved-review",
         "comments-review",
         "analytics-review",
+        "mentions-review",
+        "audience-review",
         "draft",
         "approved-publish",
     )

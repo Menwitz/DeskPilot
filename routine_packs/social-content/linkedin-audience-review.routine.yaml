@@ -1,0 +1,14 @@
+id: social-content.linkedin-audience-review
+name: LinkedIn audience review
+description: Review visible LinkedIn audience information without changing profile or page settings.
+goal: Inspect LinkedIn audience signals and leave local trace evidence.
+required_app: Browser
+required_site: linkedin.com
+tags: [social, linkedin, audience, read-only]
+inputs: [linkedin audience]
+outputs: [audience reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/audience-review-surface.yaml}

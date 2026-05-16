@@ -1,0 +1,14 @@
+id: social-content.x-twitter-mentions-review
+name: X/Twitter mentions review
+description: Review visible X/Twitter mentions without replying, liking, reposting, or posting.
+goal: Inspect X/Twitter mention activity and leave local trace evidence.
+required_app: Browser
+required_site: x.com
+tags: [social, x-twitter, mentions, read-only]
+inputs: [x twitter mentions]
+outputs: [mentions reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/mentions-review-surface.yaml}

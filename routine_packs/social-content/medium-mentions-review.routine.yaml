@@ -1,0 +1,14 @@
+id: social-content.medium-mentions-review
+name: Medium mentions review
+description: Review visible Medium mentions without replying, highlighting, or publishing.
+goal: Inspect Medium mention activity and leave local trace evidence.
+required_app: Browser
+required_site: medium.com
+tags: [social, medium, mentions, read-only]
+inputs: [medium mentions]
+outputs: [mentions reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/mentions-review-surface.yaml}

@@ -1,0 +1,14 @@
+id: social-content.tiktok-mentions-review
+name: TikTok mentions review
+description: Review visible TikTok mentions without replying, liking, or posting.
+goal: Inspect TikTok mention activity and leave local trace evidence.
+required_app: Browser
+required_site: tiktok.com
+tags: [social, tiktok, mentions, read-only]
+inputs: [tiktok mentions]
+outputs: [mentions reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/mentions-review-surface.yaml}
