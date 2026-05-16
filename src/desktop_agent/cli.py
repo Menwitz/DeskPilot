@@ -38,6 +38,7 @@ from desktop_agent.config import (
 from desktop_agent.content_variables import load_content_variables
 from desktop_agent.mouse_demo import (
     MouseDemoError,
+    run_browser_fixture,
     run_input_demo,
     run_linkedin_demo,
     run_windows_smoke_checklist,
@@ -232,6 +233,11 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="open existing proof artifact paths with the OS file manager",
     )
+    proof_browser_parser = proof_subparsers.add_parser(
+        "browser-fixture",
+        help="run a real-input local browser form/navigation proof",
+    )
+    _add_browser_fixture_options(proof_browser_parser)
 
     benchmark_parser = subparsers.add_parser(
         "benchmark-run",
@@ -310,6 +316,24 @@ def _add_linkedin_demo_options(parser: argparse.ArgumentParser) -> None:
         help="text highlighted through Edge's browser find box after navigation",
     )
     parser.add_argument("--page-load-seconds", default=5.0, type=float)
+
+
+def _add_browser_fixture_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--trace-root", default=Path("traces"), type=Path)
+    parser.add_argument("--random-seed", default=20260515, type=int)
+    parser.add_argument("--movement-smoothness", default=0.85, type=float)
+    parser.add_argument("--countdown-seconds", default=3.0, type=float)
+    parser.add_argument(
+        "--fixture-text",
+        default="DeskPilot browser fixture",
+        help="text typed into the generated browser fixture form",
+    )
+    parser.add_argument(
+        "--result-text",
+        default="DeskPilot browser fixture submitted",
+        help="result text searched after submitting the generated form",
+    )
+    parser.add_argument("--page-load-seconds", default=1.5, type=float)
 
 
 def _add_windows_smoke_checklist_options(parser: argparse.ArgumentParser) -> None:
@@ -995,8 +1019,40 @@ def _replay(args: argparse.Namespace) -> int:
 def _proof(args: argparse.Namespace) -> int:
     if args.proof_command == "replay":
         return _proof_replay(args)
+    if args.proof_command == "browser-fixture":
+        return _proof_browser_fixture(args)
     print("error: proof subcommand required")
     return 2
+
+
+def _proof_browser_fixture(args: argparse.Namespace) -> int:
+    report = run_browser_fixture(
+        trace_root=args.trace_root,
+        random_seed=args.random_seed,
+        movement_smoothness=args.movement_smoothness,
+        countdown_seconds=args.countdown_seconds,
+        fixture_text=args.fixture_text,
+        result_text=args.result_text,
+        page_load_seconds=args.page_load_seconds,
+    )
+    print(f"status: {report.status}")
+    if report.reason:
+        print(f"reason: {report.reason}")
+    print(f"trace: {report.trace_dir}")
+    print(f"report: {report.report_path}")
+    if report.proof_manifest_path:
+        print(f"manifest: {report.proof_manifest_path}")
+    for step in report.steps:
+        movement_points = step.metadata.get("movement_points")
+        duration = step.metadata.get("movement_duration_seconds")
+        if isinstance(movement_points, int) and isinstance(duration, int | float):
+            print(
+                f"step {step.step_id}: {step.action} "
+                f"({movement_points} points, {duration:.3f}s)"
+            )
+        else:
+            print(f"step {step.step_id}: {step.action}")
+    return 0 if report.status == "passed" else 1
 
 
 def _proof_replay(args: argparse.Namespace) -> int:

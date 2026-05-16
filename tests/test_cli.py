@@ -458,6 +458,80 @@ def test_cli_demo_linkedin_prints_trace_report(
     assert "step scroll-linkedin-page: scroll (12 points, 0.500s)" in output
 
 
+def test_cli_proof_browser_fixture_prints_trace_report(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    from desktop_agent.mouse_demo import MouseDemoReport, MouseDemoStep
+
+    def fake_run_browser_fixture(
+        *,
+        trace_root: Path,
+        random_seed: int,
+        movement_smoothness: float,
+        countdown_seconds: float,
+        fixture_text: str,
+        result_text: str,
+        page_load_seconds: float,
+    ) -> MouseDemoReport:
+        assert trace_root == tmp_path
+        assert random_seed == 34
+        assert movement_smoothness == 0.7
+        assert countdown_seconds == 0
+        assert fixture_text == "typed fixture"
+        assert result_text == "fixture submitted"
+        assert page_load_seconds == 0
+        return MouseDemoReport(
+            status="passed",
+            trace_dir=tmp_path / "trace",
+            report_path=tmp_path / "trace" / "browser-fixture-report.json",
+            proof_manifest_path=tmp_path / "trace" / "proof-manifest.json",
+            steps=(
+                MouseDemoStep(
+                    "focus-browser-fixture-input",
+                    "click",
+                    {
+                        "movement_points": 8,
+                        "movement_duration_seconds": 0.25,
+                    },
+                ),
+            ),
+        )
+
+    monkeypatch.setattr(
+        "desktop_agent.cli.run_browser_fixture",
+        fake_run_browser_fixture,
+    )
+
+    status = main(
+        [
+            "proof",
+            "browser-fixture",
+            "--trace-root",
+            str(tmp_path),
+            "--random-seed",
+            "34",
+            "--movement-smoothness",
+            "0.7",
+            "--countdown-seconds",
+            "0",
+            "--fixture-text",
+            "typed fixture",
+            "--result-text",
+            "fixture submitted",
+            "--page-load-seconds",
+            "0",
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "status: passed" in output
+    assert f"manifest: {tmp_path / 'trace' / 'proof-manifest.json'}" in output
+    assert "step focus-browser-fixture-input: click (8 points, 0.250s)" in output
+
+
 def test_cli_windows_smoke_checklist_prints_checks(
     tmp_path: Path,
     capsys: CaptureFixture[str],

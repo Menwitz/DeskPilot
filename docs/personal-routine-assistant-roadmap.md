@@ -133,7 +133,7 @@ abuse, and hidden automation are not supported.
 
 - [x] Keep existing `demo-input`, `demo-linkedin`, and
       `windows-smoke-checklist` commands as low-level proof entry points.
-- [ ] Add `desktop-agent proof browser-fixture` for real browser form/navigation
+- [x] Add `desktop-agent proof browser-fixture` for real browser form/navigation
       proof.
 - [ ] Add `desktop-agent proof native-fixture` for real native Windows app proof.
 - [ ] Add `desktop-agent proof mixed-fixture` for browser-to-native handoff

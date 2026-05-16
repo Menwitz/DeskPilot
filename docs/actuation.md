@@ -110,6 +110,17 @@ The command opens Edge, types the LinkedIn URL through the address bar, scrolls
 the page with the real cursor, and uses browser Find to highlight text. See
 [LinkedIn Edge Demo](linkedin-demo.md) for the runbook.
 
+For a deterministic browser fixture proof, run:
+
+```powershell
+uv run desktop-agent proof browser-fixture
+```
+
+The command writes a local HTML form fixture, opens it in Edge, focuses the form
+with the real cursor, types and submits text with the real keyboard, and writes
+proof artifacts. See [Browser Fixture Proof](browser-fixture-proof.md) for the
+runbook.
+
 For a compact Windows smoke checklist, run:
 
 ```powershell

@@ -141,7 +141,7 @@ Acceptance:
 
 - [x] Native proof: Notepad text entry.
 - [x] Browser proof: Edge plus LinkedIn navigation, scroll, and Find.
-- [ ] Local web fixture proof: identify and submit a form through real I/O.
+- [x] Local web fixture proof: identify and submit a form through real I/O.
 - [ ] Native app proof: interact with a Windows settings or calculator flow.
 - [ ] Mixed proof: switch between Edge and Notepad with real Alt+Tab or taskbar
       selection.

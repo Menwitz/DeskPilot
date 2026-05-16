@@ -13,10 +13,13 @@ from desktop_agent.mouse_demo import (
     PostActionEvidenceRecorder,
     RealInputController,
     _demo_actuation_profile,
+    _run_browser_fixture_sequence,
     _run_linkedin_sequence,
     _run_windows_smoke_sequence,
+    _write_browser_fixture_html,
     _write_proof_manifest,
     _write_report,
+    run_browser_fixture,
     run_input_demo,
     run_linkedin_demo,
     run_mouse_demo,
@@ -260,6 +263,67 @@ def test_linkedin_sequence_opens_edge_navigates_and_finds_text() -> None:
     assert observer.observe_count == len(steps)
 
 
+def test_browser_fixture_sequence_submits_form_and_searches_result(
+    tmp_path: Path,
+) -> None:
+    backend = FakeInputBackend(start_position=(0, 0))
+    controller = RealInputController(backend, _instant_demo_profile())
+    observer = FakeScreenObserver(active_window_title="Browser Fixture - Edge")
+    recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=tmp_path,
+        observer=observer,
+    )
+    fixture_path = tmp_path / "browser-fixture.html"
+
+    steps = _run_browser_fixture_sequence(
+        controller,
+        (0, 0, 1280, 720),
+        fixture_path=fixture_path,
+        fixture_url=fixture_path.as_uri(),
+        fixture_text="routine note",
+        result_text="submitted fixture",
+        page_load_seconds=0,
+        evidence_recorder=recorder,
+        launch_edge=lambda initial_url: MouseDemoStep(
+            "open-edge",
+            "launch_application",
+            {"initial_url": initial_url},
+        ),
+    )
+
+    typed_text = "".join(
+        event.text or "" for event in backend.events if event.kind == "type_text"
+    )
+    assert [step.step_id for step in steps] == [
+        "write-browser-fixture",
+        "open-edge",
+        "focus-browser-fixture-input",
+        "type-browser-fixture-text",
+        "submit-browser-fixture-form",
+        "open-browser-find",
+        "type-browser-fixture-result-search",
+        "confirm-browser-fixture-result-search",
+        "close-browser-find",
+        "final-cursor-readback",
+    ]
+    assert typed_text == "routine notesubmitted fixture"
+    assert any(event.kind == "mouse_down" for event in backend.events)
+    assert all("post_action_evidence" in step.metadata for step in steps)
+    assert observer.observe_count == len(steps)
+
+
+def test_browser_fixture_html_submits_to_result_page(tmp_path: Path) -> None:
+    fixture_path = _write_browser_fixture_html(tmp_path, "result with ' quote")
+    result_path = tmp_path / "browser-fixture-result.html"
+
+    fixture_html = fixture_path.read_text(encoding="utf-8")
+    result_html = result_path.read_text(encoding="utf-8")
+    assert "DeskPilot Browser Fixture" in fixture_html
+    assert 'action="browser-fixture-result.html"' in fixture_html
+    assert "result with &#x27; quote" in result_html
+
+
 def test_windows_smoke_sequence_checks_cursor_notepad_edge_and_trace() -> None:
     backend = FakeInputBackend(start_position=(0, 0))
     controller = RealInputController(backend, _instant_demo_profile())
@@ -324,6 +388,16 @@ def test_run_linkedin_demo_requires_windows(
 
     with pytest.raises(MouseDemoError, match="demo-linkedin requires Windows"):
         run_linkedin_demo(trace_root=tmp_path)
+
+
+def test_run_browser_fixture_requires_windows(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("desktop_agent.mouse_demo.sys.platform", "darwin")
+
+    with pytest.raises(MouseDemoError, match="proof browser-fixture requires Windows"):
+        run_browser_fixture(trace_root=tmp_path)
 
 
 def test_run_windows_smoke_checklist_requires_windows(

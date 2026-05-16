@@ -12,6 +12,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from html import escape as html_escape
 from pathlib import Path
 from typing import Any
 
@@ -736,6 +737,104 @@ def run_linkedin_demo(
     )
 
 
+def run_browser_fixture(
+    *,
+    trace_root: Path = Path("traces"),
+    random_seed: int = 20260515,
+    movement_smoothness: float = 0.85,
+    countdown_seconds: float = 3.0,
+    fixture_text: str = "DeskPilot browser fixture",
+    result_text: str = "DeskPilot browser fixture submitted",
+    page_load_seconds: float = 1.5,
+) -> MouseDemoReport:
+    """Open a generated local browser fixture and submit a form with real input."""
+
+    if sys.platform != "win32":
+        raise MouseDemoError("proof browser-fixture requires Windows desktop input")
+    if not 0 <= movement_smoothness <= 1:
+        raise MouseDemoError("movement_smoothness must be between 0 and 1")
+    if countdown_seconds < 0:
+        raise MouseDemoError("countdown_seconds must not be negative")
+    if page_load_seconds < 0:
+        raise MouseDemoError("page_load_seconds must not be negative")
+    if not fixture_text:
+        raise MouseDemoError("fixture_text must not be empty")
+    if not result_text:
+        raise MouseDemoError("result_text must not be empty")
+
+    _set_process_dpi_aware()
+    trace_dir = _prepare_trace_dir(trace_root, "browser-fixture")
+    fixture_path = _write_browser_fixture_html(trace_dir, result_text)
+    fixture_url = fixture_path.resolve().as_uri()
+    profile = _demo_actuation_profile(random_seed, movement_smoothness)
+    backend = WindowsInputBackend(move_mode="absolute")
+    controller = RealInputController(backend, profile)
+    evidence_recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=trace_dir,
+    )
+    steps: list[MouseDemoStep] = []
+    status = "passed"
+    reason: str | None = None
+    started_at = _timestamp()
+    screen_bounds: tuple[int, int, int, int] | None = None
+
+    try:
+        _countdown(countdown_seconds)
+        screen_bounds = _windows_virtual_screen_bounds()
+        steps.extend(
+            _run_browser_fixture_sequence(
+                controller,
+                screen_bounds,
+                fixture_path=fixture_path,
+                fixture_url=fixture_url,
+                fixture_text=fixture_text,
+                result_text=result_text,
+                page_load_seconds=page_load_seconds,
+                evidence_recorder=evidence_recorder,
+            )
+        )
+    except Exception as exc:  # pragma: no cover - exercised manually on Windows.
+        status = "failed"
+        reason = str(exc)
+
+    report_path = _write_report(
+        trace_dir,
+        tuple(steps),
+        status,
+        reason,
+        report_name="browser-fixture-report.json",
+    )
+    proof_manifest_path = _write_proof_manifest(
+        trace_dir,
+        proof_name="browser-fixture",
+        command=_browser_fixture_command(
+            trace_root,
+            random_seed,
+            movement_smoothness,
+            countdown_seconds,
+            fixture_text,
+            result_text,
+            page_load_seconds,
+        ),
+        status=status,
+        reason=reason,
+        started_at=started_at,
+        completed_at=_timestamp(),
+        report_path=report_path,
+        steps=tuple(steps),
+        monitor_bounds=screen_bounds,
+    )
+    return MouseDemoReport(
+        status=status,
+        reason=reason,
+        trace_dir=trace_dir,
+        report_path=report_path,
+        steps=tuple(steps),
+        proof_manifest_path=proof_manifest_path,
+    )
+
+
 def run_windows_smoke_checklist(
     *,
     trace_root: Path = Path("traces"),
@@ -963,6 +1062,87 @@ def _run_linkedin_sequence(
     return tuple(steps)
 
 
+def _run_browser_fixture_sequence(
+    controller: RealInputController,
+    screen_bounds: tuple[int, int, int, int],
+    *,
+    fixture_path: Path,
+    fixture_url: str,
+    fixture_text: str,
+    result_text: str,
+    page_load_seconds: float,
+    launch_edge: Callable[[str], MouseDemoStep] | None = None,
+    evidence_recorder: PostActionEvidenceRecorder | None = None,
+) -> tuple[MouseDemoStep, ...]:
+    steps: list[MouseDemoStep] = []
+    edge_launcher = launch_edge or _launch_edge
+
+    _record_step(
+        steps,
+        MouseDemoStep(
+            "write-browser-fixture",
+            "write_fixture",
+            {
+                "fixture_path": str(fixture_path),
+                "fixture_url": fixture_url,
+                "result_fixture_path": str(
+                    fixture_path.with_name("browser-fixture-result.html")
+                ),
+                "expected_result_text": result_text,
+            },
+        ),
+        evidence_recorder,
+    )
+    _record_step(steps, edge_launcher(fixture_url), evidence_recorder)
+    controller.pause(page_load_seconds)
+    _record_step(
+        steps,
+        controller.click(
+            "focus-browser-fixture-input",
+            _screen_point(screen_bounds, 0.50, 0.46),
+            target_size_pixels=(360.0, 56.0),
+        ),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.type_text("type-browser-fixture-text", fixture_text),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.press_chord("submit-browser-fixture-form", "enter"),
+        evidence_recorder,
+    )
+    controller.pause(0.50)
+    _record_step(
+        steps,
+        controller.press_chord("open-browser-find", "ctrl+f"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.type_text("type-browser-fixture-result-search", result_text),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.press_chord("confirm-browser-fixture-result-search", "enter"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.press_chord("close-browser-find", "esc"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.current_position_step("final-cursor-readback"),
+        evidence_recorder,
+    )
+    return tuple(steps)
+
+
 def _run_windows_smoke_sequence(
     controller: RealInputController,
     *,
@@ -1024,6 +1204,122 @@ def _run_windows_smoke_sequence(
         evidence_recorder,
     )
     return tuple(steps)
+
+
+def _write_browser_fixture_html(trace_dir: Path, result_text: str) -> Path:
+    fixture_path = trace_dir / "browser-fixture.html"
+    result_path = trace_dir / "browser-fixture-result.html"
+    # The proof fixture is a local HTML file so the command avoids network
+    # variance while still proving real Edge keyboard and pointer I/O.
+    fixture_path.write_text(
+        "\n".join(
+            [
+                "<!doctype html>",
+                '<html lang="en">',
+                "<head>",
+                '  <meta charset="utf-8">',
+                "  <title>DeskPilot Browser Fixture</title>",
+                "  <style>",
+                "    body {",
+                "      margin: 0;",
+                "      min-height: 100vh;",
+                "      display: grid;",
+                "      place-items: center;",
+                "      font-family: Segoe UI, Arial, sans-serif;",
+                "      background: #f5f7fb;",
+                "      color: #172033;",
+                "    }",
+                "    main {",
+                "      width: min(560px, calc(100vw - 96px));",
+                "      padding: 32px;",
+                "      border: 1px solid #cbd5e1;",
+                "      border-radius: 8px;",
+                "      background: #ffffff;",
+                "    }",
+                "    h1 { font-size: 24px; margin: 0 0 20px; }",
+                "    label { display: block; font-weight: 600; margin-bottom: 8px; }",
+                "    input {",
+                "      box-sizing: border-box;",
+                "      width: 100%;",
+                "      min-height: 48px;",
+                "      padding: 0 14px;",
+                "      border: 1px solid #64748b;",
+                "      border-radius: 6px;",
+                "      font-size: 18px;",
+                "    }",
+                "    button {",
+                "      margin-top: 16px;",
+                "      min-height: 44px;",
+                "      padding: 0 18px;",
+                "      border: 0;",
+                "      border-radius: 6px;",
+                "      background: #2563eb;",
+                "      color: white;",
+                "      font-size: 16px;",
+                "      font-weight: 600;",
+                "    }",
+                "    #result { margin-top: 18px; font-weight: 700; }",
+                "  </style>",
+                "</head>",
+                "<body>",
+                "  <main>",
+                "    <h1>DeskPilot Browser Fixture</h1>",
+                f'    <form action="{result_path.name}" method="get">',
+                '      <label for="routine-input">Routine note</label>',
+                '      <input id="routine-input" name="routine" autofocus>',
+                "      <button type=\"submit\">Submit fixture</button>",
+                "    </form>",
+                "    <p>Submitting this form navigates to a local result page.</p>",
+                "  </main>",
+                "</body>",
+                "</html>",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    result_path.write_text(
+        "\n".join(
+            [
+                "<!doctype html>",
+                '<html lang="en">',
+                "<head>",
+                '  <meta charset="utf-8">',
+                "  <title>DeskPilot Browser Fixture Result</title>",
+                "  <style>",
+                "    body {",
+                "      margin: 0;",
+                "      min-height: 100vh;",
+                "      display: grid;",
+                "      place-items: center;",
+                "      font-family: Segoe UI, Arial, sans-serif;",
+                "      background: #f5f7fb;",
+                "      color: #172033;",
+                "    }",
+                "    main {",
+                "      width: min(560px, calc(100vw - 96px));",
+                "      padding: 32px;",
+                "      border: 1px solid #cbd5e1;",
+                "      border-radius: 8px;",
+                "      background: #ffffff;",
+                "    }",
+                "    h1 { font-size: 24px; margin: 0 0 20px; }",
+                "    p { font-size: 18px; font-weight: 700; }",
+                "  </style>",
+                "</head>",
+                "<body>",
+                "  <main>",
+                "    <h1>DeskPilot Browser Fixture Result</h1>",
+                f"    <p>{html_escape(result_text)}</p>",
+                "  </main>",
+                "</body>",
+                "</html>",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return fixture_path
 
 
 def _launch_notepad() -> MouseDemoStep:
@@ -1371,6 +1667,36 @@ def _linkedin_demo_command(
         url,
         "--find-text",
         find_text,
+        "--page-load-seconds",
+        str(page_load_seconds),
+    )
+
+
+def _browser_fixture_command(
+    trace_root: Path,
+    random_seed: int,
+    movement_smoothness: float,
+    countdown_seconds: float,
+    fixture_text: str,
+    result_text: str,
+    page_load_seconds: float,
+) -> tuple[str, ...]:
+    return (
+        "desktop-agent",
+        "proof",
+        "browser-fixture",
+        "--trace-root",
+        str(trace_root),
+        "--random-seed",
+        str(random_seed),
+        "--movement-smoothness",
+        str(movement_smoothness),
+        "--countdown-seconds",
+        str(countdown_seconds),
+        "--fixture-text",
+        fixture_text,
+        "--result-text",
+        result_text,
         "--page-load-seconds",
         str(page_load_seconds),
     )

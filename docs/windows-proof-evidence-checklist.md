@@ -71,6 +71,26 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Reviewer confirms the proof uses no Playwright, DevTools, browser API, or
       account credentials.
 
+## `desktop-agent proof browser-fixture`
+
+- [ ] Command recorded:
+      `desktop-agent proof browser-fixture --trace-root traces
+      --countdown-seconds 5`.
+- [ ] Video shows Microsoft Edge opening the generated local HTML fixture.
+- [ ] Video shows the real Windows cursor clicking the form input.
+- [ ] Video shows the configured fixture text typed into the form.
+- [ ] Video shows Enter submitting the form and navigating to the result page.
+- [ ] Video shows Edge Find searching for the configured result text.
+- [ ] `browser-fixture.html` exists in the trace directory.
+- [ ] `browser-fixture-result.html` exists in the trace directory.
+- [ ] `browser-fixture-report.json` exists and has `status: passed`.
+- [ ] `action-log.jsonl` contains fixture creation, Edge launch, input focus,
+      typing, submit, find, and cursor-readback monitoring records.
+- [ ] Post-action screenshots show form focus, typed text, and submitted result
+      evidence where visible.
+- [ ] Reviewer confirms the proof uses no Playwright, DevTools, browser API, DOM
+      automation, or fixture-only fake cursor.
+
 ## `desktop-agent windows-smoke-checklist`
 
 - [ ] Command recorded:
@@ -90,8 +110,6 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 
 Use the same global and bundle checks for each fixture command as it lands.
 
-- [ ] `desktop-agent proof browser-fixture` evidence shows a real browser form
-      or navigation flow, not a browser automation API.
 - [ ] `desktop-agent proof native-fixture` evidence shows real interaction with
       a native Windows app.
 - [ ] `desktop-agent proof mixed-fixture` evidence shows a browser-to-native
