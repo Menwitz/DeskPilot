@@ -107,6 +107,8 @@ routine.
 The rejection path uses the shared local model structured-output validator, so
 routine ranking follows the same accepted/rejected contract as trace summaries,
 screen summaries, missing-input extraction, and YAML improvement suggestions.
+Goal-plan traces expose both `model` and `model_name`, plus
+`structured_output_status`, `accepted`, and `rejected` fields for report review.
 
 Accepted reranking still runs through the deterministic safety boundary:
 missing inputs, approvals, schedule eligibility, and safety-class limits are

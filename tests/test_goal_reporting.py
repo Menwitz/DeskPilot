@@ -60,6 +60,7 @@ def test_goal_plan_trace_writes_model_disclosure_fields(tmp_path: Path) -> None:
     assert report["model_disclosure"]["provider"] == "ollama"
     assert metadata["provider"] == "ollama"
     assert metadata["model"] == "llama3.1"
+    assert metadata["model_name"] == "llama3.1"
     assert metadata["prompt_class"] == "goal_routine_ranking"
     assert metadata["input_artifact_references"] == [
         "goal-plan.json#user_goal",
@@ -67,6 +68,9 @@ def test_goal_plan_trace_writes_model_disclosure_fields(tmp_path: Path) -> None:
         "goal-plan.json#candidate_routines",
     ]
     assert metadata["output_hash"] == "abc123"
+    assert metadata["structured_output_status"] == "accepted"
+    assert metadata["accepted"] is True
+    assert metadata["rejected"] is False
     assert metadata["affected_selection"] is True
     assert goal_plan["model_ranking"]["input_artifact_references"] == metadata[
         "input_artifact_references"
@@ -80,3 +84,25 @@ def test_goal_model_disclosure_metadata_returns_none_without_model() -> None:
         )
         is None
     )
+
+
+def test_goal_model_disclosure_marks_rejected_outputs() -> None:
+    metadata = goal_model_disclosure_metadata(
+        GoalPlan(
+            user_goal="Read page",
+            normalized_intent="browser read",
+            model_ranking=GoalModelRanking(
+                provider="ollama",
+                model="llama3.1",
+                enabled=True,
+                attempted=True,
+                status="rejected",
+                error="unknown routine",
+            ),
+        ),
+    )
+
+    assert metadata is not None
+    assert metadata["structured_output_status"] == "rejected"
+    assert metadata["accepted"] is False
+    assert metadata["rejected"] is True

@@ -262,5 +262,6 @@ The schema defines six top-level evidence sections:
 - `state_delta`: focus changes, visible text changes, viewport movement, and
   other observed differences before and after input.
 - `model_assistance`: optional local-model disclosure fields, including
-  provider, model, prompt class, input artifact references, output hash, and
-  whether the model affected routine selection.
+  provider, model name, prompt class, input artifact references, output hash,
+  structured output accepted/rejected status, and whether the model affected
+  routine selection.

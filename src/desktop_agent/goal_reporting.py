@@ -70,9 +70,13 @@ def goal_model_disclosure_metadata(
         "trace_schema_section": "model_assistance",
         "provider": ranking.provider,
         "model": ranking.model,
+        "model_name": ranking.model,
         "prompt_class": ranking.prompt_class,
         "input_artifact_references": list(input_artifact_references),
         "output_hash": ranking.output_hash,
+        "structured_output_status": _structured_output_status(ranking.status),
+        "accepted": ranking.status == "applied",
+        "rejected": ranking.status == "rejected",
         "affected_selection": ranking.affected_selection,
         "enabled": ranking.enabled,
         "attempted": ranking.attempted,
@@ -81,6 +85,14 @@ def goal_model_disclosure_metadata(
         "candidate_order": list(ranking.candidate_order),
         "error": ranking.error,
     }
+
+
+def _structured_output_status(status: str) -> str:
+    if status == "applied":
+        return "accepted"
+    if status == "rejected":
+        return "rejected"
+    return "not_attempted"
 
 
 def _goal_trace_directory(trace_root: Path, user_goal: str) -> Path:

@@ -95,9 +95,13 @@ class TraceSchemaV2:
                     "typical_fields": [
                         "provider",
                         "model",
+                        "model_name",
                         "prompt_class",
                         "input_artifact_references",
                         "output_hash",
+                        "structured_output_status",
+                        "accepted",
+                        "rejected",
                         "affected_selection",
                     ],
                 },

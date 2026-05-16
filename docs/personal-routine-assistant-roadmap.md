@@ -563,7 +563,7 @@ abuse, and hidden automation are not supported.
 - [x] Add local screenshot captioning path only for review and authoring, not
       direct action execution.
 - [x] Add output validation for structured model responses.
-- [ ] Add trace fields for provider, model name, prompt class, input artifact
+- [x] Add trace fields for provider, model name, prompt class, input artifact
       references, output hash, and accepted/rejected status.
 - [ ] Add fake model provider for tests.
 - [ ] Add docs explaining that local AI assists selection and review but never
