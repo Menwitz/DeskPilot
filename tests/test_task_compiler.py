@@ -1,10 +1,15 @@
+from pathlib import Path
+
 import pytest
 
+from desktop_agent.config import RuntimeConfig
 from desktop_agent.task_compiler import TaskCompilationError, TaskCompiler
 from desktop_agent.task_dsl import (
+    BasicTaskValidator,
     ExpectedStateTransition,
     TaskDefinition,
     TaskStep,
+    YamlTaskLoader,
 )
 
 
@@ -42,6 +47,56 @@ def test_task_compiler_records_dependency_and_state_metadata() -> None:
     assert compiled.state_transitions[1].after == "title-entered"
     assert compiled.metadata()["dependency_count"] == 1
     assert compiled.metadata()["state_transition_count"] == 2
+    assert compiled.metadata()["compiled_execution_model"] == "desktop_io_v1"
+    assert compiled.metadata()["desktop_io_steps"] == [
+        {
+            "step_id": "open-editor",
+            "source_action": "click_text",
+            "operations": ["observe", "move", "click", "verify"],
+        },
+        {
+            "step_id": "type-title",
+            "source_action": "type_text",
+            "operations": ["observe", "type", "verify"],
+        },
+    ]
+
+
+def test_task_compiler_preserves_yaml_actions_with_desktop_io_model(
+    tmp_path: Path,
+) -> None:
+    task_path = tmp_path / "routine.yaml"
+    task_path.write_text(
+        """name: existing yaml routine
+allowed_windows:
+  - DeskPilot Fixture
+timeout_seconds: 30
+steps:
+  - id: open-menu
+    action: click_text
+    target: Menu
+  - id: search
+    action: type_text
+    text: report
+""",
+        encoding="utf-8",
+    )
+    task = YamlTaskLoader().load(task_path)
+    BasicTaskValidator().validate(task, RuntimeConfig())
+
+    compiled = TaskCompiler().compile(task)
+
+    assert [step.action for step in task.steps] == ["click_text", "type_text"]
+    assert [step.source_action for step in compiled.desktop_io_steps] == [
+        "click_text",
+        "type_text",
+    ]
+    assert compiled.desktop_io_steps[0].operations == (
+        "observe",
+        "move",
+        "click",
+        "verify",
+    )
 
 
 def test_task_compiler_rejects_invalid_dependencies() -> None:

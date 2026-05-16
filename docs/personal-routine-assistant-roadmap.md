@@ -217,7 +217,7 @@ abuse, and hidden automation are not supported.
 - [x] Make real desktop operations explicit below semantic YAML actions.
 - [x] Track mutation risk, approval needs, reversibility, and app/window scope
       per action.
-- [ ] Preserve existing YAML compatibility while adding a lower-level compiled
+- [x] Preserve existing YAML compatibility while adding a lower-level compiled
       execution model.
 
 ### OKRs

@@ -4,6 +4,7 @@ from desktop_agent.approval_manifest import load_approval_manifest
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.content_variables import load_content_variables
 from desktop_agent.site_playbooks import SiteTaskCompiler, load_site_playbook
+from desktop_agent.task_compiler import TaskCompiler
 from desktop_agent.task_dsl import BasicTaskValidator, YamlTaskLoader
 
 EXAMPLE_TASKS = (
@@ -42,13 +43,16 @@ def test_adversarial_fixture_contains_required_states() -> None:
 def test_example_tasks_validate() -> None:
     loader = YamlTaskLoader()
     validator = BasicTaskValidator()
+    compiler = TaskCompiler()
     config = RuntimeConfig(max_steps=50)
 
     for task_path in EXAMPLE_TASKS:
         task = loader.load(task_path)
         validator.validate(task, config)
+        compiled = compiler.compile(task)
         assert task.allowed_windows
         assert task.steps
+        assert len(compiled.desktop_io_steps) == len(task.steps)
 
 
 def test_publish_example_manifests_match_content_fingerprints() -> None:

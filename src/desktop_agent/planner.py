@@ -43,7 +43,7 @@ from desktop_agent.screen import (
     screenshot_bounds_to_physical,
     screenshot_point_to_physical,
 )
-from desktop_agent.task_compiler import TaskCompiler
+from desktop_agent.task_compiler import TaskCompiler, desktop_io_operations_for_action
 from desktop_agent.task_dsl import (
     TaskDefinition,
     TaskLoader,
@@ -2136,21 +2136,7 @@ def _desktop_io_plan_metadata(step: TaskStep) -> dict[str, object]:
 
 
 def _desktop_io_operations(action: str) -> list[str]:
-    mapping = {
-        "click_text": ["observe", "move", "click", "verify"],
-        "click_image": ["observe", "move", "click", "verify"],
-        "click_uia": ["observe", "move", "click", "verify"],
-        "double_click": ["observe", "move", "double_click", "verify"],
-        "drag": ["observe", "move", "drag", "verify"],
-        "type_text": ["observe", "type", "verify"],
-        "press_key": ["observe", "hotkey", "verify"],
-        "scroll": ["observe", "wheel", "verify"],
-        "scroll_until": ["observe", "wheel", "observe", "verify"],
-        "wait_for": ["observe", "wait", "verify"],
-        "assert_visible": ["observe", "verify"],
-        "branch_if_visible": ["observe", "verify"],
-    }
-    return list(mapping.get(action, ["observe", action, "verify"]))
+    return list(desktop_io_operations_for_action(action))
 
 
 def _success_evidence_metadata(

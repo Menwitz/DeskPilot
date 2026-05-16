@@ -81,6 +81,9 @@ The `compile_task` event records static step order, dependency edges, and
 expected UI state transitions before the planner observes the screen or attempts
 input. Task JSON also stores each step's `depends_on` and `expected_state`
 contracts for report review.
+It also records `compiled_execution_model: desktop_io_v1` and
+`desktop_io_steps`, preserving existing YAML actions while exposing the
+lower-level operation sequence each step will use.
 
 The `execution_path` event records whether an action attempt uses the standard,
 fast, or careful path. Fast-path timing events include the original sampled

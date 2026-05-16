@@ -8,8 +8,11 @@ Before safety checks or runtime observation, the engine compiles the validated
 task into a static execution plan. The compiler rejects missing, duplicate,
 self-referential, or forward `depends_on` references and checks authored
 `expected_state` transitions for contradictions. Successful compilation emits a
-`compile_task` trace event with step order, dependency, and state-transition
-metadata for monitoring and reports.
+`compile_task` trace event with step order, dependency, state-transition, and
+compiled desktop I/O metadata for monitoring and reports. Existing task YAML
+remains the authoring surface; the compiler adds a `desktop_io_v1` model that
+maps each semantic action into lower-level operations such as `observe`,
+`move`, `click`, `type`, `wheel`, `wait`, and `verify`.
 
 After target selection and before timing, the engine chooses an execution path.
 Stable first-attempt actions with exactly one visible, enabled, high-confidence

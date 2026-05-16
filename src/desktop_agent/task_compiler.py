@@ -16,6 +16,22 @@ class TaskCompilationError(TaskValidationError):
     """Raised when a structurally valid task cannot form an execution plan."""
 
 
+DESKTOP_IO_OPERATIONS_BY_ACTION: dict[str, tuple[str, ...]] = {
+    "click_text": ("observe", "move", "click", "verify"),
+    "click_image": ("observe", "move", "click", "verify"),
+    "click_uia": ("observe", "move", "click", "verify"),
+    "double_click": ("observe", "move", "double_click", "verify"),
+    "drag": ("observe", "move", "drag", "verify"),
+    "type_text": ("observe", "type", "verify"),
+    "press_key": ("observe", "hotkey", "verify"),
+    "scroll": ("observe", "wheel", "verify"),
+    "scroll_until": ("observe", "wheel", "observe", "verify"),
+    "wait_for": ("observe", "wait", "verify"),
+    "assert_visible": ("observe", "verify"),
+    "branch_if_visible": ("observe", "verify"),
+}
+
+
 @dataclass(frozen=True)
 class CompiledStepDependency:
     """Dependency contract for one compiled step."""
@@ -34,17 +50,28 @@ class CompiledStateTransition:
 
 
 @dataclass(frozen=True)
+class CompiledDesktopIoStep:
+    """Lower-level desktop I/O operations compiled from one YAML step."""
+
+    step_id: str
+    source_action: str
+    operations: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class CompiledTask:
     """Static execution plan metadata produced before runtime observation."""
 
     step_order: tuple[str, ...]
     dependencies: tuple[CompiledStepDependency, ...]
     state_transitions: tuple[CompiledStateTransition, ...]
+    desktop_io_steps: tuple[CompiledDesktopIoStep, ...]
 
     def metadata(self) -> dict[str, object]:
         """Return compact trace metadata for monitoring compiled task shape."""
 
         return {
+            "compiled_execution_model": "desktop_io_v1",
             "step_order": list(self.step_order),
             "dependency_count": sum(
                 len(dependency.depends_on) for dependency in self.dependencies
@@ -65,6 +92,15 @@ class CompiledTask:
                 }
                 for transition in self.state_transitions
             ],
+            "desktop_io_step_count": len(self.desktop_io_steps),
+            "desktop_io_steps": [
+                {
+                    "step_id": step.step_id,
+                    "source_action": step.source_action,
+                    "operations": list(step.operations),
+                }
+                for step in self.desktop_io_steps
+            ],
         }
 
 
@@ -77,6 +113,7 @@ class TaskCompiler:
         positions = _step_positions(task.steps, errors)
         dependencies = _compile_dependencies(task.steps, positions, errors)
         state_transitions = _compile_state_transitions(task.steps, errors)
+        desktop_io_steps = _compile_desktop_io_steps(task.steps)
 
         if errors:
             raise TaskCompilationError("; ".join(errors))
@@ -84,7 +121,30 @@ class TaskCompiler:
             step_order=step_order,
             dependencies=dependencies,
             state_transitions=state_transitions,
+            desktop_io_steps=desktop_io_steps,
         )
+
+
+def desktop_io_operations_for_action(action: str) -> tuple[str, ...]:
+    """Return the stable low-level operation sequence for a semantic action."""
+
+    return DESKTOP_IO_OPERATIONS_BY_ACTION.get(
+        action,
+        ("observe", action, "verify"),
+    )
+
+
+def _compile_desktop_io_steps(
+    steps: tuple[TaskStep, ...],
+) -> tuple[CompiledDesktopIoStep, ...]:
+    return tuple(
+        CompiledDesktopIoStep(
+            step_id=step.id,
+            source_action=step.action,
+            operations=desktop_io_operations_for_action(step.action),
+        )
+        for step in steps
+    )
 
 
 def _step_positions(
