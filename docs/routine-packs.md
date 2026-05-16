@@ -102,5 +102,7 @@ directory or `.zip` archive depending on the `--output` path.
 YAML without real desktop input. `write-routine-pack-proof` writes
 `pack-test-report.json`, `proof-checklist.md`, and a manifest copy so the pack's
 proof status can be reviewed or attached to release evidence.
+The proof report and checklist include an explicit `proof_status` value:
+`failed_validation`, `windows_proof_required`, or `ready_for_review`.
 After import, pack routines are loaded by the same catalog used by
 `list-routines --query` and by the native operator app's routine library search.

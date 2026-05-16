@@ -659,7 +659,7 @@ abuse, and hidden automation are not supported.
 - [x] A trusted local routine pack can be installed and validated.
 - [x] Duplicate or unsafe routine packs are rejected or quarantined.
 - [x] Pack routines appear in CLI and native app catalog search.
-- [ ] Pack-level proof status is visible in reports.
+- [x] Pack-level proof status is visible in reports.
 - [ ] Local execution remains fully functional without any report server.
 
 ## Public Interfaces To Add

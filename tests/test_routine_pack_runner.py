@@ -36,8 +36,12 @@ def test_routine_pack_proof_bundle_writes_report_and_checklist(
     checklist = result.checklist_path.read_text(encoding="utf-8")
 
     assert result.test_result.status == "passed"
+    assert result.proof_status == "ready_for_review"
+    assert result.metadata()["proof_status"] == "ready_for_review"
+    assert report["proof_status"] == "ready_for_review"
     assert report["test_result"]["validated_routine_count"] == 1
     assert "Routine Pack Proof" in checklist
+    assert "Proof status: `ready_for_review`" in checklist
     assert "`final-report.json`" in checklist
     assert result.manifest_copy_path.exists()
 

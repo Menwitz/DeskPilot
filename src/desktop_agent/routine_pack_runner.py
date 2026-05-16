@@ -45,6 +45,7 @@ class RoutinePackProofBundleResult:
     report_path: Path
     checklist_path: Path
     manifest_copy_path: Path
+    proof_status: str
     test_result: RoutinePackTestResult
 
     def metadata(self) -> dict[str, object]:
@@ -54,6 +55,7 @@ class RoutinePackProofBundleResult:
             "report_path": str(self.report_path),
             "checklist_path": str(self.checklist_path),
             "manifest_copy_path": str(self.manifest_copy_path),
+            "proof_status": self.proof_status,
             "test_result": self.test_result.metadata(),
         }
 
@@ -95,6 +97,7 @@ def write_routine_pack_proof_bundle(
     """Write a local review bundle for one routine pack."""
     manifest = _manifest_by_id(routine_pack_root, pack_id)
     test_result = run_routine_pack_tests(routine_pack_root, pack_id)
+    proof_status = _proof_status(manifest, test_result)
     output_dir.mkdir(parents=True, exist_ok=True)
     report_path = output_dir / "pack-test-report.json"
     checklist_path = output_dir / "proof-checklist.md"
@@ -103,6 +106,7 @@ def write_routine_pack_proof_bundle(
         json.dumps(
             {
                 "manifest": manifest.metadata(),
+                "proof_status": proof_status,
                 "test_result": test_result.metadata(),
             },
             indent=2,
@@ -122,6 +126,7 @@ def write_routine_pack_proof_bundle(
         report_path=report_path,
         checklist_path=checklist_path,
         manifest_copy_path=manifest_copy_path,
+        proof_status=proof_status,
         test_result=test_result,
     )
 
@@ -169,6 +174,7 @@ def _proof_checklist_markdown(
     manifest: RoutinePackManifest,
     test_result: RoutinePackTestResult,
 ) -> str:
+    proof_status = _proof_status(manifest, test_result)
     lines = [
         f"# Routine Pack Proof: {manifest.name}",
         "",
@@ -181,6 +187,7 @@ def _proof_checklist_markdown(
         "",
         "## Pack Test",
         "",
+        f"- Proof status: `{proof_status}`",
         f"- Status: `{test_result.status}`",
         f"- Routines: `{test_result.routine_count}`",
         f"- Validated routines: `{test_result.validated_routine_count}`",
@@ -208,3 +215,15 @@ def _proof_checklist_markdown(
         lines.extend(f"- `{error}`" for error in test_result.errors)
         lines.append("")
     return "\n".join(lines)
+
+
+def _proof_status(
+    manifest: RoutinePackManifest,
+    test_result: RoutinePackTestResult,
+) -> str:
+    """Return the pack-level proof status shown in reports and review bundles."""
+    if test_result.status != "passed":
+        return "failed_validation"
+    if manifest.proof.windows_proof_required:
+        return "windows_proof_required"
+    return "ready_for_review"
