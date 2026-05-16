@@ -33,8 +33,10 @@ metadata.
 For clicked points, the recorder has a UIA capture helper that hit-tests the
 point with the Windows UIA adapter and stores element name, control type,
 bounds, enabled/visible state, and confidence as `uia` candidate context. This
-is the first stable-selector capture source; OCR and image fallback capture are
-tracked separately.
+is the first stable-selector capture source. The recorder also has an OCR
+context helper that filters nearby OCR text blocks around a clicked point,
+preserving text, bounds, confidence, whether the point was inside the block, and
+distance from the click. Image fallback capture is tracked separately.
 
 Live Windows event capture and editable YAML/playbook generation are tracked in
 the remaining recorder roadmap tasks.

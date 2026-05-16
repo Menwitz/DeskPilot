@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -22,6 +23,19 @@ class UiaPointCaptureAdapter(Protocol):
     """UIA hit-test seam used by the recorder without hard-coding pywinauto."""
 
     def element_at_point(self, point: tuple[int, int]) -> object: ...
+
+
+class OcrTextBlockLike(Protocol):
+    """OCR text-block shape consumed by recorder click context capture."""
+
+    @property
+    def text(self) -> str: ...
+
+    @property
+    def bounds(self) -> object: ...
+
+    @property
+    def confidence(self) -> float: ...
 
 
 @dataclass(frozen=True)
@@ -320,6 +334,43 @@ def capture_uia_context_for_point(
     )
 
 
+def capture_ocr_context_for_point(
+    point: tuple[int, int],
+    text_blocks: tuple[OcrTextBlockLike, ...],
+    *,
+    max_distance_pixels: float = 96.0,
+    limit: int = 5,
+) -> tuple[RecorderCandidateContext, ...]:
+    scored_blocks: list[tuple[bool, float, OcrTextBlockLike]] = []
+    for block in text_blocks:
+        bounds_payload = _bounds_payload(block.bounds)
+        if bounds_payload is None:
+            continue
+        contains_point = _point_inside_bounds_payload(point, bounds_payload)
+        distance = _distance_to_bounds_center(point, bounds_payload)
+        if contains_point or distance <= max_distance_pixels:
+            scored_blocks.append((contains_point, distance, block))
+
+    contexts: list[RecorderCandidateContext] = []
+    for contains_point, distance, block in sorted(
+        scored_blocks,
+        key=lambda item: (not item[0], item[1]),
+    )[:limit]:
+        contexts.append(
+            RecorderCandidateContext(
+                source="ocr",
+                label=block.text,
+                bounds=_bounds_payload(block.bounds),
+                confidence=block.confidence,
+                metadata={
+                    "contains_point": contains_point,
+                    "distance_pixels": round(distance, 3),
+                },
+            ),
+        )
+    return tuple(contexts)
+
+
 def _write_payload(path: Path, payload: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -393,3 +444,22 @@ def _bounds_payload(bounds: object) -> dict[str, int] | None:
     if not all(isinstance(value, int) for value in values.values()):
         return None
     return cast(dict[str, int], values)
+
+
+def _point_inside_bounds_payload(
+    point: tuple[int, int],
+    bounds: dict[str, int],
+) -> bool:
+    return (
+        bounds["x"] <= point[0] <= bounds["x"] + bounds["width"]
+        and bounds["y"] <= point[1] <= bounds["y"] + bounds["height"]
+    )
+
+
+def _distance_to_bounds_center(
+    point: tuple[int, int],
+    bounds: dict[str, int],
+) -> float:
+    center_x = bounds["x"] + (bounds["width"] / 2)
+    center_y = bounds["y"] + (bounds["height"] / 2)
+    return math.hypot(point[0] - center_x, point[1] - center_y)

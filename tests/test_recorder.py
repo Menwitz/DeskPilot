@@ -4,11 +4,13 @@ from pathlib import Path
 from pytest import CaptureFixture
 
 from desktop_agent.cli import main
+from desktop_agent.ocr import OcrTextBlock
 from desktop_agent.platforms.windows.uia import UiaElementSnapshot
 from desktop_agent.recorder import (
     RecorderCandidateContext,
     RecorderController,
     RecorderEvent,
+    capture_ocr_context_for_point,
     capture_uia_context_for_point,
 )
 from desktop_agent.screen import Bounds
@@ -106,6 +108,38 @@ def test_recorder_captures_uia_context_around_clicked_point() -> None:
             bounds={"x": 100, "y": 220, "width": 80, "height": 30},
             confidence=0.95,
             metadata={"enabled": True, "visible": True},
+        ),
+    )
+
+
+def test_recorder_captures_ocr_text_blocks_around_clicked_point() -> None:
+    blocks = (
+        OcrTextBlock(
+            text="Submit",
+            bounds=Bounds(x=100, y=220, width=80, height=30),
+            confidence=0.92,
+        ),
+        OcrTextBlock(
+            text="Cancel",
+            bounds=Bounds(x=240, y=220, width=80, height=30),
+            confidence=0.88,
+        ),
+        OcrTextBlock(
+            text="Footer",
+            bounds=Bounds(x=500, y=700, width=120, height=30),
+            confidence=0.99,
+        ),
+    )
+
+    context = capture_ocr_context_for_point((120, 240), blocks)
+
+    assert context == (
+        RecorderCandidateContext(
+            source="ocr",
+            label="Submit",
+            bounds={"x": 100, "y": 220, "width": 80, "height": 30},
+            confidence=0.92,
+            metadata={"contains_point": True, "distance_pixels": 20.616},
         ),
     )
 
