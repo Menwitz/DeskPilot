@@ -204,7 +204,13 @@ class RoutineDefinition:
         return {
             "routine_id": self.id,
             "routine_name": self.name,
+            "routine_description": self.description,
+            "routine_goal": self.goal,
+            "routine_required_app": self.required_app,
+            "routine_required_site": self.required_site,
             "routine_tags": list(self.tags),
+            "routine_inputs": list(self.inputs),
+            "routine_outputs": list(self.outputs),
             "routine_safety_class": self.safety_class,
             "routine_schedule_policy": self.schedule_policy,
             "routine_approval_policy": self.approval_policy,

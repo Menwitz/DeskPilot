@@ -129,12 +129,33 @@ def test_builtin_routines_have_cli_dry_run_coverage(
         assert "status: passed" in output
 
     reports = sorted(trace_root.glob("*/final-report.json"))
-    reported_routine_ids = {
-        json.loads(report.read_text(encoding="utf-8"))["metadata"]["routine_id"]
-        for report in reports
-    }
+    report_metadata_by_routine_id: dict[str, dict[str, object]] = {}
+    for report in reports:
+        payload = json.loads(report.read_text(encoding="utf-8"))
+        assert payload["status"] == "passed"
+        metadata = payload["metadata"]
+        assert isinstance(metadata, dict)
+        routine_id = metadata["routine_id"]
+        assert isinstance(routine_id, str)
+        report_metadata_by_routine_id[routine_id] = metadata
+
     assert len(reports) == len(catalog.routines)
-    assert reported_routine_ids == {routine.id for routine in catalog.routines}
+    assert set(report_metadata_by_routine_id) == {
+        routine.id for routine in catalog.routines
+    }
+    for routine in catalog.routines:
+        metadata = report_metadata_by_routine_id[routine.id]
+        assert routine.tags
+        assert routine.inputs
+        assert routine.outputs
+        assert metadata["routine_inputs"] == list(routine.inputs)
+        assert metadata["routine_outputs"] == list(routine.outputs)
+        assert metadata["routine_safety_class"] == routine.safety_class
+        gates = metadata["routine_promotion_gates"]
+        assert isinstance(gates, list)
+        assert "trace_replay_review" in {
+            gate["id"] for gate in gates if isinstance(gate, dict)
+        }
 
 
 def test_high_risk_builtin_routines_require_approval_and_checkpoints(

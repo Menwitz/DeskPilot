@@ -94,7 +94,10 @@ coordinate `sensitive_zones` with `id`, `x`, `y`, `width`, `height`, and an
 optional `reason`.
 
 `RoutineDefinition.report_metadata()` returns JSON-safe fields for future trace,
-monitoring, search, and catalog quality reports.
+monitoring, search, and catalog quality reports, including routine identity,
+goal, required app/site, tags, inputs, outputs, safety class, approval policy,
+schedule policy, promotion gates, schema migration, redaction policy, and
+quarantine status.
 
 ## Schema Migrations
 

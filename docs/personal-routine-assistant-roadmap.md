@@ -317,7 +317,7 @@ abuse, and hidden automation are not supported.
 - [ ] KR1: Add 100 browser routines.
 - [ ] KR2: Add 100 native Windows routines.
 - [ ] KR3: Add 100 social/content routines.
-- [ ] KR4: Every routine has metadata, inputs, outputs, safety class, dry-run
+- [x] KR4: Every routine has metadata, inputs, outputs, safety class, dry-run
       coverage, and trace expectations.
 - [x] KR5: High-risk routines require approval and checkpoint coverage.
 
