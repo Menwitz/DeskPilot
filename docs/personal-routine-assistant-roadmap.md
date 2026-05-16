@@ -147,7 +147,7 @@ abuse, and hidden automation are not supported.
       and artifact paths.
 - [ ] Add a proof replay command that prints proof status and opens artifact
       paths without re-executing input.
-- [ ] Fix unsupported-platform real `run` behavior so it fails early with a
+- [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [ ] Add a Windows manual evidence checklist for each proof command.
 
@@ -158,7 +158,7 @@ abuse, and hidden automation are not supported.
 - [ ] Each proof includes video, action log, final report, pre/post screenshots,
       and cursor readback.
 - [ ] A reviewer can verify from artifacts that real OS input occurred.
-- [ ] Non-Windows real `run` exits with a clear unsupported-platform message.
+- [x] Non-Windows real `run` exits with a clear unsupported-platform message.
 - [ ] Proof commands do not use browser DevTools, Playwright, app APIs, or
       fixture-only fake cursors.
 

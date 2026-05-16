@@ -163,6 +163,7 @@ def test_cli_run_fails_when_platform_actuation_is_unavailable(
     capsys: CaptureFixture[str],
 ) -> None:
     task_path = tmp_path / "task.yaml"
+    trace_root = tmp_path / "traces"
     task_path.write_text(
         "\n".join(
             [
@@ -170,10 +171,12 @@ def test_cli_run_fails_when_platform_actuation_is_unavailable(
                 "allowed_windows:",
                 "  - DeskPilot Fixture",
                 "timeout_seconds: 30",
+                "config:",
+                f"  trace_root: {trace_root}",
                 "steps:",
-                "  - id: press-enter",
-                "    action: press_key",
-                "    text: enter",
+                "  - id: click-submit",
+                "    action: click_text",
+                "    target: Submit",
                 "",
             ],
         ),
@@ -185,6 +188,18 @@ def test_cli_run_fails_when_platform_actuation_is_unavailable(
     output = capsys.readouterr().out
     assert status == 1
     assert "desktop actuation is unavailable on this platform" in output
+    assert "missed_target" not in output
+    report_paths = tuple(trace_root.glob("*/final-report.json"))
+    assert len(report_paths) == 1
+    report = json.loads(report_paths[0].read_text(encoding="utf-8"))
+    assert report["status"] == "aborted"
+    assert (
+        report["abort_reason"]
+        == "desktop actuation is unavailable on this platform; use dry-run"
+    )
+    phases = [event["phase"] for event in report["events"]]
+    assert phases == ["platform_preflight"]
+    assert report["events"][0]["metadata"]["deep_search_skipped"] is True
 
 
 def test_cli_run_stops_when_operator_denies_submission_approval(
@@ -195,6 +210,15 @@ def test_cli_run_stops_when_operator_denies_submission_approval(
     task_path = tmp_path / "task.yaml"
     _write_submission_task(task_path)
     monkeypatch.setattr("builtins.input", lambda _prompt: "no")
+
+    def create_actuator(
+        profile: ActuationProfile | None = None,
+        emergency_stop_monitor: EmergencyStopMonitor | None = None,
+    ) -> DryRunActuator:
+        _ = profile, emergency_stop_monitor
+        return DryRunActuator()
+
+    monkeypatch.setattr("desktop_agent.cli.create_platform_actuator", create_actuator)
 
     status = main(["run", str(task_path), "--allowed-window", "DeskPilot Fixture"])
 

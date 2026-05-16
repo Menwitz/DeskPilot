@@ -13,6 +13,7 @@ import yaml
 
 from desktop_agent.actuation import (
     DryRunActuator,
+    UnavailableActuator,
     actuation_profile_from_runtime_config,
     create_platform_actuator,
 )
@@ -93,7 +94,7 @@ from desktop_agent.task_dsl import (
     YamlTaskLoader,
     step_category,
 )
-from desktop_agent.tracing import FileTraceSink, RunReport
+from desktop_agent.tracing import FileTraceSink, RunReport, TraceEvent
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -345,8 +346,6 @@ def _run_loaded_task(
         require_approval_manifest_if_needed(task, manifest_path)
     if manifest_path is not None:
         task, config = apply_approval_manifest(task, config, manifest_path)
-    if not dry_run:
-        config = config if site_run else _config_with_operator_approvals(task, config)
     trace_sink = FileTraceSink()
     emergency_stop_monitor = (
         NoopEmergencyStopMonitor()
@@ -363,6 +362,12 @@ def _run_loaded_task(
             emergency_stop_monitor,
         )
     )
+    if not dry_run and isinstance(actuator, UnavailableActuator):
+        report = _write_platform_unavailable_report(task, config, trace_sink)
+        _print_report(report, verbose=args.verbose)
+        return 1
+    if not dry_run:
+        config = config if site_run else _config_with_operator_approvals(task, config)
     engine = ExecutionEngine(
         config_loader=StaticConfigLoader(config),
         task_loader=StaticTaskLoader(task),
@@ -378,6 +383,29 @@ def _run_loaded_task(
     report = engine.run(task_path, args.config)
     _print_report(report, verbose=args.verbose)
     return 0 if report.status == "passed" else 1
+
+
+def _write_platform_unavailable_report(
+    task: TaskDefinition,
+    config: RuntimeConfig,
+    trace_sink: FileTraceSink,
+) -> RunReport:
+    # Non-Windows real runs cannot safely execute desktop input, so stop before
+    # perception/deep-search can produce misleading target-selection failures.
+    reason = "desktop actuation is unavailable on this platform; use dry-run"
+    trace_sink.prepare_run(task, config)
+    trace_sink.record_event(
+        TraceEvent(
+            phase="platform_preflight",
+            message=reason,
+            metadata={
+                "platform": sys.platform,
+                "actuation_available": False,
+                "deep_search_skipped": True,
+            },
+        )
+    )
+    return trace_sink.write_final_report("aborted", reason)
 
 
 def _list_sites(args: argparse.Namespace) -> int:
