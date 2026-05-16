@@ -1,0 +1,13 @@
+id: browser.handlers-settings-open
+name: Browser handlers settings open
+description: Open browser protocol handlers settings for read-only review.
+goal: Inspect handler settings without changing protocol behavior.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [handlers settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/handlers-settings-open.yaml}

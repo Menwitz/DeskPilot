@@ -1,0 +1,23 @@
+name: Browser microphone permissions settings open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: focus-address-bar
+    action: press_key
+    text: ctrl+l
+    verify:
+      type: visible_text
+      text: Address
+  - id: type-microphone-permissions-url
+    action: type_text
+    text: "browser://settings/content/microphone"
+    verify:
+      type: visible_text
+      text: "browser://settings/content/microphone"
+  - id: load-microphone-permissions
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Microphone

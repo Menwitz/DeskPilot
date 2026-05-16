@@ -1,0 +1,13 @@
+id: browser.images-settings-open
+name: Browser images settings open
+description: Open browser image loading settings for read-only review.
+goal: Inspect image permissions without changing site behavior.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [image settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/images-settings-open.yaml}

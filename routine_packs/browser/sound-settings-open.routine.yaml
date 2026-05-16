@@ -1,0 +1,13 @@
+id: browser.sound-settings-open
+name: Browser sound settings open
+description: Open browser sound permission settings for read-only review.
+goal: Inspect sound settings without changing site behavior.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [sound settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/sound-settings-open.yaml}

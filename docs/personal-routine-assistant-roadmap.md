@@ -349,6 +349,10 @@ abuse, and hidden automation are not supported.
       notifications, pop-ups, downloads, appearance, defaults, performance,
       startup, new tab, printing, captions, search shortcuts, extension
       shortcuts, and developer tools review surfaces.
+- [x] Add fifth browser scale-out batch for location, camera, microphone,
+      JavaScript, images, PDFs, ads, background sync, automatic downloads,
+      handlers, sound, protected content, insecure content, clipboard, and USB
+      permission review pages.
 - [x] Add native routines for Notepad, Calculator, Settings, File Explorer,
       clipboard, app switching, window management, and simple Office-like
       surfaces.

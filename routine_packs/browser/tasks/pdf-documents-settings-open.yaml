@@ -1,0 +1,23 @@
+name: Browser PDF documents settings open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: focus-address-bar
+    action: press_key
+    text: ctrl+l
+    verify:
+      type: visible_text
+      text: Address
+  - id: type-pdf-documents-url
+    action: type_text
+    text: "browser://settings/content/pdfDocuments"
+    verify:
+      type: visible_text
+      text: "browser://settings/content/pdfDocuments"
+  - id: load-pdf-documents
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: PDF documents

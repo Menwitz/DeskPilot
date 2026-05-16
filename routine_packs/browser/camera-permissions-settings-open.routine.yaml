@@ -1,0 +1,13 @@
+id: browser.camera-permissions-settings-open
+name: Browser camera permissions settings open
+description: Open browser camera permission settings for read-only review.
+goal: Inspect camera permissions without changing device access.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [camera permissions visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/camera-permissions-settings-open.yaml}

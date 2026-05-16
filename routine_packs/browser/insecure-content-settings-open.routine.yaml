@@ -1,0 +1,13 @@
+id: browser.insecure-content-settings-open
+name: Browser insecure content settings open
+description: Open browser insecure content settings for read-only review.
+goal: Inspect insecure content settings without changing site behavior.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [insecure content settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/insecure-content-settings-open.yaml}

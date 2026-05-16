@@ -1,0 +1,13 @@
+id: browser.javascript-settings-open
+name: Browser JavaScript settings open
+description: Open browser JavaScript settings for read-only review.
+goal: Inspect JavaScript permissions without changing site behavior.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [JavaScript settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/javascript-settings-open.yaml}

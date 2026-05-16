@@ -1,0 +1,13 @@
+id: browser.usb-devices-settings-open
+name: Browser USB devices settings open
+description: Open browser USB device permission settings for read-only review.
+goal: Inspect USB device permissions without changing site access.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [USB device permissions visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/usb-devices-settings-open.yaml}
