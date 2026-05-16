@@ -562,7 +562,7 @@ abuse, and hidden automation are not supported.
       summarization, screen summary, and YAML improvement suggestions.
 - [x] Add local screenshot captioning path only for review and authoring, not
       direct action execution.
-- [ ] Add output validation for structured model responses.
+- [x] Add output validation for structured model responses.
 - [ ] Add trace fields for provider, model name, prompt class, input artifact
       references, output hash, and accepted/rejected status.
 - [ ] Add fake model provider for tests.

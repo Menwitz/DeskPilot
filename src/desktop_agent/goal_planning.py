@@ -15,6 +15,7 @@ from desktop_agent.local_model_prompts import (
     PROMPT_CLASS_ROUTINE_RANKING,
     build_routine_ranking_prompt,
 )
+from desktop_agent.local_model_validation import validate_routine_ranking_response
 from desktop_agent.routines import (
     RoutineCatalog,
     RoutineDefinition,
@@ -972,23 +973,23 @@ def _safe_model_candidate_order(
     candidate_order: tuple[str, ...],
     suggestion: GoalModelSuggestion,
 ) -> tuple[tuple[str, ...], str | None]:
-    candidate_ids = set(candidate_order)
+    validation = validate_routine_ranking_response(
+        {
+            "selected_routine_id": suggestion.selected_routine_id,
+            "candidate_order": list(suggestion.candidate_order),
+            "explanation": suggestion.explanation,
+        },
+        candidate_ids=candidate_order,
+    )
+    if not validation.accepted:
+        return candidate_order, "; ".join(validation.errors)
+
     suggested_ids = list(suggestion.candidate_order)
     if (
         suggestion.selected_routine_id
         and suggestion.selected_routine_id not in suggested_ids
     ):
         suggested_ids.insert(0, suggestion.selected_routine_id)
-
-    unknown_ids = sorted(
-        {routine_id for routine_id in suggested_ids if routine_id not in candidate_ids}
-    )
-    if unknown_ids:
-        return candidate_order, "model suggested unknown routine id(s): " + ", ".join(
-            unknown_ids,
-        )
-    if len(suggested_ids) != len(set(suggested_ids)):
-        return candidate_order, "model suggested duplicate routine IDs"
 
     remaining_ids = [
         routine_id

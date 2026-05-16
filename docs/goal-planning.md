@@ -104,6 +104,9 @@ keeps the deterministic plan when Ollama is unavailable, and stores
 input artifact references, status, selected routine ID, candidate order,
 explanation, output hash, error, and whether the model changed the selected
 routine.
+The rejection path uses the shared local model structured-output validator, so
+routine ranking follows the same accepted/rejected contract as trace summaries,
+screen summaries, missing-input extraction, and YAML improvement suggestions.
 
 Accepted reranking still runs through the deterministic safety boundary:
 missing inputs, approvals, schedule eligibility, and safety-class limits are

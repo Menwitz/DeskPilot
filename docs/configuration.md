@@ -323,6 +323,9 @@ was requested:
 Every prompt class keeps the same boundary: return structured JSON only, do not
 execute desktop input, do not invent executable actions, and wait for
 deterministic validation before any suggestion can affect a run.
+Structured response validators reject unknown routine IDs, unknown missing-input
+keys, unknown evidence references, malformed screen summaries, and YAML
+improvement proposals that are not explicitly review-only.
 
 For screen review, `desktop-agent inspect-screen --caption-output <path>` writes
 a local caption prompt report from the captured screenshot, OCR text, UIA tree,
