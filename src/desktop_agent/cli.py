@@ -156,6 +156,8 @@ from desktop_agent.site_playbooks import (
 )
 from desktop_agent.task_dsl import (
     BasicTaskValidator,
+    ExpectedStateTransition,
+    RecoveryRule,
     StaticTaskLoader,
     TaskDefinition,
     TaskStep,
@@ -1609,6 +1611,7 @@ def _task_to_yaml_dict(task: TaskDefinition) -> dict[str, object]:
         "timeout_seconds": task.timeout_seconds,
         "steps": [_task_step_to_yaml_dict(step) for step in task.steps],
     }
+    _put_optional(payload, "entropy_budget", task.entropy_budget)
     if task.config_overrides.confidence_threshold is not None:
         payload["config"] = {
             "confidence_threshold": task.config_overrides.confidence_threshold,
@@ -1625,6 +1628,8 @@ def _task_step_to_yaml_dict(step: TaskStep) -> dict[str, object]:
     }
     _put_optional(payload, "target", step.target)
     _put_optional(payload, "text", step.text)
+    _put_optional(payload, "handoff_prompt", step.handoff_prompt)
+    _put_optional(payload, "expected_operator_work", step.expected_operator_work)
     _put_optional(payload, "image", str(step.image) if step.image else None)
     if step.region is not None:
         payload["region"] = {
@@ -1639,9 +1644,23 @@ def _task_step_to_yaml_dict(step: TaskStep) -> dict[str, object]:
         payload["checkpoint"] = _verification_to_yaml_dict(step.checkpoint)
     _put_optional(payload, "timeout_seconds", step.timeout_seconds)
     _put_optional(payload, "retry", step.retry)
+    _put_optional(payload, "on_failure", step.on_failure)
     if step.requires_confirmation:
         payload["requires_confirmation"] = True
     _put_optional(payload, "category", step.category)
+    _put_optional(payload, "entropy_budget", step.entropy_budget)
+    if step.safe_action_variants:
+        payload["safe_action_variants"] = list(step.safe_action_variants)
+    if step.recovery:
+        payload["recovery"] = [
+            _recovery_rule_to_yaml_dict(rule) for rule in step.recovery
+        ]
+    if step.depends_on:
+        payload["depends_on"] = list(step.depends_on)
+    if step.expected_state is not None:
+        payload["expected_state"] = _expected_state_to_yaml_dict(
+            step.expected_state,
+        )
     if step.metadata:
         payload["metadata"] = step.metadata
     return payload
@@ -1657,6 +1676,24 @@ def _verification_to_yaml_dict(
         "image",
         str(verification.image) if verification.image else None,
     )
+    return payload
+
+
+def _recovery_rule_to_yaml_dict(rule: RecoveryRule) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "reason": rule.reason,
+        "actions": list(rule.actions),
+    }
+    _put_optional(payload, "next_step", rule.next_step)
+    return payload
+
+
+def _expected_state_to_yaml_dict(
+    state: ExpectedStateTransition,
+) -> dict[str, object]:
+    payload: dict[str, object] = {}
+    _put_optional(payload, "before", state.before)
+    _put_optional(payload, "after", state.after)
     return payload
 
 

@@ -349,7 +349,7 @@ abuse, and hidden automation are not supported.
 - [ ] 300 routines validate.
 - [ ] Every routine has dry-run coverage.
 - [ ] Every high-risk routine has approval metadata and checkpoint coverage.
-- [ ] Every routine can be listed, inspected, and compiled from the CLI.
+- [x] Every routine can be listed, inspected, and compiled from the CLI.
 - [ ] Catalog quality report shows validation, proof, and quarantine status.
 
 ## Phase 6: Human-Paced Scheduling And Activity Layer

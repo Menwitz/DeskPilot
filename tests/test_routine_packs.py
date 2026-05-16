@@ -1,5 +1,8 @@
 from pathlib import Path
 
+from pytest import CaptureFixture
+
+from desktop_agent.cli import main
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.routines import load_routine_catalog
 from desktop_agent.task_dsl import BasicTaskValidator, YamlTaskLoader
@@ -21,6 +24,61 @@ def test_expected_routine_pack_directories_are_documented() -> None:
     assert (root / "README.md").exists()
     for pack in EXPECTED_ROUTINE_PACKS:
         assert (root / pack / "README.md").exists()
+
+
+def test_builtin_routines_are_listable_inspectable_and_compilable_from_cli(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    pack_root = Path("routine_packs")
+    catalog = load_routine_catalog(pack_root)
+    validator = BasicTaskValidator()
+    config = RuntimeConfig()
+
+    assert catalog.routines
+    assert main(["list-routines", "--routine-pack-root", str(pack_root)]) == 0
+    list_output = capsys.readouterr().out
+
+    for routine in catalog.routines:
+        assert f"{routine.id}\t" in list_output
+
+        assert (
+            main(
+                [
+                    "show-routine",
+                    routine.id,
+                    "--routine-pack-root",
+                    str(pack_root),
+                ],
+            )
+            == 0
+        )
+        show_output = capsys.readouterr().out
+        assert f"id: {routine.id}" in show_output
+        assert f"name: {routine.name}" in show_output
+        assert "reference:" in show_output
+
+        output_path = tmp_path / f"{routine.id.replace('.', '_')}.compiled.yaml"
+        assert (
+            main(
+                [
+                    "compile-routine",
+                    routine.id,
+                    "--routine-pack-root",
+                    str(pack_root),
+                    "--output",
+                    str(output_path),
+                ],
+            )
+            == 0
+        )
+        compile_output = capsys.readouterr().out
+        assert f"compiled routine: {routine.id}" in compile_output
+
+        task = YamlTaskLoader().load(output_path)
+        validator.validate(task, config)
+        assert task.metadata["routine_id"] == routine.id
+        assert task.metadata["routine_source_path"] == str(routine.source_path)
 
 
 def test_browser_routine_pack_contains_seed_categories() -> None:
