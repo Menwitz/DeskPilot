@@ -21,6 +21,7 @@ RunQueueStatus = Literal[
     "failed",
     "canceled",
     "stopped",
+    "emergency_stopped",
     "handed_off",
 ]
 SchedulerTraceKind = Literal[
@@ -43,15 +44,24 @@ RUN_QUEUE_STATUSES: frozenset[str] = frozenset(
         "failed",
         "canceled",
         "stopped",
+        "emergency_stopped",
         "handed_off",
     },
 )
 TERMINAL_RUN_QUEUE_STATUSES: frozenset[str] = frozenset(
-    {"completed", "failed", "canceled", "stopped", "handed_off"},
+    {"completed", "failed", "canceled", "stopped", "emergency_stopped", "handed_off"},
 )
 RUN_QUEUE_TRANSITIONS: dict[RunQueueStatus, frozenset[RunQueueStatus]] = {
     "pending": frozenset(
-        {"running", "paused", "blocked", "canceled", "stopped", "handed_off"},
+        {
+            "running",
+            "paused",
+            "blocked",
+            "canceled",
+            "stopped",
+            "emergency_stopped",
+            "handed_off",
+        },
     ),
     "running": frozenset(
         {
@@ -61,19 +71,36 @@ RUN_QUEUE_TRANSITIONS: dict[RunQueueStatus, frozenset[RunQueueStatus]] = {
             "failed",
             "canceled",
             "stopped",
+            "emergency_stopped",
             "handed_off",
         },
     ),
     "paused": frozenset(
-        {"pending", "running", "canceled", "stopped", "handed_off"},
+        {
+            "pending",
+            "running",
+            "canceled",
+            "stopped",
+            "emergency_stopped",
+            "handed_off",
+        },
     ),
     "blocked": frozenset(
-        {"pending", "running", "failed", "canceled", "stopped", "handed_off"},
+        {
+            "pending",
+            "running",
+            "failed",
+            "canceled",
+            "stopped",
+            "emergency_stopped",
+            "handed_off",
+        },
     ),
     "completed": frozenset(),
     "failed": frozenset(),
     "canceled": frozenset(),
     "stopped": frozenset(),
+    "emergency_stopped": frozenset(),
     "handed_off": frozenset(),
 }
 SCHEDULER_TRACE_KINDS: frozenset[str] = frozenset(

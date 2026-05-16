@@ -374,6 +374,10 @@ class RunnerService(Protocol):
         """Stop a monitored app run."""
         ...
 
+    def emergency_stop_run(self, run_id: str) -> OperatorRunControlResult:
+        """Emergency-stop a monitored app run."""
+        ...
+
 
 class SchedulerService(Protocol):
     """Run queue API boundary for future UI wiring."""
@@ -743,6 +747,14 @@ class LocalRunnerService:
             run_id,
             "stopped",
             reason="operator_app_stop",
+            next_action=None,
+        )
+
+    def emergency_stop_run(self, run_id: str) -> OperatorRunControlResult:
+        return self._transition_run(
+            run_id,
+            "emergency_stopped",
+            reason="operator_app_emergency_stop",
             next_action=None,
         )
 

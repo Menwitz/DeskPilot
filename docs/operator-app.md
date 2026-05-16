@@ -22,7 +22,8 @@ The Phase 8 shell defines these pages:
 The Dashboard includes the first live run panel. Its state contract tracks the
 run ID, current routine, current step, screenshot preview path, selected target,
 next action, elapsed seconds, run status, and stop controls: pause, resume,
-cancel, and emergency stop.
+cancel, normal stop, and emergency stop. Emergency stop is represented as the
+terminal `emergency_stopped` run-queue state.
 
 The Approvals page includes the approval dialog contract. It shows routine ID,
 step ID, risk class, checkpoint evidence, content fingerprint, current status,

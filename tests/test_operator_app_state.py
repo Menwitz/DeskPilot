@@ -93,6 +93,27 @@ def test_operator_app_controller_stops_run_with_fake_runner() -> None:
     assert runner.run_statuses["run-0001"] == "stopped"
 
 
+def test_operator_app_controller_emergency_stops_run_with_fake_runner() -> None:
+    runner = _FakeRunnerService(
+        {
+            "browser.search": RoutineExecutionGate(
+                routine_id="browser.search",
+                allowed=True,
+                reason="validated_catalog_routine",
+            ),
+        },
+    )
+    controller = OperatorAppController(runner)
+
+    controller.start_routine("browser.search")
+    stopped = controller.emergency_stop_run()
+
+    assert stopped.live_run.run_id == "run-0001"
+    assert stopped.live_run.status == "emergency_stopped"
+    assert stopped.live_run.next_action is None
+    assert runner.run_statuses["run-0001"] == "emergency_stopped"
+
+
 def test_operator_app_controller_blocks_run_when_fake_gate_rejects() -> None:
     controller = OperatorAppController(
         _FakeRunnerService(
@@ -254,6 +275,13 @@ class _FakeRunnerService:
 
     def stop_run(self, run_id: str) -> OperatorRunControlResult:
         return self._transition_run(run_id, "stopped", "operator_app_stop")
+
+    def emergency_stop_run(self, run_id: str) -> OperatorRunControlResult:
+        return self._transition_run(
+            run_id,
+            "emergency_stopped",
+            "operator_app_emergency_stop",
+        )
 
     def _transition_run(
         self,

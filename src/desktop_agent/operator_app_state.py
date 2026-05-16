@@ -170,6 +170,19 @@ class OperatorAppController:
         )
         return self.state
 
+    def emergency_stop_run(self) -> OperatorAppState:
+        run_id = self._active_run_id()
+        run = self._runner.emergency_stop_run(run_id)
+        self.state = replace(
+            self.state,
+            live_run=replace(
+                self.state.live_run,
+                status=run.status,
+                next_action=run.next_action,
+            ),
+        )
+        return self.state
+
     def request_approval(self, dialog: ApprovalDialogState) -> OperatorAppState:
         self.state = replace(
             self.state,
