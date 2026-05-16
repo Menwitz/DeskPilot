@@ -284,7 +284,7 @@ abuse, and hidden automation are not supported.
 - [x] Capture OCR text blocks around clicked points.
 - [x] Capture image-template snippets only when UIA/OCR cannot identify a
       stable target.
-- [ ] Generate `click_uia`, `click_text`, `click_image`, `type_text`,
+- [x] Generate `click_uia`, `click_text`, `click_image`, `type_text`,
       `press_key`, `scroll`, `wait_for`, and `assert_visible` steps.
 - [ ] Infer allowed windows from observed active windows and require operator
       confirmation before save.

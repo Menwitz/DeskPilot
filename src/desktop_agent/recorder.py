@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Literal, Protocol, cast
 from uuid import uuid4
 
+from desktop_agent.task_dsl import TaskDefinition, TaskStep
+
 RECORDER_SESSION_FORMAT = "deskpilot_recorder_session_v1"
 RecorderStatus = Literal["recording", "paused", "stopped", "saved"]
 RecorderEventType = Literal["observation", "input_event", "selected_point"]
@@ -18,6 +20,10 @@ RecorderEventType = Literal["observation", "input_event", "selected_point"]
 
 class RecorderError(RuntimeError):
     """Raised when recorder session controls are used out of order."""
+
+
+class RecorderGenerationError(RecorderError):
+    """Raised when recorder events cannot be converted into task steps."""
 
 
 class UiaPointCaptureAdapter(Protocol):
@@ -408,6 +414,26 @@ def capture_image_snippet_for_point(
     )
 
 
+def generate_task_from_recorder_session(session: RecorderSession) -> TaskDefinition:
+    steps: list[TaskStep] = []
+    for index, event in enumerate(session.events, start=1):
+        step = _step_from_recorder_event(index, event)
+        if step is not None:
+            steps.append(step)
+    if not steps:
+        raise RecorderGenerationError("recorder session has no task-generating events")
+    return TaskDefinition(
+        name=session.name,
+        allowed_windows=_allowed_windows_from_events(session.events),
+        timeout_seconds=300,
+        steps=tuple(steps),
+        metadata={
+            "recorder_session_id": session.session_id,
+            "recorder_event_count": len(session.events),
+        },
+    )
+
+
 def _write_payload(path: Path, payload: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -528,3 +554,126 @@ def _snippet_bounds(
         "width": snippet_width,
         "height": snippet_height,
     }
+
+
+def _step_from_recorder_event(index: int, event: RecorderEvent) -> TaskStep | None:
+    if event.event_type == "selected_point":
+        return _click_step_from_event(index, event)
+    if event.event_type == "input_event" and event.input_event is not None:
+        return _input_step_from_event(index, event)
+    if event.event_type == "observation":
+        return _observation_step_from_event(index, event)
+    return None
+
+
+def _click_step_from_event(index: int, event: RecorderEvent) -> TaskStep | None:
+    context = _preferred_click_context(event.candidate_context)
+    if context is None:
+        return None
+    step_id = _step_id(index, f"click-{context.source}")
+    if context.source == "uia":
+        return TaskStep(
+            id=step_id,
+            action="click_uia",
+            target=context.label or context.control_type,
+        )
+    if context.source == "ocr":
+        return TaskStep(id=step_id, action="click_text", target=context.label)
+    if context.source == "image":
+        snippet_path = context.metadata.get("snippet_path")
+        if not isinstance(snippet_path, str):
+            raise RecorderGenerationError("image recorder context needs snippet_path")
+        return TaskStep(
+            id=step_id,
+            action="click_image",
+            image=Path(snippet_path),
+            target=context.label,
+        )
+    return None
+
+
+def _input_step_from_event(index: int, event: RecorderEvent) -> TaskStep | None:
+    payload = event.input_event or {}
+    kind = payload.get("kind")
+    if kind == "type_text":
+        return TaskStep(
+            id=_step_id(index, "type-text"),
+            action="type_text",
+            text=_payload_string(payload, "text"),
+        )
+    if kind in {"press_key", "hotkey"}:
+        return TaskStep(
+            id=_step_id(index, "press-key"),
+            action="press_key",
+            text=_payload_string(payload, "key"),
+        )
+    if kind == "scroll":
+        clicks = payload.get("clicks", -3)
+        return TaskStep(
+            id=_step_id(index, "scroll"),
+            action="scroll",
+            text=str(clicks),
+        )
+    if kind == "wait_for":
+        return TaskStep(
+            id=_step_id(index, "wait-for"),
+            action="wait_for",
+            target=_payload_string(payload, "target"),
+        )
+    if kind == "assert_visible":
+        return TaskStep(
+            id=_step_id(index, "assert-visible"),
+            action="assert_visible",
+            target=_payload_string(payload, "target"),
+        )
+    return None
+
+
+def _observation_step_from_event(index: int, event: RecorderEvent) -> TaskStep | None:
+    suggested_action = event.metadata.get("suggested_action")
+    target = event.metadata.get("target")
+    if suggested_action == "wait_for" and isinstance(target, str):
+        return TaskStep(
+            id=_step_id(index, "wait-for"),
+            action="wait_for",
+            target=target,
+        )
+    if suggested_action == "assert_visible" and isinstance(target, str):
+        return TaskStep(
+            id=_step_id(index, "assert-visible"),
+            action="assert_visible",
+            target=target,
+        )
+    return None
+
+
+def _preferred_click_context(
+    contexts: tuple[RecorderCandidateContext, ...],
+) -> RecorderCandidateContext | None:
+    for source in ("uia", "ocr", "image"):
+        for context in contexts:
+            if context.source == source and (context.label or context.control_type):
+                return context
+    return None
+
+
+def _allowed_windows_from_events(events: tuple[RecorderEvent, ...]) -> tuple[str, ...]:
+    windows = tuple(
+        dict.fromkeys(
+            event.active_window
+            for event in events
+            if isinstance(event.active_window, str) and event.active_window
+        ),
+    )
+    return windows or ("Recorded Window",)
+
+
+def _payload_string(payload: dict[str, object], key: str) -> str:
+    value = payload.get(key)
+    if not isinstance(value, str) or not value:
+        raise RecorderGenerationError(f"recorder input event {key} is required")
+    return value
+
+
+def _step_id(index: int, suffix: str) -> str:
+    return f"recorded-{index:03d}-{suffix}"

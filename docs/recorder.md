@@ -43,3 +43,8 @@ stores the snippet path, source screenshot, crop bounds, and fallback reason as
 
 Live Windows event capture and editable YAML/playbook generation are tracked in
 the remaining recorder roadmap tasks.
+
+The recorder generator can already convert reviewed session events into a
+`TaskDefinition` with `click_uia`, `click_text`, `click_image`, `type_text`,
+`press_key`, `scroll`, `wait_for`, and `assert_visible` steps. It prefers UIA
+context, then OCR context, then image snippets for clicked points.
