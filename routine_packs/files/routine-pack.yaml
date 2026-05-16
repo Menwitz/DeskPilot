@@ -1,0 +1,24 @@
+pack_schema_version: "1"
+id: files
+name: Files Routine Pack
+description: Planned local file organization, renaming, movement, cleanup, and reporting routines.
+version: "0.1.0"
+publisher: DeskPilot
+trust_level: builtin
+routine_globs:
+  - "*.routine.yaml"
+docs:
+  - README.md
+fixtures: []
+tests: []
+safety:
+  max_safety_class: medium
+  requires_review: true
+  external_mutation_allowed: false
+  approval_required: true
+proof:
+  windows_proof_required: true
+  expected_artifacts:
+    - final-report.json
+    - action-log.jsonl
+    - trace-schema.json

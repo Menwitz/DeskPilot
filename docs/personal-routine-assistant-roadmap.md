@@ -640,7 +640,7 @@ abuse, and hidden automation are not supported.
 
 ### Tasks
 
-- [ ] Add routine-pack manifest schema.
+- [x] Add routine-pack manifest schema.
 - [ ] Add routine-pack import/export commands.
 - [ ] Add app UI for installing and removing routine packs.
 - [ ] Add trust warnings for unverified local packs.
@@ -679,7 +679,7 @@ abuse, and hidden automation are not supported.
 - [ ] `OperatorAppService`: Python service boundary used by the PySide6 app.
 - [ ] `ProofManifest`: Windows proof artifact index for command, environment,
       video, trace, screenshots, and reports.
-- [ ] `RoutinePackManifest`: trusted local pack metadata, routines, fixtures,
+- [x] `RoutinePackManifest`: trusted local pack metadata, routines, fixtures,
       docs, tests, and safety declarations.
 
 ## Cross-Phase Test Matrix

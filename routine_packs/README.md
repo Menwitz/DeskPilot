@@ -5,6 +5,9 @@ pack will hold `*.routine.yaml` definitions, generated task YAML, dry-run
 evidence, proof notes, and pack-level documentation as Phase 5 expands the
 catalog. Routine definition schema fields, catalog loading, validation, and
 search behavior are documented in `docs/routines.md`.
+Each pack has a `routine-pack.yaml` manifest with trust level, routine globs,
+docs, fixtures, tests, safety metadata, and proof expectations. The manifest
+schema is documented in `docs/routine-packs.md`.
 
 ## Packs
 

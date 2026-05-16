@@ -1,0 +1,25 @@
+pack_schema_version: "1"
+id: publishing
+name: Publishing Routine Pack
+description: Planned approved publishing handoffs, final checks, and traceable submission routines.
+version: "0.1.0"
+publisher: DeskPilot
+trust_level: builtin
+routine_globs:
+  - "*.routine.yaml"
+docs:
+  - README.md
+fixtures: []
+tests: []
+safety:
+  max_safety_class: high
+  requires_review: true
+  external_mutation_allowed: true
+  approval_required: true
+proof:
+  windows_proof_required: true
+  expected_artifacts:
+    - final-report.json
+    - action-log.jsonl
+    - trace-schema.json
+    - approval-manifest.json

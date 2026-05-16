@@ -1,0 +1,26 @@
+pack_schema_version: "1"
+id: browser
+name: Browser Routine Pack
+description: Reviewed browser navigation, search, reading, forms, downloads, settings, and writing-surface routines.
+version: "0.1.0"
+publisher: DeskPilot
+trust_level: builtin
+routine_globs:
+  - "*.routine.yaml"
+docs:
+  - README.md
+fixtures: []
+tests:
+  - tests/test_routine_packs.py::test_browser_routine_pack_contains_seed_categories
+safety:
+  max_safety_class: medium
+  requires_review: true
+  external_mutation_allowed: false
+  approval_required: true
+proof:
+  windows_proof_required: true
+  expected_artifacts:
+    - final-report.json
+    - action-log.jsonl
+    - trace-schema.json
+    - replay-summary.md

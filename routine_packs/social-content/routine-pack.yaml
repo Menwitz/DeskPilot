@@ -1,0 +1,27 @@
+pack_schema_version: "1"
+id: social-content
+name: Social Content Routine Pack
+description: Reviewed social and content routines for read-only, draft, and explicitly approved publish flows.
+version: "0.1.0"
+publisher: DeskPilot
+trust_level: builtin
+routine_globs:
+  - "*.routine.yaml"
+docs:
+  - README.md
+fixtures: []
+tests:
+  - tests/test_routine_packs.py::test_social_content_routine_pack_contains_platform_surface_matrix
+safety:
+  max_safety_class: high
+  requires_review: true
+  external_mutation_allowed: true
+  approval_required: true
+proof:
+  windows_proof_required: true
+  expected_artifacts:
+    - final-report.json
+    - action-log.jsonl
+    - trace-schema.json
+    - replay-summary.md
+    - approval-manifest.json
