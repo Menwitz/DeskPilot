@@ -246,6 +246,51 @@ def test_regression_operator_approval_stops_sensitive_step_before_observation() 
     assert "execute_action" not in event_phases(report)
 
 
+def test_acceptance_risky_actions_require_confirmation_before_input() -> None:
+    task = fixture_task(
+        TaskStep(
+            id="submit-payment",
+            action="click_text",
+            target="Submit",
+            category="submission",
+        ),
+    )
+    blocked_actuator = CountingActuator()
+    blocked = run_fixture(
+        task=task,
+        actuator=blocked_actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            require_operator_approval=True,
+            execution_profile=enabled_profile(),
+        ),
+    )
+    approved_actuator = CountingActuator()
+    approved = run_fixture(
+        task=task,
+        actuator=approved_actuator,
+        observation=ScreenObservation(active_window_title="DeskPilot Fixture"),
+        perception_engine=SingleCandidatePerceptionEngine(),
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            require_operator_approval=True,
+            confirmed_steps=("submit-payment",),
+            execution_profile=enabled_profile(),
+        ),
+    )
+
+    assert blocked.status == "failed"
+    assert blocked.steps[0].metadata["failure_category"] == "safety_stop"
+    assert blocked_actuator.calls == 0
+    assert "observe_screen" not in event_phases(blocked)
+    assert "execute_action" not in event_phases(blocked)
+    assert approved.status == "passed"
+    assert approved_actuator.calls == 1
+    assert "execute_action" in event_phases(approved)
+
+
 def test_acceptance_required_stop_conditions_prevent_actuation() -> None:
     disallowed_window_actuator = CountingActuator()
     disallowed_window = run_fixture(

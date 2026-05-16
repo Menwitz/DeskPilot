@@ -18,6 +18,9 @@ logged-in Windows desktop session.
   tracing, and report modules without requiring a cloud service.
 - Safety checks block actions when the active window is outside the task
   whitelist.
+- Risky submission and confirmation-required actions stop before observation,
+  timing, or actuation unless the step is confirmed by operator approval or an
+  approved site manifest.
 - Sensitive site dry-runs validate local content variables, approval manifests,
   checkpoints, and trace metadata without sending desktop input.
 - Trace artifacts remain local by default; content payloads are represented by
