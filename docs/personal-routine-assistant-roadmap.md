@@ -260,7 +260,7 @@ abuse, and hidden automation are not supported.
 
 ### Goals
 
-- [ ] Turn a demonstrated routine into editable YAML or website playbook steps.
+- [x] Turn a demonstrated routine into editable YAML or website playbook steps.
 - [ ] Prefer stable selectors over raw coordinates.
 - [ ] Let the operator review and correct generated routines before saving.
 
