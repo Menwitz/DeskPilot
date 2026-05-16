@@ -1758,6 +1758,21 @@ def test_cli_proof_validate_suite_reports_missing_bundles(
     assert "error: missing proof bundle: native-fixture" in output
 
 
+def test_cli_proof_validate_suite_can_require_preflight(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    write_proof_manifest(trace_dir)
+
+    status = main(["proof", "validate-suite", str(tmp_path), "--require-preflight"])
+
+    output = capsys.readouterr().out
+    assert status == 1
+    assert "suite: failed" in output
+    assert "error: proof preflight report not found" in output
+
+
 def test_cli_proof_validate_suite_writes_report(
     tmp_path: Path,
     capsys: CaptureFixture[str],
@@ -1838,7 +1853,7 @@ def test_cli_proof_validate_suite_writes_runbook(
     assert f"runbook: {runbook_path}" in output
     assert "# DeskPilot Windows Proof Suite Next Actions" in runbook
     assert "desktop-agent proof browser-fixture" in runbook
-    assert "--allow-missing-video --write-report" in runbook
+    assert "--allow-missing-video --require-preflight --write-report" in runbook
 
 
 def test_cli_proof_validate_suite_writes_archive(

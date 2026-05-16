@@ -136,6 +136,8 @@ class ProofSuiteValidation:
     bundle_results: tuple[ProofBundleValidation, ...]
     missing_proofs: tuple[str, ...]
     duplicate_proofs: tuple[str, ...]
+    preflight_report_path: Path | None
+    preflight_errors: tuple[str, ...]
     warnings: tuple[str, ...]
 
     @property
@@ -144,7 +146,8 @@ class ProofSuiteValidation:
 
     @property
     def errors(self) -> tuple[str, ...]:
-        errors = [f"missing proof bundle: {name}" for name in self.missing_proofs]
+        errors = list(self.preflight_errors)
+        errors.extend(f"missing proof bundle: {name}" for name in self.missing_proofs)
         for result in self.bundle_results:
             proof_name = result.proof_name or str(result.trace_dir)
             errors.extend(f"{proof_name}: {error}" for error in result.errors)
@@ -349,10 +352,16 @@ def validate_proof_suite(
     *,
     expected_proofs: tuple[str, ...] = REQUIRED_WINDOWS_PROOF_NAMES,
     require_video: bool = True,
+    require_preflight: bool = False,
 ) -> ProofSuiteValidation:
     """Validate that a trace root contains every required Windows proof bundle."""
 
     warnings: list[str] = []
+    preflight_report_path, preflight_errors = _validate_preflight_report(
+        trace_root,
+        require_preflight,
+        warnings,
+    )
     manifests_by_name: dict[str, list[Path]] = {}
     for manifest_path in sorted(trace_root.glob("*/proof-manifest.json")):
         errors: list[str] = []
@@ -391,6 +400,8 @@ def validate_proof_suite(
         bundle_results=tuple(bundle_results),
         missing_proofs=missing,
         duplicate_proofs=duplicates,
+        preflight_report_path=preflight_report_path,
+        preflight_errors=preflight_errors,
         warnings=tuple(warnings),
     )
 
@@ -468,11 +479,7 @@ def render_proof_suite_report(validation: ProofSuiteValidation) -> str:
     if has_no_findings:
         lines.append("- No blocking findings.")
     else:
-        suite_errors = [
-            error
-            for error in validation.errors
-            if error.startswith("missing proof bundle:")
-        ]
+        suite_errors = _suite_level_errors(validation)
         if suite_errors:
             lines.append("- Errors:")
             lines.extend(f"  - {error}" for error in suite_errors)
@@ -535,7 +542,10 @@ def proof_suite_status_metadata(validation: ProofSuiteValidation) -> dict[str, o
         "schema_version": 1,
         "trace_root": str(validation.trace_root),
         "status": "passed" if validation.passed else "failed",
-        "preflight_report_path": _optional_preflight_report_path(validation),
+        "preflight_report_path": str(validation.preflight_report_path)
+        if validation.preflight_report_path is not None
+        else None,
+        "preflight_errors": list(validation.preflight_errors),
         "expected_proofs": list(validation.expected_proofs),
         "missing_proofs": list(validation.missing_proofs),
         "duplicate_proofs": list(validation.duplicate_proofs),
@@ -704,6 +714,15 @@ def _proof_errors_for_bundle(
     ]
 
 
+def _suite_level_errors(validation: ProofSuiteValidation) -> list[str]:
+    proof_prefixes = tuple(f"{name}: " for name in validation.expected_proofs)
+    return [
+        error
+        for error in validation.errors
+        if not error.startswith(proof_prefixes)
+    ]
+
+
 def _write_zip_text(
     archive: zipfile.ZipFile,
     written_names: set[str],
@@ -861,7 +880,8 @@ def _proof_suite_validation_command(trace_root: Path, require_video: bool) -> st
     allow_missing_video = "" if require_video else " --allow-missing-video"
     return (
         f"- `desktop-agent proof validate-suite {_shell_arg(trace_root)}"
-        f"{allow_missing_video} --write-report --write-status-json "
+        f"{allow_missing_video} --require-preflight --write-report "
+        "--write-status-json "
         "--write-runbook`"
     )
 
@@ -887,6 +907,45 @@ def _load_json_object(
         errors.append(f"{label} must contain a JSON object")
         return None
     return payload
+
+
+def _validate_preflight_report(
+    trace_root: Path,
+    require_preflight: bool,
+    warnings: list[str],
+) -> tuple[Path | None, tuple[str, ...]]:
+    report_path = trace_root / PROOF_PREFLIGHT_REPORT_NAME
+    if not report_path.exists():
+        if require_preflight:
+            return None, (f"proof preflight report not found: {report_path}",)
+        warnings.append(f"proof preflight report not found: {report_path}")
+        return None, ()
+
+    errors: list[str] = []
+    payload = _load_json_object(report_path, errors, "proof preflight report")
+    if payload is None:
+        return report_path, tuple(errors)
+    if payload.get("status") != "passed":
+        errors.append(
+            "proof preflight status is not passed: "
+            f"{payload.get('status', 'missing')}",
+        )
+    checks = payload.get("checks")
+    if not isinstance(checks, list) or not checks:
+        errors.append("proof preflight report must contain at least one check")
+    else:
+        for index, item in enumerate(checks, start=1):
+            if not isinstance(item, dict):
+                errors.append(f"proof preflight check {index} must be a JSON object")
+                continue
+            name = _string_value(item.get("name")) or f"#{index}"
+            status = _string_value(item.get("status"))
+            if status not in {"passed", "warning"}:
+                errors.append(
+                    f"proof preflight check {name} is not passed: "
+                    f"{status or 'missing'}",
+                )
+    return report_path, tuple(errors)
 
 
 def _validate_manifest_metadata(

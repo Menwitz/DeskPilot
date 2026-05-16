@@ -177,6 +177,92 @@ def test_validate_proof_suite_reports_missing_bundle(tmp_path: Path) -> None:
     assert "missing proof bundle: recovery-fixture" in result.errors
 
 
+def test_validate_proof_suite_can_require_passing_preflight(tmp_path: Path) -> None:
+    for proof_name in (
+        "browser-fixture",
+        "native-fixture",
+        "mixed-fixture",
+        "recovery-fixture",
+    ):
+        _write_proof_bundle(
+            tmp_path,
+            proof_name=proof_name,
+            trace_dir_name=proof_name,
+            include_video=False,
+        )
+    write_proof_preflight_report(
+        run_proof_preflight(
+            tmp_path,
+            require_windows=False,
+            require_video=False,
+        ),
+    )
+
+    result = validate_proof_suite(
+        tmp_path,
+        require_video=False,
+        require_preflight=True,
+    )
+
+    assert result.passed
+    assert result.preflight_report_path == tmp_path / "proof-preflight.json"
+    assert result.preflight_errors == ()
+
+
+def test_validate_proof_suite_reports_missing_required_preflight(
+    tmp_path: Path,
+) -> None:
+    _write_proof_bundle(
+        tmp_path,
+        proof_name="browser-fixture",
+        trace_dir_name="browser-fixture",
+        include_video=False,
+    )
+
+    result = validate_proof_suite(
+        tmp_path,
+        require_video=False,
+        require_preflight=True,
+    )
+
+    assert not result.passed
+    assert (
+        f"proof preflight report not found: {tmp_path / 'proof-preflight.json'}"
+        in result.errors
+    )
+
+
+def test_validate_proof_suite_reports_failed_required_preflight(
+    tmp_path: Path,
+) -> None:
+    _write_proof_bundle(
+        tmp_path,
+        proof_name="browser-fixture",
+        trace_dir_name="browser-fixture",
+        include_video=False,
+    )
+    write_proof_preflight_report(
+        run_proof_preflight(
+            tmp_path,
+            platform_name="darwin",
+            path_lookup=lambda _command: None,
+        ),
+    )
+
+    result = validate_proof_suite(
+        tmp_path,
+        require_video=False,
+        require_preflight=True,
+    )
+
+    assert not result.passed
+    assert "proof preflight status is not passed: failed" in result.errors
+    assert (
+        "proof preflight check windows-platform is not passed: failed"
+        in result.errors
+    )
+
+
 def test_write_proof_suite_report_summarizes_bundle_status(tmp_path: Path) -> None:
     _write_proof_bundle(
         tmp_path,
@@ -253,7 +339,7 @@ def test_write_proof_suite_runbook_lists_next_operator_commands(
     ) in runbook
     assert (
         "desktop-agent proof validate-suite "
-        f"{tmp_path} --allow-missing-video --write-report "
+        f"{tmp_path} --allow-missing-video --require-preflight --write-report "
         "--write-status-json --write-runbook"
     ) in runbook
 

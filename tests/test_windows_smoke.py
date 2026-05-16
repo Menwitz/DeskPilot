@@ -115,6 +115,19 @@ def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> No
     _require_windows_smoke()
     trace_root = tmp_path / "proof-suite"
 
+    preflight_exit_code = main(
+        [
+            "proof",
+            "preflight",
+            "--trace-root",
+            str(trace_root),
+            "--video-policy",
+            "disabled",
+            "--write-report",
+        ],
+    )
+    assert preflight_exit_code == 0, "proof suite preflight failed"
+
     for command in PROOF_SUITE_COMMANDS:
         exit_code = main(
             [
@@ -135,6 +148,7 @@ def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> No
             "validate-suite",
             str(trace_root),
             "--allow-missing-video",
+            "--require-preflight",
             "--write-report",
             "--write-status-json",
             "--write-runbook",
@@ -143,6 +157,7 @@ def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> No
     )
 
     assert validation_exit_code == 0, "proof suite validation failed"
+    assert (trace_root / "proof-preflight.json").exists()
     assert (trace_root / "proof-suite-report.md").exists()
     assert (trace_root / "proof-suite-status.json").exists()
     assert (trace_root / "proof-suite-next-actions.md").exists()

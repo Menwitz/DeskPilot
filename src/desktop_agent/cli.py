@@ -578,6 +578,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="validate non-video proof artifacts when video capture was disabled",
     )
     proof_validate_suite_parser.add_argument(
+        "--require-preflight",
+        action="store_true",
+        help="fail suite validation unless proof-preflight.json passed",
+    )
+    proof_validate_suite_parser.add_argument(
         "--write-report",
         action="store_true",
         help="write proof-suite-report.md after validation",
@@ -2790,6 +2795,7 @@ def _proof_validate_suite(args: argparse.Namespace) -> int:
     result = validate_proof_suite(
         args.trace_root,
         require_video=not args.allow_missing_video,
+        require_preflight=args.require_preflight,
     )
     print(f"trace_root: {args.trace_root}")
     print(f"suite: {'passed' if result.passed else 'failed'}")
