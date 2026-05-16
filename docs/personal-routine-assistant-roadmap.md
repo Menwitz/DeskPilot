@@ -651,7 +651,7 @@ abuse, and hidden automation are not supported.
 - [x] Add optional local report-server design after native app and trace schema
       stabilize.
 - [x] Add Linux X11 adapter plan after Windows beta proof is complete.
-- [ ] Keep Wayland support as a research track until screenshot and input
+- [x] Keep Wayland support as a research track until screenshot and input
       constraints are resolved.
 
 ### Acceptance Criteria

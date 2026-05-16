@@ -136,6 +136,22 @@ def test_linux_x11_plan_remains_after_windows_beta() -> None:
         assert phrase in documentation
 
 
+def test_wayland_support_remains_research_until_io_constraints_close() -> None:
+    documentation = Path("docs/wayland-support-research.md").read_text(
+        encoding="utf-8",
+    )
+
+    for phrase in (
+        "research track, not a beta release target",
+        "screenshot, focus, and input constraints",
+        "Do not bypass compositor security",
+        "XDG Desktop Portal",
+        "Focus, cursor, and target readback",
+        "No production support before the research constraints above are closed",
+    ):
+        assert phrase in documentation
+
+
 def test_windows_proof_docs_cover_manual_evidence_review() -> None:
     documentation = "\n".join(
         [
