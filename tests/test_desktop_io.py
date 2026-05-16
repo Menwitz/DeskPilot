@@ -9,7 +9,7 @@ from desktop_agent.desktop_io import (
     validate_desktop_io_action,
     validate_desktop_io_plan,
 )
-from desktop_agent.task_dsl import TaskRegion, TaskStep
+from desktop_agent.task_dsl import TaskRegion, TaskStep, VerificationDefinition
 
 
 def test_desktop_io_plan_uses_first_class_action_schema() -> None:
@@ -119,6 +119,34 @@ def test_desktop_io_action_metadata_surfaces_scope_and_reversibility() -> None:
     assert safety["idempotent"] is False
     assert safety["window_scope"] == ["DeskPilot Fixture"]
     assert safety["allowed_region"] == {"x": 1, "y": 2, "width": 30, "height": 40}
+
+
+def test_desktop_io_manual_handoff_carries_prompt_and_resume_verification() -> None:
+    plan = compile_desktop_io_plan(
+        TaskStep(
+            id="review-dialog",
+            action="manual_handoff",
+            handoff_prompt="Review the dialog.",
+            expected_operator_work="Confirm the dialog is safe.",
+            verify=VerificationDefinition(type="visible_text", text="Reviewed"),
+        ),
+        allowed_windows=("DeskPilot Fixture",),
+    )
+
+    handoff = plan.actions[0].to_metadata()
+    handoff_metadata = handoff["metadata"]
+    assert isinstance(handoff_metadata, dict)
+    assert plan.operations == ("handoff", "verify")
+    assert handoff["kind"] == "handoff"
+    assert handoff_metadata["handoff_prompt"] == "Review the dialog."
+    assert handoff_metadata["expected_operator_work"] == (
+        "Confirm the dialog is safe."
+    )
+    assert handoff_metadata["resume_verification"] == {
+        "type": "visible_text",
+        "text": "Reviewed",
+        "image": None,
+    }
 
 
 def test_desktop_io_validation_rejects_unsupported_action_kind() -> None:

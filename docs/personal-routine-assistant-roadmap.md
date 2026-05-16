@@ -240,7 +240,7 @@ abuse, and hidden automation are not supported.
       `message_or_publish`.
 - [x] Add action metadata for approval requirement, reversibility,
       idempotence, allowed windows, and allowed regions.
-- [ ] Add manual handoff action with prompt text, expected operator work, and
+- [x] Add manual handoff action with prompt text, expected operator work, and
       resume verification.
 - [ ] Add emergency-stop checks between mouse path points, drag path points,
       typed characters, scroll chunks, and retry waits.

@@ -29,7 +29,12 @@ MouseButton = Literal["left", "right", "middle"]
 MouseMoveMode = Literal["absolute", "relative"]
 
 _CLICK_ACTIONS = {"click_text", "click_image", "click_uia"}
-_PASSIVE_ACTIONS = {"wait_for", "assert_visible", "branch_if_visible"}
+_PASSIVE_ACTIONS = {
+    "wait_for",
+    "assert_visible",
+    "branch_if_visible",
+    "manual_handoff",
+}
 _REGION_GUARDED_ACTIONS = _CLICK_ACTIONS | {"scroll", "scroll_until"}
 _DEFAULT_SCROLL_CLICKS = -3
 

@@ -109,6 +109,68 @@ def test_task_dsl_loads_dependencies_and_expected_state(tmp_path: Path) -> None:
     )
 
 
+def test_task_dsl_loads_manual_handoff_action(tmp_path: Path) -> None:
+    task_path = tmp_path / "task.yaml"
+    task_path.write_text(
+        "\n".join(
+            [
+                "name: handoff-task",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "timeout_seconds: 30",
+                "steps:",
+                "  - id: review-dialog",
+                "    action: manual_handoff",
+                "    handoff_prompt: Review the dialog before continuing.",
+                "    expected_operator_work: Confirm the dialog state is safe.",
+                "    verify:",
+                "      type: visible_text",
+                "      text: Reviewed",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    task = YamlTaskLoader().load(task_path)
+    BasicTaskValidator().validate(task, RuntimeConfig())
+
+    assert task.steps[0].action == "manual_handoff"
+    assert task.steps[0].handoff_prompt == "Review the dialog before continuing."
+    assert task.steps[0].expected_operator_work == (
+        "Confirm the dialog state is safe."
+    )
+    assert task.steps[0].verify is not None
+    assert step_category(task.steps[0]) == "verification"
+
+
+def test_task_dsl_rejects_manual_handoff_without_resume_verification(
+    tmp_path: Path,
+) -> None:
+    task_path = tmp_path / "task.yaml"
+    task_path.write_text(
+        "\n".join(
+            [
+                "name: bad-handoff-task",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "timeout_seconds: 30",
+                "steps:",
+                "  - id: review-dialog",
+                "    action: manual_handoff",
+                "    handoff_prompt: Review the dialog.",
+                "    expected_operator_work: Confirm it is safe.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    task = YamlTaskLoader().load(task_path)
+
+    with pytest.raises(TaskValidationError, match="verify is required"):
+        BasicTaskValidator().validate(task, RuntimeConfig())
+
+
 def test_task_dsl_rejects_unknown_action(tmp_path: Path) -> None:
     task_path = tmp_path / "task.yaml"
     task_path.write_text(

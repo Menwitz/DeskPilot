@@ -50,6 +50,7 @@ from desktop_agent.task_dsl import (
     TaskLoader,
     TaskStep,
     TaskValidator,
+    VerificationDefinition,
     step_category,
 )
 from desktop_agent.task_state import TaskStateTracker
@@ -746,6 +747,12 @@ class ExecutionEngine:
                 "semantic action compiled to desktop I/O",
                 _step_metadata(step, **_desktop_io_plan_metadata(step)),
             )
+            if step.action == "manual_handoff":
+                self._record(
+                    "manual_handoff",
+                    "operator handoff requested",
+                    _step_metadata(step, **_manual_handoff_metadata(step)),
+                )
             if step.checkpoint is not None:
                 checkpoint = self._run_verification_checkpoint(
                     step,
@@ -2138,6 +2145,27 @@ def _desktop_io_plan_metadata(step: TaskStep) -> dict[str, object]:
 
 def _desktop_io_operations(action: str) -> list[str]:
     return list(desktop_io_operations_for_action(action))
+
+
+def _manual_handoff_metadata(step: TaskStep) -> dict[str, object]:
+    return {
+        "manual_handoff_required": True,
+        "handoff_prompt": step.handoff_prompt or step.text,
+        "expected_operator_work": step.expected_operator_work,
+        "resume_verification": _verification_metadata(step.verify),
+    }
+
+
+def _verification_metadata(
+    verification: VerificationDefinition | None,
+) -> dict[str, object] | None:
+    if verification is None:
+        return None
+    return {
+        "type": verification.type,
+        "text": verification.text,
+        "image": str(verification.image) if verification.image else None,
+    }
 
 
 def _success_evidence_metadata(

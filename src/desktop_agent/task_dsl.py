@@ -34,6 +34,7 @@ SUPPORTED_ACTIONS: frozenset[str] = frozenset(
         "assert_visible",
         "branch_if_visible",
         "drag",
+        "manual_handoff",
     },
 )
 
@@ -70,6 +71,7 @@ DEFAULT_CATEGORY_BY_ACTION: dict[str, str] = {
     "click_text": "navigation",
     "click_image": "navigation",
     "click_uia": "navigation",
+    "manual_handoff": "verification",
 }
 
 SAFE_ACTION_VARIANTS_BY_ACTION: dict[str, frozenset[str]] = {
@@ -146,6 +148,8 @@ class TaskStep:
     action: str
     target: str | None = None
     text: str | None = None
+    handoff_prompt: str | None = None
+    expected_operator_work: str | None = None
     image: Path | None = None
     region: TaskRegion | None = None
     verify: VerificationDefinition | None = None
@@ -314,6 +318,8 @@ def _step_from_mapping(value: object, task_dir: Path) -> TaskStep:
         action=str(data.get("action", "")),
         target=_optional_str(data.get("target")),
         text=_optional_str(data.get("text")),
+        handoff_prompt=_optional_str(data.get("handoff_prompt")),
+        expected_operator_work=_optional_str(data.get("expected_operator_work")),
         image=_optional_image(data.get("image"), task_dir),
         region=_optional_region(data.get("region")),
         verify=verify,
@@ -371,6 +377,19 @@ def _validate_action_shape(step: TaskStep) -> list[str]:
             errors.append(
                 f"step {step.id} on_failure is required for branch_if_visible"
             )
+    if step.action == "manual_handoff":
+        if not step.handoff_prompt and not step.text:
+            errors.append(
+                f"step {step.id} handoff_prompt or text is required for "
+                "manual_handoff"
+            )
+        if not step.expected_operator_work:
+            errors.append(
+                f"step {step.id} expected_operator_work is required for "
+                "manual_handoff"
+            )
+        if step.verify is None:
+            errors.append(f"step {step.id} verify is required for manual_handoff")
     return errors
 
 

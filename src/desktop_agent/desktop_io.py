@@ -136,6 +136,7 @@ DESKTOP_IO_OPERATIONS_BY_ACTION: dict[str, tuple[str, ...]] = {
     "wait_for": ("observe", "wait", "verify"),
     "assert_visible": ("observe", "verify"),
     "branch_if_visible": ("observe", "verify"),
+    "manual_handoff": ("handoff", "verify"),
 }
 
 
@@ -203,7 +204,6 @@ def compile_desktop_io_plan(
     """Compile one YAML task step into ordered desktop I/O schema actions."""
 
     operations = desktop_io_operations_for_action(step.action)
-    safety_metadata = action_safety_metadata(step, allowed_windows=allowed_windows)
     actions = tuple(
         DesktopIoAction(
             id=f"{step.id}:{index}:{operation}",
@@ -211,7 +211,11 @@ def compile_desktop_io_plan(
             kind=operation,
             order=index,
             source_action=step.action,
-            metadata={"safety": safety_metadata},
+            metadata=_desktop_io_action_metadata(
+                step,
+                operation,
+                allowed_windows,
+            ),
         )
         for index, operation in enumerate(operations, start=1)
     )
@@ -237,6 +241,35 @@ def desktop_io_kind_spec(kind: str) -> DesktopIoKindSpec | None:
     """Return the contract for a supported low-level operation kind."""
 
     return DESKTOP_IO_KIND_SPECS.get(kind)
+
+
+def _desktop_io_action_metadata(
+    step: TaskStep,
+    operation: str,
+    allowed_windows: tuple[str, ...],
+) -> dict[str, object]:
+    metadata: dict[str, object] = {
+        "safety": action_safety_metadata(step, allowed_windows=allowed_windows)
+    }
+    if operation == "handoff":
+        metadata.update(
+            {
+                "handoff_prompt": step.handoff_prompt or step.text,
+                "expected_operator_work": step.expected_operator_work,
+                "resume_verification": _resume_verification_metadata(step),
+            }
+        )
+    return metadata
+
+
+def _resume_verification_metadata(step: TaskStep) -> dict[str, object] | None:
+    if step.verify is None:
+        return None
+    return {
+        "type": step.verify.type,
+        "text": step.verify.text,
+        "image": str(step.verify.image) if step.verify.image else None,
+    }
 
 
 def validate_desktop_io_plan(plan: DesktopIoPlan) -> None:

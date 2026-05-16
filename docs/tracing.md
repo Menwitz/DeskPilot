@@ -76,6 +76,9 @@ appearance/disappearance, and scroll movement metadata from the emitted input.
 or `inconclusive`. Inconclusive verification uses bounded retry recovery while
 retry budget remains; exhausted inconclusive checks emit `manual_handoff` with
 `manual_handoff_required: true`.
+Authored `manual_handoff` actions emit a `manual_handoff` event before resume
+verification with `handoff_prompt`, `expected_operator_work`, and
+`resume_verification` metadata.
 
 The `compile_task` event records static step order, dependency edges, and
 expected UI state transitions before the planner observes the screen or attempts

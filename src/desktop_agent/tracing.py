@@ -336,6 +336,8 @@ def _step_to_dict(step: TaskStep) -> dict[str, object]:
         "resolved_category": step_category(step),
         "target": step.target,
         "text": step.text,
+        "handoff_prompt": step.handoff_prompt,
+        "expected_operator_work": step.expected_operator_work,
         "image": str(step.image) if step.image else None,
         "region": _region_to_dict(step.region),
         "verify": _verification_to_dict(step.verify),

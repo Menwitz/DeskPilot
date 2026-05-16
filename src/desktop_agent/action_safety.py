@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from desktop_agent.task_dsl import TaskRegion, TaskStep, step_category
 
 READ_ONLY_ACTIONS: frozenset[str] = frozenset(
-    {"wait_for", "assert_visible", "branch_if_visible"},
+    {"wait_for", "assert_visible", "branch_if_visible", "manual_handoff"},
 )
 MESSAGE_OR_PUBLISH_CATEGORIES: frozenset[str] = frozenset(
     {"publish", "comment", "message"},

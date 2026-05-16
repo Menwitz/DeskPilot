@@ -977,6 +977,44 @@ def test_execution_engine_routes_inconclusive_verification_to_handoff() -> None:
     assert handoff.metadata["manual_handoff_required"] is True
 
 
+def test_execution_engine_records_manual_handoff_action() -> None:
+    task = TaskDefinition(
+        name="manual-handoff-action",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="review-dialog",
+                action="manual_handoff",
+                handoff_prompt="Review the dialog before continuing.",
+                expected_operator_work="Confirm the dialog state is safe.",
+                verify=VerificationDefinition(type="visible_text", text="Reviewed"),
+            ),
+        ),
+    )
+    engine = _engine(
+        task,
+        perception=SequencePerceptionEngine((_candidate_tuple("Reviewed"),)),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    handoff = next(event for event in report.events if event.phase == "manual_handoff")
+    assert report.status == "passed"
+    assert handoff.message == "operator handoff requested"
+    assert handoff.metadata["handoff_prompt"] == (
+        "Review the dialog before continuing."
+    )
+    assert handoff.metadata["expected_operator_work"] == (
+        "Confirm the dialog state is safe."
+    )
+    assert handoff.metadata["resume_verification"] == {
+        "type": "visible_text",
+        "text": "Reviewed",
+        "image": None,
+    }
+
+
 def test_execution_engine_runs_checkpoint_before_irreversible_action() -> None:
     task = TaskDefinition(
         name="checkpoint-pass",
