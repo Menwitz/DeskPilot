@@ -176,6 +176,11 @@ candidate, scroll search, wait, reopen-surface, and handoff branches.
 Focus-loss recovery records a `focus_loss` recovery event, invokes only the
 allowed-window refocus controller, captures `observe_after_refocus`, and stores
 `post_refocus_verification_passed` with the post-refocus active-window title.
+Layout-change recovery records a `layout_change` recovery event when normal
+selection fails across multiple candidate families. The event includes
+`selector_family_attempts`, `alternate_selector_family`, and
+`alternate_selector_candidate_id`, and the following `select_target` event shows
+whether that alternate family resolved the target.
 Retry timing events and recovery events include bounded-backoff metadata:
 `retry_backoff_strategy`, `retry_index`, `retry_budget`,
 `retry_backoff_fraction`, and `retry_limit_respected`.

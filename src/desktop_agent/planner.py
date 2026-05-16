@@ -101,6 +101,7 @@ RECOVERABLE_SELECTION_REASONS: frozenset[str] = frozenset(
         "transient_loading",
     },
 )
+SELECTOR_FAMILY_ORDER: tuple[str, ...] = ("uia", "ocr", "image", "unknown")
 
 
 @dataclass(frozen=True)
@@ -126,6 +127,14 @@ class StepExecutionOutcome:
     next_step_id: str | None = None
     abort_reason: str | None = None
     stop_status: RunStatus | None = None
+
+
+@dataclass(frozen=True)
+class SelectorFamilyRecoveryResult:
+    """Target-selection result after isolating candidate source families."""
+
+    target: ElementCandidate | None
+    metadata: dict[str, object]
 
 
 @dataclass(frozen=True)
@@ -593,14 +602,36 @@ class ExecutionEngine:
                     observation,
                     candidates,
                     target,
+                    confidence_threshold=config.confidence_threshold,
                 )
                 selection_metadata.update(selection_recovery_policy.metadata())
-                if candidates and not _selection_retryable(
+                if selection_recovery_policy.reason == "layout_change":
+                    selector_family_recovery = (
+                        self._recover_layout_change_selection(
+                            step,
+                            candidates,
+                            config,
+                            selection_recovery_policy,
+                            attempt,
+                        )
+                    )
+                    selection_metadata.update(selector_family_recovery.metadata)
+                    if selector_family_recovery.target is not None:
+                        target = selector_family_recovery.target
+                        last_candidate_id = target.id
+                        selection_metadata.update(
+                            {
+                                "candidate_id": target.id,
+                                "candidate_confidence": target.confidence,
+                                "candidate_source": target.source,
+                            }
+                        )
+                if target is None and candidates and not _selection_retryable(
                     selection_recovery_policy,
                     candidates,
                 ):
-                    selection_metadata["selection_blocked"] = (
-                        "confidence_or_ambiguity_gate"
+                    selection_metadata["selection_blocked"] = _selection_blocked_reason(
+                        selection_recovery_policy,
                     )
             selection_blocked = selection_metadata.get("selection_blocked")
             selection_metadata.update(
@@ -1181,7 +1212,12 @@ class ExecutionEngine:
                 "waiting and re-observing",
                 _recovery_metadata(
                     step,
-                    recovery_policy_for_selection(observation, candidates, target),
+                    recovery_policy_for_selection(
+                        observation,
+                        candidates,
+                        target,
+                        confidence_threshold=config.confidence_threshold,
+                    ),
                     failed_attempt=attempts,
                     next_attempt=attempts + 1,
                     retry_reason=last_message,
@@ -1531,6 +1567,83 @@ class ExecutionEngine:
             metadata,
         )
         return observation, candidates
+
+    def _recover_layout_change_selection(
+        self,
+        step: TaskStep,
+        candidates: tuple[ElementCandidate, ...],
+        config: RuntimeConfig,
+        policy: RecoveryPolicy,
+        attempt: int,
+    ) -> SelectorFamilyRecoveryResult:
+        constrained = constrain_recovery_policy(step, policy)
+        if constrained.chosen_action != "retry_alternate_selector_family":
+            return SelectorFamilyRecoveryResult(
+                target=None,
+                metadata={"layout_change_recovery_applied": False},
+            )
+
+        family_attempts: list[dict[str, object]] = []
+        selected_target: ElementCandidate | None = None
+        selected_family: str | None = None
+        for family in _candidate_selector_families(candidates):
+            family_candidates = tuple(
+                candidate
+                for candidate in candidates
+                if _candidate_has_selector_family(candidate, family)
+            )
+            family_target = self.target_selector.select(
+                step,
+                family_candidates,
+                config,
+            )
+            family_attempts.append(
+                {
+                    "selector_family": family,
+                    "candidate_count": len(family_candidates),
+                    "selected_candidate_id": family_target.id
+                    if family_target is not None
+                    else None,
+                }
+            )
+            if family_target is not None:
+                selected_target = family_target
+                selected_family = family
+                break
+
+        metadata = _recovery_metadata(
+            step,
+            policy,
+            failed_attempt=attempt,
+            failure_observation_phase="detect_candidates",
+            layout_change_recovery_applied=selected_target is not None,
+            alternate_selector_family=selected_family,
+            alternate_selector_candidate_id=selected_target.id
+            if selected_target is not None
+            else None,
+            selector_family_attempts=family_attempts,
+            selector_family_attempt_count=len(family_attempts),
+            selector_family_count=len(_candidate_selector_families(candidates)),
+        )
+        self._record(
+            "recover",
+            "selected alternate selector family"
+            if selected_target is not None
+            else "alternate selector families did not resolve target",
+            metadata,
+        )
+        return SelectorFamilyRecoveryResult(
+            target=selected_target,
+            metadata={
+                "layout_change_recovery_applied": selected_target is not None,
+                "alternate_selector_family": selected_family,
+                "alternate_selector_candidate_id": selected_target.id
+                if selected_target is not None
+                else None,
+                "selector_family_attempts": family_attempts,
+                "selector_family_attempt_count": len(family_attempts),
+            },
+        )
 
     def _recover_focus_loss(
         self,
@@ -2032,12 +2145,20 @@ def _selection_retryable(
     return not (policy.reason == "missed_target" and candidates)
 
 
+def _selection_blocked_reason(policy: RecoveryPolicy) -> str:
+    if policy.reason == "layout_change":
+        return "layout_change_selector_mismatch"
+    return "confidence_or_ambiguity_gate"
+
+
 def _selection_retry_reason(
     policy: RecoveryPolicy | None,
     candidates: tuple[ElementCandidate, ...],
 ) -> str:
     if policy is None:
         return "target selection failed"
+    if policy.reason == "layout_change":
+        return "target selection failed: layout_change"
     if policy.reason == "missed_target" and candidates:
         return "target selection blocked by confidence or ambiguity gate"
     return f"target selection failed: {policy.reason}"
@@ -2047,9 +2168,36 @@ def _selection_failure_category(
     policy: RecoveryPolicy | None,
     candidates: tuple[ElementCandidate, ...],
 ) -> str:
+    if policy is not None and policy.reason == "layout_change":
+        return "layout_change"
     if policy is not None and policy.reason == "missed_target" and candidates:
         return "selection_ambiguity"
     return "perception_failure"
+
+
+def _candidate_selector_families(
+    candidates: tuple[ElementCandidate, ...],
+) -> tuple[str, ...]:
+    discovered = {
+        family
+        for candidate in candidates
+        for family in _candidate_selector_family_values(candidate)
+    }
+    return tuple(family for family in SELECTOR_FAMILY_ORDER if family in discovered)
+
+
+def _candidate_has_selector_family(candidate: ElementCandidate, family: str) -> bool:
+    return family in _candidate_selector_family_values(candidate)
+
+
+def _candidate_selector_family_values(candidate: ElementCandidate) -> tuple[str, ...]:
+    families: list[str] = []
+    raw_sources = candidate.metadata.get("merged_sources")
+    if isinstance(raw_sources, tuple | list):
+        families.extend(source for source in raw_sources if isinstance(source, str))
+    if candidate.source not in families:
+        families.append(candidate.source)
+    return tuple(family for family in families if family in SELECTOR_FAMILY_ORDER)
 
 
 def _recovery_path_metadata(

@@ -1,5 +1,5 @@
 from desktop_agent.actuation import ActionResult
-from desktop_agent.perception import ElementCandidate
+from desktop_agent.perception import CandidateSource, ElementCandidate
 from desktop_agent.recovery import (
     RECOVERY_POLICIES,
     RECOVERY_TREE_ACTIONS,
@@ -14,6 +14,7 @@ from desktop_agent.task_dsl import RecoveryRule, TaskStep
 
 def candidate(
     *,
+    source: CandidateSource = "uia",
     enabled: bool = True,
     visible: bool = True,
     state: str | None = None,
@@ -23,7 +24,7 @@ def candidate(
         metadata["state"] = state
     return ElementCandidate(
         id="candidate-1",
-        source="uia",
+        source=source,
         label="Submit",
         bounds=Bounds(x=0, y=0, width=10, height=10),
         confidence=0.95,
@@ -70,6 +71,20 @@ def test_recovery_policy_classifies_loading_and_missed_targets() -> None:
 
     assert loading.reason == "transient_loading"
     assert missed.reason == "missed_target"
+
+
+def test_recovery_policy_classifies_layout_change_from_candidate_families() -> None:
+    policy = recovery_policy_for_selection(
+        ScreenObservation(),
+        (
+            candidate(source="uia"),
+            candidate(source="ocr"),
+        ),
+        None,
+    )
+
+    assert policy.reason == "layout_change"
+    assert policy.actions[0] == "retry_alternate_selector_family"
 
 
 def test_recovery_policy_classifies_transient_action_failure() -> None:
@@ -129,6 +144,7 @@ def test_recovery_tree_covers_supported_execution_actions() -> None:
         "refocus_allowed_window",
         "reobserve_screen",
         "retry_alternate_candidate",
+        "retry_alternate_selector_family",
         "scroll_search_region",
         "wait_for_enabled",
         "wait_for_loading",

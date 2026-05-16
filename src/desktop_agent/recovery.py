@@ -140,6 +140,15 @@ RECOVERY_POLICIES: dict[str, RecoveryPolicy] = {
         reason="focus_loss",
         actions=("refocus_allowed_window", "reobserve_screen", "abort_with_trace"),
     ),
+    "layout_change": RecoveryPolicy(
+        name="recover_layout_change",
+        reason="layout_change",
+        actions=(
+            "retry_alternate_selector_family",
+            "reobserve_screen",
+            "abort_with_trace",
+        ),
+    ),
     "transient_loading": RecoveryPolicy(
         name="wait_for_transient_loading",
         reason="transient_loading",
@@ -179,6 +188,10 @@ RECOVERY_TREE_ACTIONS: dict[str, tuple[RecoveryTreeAction, ...]] = {
         RecoveryTreeAction("retry_alternate_candidate", "select"),
         RecoveryTreeAction("reobserve_screen", "observe"),
     ),
+    "retry_alternate_selector_family": (
+        RecoveryTreeAction("retry_alternate_selector_family", "select"),
+        RecoveryTreeAction("reobserve_screen", "observe"),
+    ),
     "retry_with_fresh_candidates": (
         RecoveryTreeAction("reobserve_screen", "observe"),
         RecoveryTreeAction("retry_with_fresh_candidates", "select"),
@@ -216,6 +229,8 @@ def recovery_policy_for_selection(
     observation: ScreenObservation,
     candidates: tuple[ElementCandidate, ...],
     target: ElementCandidate | None,
+    *,
+    confidence_threshold: float = 0.8,
 ) -> RecoveryPolicy:
     """Classify why target selection could not safely produce an action target."""
 
@@ -232,7 +247,26 @@ def recovery_policy_for_selection(
         return RECOVERY_POLICIES["disabled_control"]
     if candidates and all(not candidate.visible for candidate in candidates):
         return RECOVERY_POLICIES["occluded_control"]
+    if _has_multiple_candidate_families(candidates, confidence_threshold):
+        return RECOVERY_POLICIES["layout_change"]
     return RECOVERY_POLICIES["missed_target"]
+
+
+def _has_multiple_candidate_families(
+    candidates: tuple[ElementCandidate, ...],
+    confidence_threshold: float,
+) -> bool:
+    families: set[str] = set()
+    for candidate in candidates:
+        if candidate.confidence < confidence_threshold:
+            continue
+        merged_sources = candidate.metadata.get("merged_sources")
+        if isinstance(merged_sources, tuple | list):
+            families.update(
+                source for source in merged_sources if isinstance(source, str)
+            )
+        families.add(candidate.source)
+    return len(families) > 1
 
 
 def recovery_policy_for_action_result(

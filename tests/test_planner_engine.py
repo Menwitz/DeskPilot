@@ -7,10 +7,12 @@ from desktop_agent.focus_recovery import (
     NoopFocusRecoveryController,
 )
 from desktop_agent.perception import (
+    CandidateSource,
     CompositePerceptionEngine,
     ConfidenceTargetSelector,
     ElementCandidate,
     PerceptionEngine,
+    TargetSelector,
 )
 from desktop_agent.planner import (
     ExecutionEngine,
@@ -129,6 +131,24 @@ class SequenceFocusRecoveryController:
         index = min(self.calls, len(self._results) - 1)
         self.calls += 1
         return self._results[index]
+
+
+class FamilyIsolationTargetSelector(TargetSelector):
+    """Test selector that only succeeds after candidates are isolated by source."""
+
+    def __init__(self) -> None:
+        self._selector = ConfidenceTargetSelector()
+
+    def select(
+        self,
+        step: TaskStep,
+        candidates: tuple[ElementCandidate, ...],
+        config: RuntimeConfig,
+    ) -> ElementCandidate | None:
+        sources = {candidate.source for candidate in candidates}
+        if len(sources) > 1:
+            return None
+        return self._selector.select(step, candidates, config)
 
 
 class SequenceVerifier:
@@ -1400,6 +1420,43 @@ def test_execution_engine_reports_duplicated_labels_as_ambiguity_gate() -> None:
     assert actuator.calls == 0
 
 
+def test_execution_engine_recovers_layout_change_with_selector_family() -> None:
+    trace_sink = MemoryTraceSink()
+    actuator = SequenceActuator((ActionResult(True, "clicked"),))
+    task = _single_click_task("layout-change", retry=0)
+    engine = _engine(
+        task,
+        perception=SequencePerceptionEngine(
+            (
+                (
+                    _candidate("uia-submit", "Submit", source="uia"),
+                    _candidate("ocr-submit", "Submit", source="ocr", x=220),
+                ),
+            ),
+        ),
+        actuator=actuator,
+        trace_sink=trace_sink,
+        target_selector=FamilyIsolationTargetSelector(),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    recover = next(event for event in report.events if event.phase == "recover")
+    selection = next(event for event in report.events if event.phase == "select_target")
+    assert report.status == "passed"
+    assert actuator.calls == 1
+    assert recover.metadata["recovery_reason"] == "layout_change"
+    assert recover.metadata["recovery_chosen_action"] == (
+        "retry_alternate_selector_family"
+    )
+    assert recover.metadata["layout_change_recovery_applied"] is True
+    assert recover.metadata["alternate_selector_family"] == "uia"
+    assert recover.metadata["alternate_selector_candidate_id"] == "uia-submit"
+    assert selection.metadata["candidate_id"] == "uia-submit"
+    assert selection.metadata["layout_change_recovery_applied"] is True
+    assert selection.metadata.get("selection_blocked") is None
+
+
 def test_execution_engine_reports_failure_category_metadata() -> None:
     perception_report = _engine(
         _single_click_task("perception", retry=0),
@@ -1986,6 +2043,7 @@ def _engine(
     verifier: SequenceVerifier | None = None,
     emergency_stop_monitor: EmergencyStopMonitor | None = None,
     focus_recovery_controller: SequenceFocusRecoveryController | None = None,
+    target_selector: TargetSelector | None = None,
 ) -> ExecutionEngine:
     return ExecutionEngine(
         config_loader=StaticConfigLoader(
@@ -2002,7 +2060,7 @@ def _engine(
         perception_engine=CompositePerceptionEngine(
             (perception or SequencePerceptionEngine((_candidate_tuple("Submit"),)),),
         ),
-        target_selector=ConfidenceTargetSelector(),
+        target_selector=target_selector or ConfidenceTargetSelector(),
         actuator=actuator or DryRunActuator(),
         verifier=verifier if verifier is not None else PassingStepVerifier(),
         clock=clock or FakeClock(),
@@ -2036,6 +2094,7 @@ def _candidate(
     candidate_id: str,
     label: str,
     *,
+    source: CandidateSource = "uia",
     x: int = 10,
     confidence: float = 0.95,
     enabled: bool = True,
@@ -2043,7 +2102,7 @@ def _candidate(
 ) -> ElementCandidate:
     return ElementCandidate(
         id=candidate_id,
-        source="uia",
+        source=source,
         label=label,
         bounds=Bounds(x=x, y=20, width=100, height=30),
         confidence=confidence,

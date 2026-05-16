@@ -269,6 +269,10 @@ def test_task_dsl_accepts_safe_action_variants_for_equivalent_actions(
                 "        actions:",
                 "          - refocus_allowed_window",
                 "          - abort_with_trace",
+                "      - reason: layout_change",
+                "        actions:",
+                "          - retry_alternate_selector_family",
+                "          - abort_with_trace",
                 "",
             ],
         ),
@@ -288,6 +292,11 @@ def test_task_dsl_accepts_safe_action_variants_for_equivalent_actions(
     assert task.steps[0].recovery[1].reason == "focus_loss"
     assert task.steps[0].recovery[1].actions == (
         "refocus_allowed_window",
+        "abort_with_trace",
+    )
+    assert task.steps[0].recovery[2].reason == "layout_change"
+    assert task.steps[0].recovery[2].actions == (
+        "retry_alternate_selector_family",
         "abort_with_trace",
     )
 

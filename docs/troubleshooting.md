@@ -38,6 +38,9 @@ Symptoms:
   `selection_blocked: confidence_or_ambiguity_gate`.
 - `ui_state_snapshot` lists multiple candidates with blocked reasons such as
   `confidence_or_ambiguity_gate`, `target_mismatch`, or `outside_region`.
+- `recover` may show `recovery_reason: layout_change` with
+  `selector_family_attempts` when UIA, OCR, or image candidates disagree after a
+  minor layout shift.
 - `benchmark-report.json` shows an increased `ambiguity_rate`.
 
 Checks:

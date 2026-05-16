@@ -521,7 +521,7 @@ abuse, and hidden automation are not supported.
       manual handoff.
 - [x] Add focus-loss recovery with allowed-window refocus and post-refocus
       verification.
-- [ ] Add layout-change recovery with alternate selector families.
+- [x] Add layout-change recovery with alternate selector families.
 - [ ] Add historical failure counters per routine.
 - [ ] Add routine quarantine status after configured failure thresholds.
 - [ ] Add failed-run analyzer that proposes YAML updates but does not apply them

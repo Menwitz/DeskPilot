@@ -137,11 +137,12 @@ Supported verification types:
   each other.
 - `recovery` declares explicit allowed recovery actions for a recovery reason.
   Supported reasons include `stale_observation`, `missed_target`,
-  `disabled_control`, `occluded_control`, `focus_loss`, `transient_loading`,
-  and `verification_failure`. Supported recovery actions include refocus,
-  reobserve, retry alternate or fresh candidates, scroll search, wait and
-  reobserve, wait for enabled, wait for loading, reopen surface, manual
-  handoff, and abort with trace.
+  `disabled_control`, `occluded_control`, `focus_loss`, `layout_change`,
+  `transient_loading`, and `verification_failure`. Supported recovery actions
+  include refocus, reobserve, retry alternate candidates, retry alternate
+  selector families, retry fresh candidates, scroll search, wait and reobserve,
+  wait for enabled, wait for loading, reopen surface, manual handoff, and abort
+  with trace.
 - `on_failure` names a future recovery or branch target.
 - `requires_confirmation` blocks the step unless its ID is explicitly confirmed
   in runtime configuration or with `--confirm-step`.

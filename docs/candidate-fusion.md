@@ -53,6 +53,14 @@ and the task did not provide a `region`, target selection returns no candidate.
 The planner records the ranking list in `detect_candidates` trace metadata so
 the task author can add a region or more specific selector.
 
+When normal selection fails while candidates are available across multiple
+families, the planner treats it as a possible `layout_change`. It then isolates
+UIA, OCR, image, and unknown-source candidates in a fixed order and lets the
+selector choose inside one family. The recovery event records
+`selector_family_attempts`, `alternate_selector_family`, and the selected
+candidate ID, so reports show whether a layout shift was recovered without
+loosening confidence checks.
+
 When a task provides a `region`, candidates outside the region are filtered from
 target selection. Candidates whose center falls inside the region receive a full
 region score; partial overlaps receive proportional credit. This lets repeated
