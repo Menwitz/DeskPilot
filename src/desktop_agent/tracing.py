@@ -510,6 +510,13 @@ def _event_markdown_suffix(event: TraceEvent) -> str:
     recovery_summary = event.metadata.get("recovery_path_summary")
     if isinstance(recovery_summary, str):
         details.append(recovery_summary)
+    rejected_recovery_actions = event.metadata.get("recovery_rejected_policy_actions")
+    if isinstance(rejected_recovery_actions, list):
+        rejected = [
+            action for action in rejected_recovery_actions if isinstance(action, str)
+        ]
+        if rejected:
+            details.append(f"rejected recovery actions {', '.join(rejected)}")
     selection_blocked = event.metadata.get("selection_blocked")
     if isinstance(selection_blocked, str):
         details.append(selection_blocked)

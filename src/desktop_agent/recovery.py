@@ -34,6 +34,7 @@ class ConstrainedRecoveryPolicy:
 
     policy: RecoveryPolicy
     rule: RecoveryRule | None = None
+    rejected_actions: tuple[str, ...] = ()
 
     @property
     def chosen_action(self) -> str:
@@ -47,6 +48,7 @@ class ConstrainedRecoveryPolicy:
     def metadata(self) -> dict[str, object]:
         metadata = self.policy.metadata()
         metadata["recovery_chosen_action"] = self.chosen_action
+        metadata["recovery_rejected_policy_actions"] = list(self.rejected_actions)
         if self.rule is not None:
             metadata["recovery_allowed_actions"] = list(self.rule.actions)
             metadata["recovery_rule_next_step"] = self.rule.next_step
@@ -299,8 +301,10 @@ def constrain_recovery_policy(
     if rule is None:
         return ConstrainedRecoveryPolicy(policy)
     allowed = tuple(action for action in policy.actions if action in rule.actions)
+    rejected = tuple(action for action in policy.actions if action not in allowed)
     if not allowed:
         allowed = ("abort_with_trace",)
+        rejected = policy.actions
     return ConstrainedRecoveryPolicy(
         RecoveryPolicy(
             name=policy.name,
@@ -309,6 +313,7 @@ def constrain_recovery_policy(
             backoff_strategy=policy.backoff_strategy,
         ),
         rule,
+        rejected,
     )
 
 

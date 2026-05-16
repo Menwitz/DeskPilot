@@ -172,6 +172,8 @@ Recovery events include `recovery_policy`, `recovery_reason`, and
 targets, disabled controls, occluded controls, and transient loading states.
 When a step has an explicit `recovery` rule, recovery events also include the
 allowed actions and whether the default policy was constrained by that rule.
+Constrained recovery events include `recovery_rejected_policy_actions`, and the
+Markdown report prints rejected actions on the recovery row.
 Failed action attempts emit `reobserve_after_failure` before retry metadata is
 written. The recovery monitor then runs candidate detection on the fresh
 observation and records `recover_candidates`, so deep-search output is visible

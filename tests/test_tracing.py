@@ -274,6 +274,7 @@ def test_file_trace_sink_includes_recovery_decision_metadata_in_reports(
                     "classify transient_loading -> wait_for_loading -> "
                     "observe_screen attempt 2 -> retry attempt 2"
                 ),
+                "recovery_rejected_policy_actions": ["reobserve_screen"],
                 "retry_limit_respected": True,
             },
         )
@@ -288,11 +289,15 @@ def test_file_trace_sink_includes_recovery_decision_metadata_in_reports(
     )
     recover_event = final_report_json["events"][0]
     assert "classify transient_loading" in final_report
+    assert "rejected recovery actions reobserve_screen" in final_report
     assert recover_event["metadata"]["recovery_policy"] == (
         "wait_for_transient_loading"
     )
     assert recover_event["metadata"]["recovery_reason"] == "transient_loading"
     assert recover_event["metadata"]["recovery_chosen_action"] == "wait_for_loading"
+    assert recover_event["metadata"]["recovery_rejected_policy_actions"] == [
+        "reobserve_screen",
+    ]
     assert recover_event["metadata"]["retry_limit_respected"] is True
 
 

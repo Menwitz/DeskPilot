@@ -137,6 +137,9 @@ def test_recovery_policy_constrains_actions_from_task_rule() -> None:
     assert constrained.chosen_action == "wait_for_loading"
     assert constrained.metadata()["recovery_chosen_action"] == "wait_for_loading"
     assert constrained.metadata()["recovery_actions_constrained"] is True
+    assert constrained.metadata()["recovery_rejected_policy_actions"] == [
+        "reobserve_screen",
+    ]
 
 
 def test_recovery_tree_covers_supported_execution_actions() -> None:
