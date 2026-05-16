@@ -9,6 +9,21 @@ automation tasks, site playbooks, approval records, and content variables in
 YAML. The runtime combines task execution with local screen capture, computer
 vision, OCR, and Windows UI Automation.
 
+## Product Contract
+
+The next product milestone is a personal local routine assistant built on the
+existing YAML task and website playbook foundation. DeskPilot should help an
+operator record, review, schedule, approve, run, and replay authorized desktop
+routines through visible local Windows input. Human-paced timing, routine
+selection, and activity spacing are allowed only inside explicit safety,
+approval, trace, and allowed-window boundaries.
+
+The personal assistant roadmap is tracked in
+[Personal Routine Assistant Roadmap](personal-routine-assistant-roadmap.md).
+That roadmap is the source of truth for recorder, routine catalog, goal
+planning, native operator UI, Windows proof bundles, local model assistance,
+redaction, and routine-pack work.
+
 ## Safety Boundary
 
 DeskPilot is intended for controlled environments where the operator owns or is

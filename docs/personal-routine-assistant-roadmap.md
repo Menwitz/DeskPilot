@@ -93,7 +93,7 @@ abuse, and hidden automation are not supported.
       product roadmap.
 - [x] Keep `docs/desktop-io-control-roadmap.md` as the lower-level desktop I/O
       proof roadmap.
-- [ ] Add a short product-contract section to `docs/project-definition.md`.
+- [x] Add a short product-contract section to `docs/project-definition.md`.
 - [ ] Add release-note language that stops presenting external Windows evidence
       gates as completed product proof.
 
