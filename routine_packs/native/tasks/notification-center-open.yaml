@@ -1,0 +1,16 @@
+name: Notification center open task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: open-notification-center
+    action: press_key
+    text: win+n
+    verify:
+      type: visible_text
+      text: Notifications
+  - id: confirm-notifications
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Notifications

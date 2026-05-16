@@ -1,0 +1,16 @@
+name: Virtual desktop switch left task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: switch-desktop-left
+    action: press_key
+    text: ctrl+win+left
+    verify:
+      type: visible_text
+      text: Desktop
+  - id: confirm-desktop-left
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Desktop

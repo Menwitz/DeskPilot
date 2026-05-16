@@ -1,0 +1,19 @@
+name: Window minimize task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: confirm-window
+    action: wait_for
+    target: Windows
+  - id: minimize-window
+    action: press_key
+    text: win+down
+    verify:
+      type: visible_text
+      text: Windows
+  - id: confirm-window-after-minimize
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Windows

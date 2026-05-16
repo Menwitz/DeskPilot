@@ -1,0 +1,17 @@
+name: Emoji panel open task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: open-emoji-panel
+    action: press_key
+    text: win+period
+    verify:
+      type: visible_text
+      text: Emoji
+  - id: close-emoji-panel
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: Windows

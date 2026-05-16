@@ -1,0 +1,16 @@
+name: Restore desktop windows task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: restore-windows
+    action: press_key
+    text: win+d
+    verify:
+      type: visible_text
+      text: Windows
+  - id: confirm-windows-restored
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Windows

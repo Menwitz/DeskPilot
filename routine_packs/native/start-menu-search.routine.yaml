@@ -1,0 +1,20 @@
+id: native.start-menu-search
+name: Start menu search
+description: Open Start search and type reviewed app or document text.
+goal: Find a local app or document from the Windows Start menu.
+required_app: Windows
+tags:
+  - native
+  - system
+  - search
+inputs:
+  - search text
+outputs:
+  - start search results visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/start-menu-search.yaml

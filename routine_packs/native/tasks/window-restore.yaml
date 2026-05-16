@@ -1,0 +1,19 @@
+name: Window restore task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: confirm-window
+    action: wait_for
+    target: Windows
+  - id: restore-window
+    action: press_key
+    text: win+up
+    verify:
+      type: visible_text
+      text: Windows
+  - id: confirm-window-restored
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Windows

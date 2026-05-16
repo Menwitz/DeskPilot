@@ -1,0 +1,20 @@
+id: native.system-about-open
+name: System about open
+description: Open Windows system About settings for read-only review.
+goal: Inspect system information without changing settings.
+required_app: Settings
+tags:
+  - native
+  - settings
+  - system
+inputs:
+  - desktop session
+outputs:
+  - system about page visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/system-about-open.yaml

@@ -1,0 +1,22 @@
+name: Start menu search task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: open-start
+    action: press_key
+    text: win
+    verify:
+      type: visible_text
+      text: Start
+  - id: type-start-query
+    action: type_text
+    text: Reviewed app
+    verify:
+      type: visible_text
+      text: Reviewed app
+  - id: confirm-search-results
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Reviewed app

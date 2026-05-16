@@ -45,7 +45,7 @@ def test_builtin_routine_catalog_has_broad_reusable_surface_coverage() -> None:
 
     assert len(catalog.routines) >= 30
     assert pack_counts["browser"] >= 35
-    assert pack_counts["native"] >= 20
+    assert pack_counts["native"] >= 35
     assert pack_counts["social-content"] >= 35
 
 
@@ -306,6 +306,21 @@ def test_native_routine_pack_contains_seed_categories() -> None:
         "native.snipping-tool-open",
         "native.clipboard-history-open",
         "native.window-snap-left",
+        "native.window-snap-right",
+        "native.window-minimize",
+        "native.window-restore",
+        "native.desktop-show",
+        "native.desktop-restore",
+        "native.virtual-desktop-new",
+        "native.virtual-desktop-switch-left",
+        "native.virtual-desktop-switch-right",
+        "native.action-center-open",
+        "native.notification-center-open",
+        "native.start-menu-search",
+        "native.emoji-panel-open",
+        "native.quick-link-menu-open",
+        "native.system-about-open",
+        "native.display-settings-open",
     }
     routines = {
         routine.id: routine

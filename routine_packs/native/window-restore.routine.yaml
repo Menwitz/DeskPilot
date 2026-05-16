@@ -1,0 +1,20 @@
+id: native.window-restore
+name: Window restore
+description: Restore the active allowed window from a minimized or snapped state.
+goal: Return the active window to a normal reviewed layout.
+required_app: Windows
+tags:
+  - native
+  - windows
+  - layout
+inputs:
+  - active window
+outputs:
+  - window restored
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/window-restore.yaml

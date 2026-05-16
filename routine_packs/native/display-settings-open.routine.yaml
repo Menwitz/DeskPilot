@@ -1,0 +1,20 @@
+id: native.display-settings-open
+name: Display settings open
+description: Open Windows display settings for read-only review.
+goal: Inspect display settings without modifying layout or scale.
+required_app: Settings
+tags:
+  - native
+  - settings
+  - display
+inputs:
+  - desktop session
+outputs:
+  - display settings visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/display-settings-open.yaml

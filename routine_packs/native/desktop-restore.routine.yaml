@@ -1,0 +1,20 @@
+id: native.desktop-restore
+name: Restore desktop windows
+description: Toggle desktop view again to restore previously visible windows.
+goal: Return windows after a desktop-level review task.
+required_app: Windows
+tags:
+  - native
+  - desktop
+  - windows
+inputs:
+  - desktop session
+outputs:
+  - windows restored
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/desktop-restore.yaml

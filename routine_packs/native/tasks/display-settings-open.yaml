@@ -1,0 +1,25 @@
+name: Display settings open task
+allowed_windows:
+  - Settings
+timeout_seconds: 30
+steps:
+  - id: open-settings
+    action: press_key
+    text: win+i
+    verify:
+      type: visible_text
+      text: Settings
+  - id: focus-settings-search
+    action: click_text
+    target: Search
+  - id: type-display-query
+    action: type_text
+    text: Display
+    verify:
+      type: visible_text
+      text: Display
+  - id: confirm-display-result
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Display

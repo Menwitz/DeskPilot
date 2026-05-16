@@ -1,0 +1,20 @@
+id: native.virtual-desktop-switch-right
+name: Virtual desktop switch right
+description: Switch to the adjacent virtual desktop on the right.
+goal: Move to the next Windows virtual desktop.
+required_app: Windows
+tags:
+  - native
+  - desktop
+  - workspace
+inputs:
+  - desktop session
+outputs:
+  - next virtual desktop active
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/virtual-desktop-switch-right.yaml

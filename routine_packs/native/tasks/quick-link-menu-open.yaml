@@ -1,0 +1,17 @@
+name: Quick link menu open task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: open-quick-link-menu
+    action: press_key
+    text: win+x
+    verify:
+      type: visible_text
+      text: Menu
+  - id: close-quick-link-menu
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: Windows

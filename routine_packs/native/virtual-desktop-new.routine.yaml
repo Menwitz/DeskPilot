@@ -1,0 +1,20 @@
+id: native.virtual-desktop-new
+name: Virtual desktop new
+description: Create a new Windows virtual desktop for a separated local workflow.
+goal: Prepare a clean virtual desktop for reviewed activity.
+required_app: Windows
+tags:
+  - native
+  - desktop
+  - workspace
+inputs:
+  - desktop session
+outputs:
+  - new virtual desktop active
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/virtual-desktop-new.yaml

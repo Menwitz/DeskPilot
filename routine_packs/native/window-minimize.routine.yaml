@@ -1,0 +1,20 @@
+id: native.window-minimize
+name: Window minimize
+description: Minimize the active allowed window and keep trace evidence for the action.
+goal: Move the active window out of the workspace without closing it.
+required_app: Windows
+tags:
+  - native
+  - windows
+  - layout
+inputs:
+  - active window
+outputs:
+  - window minimized
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/window-minimize.yaml

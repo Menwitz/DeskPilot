@@ -1,0 +1,20 @@
+id: native.window-snap-right
+name: Window snap right
+description: Snap the active allowed window right and verify the desktop remains responsive.
+goal: Arrange the active window into a right-side workspace position.
+required_app: Windows
+tags:
+  - native
+  - windows
+  - layout
+inputs:
+  - active window
+outputs:
+  - window snapped right
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/window-snap-right.yaml

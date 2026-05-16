@@ -1,0 +1,16 @@
+name: Action center open task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: open-action-center
+    action: press_key
+    text: win+a
+    verify:
+      type: visible_text
+      text: Quick settings
+  - id: confirm-action-center
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Quick settings

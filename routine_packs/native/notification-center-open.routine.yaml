@@ -1,0 +1,20 @@
+id: native.notification-center-open
+name: Notification center open
+description: Open Windows notification center for read-only review.
+goal: Inspect recent notifications without selecting or dismissing them.
+required_app: Windows
+tags:
+  - native
+  - system
+  - notifications
+inputs:
+  - desktop session
+outputs:
+  - notification center visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/notification-center-open.yaml

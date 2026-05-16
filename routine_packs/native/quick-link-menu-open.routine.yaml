@@ -1,0 +1,20 @@
+id: native.quick-link-menu-open
+name: Quick link menu open
+description: Open the Windows quick link menu and close it after review.
+goal: Inspect the administrative quick link menu without selecting items.
+required_app: Windows
+tags:
+  - native
+  - system
+  - menu
+inputs:
+  - desktop session
+outputs:
+  - quick link menu reviewed
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/quick-link-menu-open.yaml

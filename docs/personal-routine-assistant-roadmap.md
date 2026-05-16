@@ -348,6 +348,9 @@ abuse, and hidden automation are not supported.
 - [x] Add first native scale-out batch for Notepad find/save review, File
       Explorer search/new-folder review, Settings search, Calculator mode/copy,
       Task Manager, Run, Snipping Tool, clipboard history, and window snap.
+- [x] Add second native scale-out batch for window snap/minimize/restore,
+      desktop and virtual desktop navigation, action/notification center,
+      Start search, emoji panel, quick link menu, and system/display settings.
 - [x] Add social/content routines for LinkedIn, Medium, X/Twitter, Instagram,
       Facebook, YouTube, and TikTok read-only, draft, and approved publish
       surfaces.

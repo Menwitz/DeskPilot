@@ -1,0 +1,20 @@
+id: native.desktop-show
+name: Show desktop
+description: Show the desktop using the Windows shortcut and verify the desktop surface.
+goal: Move visible windows aside for a desktop-level review task.
+required_app: Windows
+tags:
+  - native
+  - desktop
+  - windows
+inputs:
+  - desktop session
+outputs:
+  - desktop visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/desktop-show.yaml
