@@ -24,3 +24,19 @@ reports whether PySide6 is available.
 The first implementation keeps the page contract in
 `desktop_agent.operator_app_shell` so the future service layer and PySide
 widgets can share the same page IDs in tests, packaging, and documentation.
+
+## Local Service Boundary
+
+`desktop_agent.operator_services` defines the app-facing service boundary. The
+initial concrete bundle is local-only and wraps existing project modules:
+
+- Catalog service: list, search, and inspect routine definitions.
+- Recorder service: expose supported recording operations.
+- Runner service: apply the validated routine execution gate before runs.
+- Scheduler service: expose immutable run queue metadata.
+- Approval service: list active routines requiring operator approval.
+- Trace service: list local trace directories and read JSON reports.
+
+The PySide widgets should use these services instead of shelling out to CLI
+commands. This keeps the app, CLI, tests, and future packaging on the same local
+safety and trace contracts.

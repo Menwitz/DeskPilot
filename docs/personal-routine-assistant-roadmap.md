@@ -470,7 +470,7 @@ abuse, and hidden automation are not supported.
 - [x] Add `deskpilot-app` entry point.
 - [x] Add app shell with Dashboard, Routine Library, Record, Run Queue,
       Approvals, Trace Viewer, Settings, and Help pages.
-- [ ] Add local service boundary for catalog, recorder, runner, scheduler,
+- [x] Add local service boundary for catalog, recorder, runner, scheduler,
       approvals, and trace APIs.
 - [ ] Add live run panel with current routine, current step, screenshot preview,
       selected target, next action, elapsed time, status, and stop controls.
