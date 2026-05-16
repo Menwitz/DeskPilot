@@ -548,7 +548,7 @@ abuse, and hidden automation are not supported.
 ### OKRs
 
 - [x] O1: Integrate optional local model assistance safely.
-- [ ] KR1: Add `LocalModelProvider` interface and Ollama implementation.
+- [x] KR1: Add `LocalModelProvider` interface and Ollama implementation.
 - [ ] KR2: Model output can rank routines, summarize traces, extract draft
       inputs, and suggest YAML improvements.
 - [ ] KR3: Model output cannot execute raw desktop actions directly.
