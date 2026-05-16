@@ -47,6 +47,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Run `desktop-agent proof validate-suite <trace-root>
       --write-review-template`, complete `proof-suite-review.md`, and store it
       with the review record.
+- [ ] Run `desktop-agent proof validate-review <path-to-proof-suite-review.md>
+      --write-status-json` and store `proof-suite-review-status.json` with the
+      review record.
 
 ## Required Proof Bundle
 
@@ -93,6 +96,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       video-capture readiness checks before the desktop run begins.
 - [ ] `proof-suite-review.md` records reviewer name, review date, decision,
       required review checks, per-proof bundle checks, and blocking findings.
+- [ ] `proof-suite-review-status.json` records the completed human review
+      validation status, decision, checked item count, unchecked items, and
+      blocking errors.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 

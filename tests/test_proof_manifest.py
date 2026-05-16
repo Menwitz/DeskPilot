@@ -10,8 +10,10 @@ from desktop_agent.proof_manifest import (
     render_proof_suite_runbook,
     run_proof_preflight,
     validate_proof_bundle,
+    validate_proof_review,
     validate_proof_suite,
     write_proof_preflight_report,
+    write_proof_review_status,
     write_proof_suite_archive,
     write_proof_suite_report,
     write_proof_suite_review_template,
@@ -363,10 +365,66 @@ def test_write_proof_suite_review_template_lists_signoff_checks(
     assert review_path == tmp_path / "proof-suite-review.md"
     assert review_path.read_text(encoding="utf-8") == review
     assert "# DeskPilot Windows Proof Suite Review" in review
-    assert "- Decision: `[ ] pass` `[ ] fail`" in review
+    assert "- [ ] Pass" in review
+    assert "- [ ] Fail" in review
     assert "### browser-fixture" in review
     assert "- [ ] Video or justified external recording reviewed." in review
     assert "- [ ] missing proof bundle: native-fixture" in review
+
+
+def test_validate_proof_review_accepts_completed_pass_review(tmp_path: Path) -> None:
+    review_path = tmp_path / "proof-suite-review.md"
+    review_path.write_text(
+        "\n".join(
+            [
+                "# DeskPilot Windows Proof Suite Review",
+                "- Reviewer: Ada",
+                "- Review date: 2026-05-16",
+                "- [x] Pass",
+                "- [ ] Fail",
+                "- [x] The run happened on an owned, unlocked Windows desktop or VM.",
+                "- [x] Video or justified external recording reviewed.",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    result = validate_proof_review(review_path)
+    status_path = write_proof_review_status(result)
+    payload = json.loads(status_path.read_text(encoding="utf-8"))
+
+    assert result.passed
+    assert result.decision == "pass"
+    assert result.checked_count == 2
+    assert status_path == tmp_path / "proof-suite-review-status.json"
+    assert payload["status"] == "passed"
+
+
+def test_validate_proof_review_reports_incomplete_review(tmp_path: Path) -> None:
+    review_path = tmp_path / "proof-suite-review.md"
+    review_path.write_text(
+        "\n".join(
+            [
+                "# DeskPilot Windows Proof Suite Review",
+                "- Reviewer:",
+                "- Review date:",
+                "- [ ] Pass",
+                "- [ ] Fail",
+                "- [ ] The run happened on an owned, unlocked Windows desktop or VM.",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    result = validate_proof_review(review_path)
+
+    assert not result.passed
+    assert "proof review missing reviewer" in result.errors
+    assert "proof review missing review date" in result.errors
+    assert "proof review missing pass/fail decision" in result.errors
+    assert "proof review has unchecked required items" in result.errors
 
 
 def test_write_proof_suite_archive_packages_review_artifacts(

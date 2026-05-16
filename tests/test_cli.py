@@ -1911,7 +1911,47 @@ def test_cli_proof_validate_suite_writes_review_template(
     assert status == 1
     assert f"review_template: {review_path}" in output
     assert "# DeskPilot Windows Proof Suite Review" in review
-    assert "- Decision: `[ ] pass` `[ ] fail`" in review
+    assert "- [ ] Pass" in review
+
+
+def test_cli_proof_validate_review_writes_status(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    review_path = tmp_path / "proof-suite-review.md"
+    status_path = tmp_path / "proof-suite-review-status.json"
+    review_path.write_text(
+        "\n".join(
+            [
+                "# DeskPilot Windows Proof Suite Review",
+                "- Reviewer: Ada",
+                "- Review date: 2026-05-16",
+                "- [x] Pass",
+                "- [ ] Fail",
+                "- [x] The run happened on an owned, unlocked Windows desktop or VM.",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    status = main(
+        [
+            "proof",
+            "validate-review",
+            str(review_path),
+            "--write-status-json",
+            "--status-json-path",
+            str(status_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    payload = json.loads(status_path.read_text(encoding="utf-8"))
+    assert status == 0
+    assert "review_validation: passed" in output
+    assert f"status_json: {status_path}" in output
+    assert payload["status"] == "passed"
 
 
 def test_cli_benchmark_run_writes_metrics_and_report(

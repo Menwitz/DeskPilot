@@ -96,8 +96,10 @@ from desktop_agent.preview import build_dry_run_preview, render_dry_run_preview
 from desktop_agent.proof_manifest import (
     run_proof_preflight,
     validate_proof_bundle,
+    validate_proof_review,
     validate_proof_suite,
     write_proof_preflight_report,
+    write_proof_review_status,
     write_proof_suite_archive,
     write_proof_suite_report,
     write_proof_suite_review_template,
@@ -526,6 +528,21 @@ def _build_parser() -> argparse.ArgumentParser:
         "--open-artifacts",
         action="store_true",
         help="open existing proof artifact paths with the OS file manager",
+    )
+    proof_validate_review_parser = proof_subparsers.add_parser(
+        "validate-review",
+        help="validate a completed proof-suite human review template",
+    )
+    proof_validate_review_parser.add_argument("review_path", type=Path)
+    proof_validate_review_parser.add_argument(
+        "--write-status-json",
+        action="store_true",
+        help="write proof-suite-review-status.json after validation",
+    )
+    proof_validate_review_parser.add_argument(
+        "--status-json-path",
+        type=Path,
+        help="write review status JSON to an explicit path",
     )
     proof_preflight_parser = proof_subparsers.add_parser(
         "preflight",
@@ -2753,6 +2770,8 @@ def _proof(args: argparse.Namespace) -> int:
         return _proof_replay(args)
     if args.proof_command == "preflight":
         return _proof_preflight(args)
+    if args.proof_command == "validate-review":
+        return _proof_validate_review(args)
     if args.proof_command == "validate":
         return _proof_validate(args)
     if args.proof_command == "validate-suite":
@@ -2783,6 +2802,25 @@ def _proof_preflight(args: argparse.Namespace) -> int:
     if args.write_report or args.report_path:
         report_path = write_proof_preflight_report(result, args.report_path)
         print(f"report: {report_path}")
+    return 0 if result.passed else 1
+
+
+def _proof_validate_review(args: argparse.Namespace) -> int:
+    result = validate_proof_review(args.review_path)
+    print(f"review: {args.review_path}")
+    print(f"review_validation: {'passed' if result.passed else 'failed'}")
+    if result.decision:
+        print(f"decision: {result.decision}")
+    print(f"checked: {result.checked_count}")
+    for item in result.unchecked_items:
+        print(f"unchecked: {item}")
+    for warning in result.warnings:
+        print(f"warning: {warning}")
+    for error in result.errors:
+        print(f"error: {error}")
+    if args.write_status_json or args.status_json_path:
+        status_path = write_proof_review_status(result, args.status_json_path)
+        print(f"status_json: {status_path}")
     return 0 if result.passed else 1
 
 

@@ -23,6 +23,7 @@ PROOF_SUITE_STATUS_NAME = "proof-suite-status.json"
 PROOF_SUITE_RUNBOOK_NAME = "proof-suite-next-actions.md"
 PROOF_SUITE_ARCHIVE_NAME = "proof-suite-artifacts.zip"
 PROOF_SUITE_REVIEW_NAME = "proof-suite-review.md"
+PROOF_SUITE_REVIEW_STATUS_NAME = "proof-suite-review-status.json"
 PROOF_PREFLIGHT_REPORT_NAME = "proof-preflight.json"
 
 
@@ -190,6 +191,33 @@ class ProofPreflightResult:
         }
 
 
+@dataclass(frozen=True)
+class ProofReviewValidation:
+    """Validation result for a completed human proof-suite review template."""
+
+    review_path: Path
+    decision: str | None
+    checked_count: int
+    unchecked_items: tuple[str, ...]
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    @property
+    def passed(self) -> bool:
+        return not self.errors
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "review_path": str(self.review_path),
+            "status": "passed" if self.passed else "failed",
+            "decision": self.decision,
+            "checked_count": self.checked_count,
+            "unchecked_items": list(self.unchecked_items),
+            "errors": list(self.errors),
+            "warnings": list(self.warnings),
+        }
+
+
 def run_proof_preflight(
     trace_root: Path,
     *,
@@ -207,6 +235,57 @@ def run_proof_preflight(
         _video_preflight_check(ffmpeg_path, require_video, path_lookup),
     )
     return ProofPreflightResult(trace_root=trace_root, checks=checks)
+
+
+def validate_proof_review(review_path: Path) -> ProofReviewValidation:
+    """Validate that a proof-suite human review template was completed."""
+
+    errors: list[str] = []
+    warnings: list[str] = []
+    if not review_path.exists():
+        return ProofReviewValidation(
+            review_path=review_path,
+            decision=None,
+            checked_count=0,
+            unchecked_items=(),
+            errors=(f"proof review not found: {review_path}",),
+            warnings=(),
+        )
+    lines = review_path.read_text(encoding="utf-8").splitlines()
+    if not _review_line_value(lines, "- Reviewer:"):
+        errors.append("proof review missing reviewer")
+    if not _review_line_value(lines, "- Review date:"):
+        errors.append("proof review missing review date")
+    decision, decision_errors = _review_decision(lines)
+    errors.extend(decision_errors)
+    checked_count, unchecked_items = _review_checkbox_counts(lines)
+    if unchecked_items:
+        errors.append("proof review has unchecked required items")
+    return ProofReviewValidation(
+        review_path=review_path,
+        decision=decision,
+        checked_count=checked_count,
+        unchecked_items=unchecked_items,
+        errors=tuple(errors),
+        warnings=tuple(warnings),
+    )
+
+
+def write_proof_review_status(
+    validation: ProofReviewValidation,
+    output_path: Path | None = None,
+) -> Path:
+    """Write machine-readable status for a completed proof review."""
+
+    status_path = output_path or validation.review_path.with_name(
+        PROOF_SUITE_REVIEW_STATUS_NAME,
+    )
+    status_path.parent.mkdir(parents=True, exist_ok=True)
+    status_path.write_text(
+        json.dumps(validation.metadata(), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    return status_path
 
 
 def write_proof_preflight_report(
@@ -672,8 +751,12 @@ def render_proof_suite_review_template(validation: ProofSuiteValidation) -> str:
         f"`{'passed' if validation.passed else 'failed'}`",
         "- Reviewer:",
         "- Review date:",
-        "- Decision: `[ ] pass` `[ ] fail`",
         "- Notes:",
+        "",
+        "## Reviewer Decision",
+        "",
+        "- [ ] Pass",
+        "- [ ] Fail",
         "",
         "## Required Review Checks",
         "",
@@ -860,6 +943,41 @@ def _archive_name(trace_root: Path, artifact_path: Path) -> str:
     except ValueError:
         relative = Path("external-artifacts") / artifact_path.name
     return relative.as_posix()
+
+
+def _review_line_value(lines: list[str], prefix: str) -> str | None:
+    for line in lines:
+        if not line.startswith(prefix):
+            continue
+        value = line.removeprefix(prefix).strip()
+        return value or None
+    return None
+
+
+def _review_decision(lines: list[str]) -> tuple[str | None, tuple[str, ...]]:
+    pass_checked = any(line.strip() == "- [x] Pass" for line in lines)
+    fail_checked = any(line.strip() == "- [x] Fail" for line in lines)
+    if pass_checked and fail_checked:
+        return None, ("proof review cannot check both pass and fail",)
+    if fail_checked:
+        return "fail", ("proof review decision is fail",)
+    if pass_checked:
+        return "pass", ()
+    return None, ("proof review missing pass/fail decision",)
+
+
+def _review_checkbox_counts(lines: list[str]) -> tuple[int, tuple[str, ...]]:
+    checked_count = 0
+    unchecked_items: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped in {"- [ ] Pass", "- [ ] Fail", "- [x] Pass", "- [x] Fail"}:
+            continue
+        if stripped.startswith("- [x] "):
+            checked_count += 1
+        elif stripped.startswith("- [ ] "):
+            unchecked_items.append(stripped.removeprefix("- [ ] "))
+    return checked_count, tuple(unchecked_items)
 
 
 def _windows_preflight_check(
