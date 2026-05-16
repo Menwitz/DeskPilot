@@ -698,7 +698,7 @@ abuse, and hidden automation are not supported.
 - [x] Windows smoke tests for proof commands behind `DESKPILOT_WINDOWS_SMOKE=1`.
 - [x] Live public-site smoke tests remain opt-in and never perform final
       external mutations without explicit approval evidence.
-- [ ] Full local quality gate remains `.venv/bin/python -m pytest`,
+- [x] Full local quality gate remains `.venv/bin/python -m pytest`,
       `.venv/bin/ruff check .`, and `.venv/bin/mypy`.
 
 ## Global Acceptance Criteria
