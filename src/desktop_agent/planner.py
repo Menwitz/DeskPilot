@@ -879,6 +879,12 @@ class ExecutionEngine:
                     action_result,
                     state_delta_metadata,
                 )
+            elif step.action == "type_text":
+                last_failure_evidence = _type_failure_evidence_metadata(
+                    observation,
+                    action_result,
+                    state_delta_metadata,
+                )
 
             if verification.resolved_outcome == "inconclusive":
                 last_message = verification.message
@@ -2042,6 +2048,28 @@ def _click_failure_evidence_metadata(
             for ranked_candidate in rank_candidates(step, candidates, config)
             if ranked_candidate.candidate.visible
         ],
+        "state_delta": state_delta,
+    }
+
+
+def _type_failure_evidence_metadata(
+    observation: ScreenObservation,
+    action_result: ActionResult,
+    state_delta: dict[str, object],
+) -> dict[str, object]:
+    return {
+        "failure_evidence_type": "failed_type",
+        "action_message": action_result.message,
+        "action_success": action_result.success,
+        "before_screenshot_path": str(observation.screenshot_path)
+        if observation.screenshot_path
+        else None,
+        "before_active_window_title": observation.active_window_title,
+        "before_focused_element": _metadata_dict(observation, "focused_element"),
+        "before_active_window_process": _metadata_dict(
+            observation,
+            "active_window_process",
+        ),
         "state_delta": state_delta,
     }
 

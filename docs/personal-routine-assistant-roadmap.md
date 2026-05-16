@@ -205,7 +205,7 @@ abuse, and hidden automation are not supported.
 
 - [x] A failed click shows what was visible before the click and what changed
       after it.
-- [ ] A failed type shows the focused window and focused element before typing.
+- [x] A failed type shows the focused window and focused element before typing.
 - [ ] A failed scroll shows whether the viewport moved.
 - [ ] A passed action includes concrete evidence of the resulting state.
 - [ ] Trace replay can explain each executed step without live desktop access.

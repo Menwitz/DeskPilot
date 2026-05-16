@@ -1233,6 +1233,56 @@ def test_execution_engine_failed_click_includes_before_and_delta_evidence() -> N
     assert state_delta["visible_text_changed"] is True
 
 
+def test_execution_engine_failed_type_includes_focus_evidence() -> None:
+    task = TaskDefinition(
+        name="failed-type-evidence",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="type-message",
+                action="type_text",
+                text="hello",
+                retry=0,
+            ),
+        ),
+    )
+    before = ScreenObservation(
+        active_window_title="DeskPilot Fixture",
+        metadata={
+            "focused_element": {"name": "Message", "class_name": "Edit"},
+            "active_window_process": {
+                "process_id": 1234,
+                "process_name": "notepad.exe",
+            },
+        },
+    )
+    engine = _engine(
+        task,
+        screen_observer=SequenceScreenObserver((before, before)),
+        perception=SequencePerceptionEngine(((),)),
+        actuator=SequenceActuator((ActionResult(False, "type failed"),)),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    evidence = report.steps[0].metadata["failure_evidence"]
+    assert isinstance(evidence, dict)
+    assert report.status == "failed"
+    assert report.steps[0].metadata["failure_category"] == "actuation_failure"
+    assert evidence["failure_evidence_type"] == "failed_type"
+    assert evidence["action_message"] == "type failed"
+    assert evidence["before_active_window_title"] == "DeskPilot Fixture"
+    assert evidence["before_focused_element"] == {
+        "name": "Message",
+        "class_name": "Edit",
+    }
+    assert evidence["before_active_window_process"] == {
+        "process_id": 1234,
+        "process_name": "notepad.exe",
+    }
+
+
 def test_execution_engine_missed_target_includes_diagnostic_bundle(
     tmp_path: Path,
 ) -> None:
