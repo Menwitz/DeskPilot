@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -190,6 +191,71 @@ def test_routine_pack_cli_lists_shows_imports_and_exports(
     assert (export_path / "routine-pack.yaml").exists()
 
 
+def test_trusted_routine_pack_cli_imports_and_validates_installed_pack(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    source = _write_pack(
+        tmp_path / "trusted-pack",
+        pack_id="trusted-pack",
+        trust_level="trusted_local",
+    )
+    install_root = tmp_path / "installed"
+    report_path = tmp_path / "trusted-pack-validation.json"
+
+    assert (
+        main(
+            [
+                "import-routine-pack",
+                str(source),
+                "--routine-pack-root",
+                str(install_root),
+            ],
+        )
+        == 0
+    )
+    import_output = capsys.readouterr().out
+    assert "imported routine pack: trusted-pack" in import_output
+    assert "trust_warnings: none" in import_output
+
+    assert (
+        main(
+            [
+                "list-routine-packs",
+                "--routine-pack-root",
+                str(install_root),
+            ],
+        )
+        == 0
+    )
+    assert "trusted-pack\t0.1.0\ttrusted_local" in capsys.readouterr().out
+
+    assert (
+        main(
+            [
+                "test-routine-pack",
+                "trusted-pack",
+                "--routine-pack-root",
+                str(install_root),
+                "--output",
+                str(report_path),
+            ],
+        )
+        == 0
+    )
+    validation_output = capsys.readouterr().out
+    validation_report = json.loads(report_path.read_text(encoding="utf-8"))
+
+    assert "status: passed" in validation_output
+    assert validation_report == {
+        "errors": [],
+        "pack_id": "trusted-pack",
+        "routine_count": 1,
+        "status": "passed",
+        "validated_routine_count": 1,
+    }
+
+
 def _write_pack(
     root: Path,
     *,
@@ -209,6 +275,7 @@ def _write_pack(
                 "name: Sample task",
                 "allowed_windows:",
                 "  - Sample Window",
+                "timeout_seconds: 30",
                 "steps:",
                 "  - id: click-target",
                 "    action: click_text",

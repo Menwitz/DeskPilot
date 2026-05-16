@@ -82,6 +82,9 @@ desktop-agent write-routine-pack-proof browser --output traces/browser-pack-proo
 one `routine-pack.yaml`. It validates the manifest before copying the pack into
 the target root and refuses to overwrite an installed pack unless `--replace` is
 provided.
+For a trusted local pack, the normal acceptance flow is `import-routine-pack`
+followed by `test-routine-pack --output <report.json>`; the validation report
+must pass with every routine and referenced task YAML counted as validated.
 Before copying, import also scans the incoming pack against installed packs for
 duplicate pack/version records, duplicate routine IDs, duplicate routine input
 signatures, and duplicate task selector signatures. Duplicate pack/version and

@@ -656,7 +656,7 @@ abuse, and hidden automation are not supported.
 
 ### Acceptance Criteria
 
-- [ ] A trusted local routine pack can be installed and validated.
+- [x] A trusted local routine pack can be installed and validated.
 - [ ] Duplicate or unsafe routine packs are rejected or quarantined.
 - [ ] Pack routines appear in CLI and native app catalog search.
 - [ ] Pack-level proof status is visible in reports.
