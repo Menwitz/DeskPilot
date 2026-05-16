@@ -16,6 +16,11 @@ from desktop_agent.entropy import (
     validate_entropy_budget_constraints,
 )
 from desktop_agent.execution_paths import choose_execution_path
+from desktop_agent.focus_recovery import (
+    FocusRecoveryController,
+    FocusRecoveryResult,
+    NoopFocusRecoveryController,
+)
 from desktop_agent.perception import (
     ElementCandidate,
     PerceptionEngine,
@@ -68,7 +73,10 @@ from desktop_agent.tracing import (
     TraceEvent,
     TraceSink,
 )
-from desktop_agent.window_allowlist import effective_allowed_windows
+from desktop_agent.window_allowlist import (
+    effective_allowed_windows,
+    window_title_matches,
+)
 
 TARGETED_ACTIONS: frozenset[str] = frozenset(
     {
@@ -83,6 +91,7 @@ TARGETED_ACTIONS: frozenset[str] = frozenset(
 )
 POLL_INTERVAL_SECONDS = 0.1
 VerificationOutcome = Literal["passed", "failed", "inconclusive"]
+FocusRecoveryStatus = Literal["not_recovered", "recovered", "emergency_stopped"]
 RECOVERABLE_SELECTION_REASONS: frozenset[str] = frozenset(
     {
         "stale_observation",
@@ -252,6 +261,9 @@ class ExecutionEngine:
         default_factory=NoopEmergencyStopMonitor,
     )
     task_compiler: TaskCompiler = field(default_factory=TaskCompiler)
+    focus_recovery_controller: FocusRecoveryController = field(
+        default_factory=NoopFocusRecoveryController,
+    )
 
     def run(self, task_path: Path, config_path: Path | None = None) -> RunReport:
         config = self.config_loader.load(config_path)
@@ -727,6 +739,27 @@ class ExecutionEngine:
                     ),
                 )
             if not safety.allowed:
+                if attempt < total_attempts and _is_focus_loss_safety_stop(
+                    safety.reason,
+                ):
+                    focus_recovery_status = self._recover_focus_loss(
+                        step,
+                        config,
+                        observation,
+                        safety.reason,
+                        attempt,
+                        attempt + 1,
+                        retry_budget,
+                        timing_controller,
+                    )
+                    if focus_recovery_status == "recovered":
+                        continue
+                    if focus_recovery_status == "emergency_stopped":
+                        return self._emergency_stop_outcome(
+                            step,
+                            attempt,
+                            last_candidate_id,
+                        )
                 self._record(
                     "recover",
                     "aborting with trace after safety rejection",
@@ -1499,6 +1532,92 @@ class ExecutionEngine:
         )
         return observation, candidates
 
+    def _recover_focus_loss(
+        self,
+        step: TaskStep,
+        config: RuntimeConfig,
+        failed_observation: ScreenObservation,
+        safety_reason: str,
+        failed_attempt: int,
+        next_attempt: int,
+        retry_budget: int,
+        timing_controller: ExecutionTimingController,
+    ) -> FocusRecoveryStatus:
+        policy = RECOVERY_POLICIES["focus_loss"]
+        constrained = constrain_recovery_policy(step, policy)
+        if constrained.chosen_action != "refocus_allowed_window":
+            return "not_recovered"
+
+        retry_timing = timing_controller.before_retry(
+            retry_index=failed_attempt,
+            retry_budget=retry_budget,
+            backoff_strategy=policy.backoff_strategy,
+        )
+        focus_result = self.focus_recovery_controller.refocus_allowed_window(config)
+        post_refocus_observation = self.screen_observer.observe(config)
+        post_refocus = _post_refocus_verification_metadata(
+            post_refocus_observation,
+            focus_result,
+            config,
+        )
+        post_refocus_verified = (
+            post_refocus.get("post_refocus_verification_passed") is True
+        )
+        recover_metadata = _recovery_metadata(
+            step,
+            policy,
+            failed_attempt=failed_attempt,
+            next_attempt=next_attempt,
+            failure_observation_phase="observe_screen",
+            focus_loss_safety_reason=safety_reason,
+            focus_loss_active_window_title=failed_observation.active_window_title,
+            retry_reason=safety_reason,
+            retry_delay_seconds=retry_timing.delay_seconds,
+            **focus_result.metadata(),
+            **post_refocus,
+        )
+        recover_metadata.update(_retry_backoff_metadata(retry_timing))
+        self._record(
+            "recover",
+            "refocused allowed window"
+            if post_refocus_verified
+            else "focus recovery failed",
+            recover_metadata,
+        )
+
+        observation_metadata = self._pre_action_observation_metadata(
+            step,
+            post_refocus_observation,
+            next_attempt,
+        )
+        observation_metadata["observation_role"] = "post_refocus"
+        observation_metadata["failed_attempt"] = failed_attempt
+        observation_metadata["next_attempt"] = next_attempt
+        observation_metadata["step_category"] = step_category(step)
+        observation_metadata.update(post_refocus)
+        self._record(
+            "observe_after_refocus",
+            "screen observed after focus recovery",
+            observation_metadata,
+        )
+        if not post_refocus_verified:
+            return "not_recovered"
+
+        if config.execution_profile.enabled:
+            timing_metadata = retry_timing.metadata()
+            timing_metadata["step_id"] = step.id
+            timing_metadata["step_category"] = step_category(step)
+            timing_metadata["next_attempt"] = next_attempt
+            self._record("execution_timing", retry_timing.reason, timing_metadata)
+        delay_result = self._consume_timing_delay(
+            retry_timing,
+            config,
+            emergency_stop_boundary="retry_wait",
+        )
+        if delay_result.emergency_stopped:
+            return "emergency_stopped"
+        return "recovered"
+
     def _detect_for_step(
         self,
         step: TaskStep,
@@ -2006,6 +2125,32 @@ def _retry_backoff_metadata(decision: TimingDecision) -> dict[str, object]:
     }
     return {
         key: decision_metadata[key] for key in backoff_keys if key in decision_metadata
+    }
+
+
+def _is_focus_loss_safety_stop(reason: str) -> bool:
+    return "active window is outside" in reason
+
+
+def _post_refocus_verification_metadata(
+    observation: ScreenObservation,
+    focus_result: FocusRecoveryResult,
+    config: RuntimeConfig,
+) -> dict[str, object]:
+    verification_error: str | None = None
+    try:
+        active_window_allowed = window_title_matches(
+            observation.active_window_title,
+            config.allowed_windows,
+        )
+    except Exception as exc:
+        active_window_allowed = False
+        verification_error = str(exc)
+    return {
+        "post_refocus_active_window_title": observation.active_window_title,
+        "post_refocus_verification_passed": active_window_allowed,
+        "post_refocus_verification_error": verification_error,
+        "post_refocus_controller_success": focus_result.success,
     }
 
 

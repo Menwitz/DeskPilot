@@ -37,6 +37,10 @@ from desktop_agent.config import (
     resolve_runtime_config,
 )
 from desktop_agent.content_variables import load_content_variables
+from desktop_agent.focus_recovery import (
+    NoopFocusRecoveryController,
+    create_platform_focus_recovery_controller,
+)
 from desktop_agent.goal_planning import (
     GoalRoutingRequest,
     missing_input_prompts,
@@ -734,6 +738,9 @@ def _run_loaded_task(
         target_selector=ConfidenceTargetSelector(),
         actuator=actuator,
         emergency_stop_monitor=emergency_stop_monitor,
+        focus_recovery_controller=NoopFocusRecoveryController()
+        if dry_run
+        else create_platform_focus_recovery_controller(),
     )
     report = engine.run(task_path, args.config)
     _print_report(report, verbose=args.verbose)
@@ -1836,6 +1843,10 @@ def _replay_event_suffix(event: dict[str, object]) -> str:
         details.append("target disappeared")
     if metadata.get("scroll_moved") is True:
         details.append("scroll moved")
+    if metadata.get("post_refocus_verification_passed") is True:
+        details.append("focus recovered")
+    elif metadata.get("focus_recovery_attempted") is True:
+        details.append("focus recovery failed")
     if not details:
         return ""
     return " [" + "; ".join(details) + "]"

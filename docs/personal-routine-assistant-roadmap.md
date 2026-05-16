@@ -519,7 +519,7 @@ abuse, and hidden automation are not supported.
 - [x] Add recovery tree execution for refocus, reobserve, alternate candidate,
       scroll search, wait for enabled, wait for loading, reopen surface, and
       manual handoff.
-- [ ] Add focus-loss recovery with allowed-window refocus and post-refocus
+- [x] Add focus-loss recovery with allowed-window refocus and post-refocus
       verification.
 - [ ] Add layout-change recovery with alternate selector families.
 - [ ] Add historical failure counters per routine.

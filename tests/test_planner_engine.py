@@ -2,6 +2,10 @@ from pathlib import Path
 
 from desktop_agent.actuation import ActionResult, Actuator, DryRunActuator
 from desktop_agent.config import ExecutionProfile, RuntimeConfig, StaticConfigLoader
+from desktop_agent.focus_recovery import (
+    FocusRecoveryResult,
+    NoopFocusRecoveryController,
+)
 from desktop_agent.perception import (
     CompositePerceptionEngine,
     ConfidenceTargetSelector,
@@ -113,6 +117,18 @@ class SequenceActuator:
 
     def current_position(self) -> tuple[int, int]:
         return (333, 444)
+
+
+class SequenceFocusRecoveryController:
+    def __init__(self, results: tuple[FocusRecoveryResult, ...]) -> None:
+        self._results = results
+        self.calls = 0
+
+    def refocus_allowed_window(self, config: RuntimeConfig) -> FocusRecoveryResult:
+        _ = config
+        index = min(self.calls, len(self._results) - 1)
+        self.calls += 1
+        return self._results[index]
 
 
 class SequenceVerifier:
@@ -1437,6 +1453,102 @@ def test_execution_engine_reports_failure_category_metadata() -> None:
     )
 
 
+def test_execution_engine_recovers_focus_loss_by_refocusing_allowed_window() -> None:
+    trace_sink = MemoryTraceSink()
+    actuator = SequenceActuator((ActionResult(True, "clicked"),))
+    focus_recovery = SequenceFocusRecoveryController(
+        (
+            FocusRecoveryResult(
+                attempted=True,
+                success=True,
+                message="allowed window refocused",
+                before_active_window_title="Unexpected Window",
+                after_active_window_title="DeskPilot Fixture",
+                matched_window_title="DeskPilot Fixture",
+                allowed_windows=("DeskPilot Fixture",),
+            ),
+        ),
+    )
+    engine = _engine(
+        _single_click_task("focus-loss", retry=1),
+        perception=SequencePerceptionEngine(
+            (
+                _candidate_tuple("Submit"),
+                _candidate_tuple("Submit"),
+            ),
+        ),
+        screen_observer=SequenceScreenObserver(
+            (
+                ScreenObservation(active_window_title="Unexpected Window"),
+                ScreenObservation(active_window_title="DeskPilot Fixture"),
+                ScreenObservation(active_window_title="DeskPilot Fixture"),
+                ScreenObservation(active_window_title="DeskPilot Fixture"),
+            ),
+        ),
+        actuator=actuator,
+        trace_sink=trace_sink,
+        focus_recovery_controller=focus_recovery,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    recover = next(event for event in report.events if event.phase == "recover")
+    refocus_observation = next(
+        event for event in report.events if event.phase == "observe_after_refocus"
+    )
+    assert report.status == "passed"
+    assert actuator.calls == 1
+    assert focus_recovery.calls == 1
+    assert recover.metadata["recovery_reason"] == "focus_loss"
+    assert recover.metadata["recovery_chosen_action"] == "refocus_allowed_window"
+    assert recover.metadata["focus_recovery_success"] is True
+    assert recover.metadata["post_refocus_verification_passed"] is True
+    assert refocus_observation.metadata["observation_role"] == "post_refocus"
+    assert refocus_observation.metadata["post_refocus_active_window_title"] == (
+        "DeskPilot Fixture"
+    )
+
+
+def test_execution_engine_fails_when_focus_refocus_verification_fails() -> None:
+    trace_sink = MemoryTraceSink()
+    actuator = SequenceActuator((ActionResult(True, "should not run"),))
+    focus_recovery = SequenceFocusRecoveryController(
+        (
+            FocusRecoveryResult(
+                attempted=True,
+                success=False,
+                message="no visible allowed window was found",
+                before_active_window_title="Unexpected Window",
+                allowed_windows=("DeskPilot Fixture",),
+            ),
+        ),
+    )
+    engine = _engine(
+        _single_click_task("focus-loss-failed", retry=1),
+        perception=SequencePerceptionEngine((_candidate_tuple("Submit"),)),
+        screen_observer=SequenceScreenObserver(
+            (
+                ScreenObservation(active_window_title="Unexpected Window"),
+                ScreenObservation(active_window_title="Unexpected Window"),
+            ),
+        ),
+        actuator=actuator,
+        trace_sink=trace_sink,
+        focus_recovery_controller=focus_recovery,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    recover = next(event for event in report.events if event.phase == "recover")
+    assert report.status == "failed"
+    assert report.steps[0].metadata["failure_category"] == "safety_stop"
+    assert actuator.calls == 0
+    assert focus_recovery.calls == 1
+    assert recover.metadata["recovery_reason"] == "focus_loss"
+    assert recover.metadata["focus_recovery_success"] is False
+    assert recover.metadata["post_refocus_verification_passed"] is False
+
+
 def test_execution_engine_failed_click_includes_before_and_delta_evidence() -> None:
     task = TaskDefinition(
         name="failed-click-evidence",
@@ -1873,6 +1985,7 @@ def _engine(
     screen_observer: ScreenObserver | None = None,
     verifier: SequenceVerifier | None = None,
     emergency_stop_monitor: EmergencyStopMonitor | None = None,
+    focus_recovery_controller: SequenceFocusRecoveryController | None = None,
 ) -> ExecutionEngine:
     return ExecutionEngine(
         config_loader=StaticConfigLoader(
@@ -1896,6 +2009,8 @@ def _engine(
         emergency_stop_monitor=emergency_stop_monitor
         if emergency_stop_monitor is not None
         else NoopEmergencyStopMonitor(),
+        focus_recovery_controller=focus_recovery_controller
+        or NoopFocusRecoveryController(),
     )
 
 

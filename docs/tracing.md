@@ -173,6 +173,9 @@ includes `recovery_tree_actions`, `recovery_tree_chosen_action`,
 `recovery_tree_can_retry`, and `recovery_tree_requires_operator` so the operator
 UI can show the concrete recovery tree for refocus, reobserve, alternate
 candidate, scroll search, wait, reopen-surface, and handoff branches.
+Focus-loss recovery records a `focus_loss` recovery event, invokes only the
+allowed-window refocus controller, captures `observe_after_refocus`, and stores
+`post_refocus_verification_passed` with the post-refocus active-window title.
 Retry timing events and recovery events include bounded-backoff metadata:
 `retry_backoff_strategy`, `retry_index`, `retry_budget`,
 `retry_backoff_fraction`, and `retry_limit_respected`.

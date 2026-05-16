@@ -135,6 +135,11 @@ RECOVERY_POLICIES: dict[str, RecoveryPolicy] = {
         reason="occluded_control",
         actions=("refocus_allowed_window", "scroll_search_region", "abort_with_trace"),
     ),
+    "focus_loss": RecoveryPolicy(
+        name="recover_focus_loss",
+        reason="focus_loss",
+        actions=("refocus_allowed_window", "reobserve_screen", "abort_with_trace"),
+    ),
     "transient_loading": RecoveryPolicy(
         name="wait_for_transient_loading",
         reason="transient_loading",

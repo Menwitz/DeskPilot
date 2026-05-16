@@ -84,6 +84,22 @@ def test_recovery_policy_classifies_transient_action_failure() -> None:
     assert "wait_for_loading" in policy.actions
 
 
+def test_recovery_policy_declares_focus_loss_refocus_tree() -> None:
+    tree = build_recovery_tree_execution(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        RECOVERY_POLICIES["focus_loss"],
+        failed_attempt=1,
+        next_attempt=2,
+    )
+
+    assert tree.chosen_action == "refocus_allowed_window"
+    assert [action.action for action in tree.actions] == [
+        "refocus_allowed_window",
+        "reobserve_screen",
+    ]
+    assert tree.metadata()["recovery_tree_can_retry"] is True
+
+
 def test_recovery_policy_constrains_actions_from_task_rule() -> None:
     step = TaskStep(
         id="click-submit",

@@ -92,6 +92,13 @@ fires while a mouse button is held, the actuator releases the button before
 returning the blocked result so the local desktop is not left inside an active
 drag or click gesture.
 
+When the planner detects focus loss before input, it can run the bounded
+`focus_loss` recovery path. On Windows, the focus recovery controller enumerates
+visible top-level windows, chooses the first title matching `allowed_windows`,
+restores it if minimized, and calls `SetForegroundWindow`. The planner then
+captures `observe_after_refocus` and only retries after the active-window title
+matches the allowlist again.
+
 ## Testing
 
 `FakeInputBackend` records input events without moving the real mouse or sending

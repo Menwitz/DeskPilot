@@ -84,6 +84,7 @@ SUPPORTED_RECOVERY_REASONS: frozenset[str] = frozenset(
         "missed_target",
         "disabled_control",
         "occluded_control",
+        "focus_loss",
         "transient_loading",
         "verification_failure",
     },
