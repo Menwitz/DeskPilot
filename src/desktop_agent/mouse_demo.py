@@ -26,6 +26,11 @@ from desktop_agent.actuation import (
     WindowsInputBackend,
 )
 from desktop_agent.config import RuntimeConfig
+from desktop_agent.proof_manifest import (
+    ProofManifest,
+    ProofManifestArtifacts,
+    ProofManifestStep,
+)
 from desktop_agent.sampling import SeededSampler
 from desktop_agent.screen import (
     MssScreenObserver,
@@ -2285,43 +2290,44 @@ def _write_proof_manifest(
     video_capture: VideoCaptureResult | None = None,
 ) -> Path:
     manifest_path = trace_dir / "proof-manifest.json"
-    # The manifest is the stable index for human review: it ties the visible
-    # proof command to local evidence without requiring a rerun of desktop input.
-    payload: dict[str, object] = {
-        "schema_version": 1,
-        "proof_name": proof_name,
-        "command": list(command),
-        "status": status,
-        "reason": reason,
-        "started_at": started_at,
-        "completed_at": completed_at,
-        "executable_version": __version__,
-        "python_version": platform.python_version(),
-        "windows_version": platform.platform() if sys.platform == "win32" else None,
-        "platform": sys.platform,
-        "monitor_geometry": _monitor_geometry_metadata(monitor_bounds),
-        "dpi_scale": list(_safe_windows_dpi_scale()),
-        "artifacts": {
-            "trace_dir": str(trace_dir),
-            "report_path": str(report_path),
-            "action_log_path": str(trace_dir / "action-log.jsonl"),
-            "proof_manifest_path": str(manifest_path),
-            "screenshots": _screenshot_artifacts(trace_dir),
-            "video_path": str(video_capture.video_path) if video_capture else None,
-            "video_log_path": str(video_capture.log_path) if video_capture else None,
-        },
-        "video_capture": _video_capture_metadata(video_capture),
-        "step_count": len(steps),
-        "steps": [
-            {
-                "step_id": step.step_id,
-                "action": step.action,
-                "has_post_action_evidence": "post_action_evidence" in step.metadata,
-            }
+    manifest = ProofManifest(
+        proof_name=proof_name,
+        command=command,
+        status=status,
+        reason=reason,
+        started_at=started_at,
+        completed_at=completed_at,
+        executable_version=__version__,
+        python_version=platform.python_version(),
+        windows_version=platform.platform() if sys.platform == "win32" else None,
+        platform=sys.platform,
+        monitor_geometry=_monitor_geometry_metadata(monitor_bounds),
+        dpi_scale=_safe_windows_dpi_scale(),
+        artifacts=ProofManifestArtifacts(
+            trace_dir=trace_dir,
+            report_path=report_path,
+            action_log_path=trace_dir / "action-log.jsonl",
+            proof_manifest_path=manifest_path,
+            screenshots=tuple(
+                Path(path) for path in _screenshot_artifacts(trace_dir)
+            ),
+            video_path=video_capture.video_path if video_capture else None,
+            video_log_path=video_capture.log_path if video_capture else None,
+        ),
+        video_capture=_video_capture_metadata(video_capture),
+        steps=tuple(
+            ProofManifestStep(
+                step_id=step.step_id,
+                action=step.action,
+                has_post_action_evidence="post_action_evidence" in step.metadata,
+            )
             for step in steps
-        ],
-    }
-    manifest_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        ),
+    )
+    manifest_path.write_text(
+        json.dumps(manifest.metadata(), indent=2),
+        encoding="utf-8",
+    )
     return manifest_path
 
 

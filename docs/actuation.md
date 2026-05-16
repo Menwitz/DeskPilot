@@ -190,7 +190,8 @@ uv run desktop-agent proof browser-fixture --record-video --video-fps 15
 ```
 
 Video capture uses Windows `gdigrab` and writes `proof-video.mp4` plus
-`video-capture.log`. The report and `proof-manifest.json` link the video path,
+`video-capture.log`. The report and typed `ProofManifest`/`proof-manifest.json`
+link the video path,
 log path, capture command, and capture status.
 
 ## Platform Support

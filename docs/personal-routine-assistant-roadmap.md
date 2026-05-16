@@ -677,7 +677,7 @@ abuse, and hidden automation are not supported.
 - [x] `LocalModelProvider`: optional local model adapter interface with Ollama
       as the first implementation.
 - [x] `OperatorAppService`: Python service boundary used by the PySide6 app.
-- [ ] `ProofManifest`: Windows proof artifact index for command, environment,
+- [x] `ProofManifest`: Windows proof artifact index for command, environment,
       video, trace, screenshots, and reports.
 - [x] `RoutinePackManifest`: trusted local pack metadata, routines, fixtures,
       docs, tests, and safety declarations.

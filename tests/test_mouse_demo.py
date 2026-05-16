@@ -35,6 +35,11 @@ from desktop_agent.mouse_demo import (
     run_recovery_fixture,
     run_windows_smoke_checklist,
 )
+from desktop_agent.proof_manifest import (
+    ProofManifest,
+    ProofManifestArtifacts,
+    ProofManifestStep,
+)
 from desktop_agent.screen import ScreenObservation
 
 
@@ -222,6 +227,59 @@ def test_proof_manifest_links_command_environment_and_artifacts(
         {
             "step_id": "scroll-page",
             "action": "scroll",
+            "has_post_action_evidence": True,
+        }
+    ]
+
+
+def test_proof_manifest_public_interface_indexes_review_artifacts(
+    tmp_path: Path,
+) -> None:
+    manifest = ProofManifest(
+        proof_name="native-fixture",
+        command=("desktop-agent", "proof", "native-fixture"),
+        status="passed",
+        reason=None,
+        started_at="2026-05-16T00:00:00+00:00",
+        completed_at="2026-05-16T00:00:01+00:00",
+        executable_version="0.1.0",
+        python_version="3.12.12",
+        windows_version="Windows-11",
+        platform="win32",
+        monitor_geometry={"left": 0, "top": 0, "width": 1280, "height": 720},
+        dpi_scale=(1.0, 1.0),
+        artifacts=ProofManifestArtifacts(
+            trace_dir=tmp_path,
+            report_path=tmp_path / "native-fixture-report.json",
+            action_log_path=tmp_path / "action-log.jsonl",
+            proof_manifest_path=tmp_path / "proof-manifest.json",
+            screenshots=(tmp_path / "screenshots" / "shot-1.png",),
+            video_path=tmp_path / "proof-video.mp4",
+            video_log_path=tmp_path / "video-capture.log",
+        ),
+        video_capture={"status": "passed"},
+        steps=(
+            ProofManifestStep(
+                step_id="type-notepad-text",
+                action="type_text",
+                has_post_action_evidence=True,
+            ),
+        ),
+    )
+
+    metadata = manifest.metadata()
+    artifacts = cast(dict[str, object], metadata["artifacts"])
+
+    assert metadata["proof_name"] == "native-fixture"
+    assert metadata["command"] == ["desktop-agent", "proof", "native-fixture"]
+    assert metadata["step_count"] == 1
+    assert artifacts["trace_dir"] == str(tmp_path)
+    assert artifacts["report_path"] == str(tmp_path / "native-fixture-report.json")
+    assert artifacts["video_path"] == str(tmp_path / "proof-video.mp4")
+    assert metadata["steps"] == [
+        {
+            "step_id": "type-notepad-text",
+            "action": "type_text",
             "has_post_action_evidence": True,
         }
     ]
