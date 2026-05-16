@@ -1,9 +1,11 @@
 # Routines
 
-Routine definitions are the reviewed catalog records that sit above task YAML
-and website playbooks. A routine definition describes what the routine is for,
-what it needs, what it produces, how risky it is, and which executable task or
-playbook flow implements it.
+A routine is a user-facing reusable workflow with reviewed metadata, inputs,
+outputs, safety class, schedule policy, trace expectations, and an executable
+reference. Routine definitions are the reviewed catalog records that sit above
+task YAML and website playbooks. A routine definition describes what the routine
+is for, what it needs, what it produces, how risky it is, and which executable
+task or playbook flow implements it.
 
 ## Schema
 

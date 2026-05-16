@@ -38,7 +38,7 @@ abuse, and hidden automation are not supported.
 - [x] Define `task` as the strict YAML execution unit run by the planner.
 - [x] Define `site playbook` as a reusable website catalog entry that compiles
       into a task.
-- [ ] Define `routine` as a user-facing reusable workflow with metadata, inputs,
+- [x] Define `routine` as a user-facing reusable workflow with metadata, inputs,
       outputs, safety class, schedule policy, and trace expectations.
 - [ ] Define `skill` as a reusable routine fragment or capability that a
       routine can reference.
