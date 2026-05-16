@@ -272,6 +272,42 @@ def test_local_trace_service_lists_and_reads_reports(tmp_path: Path) -> None:
     assert report["selected_routine_id"] == "browser.search"
 
 
+def test_local_trace_service_lists_proof_suite_finalization_rollups(
+    tmp_path: Path,
+) -> None:
+    trace_root = tmp_path / "traces"
+    trace_dir = trace_root / "20260516T010000Z-proof-suite"
+    trace_dir.mkdir(parents=True)
+    report_path = trace_dir / "proof-finalization-status.json"
+    report_path.write_text(
+        json.dumps(
+            {
+                "status": "passed",
+                "gates": {
+                    "suite_validation": "passed",
+                    "promotion_verification": "passed",
+                    "archive_verification": "passed",
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+    service = LocalTraceService(trace_root)
+
+    traces = service.list_traces()
+    report = service.read_report(trace_dir)
+
+    assert len(traces) == 1
+    assert traces[0].kind == "proof_suite"
+    assert traces[0].status == "passed"
+    assert traces[0].metadata()["report_path"] == str(report_path)
+    assert report["gates"] == {
+        "suite_validation": "passed",
+        "promotion_verification": "passed",
+        "archive_verification": "passed",
+    }
+
+
 def test_local_trace_service_inspects_failed_trace_for_app_review(
     tmp_path: Path,
 ) -> None:

@@ -27,6 +27,7 @@ become part of the local execution path.
 - `traces/*/action-log.jsonl`
 - `traces/*/replay-summary.md`
 - `traces/*/proof-manifest.json`
+- `traces/*/proof-finalization-status.json`
 - `traces/*/pack-test-report.json`
 - `docs/routine-catalog-index.md`
 - routine-pack proof bundles from `write-routine-pack-proof`

@@ -18,6 +18,7 @@ from desktop_agent.failed_run_analyzer import (
     write_failed_run_analysis,
 )
 from desktop_agent.preview import build_dry_run_preview, render_dry_run_preview
+from desktop_agent.proof_manifest import PROOF_FINALIZATION_STATUS_NAME
 from desktop_agent.recorder import (
     RecorderController,
     RecorderEvent,
@@ -927,7 +928,7 @@ class LocalTraceService:
         return tuple(summaries[:limit])
 
     def read_report(self, trace_dir: Path) -> dict[str, object]:
-        for report_name in ("final-report.json", "goal-plan-report.json"):
+        for report_name, _kind in _TRACE_REPORT_NAMES:
             report_path = trace_dir / report_name
             if report_path.exists():
                 loaded = json.loads(report_path.read_text(encoding="utf-8"))
@@ -1252,10 +1253,7 @@ def _routine_list_item(routine: RoutineDefinition) -> RoutineListItem:
 
 
 def _trace_summary(trace_dir: Path) -> TraceSummary:
-    for report_name, kind in (
-        ("final-report.json", "run"),
-        ("goal-plan-report.json", "goal_plan"),
-    ):
+    for report_name, kind in _TRACE_REPORT_NAMES:
         report_path = trace_dir / report_name
         if report_path.exists():
             return TraceSummary(
@@ -1270,6 +1268,13 @@ def _trace_summary(trace_dir: Path) -> TraceSummary:
         status=None,
         kind="unknown",
     )
+
+
+_TRACE_REPORT_NAMES: tuple[tuple[str, str], ...] = (
+    ("final-report.json", "run"),
+    ("goal-plan-report.json", "goal_plan"),
+    (PROOF_FINALIZATION_STATUS_NAME, "proof_suite"),
+)
 
 
 def _routine_pack_list_item(manifest: RoutinePackManifest) -> RoutinePackListItem:

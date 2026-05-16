@@ -206,6 +206,8 @@ abuse, and hidden automation are not supported.
       one ordered post-review flow.
 - [x] Add `proof-finalization-status.json` as a unified post-review monitoring
       rollup for suite, promotion, and archive verification gates.
+- [x] Surface proof-suite finalization rollups through the local trace service
+      for operator UI and monitoring discovery.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.
