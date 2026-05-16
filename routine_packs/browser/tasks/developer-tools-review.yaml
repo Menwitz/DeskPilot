@@ -1,0 +1,17 @@
+name: Browser developer tools review task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-developer-tools
+    action: press_key
+    text: f12
+    verify:
+      type: visible_text
+      text: Developer tools
+  - id: close-developer-tools
+    action: press_key
+    text: f12
+    verify:
+      type: visible_text
+      text: Browser

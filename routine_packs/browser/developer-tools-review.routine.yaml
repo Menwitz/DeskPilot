@@ -1,0 +1,13 @@
+id: browser.developer-tools-review
+name: Browser developer tools review
+description: Open browser developer tools for local review and close them without page changes.
+goal: Inspect developer tooling visibility as part of browser control coverage.
+required_app: Browser
+tags: [browser, developer-tools, review]
+inputs: [browser page]
+outputs: [developer tools reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/developer-tools-review.yaml}

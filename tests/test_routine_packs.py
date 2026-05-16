@@ -44,7 +44,7 @@ def test_builtin_routine_catalog_has_broad_reusable_surface_coverage() -> None:
             assert routine.reference.task_path.exists()
 
     assert len(catalog.routines) >= 30
-    assert pack_counts["browser"] >= 50
+    assert pack_counts["browser"] >= 65
     assert pack_counts["native"] >= 50
     assert pack_counts["social-content"] >= 70
 
@@ -282,6 +282,21 @@ def test_browser_routine_pack_contains_seed_categories() -> None:
         "browser.language-settings-open",
         "browser.profile-settings-open",
         "browser.system-settings-open",
+        "browser.security-settings-open",
+        "browser.site-permissions-settings-open",
+        "browser.notifications-settings-open",
+        "browser.popups-settings-open",
+        "browser.downloads-settings-open",
+        "browser.appearance-settings-open",
+        "browser.default-browser-settings-open",
+        "browser.performance-settings-open",
+        "browser.startup-settings-open",
+        "browser.new-tab-settings-open",
+        "browser.printing-settings-open",
+        "browser.accessibility-captions-settings-open",
+        "browser.search-shortcuts-review",
+        "browser.extension-shortcuts-open",
+        "browser.developer-tools-review",
     }
     routines = {
         routine.id: routine

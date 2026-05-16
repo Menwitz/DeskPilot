@@ -1,0 +1,23 @@
+name: Browser downloads settings open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: focus-address-bar
+    action: press_key
+    text: ctrl+l
+    verify:
+      type: visible_text
+      text: Address
+  - id: type-downloads-settings-url
+    action: type_text
+    text: "browser://settings/downloads"
+    verify:
+      type: visible_text
+      text: "browser://settings/downloads"
+  - id: load-downloads-settings
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Downloads

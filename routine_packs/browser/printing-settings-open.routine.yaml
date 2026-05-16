@@ -1,0 +1,13 @@
+id: browser.printing-settings-open
+name: Browser printing settings open
+description: Open browser printing settings for read-only review.
+goal: Inspect print-related browser settings without starting a print job.
+required_app: Browser
+tags: [browser, settings, printing]
+inputs: [browser settings]
+outputs: [printing settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/printing-settings-open.yaml}

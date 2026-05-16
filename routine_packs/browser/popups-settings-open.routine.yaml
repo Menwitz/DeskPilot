@@ -1,0 +1,13 @@
+id: browser.popups-settings-open
+name: Browser pop-ups settings open
+description: Open browser pop-ups and redirects settings for read-only review.
+goal: Inspect pop-up settings without changing site permissions.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [pop-ups settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/popups-settings-open.yaml}

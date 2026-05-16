@@ -345,6 +345,10 @@ abuse, and hidden automation are not supported.
 - [x] Add third browser scale-out batch for page source, help/about pages,
       favorites/bookmarks, side panels, collections, reading list, browser task
       manager, full-screen controls, and advanced settings review pages.
+- [x] Add fourth browser scale-out batch for security, site permissions,
+      notifications, pop-ups, downloads, appearance, defaults, performance,
+      startup, new tab, printing, captions, search shortcuts, extension
+      shortcuts, and developer tools review surfaces.
 - [x] Add native routines for Notepad, Calculator, Settings, File Explorer,
       clipboard, app switching, window management, and simple Office-like
       surfaces.

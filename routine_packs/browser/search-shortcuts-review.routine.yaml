@@ -1,0 +1,13 @@
+id: browser.search-shortcuts-review
+name: Browser search shortcuts review
+description: Open browser search engine shortcut settings for read-only review.
+goal: Inspect search shortcuts without changing default search behavior.
+required_app: Browser
+tags: [browser, settings, search]
+inputs: [browser settings]
+outputs: [search shortcuts visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/search-shortcuts-review.yaml}

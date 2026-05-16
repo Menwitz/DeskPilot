@@ -1,0 +1,13 @@
+id: browser.new-tab-settings-open
+name: Browser new tab settings open
+description: Open browser new tab settings for read-only review.
+goal: Inspect new tab page preferences without changing page configuration.
+required_app: Browser
+tags: [browser, settings, new-tab]
+inputs: [browser settings]
+outputs: [new tab settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/new-tab-settings-open.yaml}

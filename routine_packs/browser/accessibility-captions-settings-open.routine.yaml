@@ -1,0 +1,13 @@
+id: browser.accessibility-captions-settings-open
+name: Browser captions settings open
+description: Open browser captions accessibility settings for read-only review.
+goal: Inspect captions accessibility settings without changing accessibility preferences.
+required_app: Browser
+tags: [browser, settings, accessibility]
+inputs: [browser settings]
+outputs: [captions settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/accessibility-captions-settings-open.yaml}

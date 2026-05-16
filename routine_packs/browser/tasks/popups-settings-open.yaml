@@ -1,0 +1,23 @@
+name: Browser pop-ups settings open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: focus-address-bar
+    action: press_key
+    text: ctrl+l
+    verify:
+      type: visible_text
+      text: Address
+  - id: type-popups-settings-url
+    action: type_text
+    text: "browser://settings/content/popups"
+    verify:
+      type: visible_text
+      text: "browser://settings/content/popups"
+  - id: load-popups-settings
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Pop-ups

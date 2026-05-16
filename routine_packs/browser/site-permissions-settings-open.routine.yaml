@@ -1,0 +1,13 @@
+id: browser.site-permissions-settings-open
+name: Browser site permissions settings open
+description: Open browser site permissions for read-only review.
+goal: Inspect site permission categories without changing any permission.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [site permissions visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/site-permissions-settings-open.yaml}
