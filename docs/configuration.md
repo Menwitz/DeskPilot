@@ -100,6 +100,9 @@ Set `evidence_mode: metadata_only` to suppress screenshot and OCR text artifact
 files for the run while preserving structured metadata and reports. Set
 `ocr_text: suppress` to avoid writing OCR text artifacts while still allowing
 OCR-derived candidates to participate in local target selection.
+Proof and demo commands also accept `--video-policy disabled`, which prevents
+video capture even when `--record-video` is passed. Use this when local policy
+allows trace metadata but not screen recording.
 
 ## Task Overrides
 

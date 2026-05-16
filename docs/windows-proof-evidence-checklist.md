@@ -13,6 +13,7 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Run the command from the repository root with an explicit `--trace-root`.
 - [ ] Prefer built-in recording with `--record-video --video-fps 15` when
       `ffmpeg` is installed on the Windows VM.
+- [ ] Use `--video-policy disabled` when the run may not record screen video.
 - [ ] Do not touch the mouse or keyboard after the countdown starts.
 - [ ] Stop screen recording only after the command prints status and trace path.
 - [ ] Copy the recording into the generated trace directory.

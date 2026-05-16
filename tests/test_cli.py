@@ -486,6 +486,58 @@ def test_cli_demo_mouse_alias_uses_input_demo(
     assert calls == ["called"]
 
 
+def test_cli_video_policy_disabled_blocks_record_video(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    from desktop_agent.mouse_demo import MouseDemoReport
+
+    def fake_run_input_demo(
+        *,
+        trace_root: Path,
+        random_seed: int,
+        movement_smoothness: float,
+        keyboard_text: str,
+        countdown_seconds: float,
+        record_video: bool,
+        video_fps: int,
+        ffmpeg_path: str,
+    ) -> MouseDemoReport:
+        _ = (
+            trace_root,
+            random_seed,
+            movement_smoothness,
+            keyboard_text,
+            countdown_seconds,
+            video_fps,
+            ffmpeg_path,
+        )
+        assert record_video is False
+        return MouseDemoReport(
+            status="passed",
+            trace_dir=tmp_path / "trace",
+            report_path=tmp_path / "trace" / "input-demo-report.json",
+            steps=(),
+        )
+
+    monkeypatch.setattr("desktop_agent.cli.run_input_demo", fake_run_input_demo)
+
+    status = main(
+        [
+            "demo-input",
+            "--trace-root",
+            str(tmp_path),
+            "--countdown-seconds",
+            "0",
+            "--record-video",
+            "--video-policy",
+            "disabled",
+        ],
+    )
+
+    assert status == 0
+
+
 def test_cli_demo_linkedin_prints_trace_report(
     tmp_path: Path,
     capsys: CaptureFixture[str],

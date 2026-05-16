@@ -602,7 +602,7 @@ abuse, and hidden automation are not supported.
 - [x] Add screenshot blur masks and sensitive-zone definitions.
 - [x] Add typed-text masking and content-variable masking.
 - [x] Add OCR suppression and metadata-only trace mode.
-- [ ] Add video redaction or video-disable options.
+- [x] Add video redaction or video-disable options.
 - [ ] Add trace schema migration tests.
 - [ ] Add routine catalog migration tests.
 - [ ] Add Windows installer build script for the CLI and PySide6 app.

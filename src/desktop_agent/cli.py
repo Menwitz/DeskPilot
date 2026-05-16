@@ -724,6 +724,16 @@ def _add_video_options(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--video-fps", default=15, type=int)
     parser.add_argument("--ffmpeg-path", default="ffmpeg")
+    parser.add_argument(
+        "--video-policy",
+        choices=("full", "disabled"),
+        default="full",
+        help="disable video capture even when --record-video is present",
+    )
+
+
+def _video_recording_enabled(args: argparse.Namespace) -> bool:
+    return bool(args.record_video and args.video_policy != "disabled")
 
 
 def _add_site_catalog_options(parser: argparse.ArgumentParser) -> None:
@@ -1795,7 +1805,7 @@ def _demo_input(args: argparse.Namespace) -> int:
         movement_smoothness=args.movement_smoothness,
         keyboard_text=args.keyboard_text,
         countdown_seconds=args.countdown_seconds,
-        record_video=args.record_video,
+        record_video=_video_recording_enabled(args),
         video_fps=args.video_fps,
         ffmpeg_path=args.ffmpeg_path,
     )
@@ -1826,7 +1836,7 @@ def _demo_linkedin(args: argparse.Namespace) -> int:
         url=args.url,
         find_text=args.find_text,
         page_load_seconds=args.page_load_seconds,
-        record_video=args.record_video,
+        record_video=_video_recording_enabled(args),
         video_fps=args.video_fps,
         ffmpeg_path=args.ffmpeg_path,
     )
@@ -1856,7 +1866,7 @@ def _windows_smoke_checklist(args: argparse.Namespace) -> int:
         countdown_seconds=args.countdown_seconds,
         keyboard_text=args.keyboard_text,
         edge_url=args.edge_url,
-        record_video=args.record_video,
+        record_video=_video_recording_enabled(args),
         video_fps=args.video_fps,
         ffmpeg_path=args.ffmpeg_path,
     )
@@ -2196,7 +2206,7 @@ def _proof_browser_fixture(args: argparse.Namespace) -> int:
         fixture_text=args.fixture_text,
         result_text=args.result_text,
         page_load_seconds=args.page_load_seconds,
-        record_video=args.record_video,
+        record_video=_video_recording_enabled(args),
         video_fps=args.video_fps,
         ffmpeg_path=args.ffmpeg_path,
     )
@@ -2228,7 +2238,7 @@ def _proof_native_fixture(args: argparse.Namespace) -> int:
         countdown_seconds=args.countdown_seconds,
         initial_text=args.initial_text,
         replacement_text=args.replacement_text,
-        record_video=args.record_video,
+        record_video=_video_recording_enabled(args),
         video_fps=args.video_fps,
         ffmpeg_path=args.ffmpeg_path,
     )
@@ -2253,7 +2263,7 @@ def _proof_mixed_fixture(args: argparse.Namespace) -> int:
         native_text=args.native_text,
         browser_find_text=args.browser_find_text,
         page_load_seconds=args.page_load_seconds,
-        record_video=args.record_video,
+        record_video=_video_recording_enabled(args),
         video_fps=args.video_fps,
         ffmpeg_path=args.ffmpeg_path,
     )
@@ -2279,7 +2289,7 @@ def _proof_recovery_fixture(args: argparse.Namespace) -> int:
         ready_delay_seconds=args.ready_delay_seconds,
         recovery_wait_seconds=args.recovery_wait_seconds,
         result_text=args.result_text,
-        record_video=args.record_video,
+        record_video=_video_recording_enabled(args),
         video_fps=args.video_fps,
         ffmpeg_path=args.ffmpeg_path,
     )
