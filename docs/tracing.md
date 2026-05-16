@@ -260,6 +260,11 @@ runs. Every file-backed run writes `trace-schema.json`, every action-log row
 includes `trace_schema_version`, and `final-report.json` embeds the schema used
 for the run.
 
+`desktop_agent.trace_migrations` contains the compatibility helpers for older
+local trace artifacts. The migration layer upgrades legacy final reports and
+action-log rows to the current schema, fills missing event defaults, rejects
+unknown schema versions, and records whether the migration was applied.
+
 The schema defines six top-level evidence sections:
 
 - `observation`: screenshots, active-window process, focus, cursor, monitor,
