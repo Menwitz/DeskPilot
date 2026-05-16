@@ -403,7 +403,7 @@ abuse, and hidden automation are not supported.
 ### Goals
 
 - [x] Let the user state a goal and have DeskPilot choose a known routine.
-- [ ] Keep deterministic rules authoritative for execution eligibility.
+- [x] Keep deterministic rules authoritative for execution eligibility.
 - [ ] Use optional local Ollama only for ranking, explanation, and draft input
       extraction.
 
