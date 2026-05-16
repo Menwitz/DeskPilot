@@ -75,3 +75,27 @@ desktop-agent plan-goal "Search the web" --intent "browser search" --input query
 
 The command reports selected routine, status, ranked candidates, and missing
 input/session-state prompts.
+
+Pass `--config` to opt into local Ollama ranking through the normal
+configuration file. With the default config, model assistance is reported as
+disabled and no model request is made.
+
+## Optional Ollama Ranking
+
+`rank_goal_plan_with_optional_model()` applies local model assistance after the
+deterministic catalog search has produced valid candidates. The Ollama prompt
+contains the user goal and candidate routine metadata, then asks for JSON with:
+
+- `selected_routine_id`
+- `candidate_order`
+- `explanation`
+
+The response is advisory. DeskPilot rejects unknown or duplicate routine IDs,
+keeps the deterministic plan when Ollama is unavailable, and stores
+`model_ranking` metadata on the `GoalPlan`: provider, model, prompt class,
+status, selected routine ID, candidate order, explanation, output hash, error,
+and whether the model changed the selected routine.
+
+Accepted reranking still runs through the deterministic safety boundary:
+missing inputs, approvals, schedule eligibility, and safety-class limits are
+computed from the selected validated routine before the plan can become ready.

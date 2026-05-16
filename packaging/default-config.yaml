@@ -17,3 +17,10 @@ execution_profile:
   hesitation_probability: 0.0
   movement_smoothness: 0.0
   random_seed: null
+local_model:
+  enabled: false
+  provider: ollama
+  model: llama3.1
+  endpoint: http://127.0.0.1:11434
+  request_timeout_seconds: 10.0
+  use_for_goal_ranking: false

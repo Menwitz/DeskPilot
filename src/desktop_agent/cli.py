@@ -40,6 +40,7 @@ from desktop_agent.content_variables import load_content_variables
 from desktop_agent.goal_planning import (
     GoalRoutingRequest,
     missing_input_prompts,
+    rank_goal_plan_with_optional_model,
     route_goal_to_routine,
 )
 from desktop_agent.mouse_demo import (
@@ -324,6 +325,7 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=("low", "medium", "high", "sensitive"),
     )
     plan_goal_parser.add_argument("--session-state", action="append", default=[])
+    plan_goal_parser.add_argument("--config", type=Path)
     _add_routine_catalog_options(plan_goal_parser)
 
     inspect_parser = subparsers.add_parser(
@@ -871,6 +873,7 @@ def _run_routine(args: argparse.Namespace, *, dry_run: bool) -> int:
 
 def _plan_goal(args: argparse.Namespace) -> int:
     catalog = load_routine_catalog(args.routine_pack_root)
+    config = resolve_runtime_config(YamlConfigLoader().load(args.config))
     request = GoalRoutingRequest(
         user_goal=args.user_goal,
         normalized_intent=args.intent or args.user_goal.casefold(),
@@ -881,6 +884,12 @@ def _plan_goal(args: argparse.Namespace) -> int:
         max_safety_class=args.max_safety_class,
     )
     plan = route_goal_to_routine(catalog, request)
+    plan = rank_goal_plan_with_optional_model(
+        catalog,
+        request,
+        plan,
+        config.local_model,
+    )
     print("goal plan:")
     print(f"  goal: {plan.user_goal}")
     print(f"  intent: {plan.normalized_intent}")
@@ -894,6 +903,15 @@ def _plan_goal(args: argparse.Namespace) -> int:
             f"{candidate.routine_id} score={candidate.score:g} "
             f"safety={candidate.safety_class} approval={candidate.approval_policy}",
         )
+    if plan.model_ranking is not None:
+        ranking = plan.model_ranking
+        print(
+            "  model: "
+            f"{ranking.status} provider={ranking.provider} "
+            f"model={ranking.model} affected_selection={ranking.affected_selection}",
+        )
+        if ranking.error:
+            print(f"  model_error: {ranking.error}")
     prompts = missing_input_prompts(
         plan,
         required_session_state=tuple(args.session_state),

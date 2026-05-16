@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Protocol, cast
+from urllib.parse import urlparse
 
 import yaml
 
@@ -18,6 +19,7 @@ ACTIVITY_PROFILE_NAMES: frozenset[str] = frozenset(
 POLICY_PRESETS: frozenset[str] = frozenset(
     {"strict_qa", "personal_automation", "exploratory_testing"},
 )
+LOCAL_MODEL_PROVIDERS: frozenset[str] = frozenset({"ollama"})
 
 
 @dataclass(frozen=True)
@@ -40,6 +42,18 @@ class ExecutionProfile:
 
 
 @dataclass(frozen=True)
+class LocalModelConfig:
+    """Opt-in local model assistance settings for planner-only advisory use."""
+
+    enabled: bool = False
+    provider: str = "ollama"
+    model: str = "llama3.1"
+    endpoint: str = "http://127.0.0.1:11434"
+    request_timeout_seconds: float = 10.0
+    use_for_goal_ranking: bool = False
+
+
+@dataclass(frozen=True)
 class RuntimeConfig:
     """Validated runtime settings used by the execution pipeline."""
 
@@ -58,6 +72,7 @@ class RuntimeConfig:
     require_operator_approval: bool = False
     execution_profile: ExecutionProfile = field(default_factory=ExecutionProfile)
     confirmed_steps: tuple[str, ...] = field(default_factory=tuple)
+    local_model: LocalModelConfig = field(default_factory=LocalModelConfig)
 
 
 @dataclass(frozen=True)
@@ -79,6 +94,7 @@ class ConfigOverrides:
     require_operator_approval: bool | None = None
     execution_profile: ExecutionProfile | None = None
     confirmed_steps: tuple[str, ...] | None = None
+    local_model: LocalModelConfig | None = None
 
 
 class ConfigError(ValueError):
@@ -262,6 +278,7 @@ def apply_config_overrides(
             config.execution_profile,
         ),
         confirmed_steps=_coalesce(overrides.confirmed_steps, config.confirmed_steps),
+        local_model=_coalesce(overrides.local_model, config.local_model),
     )
 
 
@@ -282,6 +299,7 @@ def config_overrides_from_mapping(data: dict[str, object]) -> ConfigOverrides:
         require_operator_approval=_optional_bool(data, "require_operator_approval"),
         execution_profile=_optional_execution_profile(data, "execution_profile"),
         confirmed_steps=_optional_string_tuple(data, "confirmed_steps"),
+        local_model=_optional_local_model_config(data, "local_model"),
     )
 
 
@@ -310,6 +328,7 @@ def validate_config(config: RuntimeConfig) -> None:
             "or exploratory_testing",
         )
     errors.extend(_validate_execution_profile(config.execution_profile))
+    errors.extend(_validate_local_model(config.local_model))
 
     if errors:
         raise ConfigError("; ".join(errors))
@@ -520,6 +539,48 @@ def _optional_seed(data: dict[str, object], key: str) -> int | None:
     return value
 
 
+def _optional_local_model_config(
+    data: dict[str, object],
+    key: str,
+) -> LocalModelConfig | None:
+    if key not in data:
+        return None
+    value = data[key]
+    if not isinstance(value, dict):
+        raise ConfigError("local_model must be a mapping")
+
+    model_config = cast(dict[str, object], value)
+    defaults = LocalModelConfig()
+    return LocalModelConfig(
+        enabled=_optional_bool_with_default(
+            model_config,
+            "enabled",
+            defaults.enabled,
+        ),
+        provider=_optional_str_with_default(
+            model_config,
+            "provider",
+            defaults.provider,
+        ),
+        model=_optional_str_with_default(model_config, "model", defaults.model),
+        endpoint=_optional_str_with_default(
+            model_config,
+            "endpoint",
+            defaults.endpoint,
+        ),
+        request_timeout_seconds=_optional_float_with_default(
+            model_config,
+            "request_timeout_seconds",
+            defaults.request_timeout_seconds,
+        ),
+        use_for_goal_ranking=_optional_bool_with_default(
+            model_config,
+            "use_for_goal_ranking",
+            defaults.use_for_goal_ranking,
+        ),
+    )
+
+
 def _validate_execution_profile(profile: ExecutionProfile) -> list[str]:
     errors: list[str] = []
     if (
@@ -577,6 +638,27 @@ def _validate_execution_profile(profile: ExecutionProfile) -> list[str]:
         )
     if profile.movement_smoothness < 0 or profile.movement_smoothness > 1:
         errors.append("execution_profile.movement_smoothness must be between 0 and 1")
+    return errors
+
+
+def _validate_local_model(config: LocalModelConfig) -> list[str]:
+    errors: list[str] = []
+    if config.provider not in LOCAL_MODEL_PROVIDERS:
+        errors.append("local_model.provider must be ollama")
+    if not config.model.strip():
+        errors.append("local_model.model is required")
+    if config.request_timeout_seconds <= 0:
+        errors.append("local_model.request_timeout_seconds must be greater than zero")
+    if config.use_for_goal_ranking and not config.enabled:
+        errors.append("local_model.use_for_goal_ranking requires local_model.enabled")
+
+    endpoint = urlparse(config.endpoint)
+    if endpoint.scheme not in {"http", "https"} or endpoint.hostname not in {
+        "127.0.0.1",
+        "localhost",
+        "::1",
+    }:
+        errors.append("local_model.endpoint must be a local http(s) URL")
     return errors
 
 

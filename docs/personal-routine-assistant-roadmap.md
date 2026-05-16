@@ -430,7 +430,7 @@ abuse, and hidden automation are not supported.
 - [x] Add missing-input prompts for routine variables and required session
       state.
 - [x] Add planner dry-run that never moves the desktop.
-- [ ] Add optional Ollama ranking and explanation behind a disabled-by-default
+- [x] Add optional Ollama ranking and explanation behind a disabled-by-default
       config flag.
 - [ ] Add model disclosure fields to traces: provider, model, prompt class,
       input artifact references, output hash, and whether the output affected

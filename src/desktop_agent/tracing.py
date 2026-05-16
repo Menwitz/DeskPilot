@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, Protocol
 
-from desktop_agent.config import ExecutionProfile, RuntimeConfig
+from desktop_agent.config import ExecutionProfile, LocalModelConfig, RuntimeConfig
 from desktop_agent.safety_audit import (
     build_safety_audit,
     render_safety_audit_markdown,
@@ -297,6 +297,7 @@ def _config_to_dict(config: RuntimeConfig) -> dict[str, object]:
         "require_operator_approval": config.require_operator_approval,
         "execution_profile": _execution_profile_to_dict(config.execution_profile),
         "confirmed_steps": list(config.confirmed_steps),
+        "local_model": _local_model_to_dict(config.local_model),
     }
 
 
@@ -314,6 +315,17 @@ def _execution_profile_to_dict(profile: ExecutionProfile) -> dict[str, object]:
         "keyboard_interval_seconds": list(profile.keyboard_interval_seconds),
         "scroll_interval_seconds": list(profile.scroll_interval_seconds),
         "random_seed": profile.random_seed,
+    }
+
+
+def _local_model_to_dict(config: LocalModelConfig) -> dict[str, object]:
+    return {
+        "enabled": config.enabled,
+        "provider": config.provider,
+        "model": config.model,
+        "endpoint": config.endpoint,
+        "request_timeout_seconds": config.request_timeout_seconds,
+        "use_for_goal_ranking": config.use_for_goal_ranking,
     }
 
 

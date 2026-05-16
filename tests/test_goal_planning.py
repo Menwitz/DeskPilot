@@ -6,8 +6,10 @@ import pytest
 from pytest import CaptureFixture
 
 from desktop_agent.cli import main
+from desktop_agent.config import LocalModelConfig
 from desktop_agent.goal_planning import (
     GoalMissingInputPrompt,
+    GoalModelSuggestion,
     GoalPlan,
     GoalPlanApproval,
     GoalPlanCandidate,
@@ -15,6 +17,7 @@ from desktop_agent.goal_planning import (
     GoalRoutingRequest,
     goal_plan_from_mapping,
     missing_input_prompts,
+    rank_goal_plan_with_optional_model,
     route_goal_to_routine,
     search_routine_index_for_goal,
     validate_goal_plan,
@@ -414,6 +417,143 @@ def test_goal_planner_cli_dry_run_reports_plan_without_desktop_input(
     assert "dry-run preview:" not in output
 
 
+def test_optional_model_ranking_is_disabled_by_default() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="browser.search-web",
+                name="Browser web search",
+                tags=["browser", "search"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+                inputs=["query"],
+            ),
+        ),
+    )
+    request = GoalRoutingRequest(
+        user_goal="Search the web",
+        normalized_intent="browser search",
+        provided_inputs=("query",),
+    )
+    plan = route_goal_to_routine(catalog, request)
+
+    ranked = rank_goal_plan_with_optional_model(
+        catalog,
+        request,
+        plan,
+        LocalModelConfig(),
+        ranker=_FailingGoalRanker(),
+    )
+
+    assert ranked.selected_routine_id == "browser.search-web"
+    assert ranked.model_ranking is not None
+    assert ranked.model_ranking.status == "disabled"
+    assert ranked.model_ranking.attempted is False
+
+
+def test_optional_ollama_ranking_can_reorder_valid_candidates() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="browser.read-page",
+                name="Browser read page",
+                tags=["browser", "reading"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+                inputs=[],
+            ),
+            _routine(
+                routine_id="browser.search-web",
+                name="Browser web search",
+                tags=["browser", "search"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+                inputs=[],
+            ),
+        ),
+    )
+    request = GoalRoutingRequest(
+        user_goal="Search the web",
+        normalized_intent="browser",
+    )
+    plan = route_goal_to_routine(catalog, request)
+
+    ranked = rank_goal_plan_with_optional_model(
+        catalog,
+        request,
+        plan,
+        LocalModelConfig(enabled=True, use_for_goal_ranking=True),
+        ranker=_StaticGoalRanker(
+            GoalModelSuggestion(
+                selected_routine_id="browser.search-web",
+                candidate_order=("browser.search-web", "browser.read-page"),
+                explanation="Search best matches the user's goal.",
+                raw_output='{"selected_routine_id":"browser.search-web"}',
+            ),
+        ),
+    )
+
+    assert ranked.selected_routine_id == "browser.search-web"
+    assert ranked.execution_status == "ready"
+    assert [candidate.routine_id for candidate in ranked.candidate_routines] == [
+        "browser.search-web",
+        "browser.read-page",
+    ]
+    assert ranked.model_ranking is not None
+    assert ranked.model_ranking.status == "applied"
+    assert ranked.model_ranking.affected_selection is True
+    assert ranked.model_ranking.output_hash is not None
+    assert ranked.metadata()["model_ranking"] is not None
+
+
+def test_optional_ollama_ranking_rejects_unknown_routine_ids() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="browser.read-page",
+                name="Browser read page",
+                tags=["browser", "reading"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+                inputs=[],
+            ),
+        ),
+    )
+    request = GoalRoutingRequest(
+        user_goal="Read the page",
+        normalized_intent="browser read",
+    )
+    plan = route_goal_to_routine(catalog, request)
+
+    ranked = rank_goal_plan_with_optional_model(
+        catalog,
+        request,
+        plan,
+        LocalModelConfig(enabled=True, use_for_goal_ranking=True),
+        ranker=_StaticGoalRanker(
+            GoalModelSuggestion(
+                selected_routine_id="invented.raw-action",
+                candidate_order=("invented.raw-action",),
+                explanation="Invalid model output.",
+                raw_output='{"selected_routine_id":"invented.raw-action"}',
+            ),
+        ),
+    )
+
+    assert ranked.selected_routine_id == plan.selected_routine_id
+    assert ranked.model_ranking is not None
+    assert ranked.model_ranking.status == "rejected"
+    assert ranked.model_ranking.affected_selection is False
+    assert ranked.model_ranking.error is not None
+
+
 def _routine(
     *,
     routine_id: str,
@@ -432,7 +572,7 @@ def _routine(
         "description": "Routine for goal-planning search tests.",
         "goal": "Match a user goal to a routine.",
         "tags": tags,
-        "inputs": inputs or ["input"],
+        "inputs": inputs if inputs is not None else ["input"],
         "outputs": ["output"],
         "safety_class": safety_class,
         "schedule_policy": schedule_policy,
@@ -448,6 +588,21 @@ def _routine(
     if allowed_time_windows is not None:
         payload["schedule"] = {"allowed_time_windows": allowed_time_windows}
     return routine_definition_from_mapping(payload)
+
+
+class _StaticGoalRanker:
+    def __init__(self, suggestion: GoalModelSuggestion) -> None:
+        self._suggestion = suggestion
+
+    def rank_goal_candidates(self, plan: GoalPlan) -> GoalModelSuggestion:
+        _ = plan
+        return self._suggestion
+
+
+class _FailingGoalRanker:
+    def rank_goal_candidates(self, plan: GoalPlan) -> GoalModelSuggestion:
+        _ = plan
+        raise AssertionError("ranker should not be called while disabled")
 
 
 def _write_routine_file(path: Path) -> None:

@@ -146,6 +146,8 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert config_payload["policy_preset"] == "strict_qa"
     assert config_payload["require_operator_approval"] is True
     assert config_payload["execution_profile"]["persona"] == "normal"
+    assert config_payload["local_model"]["enabled"] is False
+    assert config_payload["local_model"]["use_for_goal_ranking"] is False
     assert audit_payload["policy_preset"] == "strict_qa"
     assert audit_payload["sensitive_steps"][0]["step_id"] == "click-submit"
     assert config_payload["execution_profile"]["keyboard_interval_seconds"] == [

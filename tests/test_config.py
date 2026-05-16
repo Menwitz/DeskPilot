@@ -6,6 +6,7 @@ from desktop_agent.config import (
     ConfigError,
     ConfigOverrides,
     ExecutionProfile,
+    LocalModelConfig,
     RuntimeConfig,
     YamlConfigLoader,
     execution_profile_for_activity,
@@ -243,3 +244,63 @@ def test_execution_activity_profiles_apply_bounded_timing_presets(
     assert config.execution_profile.action_delay_seconds == (0.5, 1.0)
     assert config.execution_profile.retry_delay_seconds == (2.0, 6.0)
     assert config.execution_profile.random_seed == 9
+
+
+def test_local_model_config_defaults_to_disabled() -> None:
+    config = RuntimeConfig()
+
+    assert config.local_model.enabled is False
+    assert config.local_model.provider == "ollama"
+    assert config.local_model.use_for_goal_ranking is False
+
+
+def test_yaml_config_loader_loads_opt_in_local_ollama_ranking(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "local_model:",
+                "  enabled: true",
+                "  provider: ollama",
+                "  model: llama3.2",
+                "  endpoint: http://localhost:11434",
+                "  request_timeout_seconds: 2.5",
+                "  use_for_goal_ranking: true",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    config = YamlConfigLoader().load(config_path)
+
+    assert config.local_model.enabled is True
+    assert config.local_model.provider == "ollama"
+    assert config.local_model.model == "llama3.2"
+    assert config.local_model.endpoint == "http://localhost:11434"
+    assert config.local_model.request_timeout_seconds == 2.5
+    assert config.local_model.use_for_goal_ranking is True
+
+
+def test_local_model_config_rejects_nonlocal_or_half_enabled_ranking() -> None:
+    with pytest.raises(ConfigError, match=r"local_model\.endpoint"):
+        resolve_runtime_config(
+            RuntimeConfig(
+                local_model=LocalModelConfig(
+                    enabled=True,
+                    endpoint="https://example.com",
+                ),
+            ),
+        )
+
+    with pytest.raises(ConfigError, match="use_for_goal_ranking"):
+        resolve_runtime_config(
+            RuntimeConfig(
+                local_model=LocalModelConfig(
+                    enabled=False,
+                    use_for_goal_ranking=True,
+                ),
+            ),
+        )

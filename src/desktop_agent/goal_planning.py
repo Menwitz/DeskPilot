@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import hashlib
+import json
+import urllib.error
+import urllib.request
+from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import Literal, cast
+from typing import Literal, Protocol, cast
 
+from desktop_agent.config import LocalModelConfig
 from desktop_agent.routines import RoutineCatalog, RoutineDefinition
 from desktop_agent.scheduler import select_schedule_time
 
@@ -19,6 +24,13 @@ GoalExecutionStatus = Literal[
     "canceled",
 ]
 GoalMissingPromptKind = Literal["routine_input", "session_state"]
+GoalModelRankingStatus = Literal[
+    "disabled",
+    "skipped",
+    "applied",
+    "failed",
+    "rejected",
+]
 
 SUPPORTED_GOAL_EXECUTION_STATUSES: frozenset[str] = frozenset(
     {"draft", "blocked", "ready", "running", "completed", "failed", "canceled"},
@@ -94,6 +106,56 @@ class GoalMissingInputPrompt:
 
 
 @dataclass(frozen=True)
+class GoalModelRanking:
+    """Traceable summary of optional local-model goal ranking assistance."""
+
+    provider: str = "ollama"
+    model: str = ""
+    prompt_class: str = "goal_routine_ranking"
+    enabled: bool = False
+    attempted: bool = False
+    status: GoalModelRankingStatus = "disabled"
+    selected_routine_id: str | None = None
+    candidate_order: tuple[str, ...] = ()
+    explanation: str = ""
+    output_hash: str | None = None
+    affected_selection: bool = False
+    error: str | None = None
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "provider": self.provider,
+            "model": self.model,
+            "prompt_class": self.prompt_class,
+            "enabled": self.enabled,
+            "attempted": self.attempted,
+            "status": self.status,
+            "selected_routine_id": self.selected_routine_id,
+            "candidate_order": list(self.candidate_order),
+            "explanation": self.explanation,
+            "output_hash": self.output_hash,
+            "affected_selection": self.affected_selection,
+            "error": self.error,
+        }
+
+
+@dataclass(frozen=True)
+class GoalModelSuggestion:
+    """Validated local-model suggestion before deterministic safety checks rerun."""
+
+    selected_routine_id: str | None = None
+    candidate_order: tuple[str, ...] = ()
+    explanation: str = ""
+    raw_output: str = ""
+
+
+class GoalModelRanker(Protocol):
+    """Advisory ranker that can only speak in known routine IDs."""
+
+    def rank_goal_candidates(self, plan: GoalPlan) -> GoalModelSuggestion: ...
+
+
+@dataclass(frozen=True)
 class GoalRoutineIndexResult:
     """Routine index hit prepared for goal-plan candidate ranking."""
 
@@ -136,6 +198,7 @@ class GoalPlan:
     approvals: tuple[GoalPlanApproval, ...] = ()
     explanation: str = ""
     execution_status: GoalExecutionStatus = "draft"
+    model_ranking: GoalModelRanking | None = None
 
     @property
     def selected_candidate(self) -> GoalPlanCandidate | None:
@@ -171,6 +234,9 @@ class GoalPlan:
             "explanation": self.explanation,
             "execution_status": self.execution_status,
             "execution_ready": self.execution_ready,
+            "model_ranking": (
+                None if self.model_ranking is None else self.model_ranking.metadata()
+            ),
         }
 
 
@@ -188,9 +254,48 @@ def goal_plan_from_mapping(data: dict[str, object]) -> GoalPlan:
             GoalExecutionStatus,
             _optional_string(data, "execution_status") or "draft",
         ),
+        model_ranking=_model_ranking_from_value(data.get("model_ranking")),
     )
     validate_goal_plan(plan)
     return plan
+
+
+class OllamaGoalRanker:
+    """Minimal Ollama adapter for advisory goal-plan candidate ranking."""
+
+    def __init__(self, config: LocalModelConfig) -> None:
+        self._config = config
+
+    def rank_goal_candidates(self, plan: GoalPlan) -> GoalModelSuggestion:
+        prompt = _ollama_goal_ranking_prompt(plan)
+        body = {
+            "model": self._config.model,
+            "prompt": prompt,
+            "stream": False,
+            "format": "json",
+        }
+        request = urllib.request.Request(
+            f"{self._config.endpoint.rstrip('/')}/api/generate",
+            data=json.dumps(body).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(
+                request,
+                timeout=self._config.request_timeout_seconds,
+            ) as response:
+                response_body = response.read().decode("utf-8")
+        except urllib.error.URLError as exc:
+            raise GoalPlanError(f"Ollama request failed: {exc}") from exc
+
+        payload = json.loads(response_body)
+        if not isinstance(payload, dict):
+            raise GoalPlanError("Ollama response must be a mapping")
+        raw_model_output = payload.get("response")
+        if not isinstance(raw_model_output, str):
+            raise GoalPlanError("Ollama response field must be a string")
+        return _goal_model_suggestion_from_raw(raw_model_output)
 
 
 def search_routine_index_for_goal(
@@ -302,6 +407,65 @@ def route_goal_to_routine(
     return plan
 
 
+def rank_goal_plan_with_optional_model(
+    catalog: RoutineCatalog,
+    request: GoalRoutingRequest,
+    plan: GoalPlan,
+    config: LocalModelConfig,
+    *,
+    ranker: GoalModelRanker | None = None,
+) -> GoalPlan:
+    """Apply opt-in local-model ranking without allowing new routine IDs."""
+    validate_goal_plan(plan)
+    validate_goal_routing_request(request)
+    if not config.enabled or not config.use_for_goal_ranking:
+        return _with_model_ranking(
+            plan,
+            GoalModelRanking(
+                provider=config.provider,
+                model=config.model,
+                enabled=config.enabled,
+                attempted=False,
+                status="disabled",
+                candidate_order=_candidate_order(plan),
+                selected_routine_id=plan.selected_routine_id,
+                explanation="Local model goal ranking is disabled by configuration.",
+            ),
+        )
+    if not plan.candidate_routines:
+        return _with_model_ranking(
+            plan,
+            GoalModelRanking(
+                provider=config.provider,
+                model=config.model,
+                enabled=True,
+                attempted=False,
+                status="skipped",
+                explanation="No deterministic candidates were available to rank.",
+            ),
+        )
+
+    active_ranker = ranker or OllamaGoalRanker(config)
+    try:
+        suggestion = active_ranker.rank_goal_candidates(plan)
+    except Exception as exc:
+        return _with_model_ranking(
+            plan,
+            GoalModelRanking(
+                provider=config.provider,
+                model=config.model,
+                enabled=True,
+                attempted=True,
+                status="failed",
+                selected_routine_id=plan.selected_routine_id,
+                candidate_order=_candidate_order(plan),
+                explanation="Local model ranking failed; deterministic plan kept.",
+                error=str(exc),
+            ),
+        )
+    return _apply_model_suggestion(catalog, request, plan, config, suggestion)
+
+
 def validate_missing_input_prompt(prompt: GoalMissingInputPrompt) -> None:
     """Validate prompt text before it is shown by CLI or operator UI layers."""
     errors: list[str] = []
@@ -355,6 +519,8 @@ def validate_goal_plan(plan: GoalPlan) -> None:
         errors.append("missing_inputs entries must not be blank")
     for approval in plan.approvals:
         errors.extend(_approval_errors(approval))
+    if plan.model_ranking is not None:
+        errors.extend(_model_ranking_errors(plan.model_ranking, set(candidate_ids)))
     if plan.execution_status == "ready" and not plan.execution_ready:
         errors.append("ready goal plans require selection, inputs, and approvals")
     if errors:
@@ -397,6 +563,29 @@ def _approval_from_mapping(data: dict[str, object]) -> GoalPlanApproval:
     )
 
 
+def _model_ranking_from_value(value: object) -> GoalModelRanking | None:
+    if value is None:
+        return None
+    data = _mapping(value)
+    return GoalModelRanking(
+        provider=_optional_string(data, "provider") or "ollama",
+        model=_optional_string(data, "model") or "",
+        prompt_class=_optional_string(data, "prompt_class") or "goal_routine_ranking",
+        enabled=_optional_bool(data, "enabled") or False,
+        attempted=_optional_bool(data, "attempted") or False,
+        status=cast(
+            GoalModelRankingStatus,
+            _optional_string(data, "status") or "disabled",
+        ),
+        selected_routine_id=_optional_string(data, "selected_routine_id"),
+        candidate_order=_string_tuple(data.get("candidate_order"), "candidate_order"),
+        explanation=_optional_string(data, "explanation") or "",
+        output_hash=_optional_string(data, "output_hash"),
+        affected_selection=_optional_bool(data, "affected_selection") or False,
+        error=_optional_string(data, "error"),
+    )
+
+
 def _candidate_errors(candidate: GoalPlanCandidate) -> list[str]:
     errors: list[str] = []
     if not candidate.routine_id.strip():
@@ -407,6 +596,31 @@ def _candidate_errors(candidate: GoalPlanCandidate) -> list[str]:
         errors.append("candidate score must not be negative")
     if any(not field.strip() for field in candidate.matched_fields):
         errors.append("candidate matched_fields entries must not be blank")
+    return errors
+
+
+def _model_ranking_errors(
+    ranking: GoalModelRanking,
+    candidate_ids: set[str],
+) -> list[str]:
+    errors: list[str] = []
+    if ranking.status not in {"disabled", "skipped", "applied", "failed", "rejected"}:
+        errors.append(f"unsupported model ranking status: {ranking.status}")
+    if ranking.provider != "ollama":
+        errors.append("model ranking provider must be ollama")
+    if not ranking.prompt_class.strip():
+        errors.append("model ranking prompt_class is required")
+    if ranking.selected_routine_id and ranking.selected_routine_id not in candidate_ids:
+        errors.append("model ranking selected_routine_id must reference a candidate")
+    if len(ranking.candidate_order) != len(set(ranking.candidate_order)):
+        errors.append("model ranking candidate_order entries must be unique")
+    unknown_ids = [
+        routine_id
+        for routine_id in ranking.candidate_order
+        if routine_id not in candidate_ids
+    ]
+    if unknown_ids:
+        errors.append("model ranking candidate_order must reference candidates")
     return errors
 
 
@@ -607,3 +821,207 @@ def _schedule_eligibility(
     if decision.lower_bound == now:
         return True, "inside_allowed_time_window"
     return False, "outside_allowed_time_window"
+
+
+def _candidate_order(plan: GoalPlan) -> tuple[str, ...]:
+    return tuple(candidate.routine_id for candidate in plan.candidate_routines)
+
+
+def _with_model_ranking(plan: GoalPlan, ranking: GoalModelRanking) -> GoalPlan:
+    updated = replace(plan, model_ranking=ranking)
+    validate_goal_plan(updated)
+    return updated
+
+
+def _apply_model_suggestion(
+    catalog: RoutineCatalog,
+    request: GoalRoutingRequest,
+    plan: GoalPlan,
+    config: LocalModelConfig,
+    suggestion: GoalModelSuggestion,
+) -> GoalPlan:
+    candidate_order = _candidate_order(plan)
+    ordered_ids, rejected_reason = _safe_model_candidate_order(
+        candidate_order,
+        suggestion,
+    )
+    output_hash = _hash_model_output(suggestion.raw_output)
+    if rejected_reason is not None:
+        return _with_model_ranking(
+            plan,
+            GoalModelRanking(
+                provider=config.provider,
+                model=config.model,
+                enabled=True,
+                attempted=True,
+                status="rejected",
+                selected_routine_id=plan.selected_routine_id,
+                candidate_order=candidate_order,
+                explanation=(
+                    "Local model ranking was rejected; deterministic plan kept."
+                ),
+                output_hash=output_hash,
+                error=rejected_reason,
+            ),
+        )
+
+    candidates_by_id = {
+        candidate.routine_id: candidate for candidate in plan.candidate_routines
+    }
+    reranked_candidates = tuple(
+        candidates_by_id[routine_id] for routine_id in ordered_ids
+    )
+    selected_routine_id = ordered_ids[0] if ordered_ids else plan.selected_routine_id
+    missing_inputs = (
+        _missing_inputs(catalog, selected_routine_id, request.provided_inputs)
+        if selected_routine_id is not None
+        else ()
+    )
+    approvals = (
+        _approval_requirements(catalog, selected_routine_id)
+        if selected_routine_id is not None
+        else ()
+    )
+    status, explanation = _selection_status(
+        selected_routine_id,
+        missing_inputs,
+        approvals,
+        fallback_explanation=(
+            suggestion.explanation
+            or "Local model reranked deterministic routine candidates."
+        ),
+    )
+    affected_selection = selected_routine_id != plan.selected_routine_id
+    updated = GoalPlan(
+        user_goal=plan.user_goal,
+        normalized_intent=plan.normalized_intent,
+        candidate_routines=reranked_candidates,
+        selected_routine_id=selected_routine_id,
+        missing_inputs=missing_inputs,
+        approvals=approvals,
+        explanation=explanation,
+        execution_status=status,
+        model_ranking=GoalModelRanking(
+            provider=config.provider,
+            model=config.model,
+            enabled=True,
+            attempted=True,
+            status="applied",
+            selected_routine_id=selected_routine_id,
+            candidate_order=ordered_ids,
+            explanation=suggestion.explanation,
+            output_hash=output_hash,
+            affected_selection=affected_selection,
+        ),
+    )
+    validate_goal_plan(updated)
+    return updated
+
+
+def _selection_status(
+    selected_routine_id: str | None,
+    missing_inputs: tuple[str, ...],
+    approvals: tuple[GoalPlanApproval, ...],
+    *,
+    fallback_explanation: str,
+) -> tuple[GoalExecutionStatus, str]:
+    if selected_routine_id is None:
+        return "blocked", "No eligible routine matched the goal and constraints."
+    if missing_inputs:
+        return "blocked", "Selected routine is blocked by missing inputs."
+    if any(approval.required and not approval.satisfied for approval in approvals):
+        return "blocked", "Selected routine is blocked by required approvals."
+    return "ready", fallback_explanation
+
+
+def _safe_model_candidate_order(
+    candidate_order: tuple[str, ...],
+    suggestion: GoalModelSuggestion,
+) -> tuple[tuple[str, ...], str | None]:
+    candidate_ids = set(candidate_order)
+    suggested_ids = list(suggestion.candidate_order)
+    if (
+        suggestion.selected_routine_id
+        and suggestion.selected_routine_id not in suggested_ids
+    ):
+        suggested_ids.insert(0, suggestion.selected_routine_id)
+
+    unknown_ids = sorted(
+        {routine_id for routine_id in suggested_ids if routine_id not in candidate_ids}
+    )
+    if unknown_ids:
+        return candidate_order, "model suggested unknown routine id(s): " + ", ".join(
+            unknown_ids,
+        )
+    if len(suggested_ids) != len(set(suggested_ids)):
+        return candidate_order, "model suggested duplicate routine IDs"
+
+    remaining_ids = [
+        routine_id
+        for routine_id in candidate_order
+        if routine_id not in suggested_ids
+    ]
+    ordered_ids = tuple([*suggested_ids, *remaining_ids])
+    return ordered_ids, None
+
+
+def _goal_model_suggestion_from_raw(raw_output: str) -> GoalModelSuggestion:
+    try:
+        loaded = json.loads(raw_output)
+    except json.JSONDecodeError as exc:
+        raise GoalPlanError("model output must be JSON") from exc
+    if not isinstance(loaded, dict):
+        raise GoalPlanError("model output must be a mapping")
+    data = cast(dict[str, object], loaded)
+    return GoalModelSuggestion(
+        selected_routine_id=_optional_string(data, "selected_routine_id"),
+        candidate_order=_string_tuple(data.get("candidate_order"), "candidate_order"),
+        explanation=_optional_string(data, "explanation") or "",
+        raw_output=raw_output,
+    )
+
+
+def _ollama_goal_ranking_prompt(plan: GoalPlan) -> str:
+    candidates = [
+        {
+            "routine_id": candidate.routine_id,
+            "name": candidate.routine_name,
+            "score": candidate.score,
+            "matched_fields": list(candidate.matched_fields),
+            "safety_class": candidate.safety_class,
+            "approval_policy": candidate.approval_policy,
+        }
+        for candidate in plan.candidate_routines
+    ]
+    # The prompt asks for routine IDs only so the model cannot author actions.
+    return json.dumps(
+        {
+            "task": (
+                "Rank these existing DeskPilot routine candidates for the user "
+                "goal. Return JSON only."
+            ),
+            "response_schema": {
+                "selected_routine_id": "one candidate routine_id or null",
+                "candidate_order": "array of candidate routine_id values",
+                "explanation": "short operator-facing reason",
+            },
+            "user_goal": plan.user_goal,
+            "normalized_intent": plan.normalized_intent,
+            "candidates": candidates,
+            "constraints": [
+                "Use only routine_id values present in candidates.",
+                "Do not create desktop actions, scripts, URLs, or commands.",
+                (
+                    "Safety, inputs, approvals, and execution eligibility are "
+                    "enforced outside the model."
+                ),
+            ],
+        },
+        sort_keys=True,
+    )
+
+
+def _hash_model_output(raw_output: str) -> str | None:
+    if not raw_output:
+        return None
+    return hashlib.sha256(raw_output.encode("utf-8")).hexdigest()

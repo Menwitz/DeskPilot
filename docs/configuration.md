@@ -42,6 +42,13 @@ execution_profile:
   keyboard_interval_seconds: [0.0, 0.0]
   scroll_interval_seconds: [0.0, 0.0]
   random_seed: null
+local_model:
+  enabled: false
+  provider: ollama
+  model: llama3.1
+  endpoint: http://127.0.0.1:11434
+  request_timeout_seconds: 10.0
+  use_for_goal_ranking: false
 ```
 
 ## Allowed Windows
@@ -262,6 +269,35 @@ After tuning a profile, inspect these artifacts before treating it as safe:
 
 The active preset is written to `config.json` and the `load_config` trace event.
 
+## Local Model Assistance
+
+`local_model` is disabled by default. When explicitly enabled, DeskPilot can use
+local Ollama only as an advisory planner helper. For Phase 7, the supported use
+is `use_for_goal_ranking`, which lets the `plan-goal` dry-run ask Ollama to
+rank already-discovered routine candidates and explain the choice.
+
+The local model cannot create actions, URLs, commands, or new routine IDs. Its
+output is accepted only when every suggested ID already exists in the
+deterministic candidate list. DeskPilot then reruns missing-input, approval,
+safety-class, and schedule checks before reporting the selected routine. Invalid
+or unavailable model output is recorded in the goal plan and the deterministic
+plan remains in force.
+
+Example opt-in config:
+
+```yaml
+local_model:
+  enabled: true
+  provider: ollama
+  model: llama3.1
+  endpoint: http://127.0.0.1:11434
+  request_timeout_seconds: 10
+  use_for_goal_ranking: true
+```
+
+Only local loopback Ollama endpoints are accepted: `127.0.0.1`, `localhost`, or
+`::1`.
+
 ## Sensitive Step Confirmation
 
 Tasks can mark a step with `requires_confirmation: true`. Those steps are
@@ -287,5 +323,8 @@ Startup rejects unsafe values before any desktop action can run:
 - Policy preset must be `strict_qa`, `personal_automation`, or
   `exploratory_testing`.
 - Confirmed step IDs must not be blank.
+- Local model assistance must use provider `ollama`, a local endpoint, a
+  non-empty model name, and a positive request timeout. Goal ranking requires
+  `local_model.enabled: true`.
 - Emergency stop hotkey and trace root must be present.
 - Window names must not be blank.
