@@ -1,0 +1,14 @@
+id: social-content.facebook-content-calendar-review
+name: Facebook content calendar review
+description: Review visible Facebook scheduled content without editing, publishing, or deleting posts.
+goal: Inspect Facebook content calendar state and leave local trace evidence.
+required_app: Browser
+required_site: facebook.com
+tags: [social, facebook, calendar, read-only]
+inputs: [facebook content calendar]
+outputs: [content calendar reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/content-calendar-review-surface.yaml}

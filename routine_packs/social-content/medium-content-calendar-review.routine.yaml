@@ -1,0 +1,14 @@
+id: social-content.medium-content-calendar-review
+name: Medium content calendar review
+description: Review visible Medium scheduled content without editing, publishing, or deleting stories.
+goal: Inspect Medium content calendar state and leave local trace evidence.
+required_app: Browser
+required_site: medium.com
+tags: [social, medium, calendar, read-only]
+inputs: [medium content calendar]
+outputs: [content calendar reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/content-calendar-review-surface.yaml}

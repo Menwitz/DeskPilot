@@ -1,0 +1,14 @@
+id: social-content.facebook-settings-review
+name: Facebook settings review
+description: Review visible Facebook settings without changing account, page, or privacy configuration.
+goal: Inspect Facebook settings and leave local trace evidence.
+required_app: Browser
+required_site: facebook.com
+tags: [social, facebook, settings, read-only]
+inputs: [facebook settings]
+outputs: [settings reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/settings-review-surface.yaml}

@@ -1,0 +1,14 @@
+id: social-content.facebook-moderation-review
+name: Facebook moderation review
+description: Review visible Facebook moderation surfaces without approving, deleting, replying, or posting.
+goal: Inspect Facebook moderation state and leave local trace evidence.
+required_app: Browser
+required_site: facebook.com
+tags: [social, facebook, moderation, read-only]
+inputs: [facebook moderation]
+outputs: [moderation reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/moderation-review-surface.yaml}

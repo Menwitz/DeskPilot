@@ -1,0 +1,19 @@
+name: Social moderation review surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: open-moderation-surface
+    action: click_text
+    target: Moderation
+    verify:
+      type: visible_text
+      text: Moderation
+  - id: review-visible-moderation
+    action: scroll
+    text: "-2"
+  - id: confirm-moderation-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Moderation

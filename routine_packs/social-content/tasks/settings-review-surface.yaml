@@ -1,0 +1,19 @@
+name: Social settings review surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: open-settings-surface
+    action: click_text
+    target: Settings
+    verify:
+      type: visible_text
+      text: Settings
+  - id: review-visible-settings
+    action: scroll
+    text: "-2"
+  - id: confirm-settings-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Settings

@@ -1,0 +1,14 @@
+id: social-content.medium-settings-review
+name: Medium settings review
+description: Review visible Medium settings without changing account, publication, or story configuration.
+goal: Inspect Medium settings and leave local trace evidence.
+required_app: Browser
+required_site: medium.com
+tags: [social, medium, settings, read-only]
+inputs: [medium settings]
+outputs: [settings reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/settings-review-surface.yaml}

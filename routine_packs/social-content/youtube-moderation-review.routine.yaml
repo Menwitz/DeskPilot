@@ -1,0 +1,14 @@
+id: social-content.youtube-moderation-review
+name: YouTube moderation review
+description: Review visible YouTube moderation surfaces without approving, deleting, replying, or posting.
+goal: Inspect YouTube moderation state and leave local trace evidence.
+required_app: Browser
+required_site: youtube.com
+tags: [social, youtube, moderation, read-only]
+inputs: [youtube moderation]
+outputs: [moderation reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/moderation-review-surface.yaml}

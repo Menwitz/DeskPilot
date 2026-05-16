@@ -1,0 +1,19 @@
+name: Social content calendar review surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: open-calendar-surface
+    action: click_text
+    target: Calendar
+    verify:
+      type: visible_text
+      text: Calendar
+  - id: review-visible-calendar
+    action: scroll
+    text: "-2"
+  - id: confirm-calendar-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Calendar

@@ -1,0 +1,14 @@
+id: social-content.youtube-content-calendar-review
+name: YouTube content calendar review
+description: Review visible YouTube scheduled content without editing, publishing, or deleting videos or posts.
+goal: Inspect YouTube content calendar state and leave local trace evidence.
+required_app: Browser
+required_site: youtube.com
+tags: [social, youtube, calendar, read-only]
+inputs: [youtube content calendar]
+outputs: [content calendar reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/content-calendar-review-surface.yaml}

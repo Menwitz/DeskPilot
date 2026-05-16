@@ -1,0 +1,14 @@
+id: social-content.instagram-content-calendar-review
+name: Instagram content calendar review
+description: Review visible Instagram scheduled content without editing, publishing, or deleting posts.
+goal: Inspect Instagram content calendar state and leave local trace evidence.
+required_app: Browser
+required_site: instagram.com
+tags: [social, instagram, calendar, read-only]
+inputs: [instagram content calendar]
+outputs: [content calendar reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/content-calendar-review-surface.yaml}

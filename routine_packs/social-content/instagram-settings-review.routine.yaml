@@ -1,0 +1,14 @@
+id: social-content.instagram-settings-review
+name: Instagram settings review
+description: Review visible Instagram settings without changing account, content, or privacy configuration.
+goal: Inspect Instagram settings and leave local trace evidence.
+required_app: Browser
+required_site: instagram.com
+tags: [social, instagram, settings, read-only]
+inputs: [instagram settings]
+outputs: [settings reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/settings-review-surface.yaml}

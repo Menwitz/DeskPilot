@@ -1,0 +1,14 @@
+id: social-content.x-twitter-content-calendar-review
+name: X/Twitter content calendar review
+description: Review visible X/Twitter scheduled content without editing, publishing, or deleting posts.
+goal: Inspect X/Twitter content calendar state and leave local trace evidence.
+required_app: Browser
+required_site: x.com
+tags: [social, x-twitter, calendar, read-only]
+inputs: [x twitter content calendar]
+outputs: [content calendar reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/content-calendar-review-surface.yaml}
