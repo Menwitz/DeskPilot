@@ -2,14 +2,16 @@
 
 Social content routines cover LinkedIn, Medium, X/Twitter, Instagram, Facebook,
 YouTube, and TikTok surfaces for read-only, profile review, notification review,
-messages review, search review, saved-items review, draft, and explicitly
-approved publish flows. Publish-capable routines must carry approval and
+messages review, search review, saved-items review, comments review, analytics
+review, draft, and explicitly approved publish flows. Publish-capable routines
+must carry approval and
 checkpoint metadata before promotion.
 
 ## Seed Matrix
 
 Each platform has read-only, profile review, notification review, messages
-review, search review, saved-items review, draft, and approved-publish seed
+review, search review, saved-items review, comments review, analytics review,
+draft, and approved-publish seed
 routines:
 
 - LinkedIn

@@ -1,0 +1,19 @@
+name: Social analytics review surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: open-analytics-surface
+    action: click_text
+    target: Analytics
+    verify:
+      type: visible_text
+      text: Analytics
+  - id: review-visible-analytics
+    action: scroll
+    text: "-2"
+  - id: confirm-analytics-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Analytics

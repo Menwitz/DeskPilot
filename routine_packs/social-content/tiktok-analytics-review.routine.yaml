@@ -1,0 +1,14 @@
+id: social-content.tiktok-analytics-review
+name: TikTok analytics review
+description: Review visible TikTok analytics without changing content or account settings.
+goal: Inspect TikTok analytics and leave local trace evidence.
+required_app: Browser
+required_site: tiktok.com
+tags: [social, tiktok, analytics, read-only]
+inputs: [tiktok analytics]
+outputs: [analytics reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/analytics-review-surface.yaml}

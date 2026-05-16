@@ -1,0 +1,14 @@
+id: social-content.youtube-analytics-review
+name: YouTube analytics review
+description: Review visible YouTube analytics without changing channel, video, or monetization settings.
+goal: Inspect YouTube analytics and leave local trace evidence.
+required_app: Browser
+required_site: youtube.com
+tags: [social, youtube, analytics, read-only]
+inputs: [youtube analytics]
+outputs: [analytics reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/analytics-review-surface.yaml}

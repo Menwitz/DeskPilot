@@ -1,0 +1,14 @@
+id: social-content.linkedin-comments-review
+name: LinkedIn comments review
+description: Review visible LinkedIn comments without replying, reacting, or posting.
+goal: Inspect LinkedIn comment activity and leave local trace evidence.
+required_app: Browser
+required_site: linkedin.com
+tags: [social, linkedin, comments, read-only]
+inputs: [linkedin comments]
+outputs: [comments reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/comments-review-surface.yaml}

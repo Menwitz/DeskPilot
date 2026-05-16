@@ -1,0 +1,14 @@
+id: social-content.x-twitter-comments-review
+name: X/Twitter comments review
+description: Review visible X/Twitter replies without replying, liking, reposting, or posting.
+goal: Inspect X/Twitter reply activity and leave local trace evidence.
+required_app: Browser
+required_site: x.com
+tags: [social, x-twitter, comments, read-only]
+inputs: [x twitter replies]
+outputs: [comments reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/comments-review-surface.yaml}

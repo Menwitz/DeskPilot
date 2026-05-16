@@ -1,0 +1,14 @@
+id: social-content.youtube-comments-review
+name: YouTube comments review
+description: Review visible YouTube comments without replying, liking, pinning, or posting.
+goal: Inspect YouTube comment activity and leave local trace evidence.
+required_app: Browser
+required_site: youtube.com
+tags: [social, youtube, comments, read-only]
+inputs: [youtube comments]
+outputs: [comments reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/comments-review-surface.yaml}

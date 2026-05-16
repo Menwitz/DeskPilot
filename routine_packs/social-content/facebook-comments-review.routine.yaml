@@ -1,0 +1,14 @@
+id: social-content.facebook-comments-review
+name: Facebook comments review
+description: Review visible Facebook comments without replying, reacting, or posting.
+goal: Inspect Facebook comment activity and leave local trace evidence.
+required_app: Browser
+required_site: facebook.com
+tags: [social, facebook, comments, read-only]
+inputs: [facebook comments]
+outputs: [comments reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/comments-review-surface.yaml}

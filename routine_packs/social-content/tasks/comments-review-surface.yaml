@@ -1,0 +1,19 @@
+name: Social comments review surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: open-comments-surface
+    action: click_text
+    target: Comments
+    verify:
+      type: visible_text
+      text: Comments
+  - id: review-visible-comments
+    action: scroll
+    text: "-2"
+  - id: confirm-comments-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Comments

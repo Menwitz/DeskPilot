@@ -1,0 +1,14 @@
+id: social-content.linkedin-analytics-review
+name: LinkedIn analytics review
+description: Review visible LinkedIn analytics without changing campaign, post, or profile settings.
+goal: Inspect LinkedIn analytics and leave local trace evidence.
+required_app: Browser
+required_site: linkedin.com
+tags: [social, linkedin, analytics, read-only]
+inputs: [linkedin analytics]
+outputs: [analytics reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/analytics-review-surface.yaml}
