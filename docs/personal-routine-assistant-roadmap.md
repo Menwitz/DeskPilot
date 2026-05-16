@@ -415,7 +415,7 @@ abuse, and hidden automation are not supported.
 - [x] KR2: Planner asks for missing required inputs before execution.
 - [x] KR3: Planner shows selected routine, alternatives, risk, approvals,
       expected evidence, and abort conditions.
-- [ ] KR4: Optional Ollama output cannot bypass validation, safety checks, or
+- [x] KR4: Optional Ollama output cannot bypass validation, safety checks, or
       approvals.
 
 ### Tasks

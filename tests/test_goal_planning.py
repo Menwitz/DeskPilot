@@ -681,6 +681,123 @@ def test_optional_ollama_ranking_rejects_unknown_routine_ids() -> None:
     assert ranked.model_ranking.error is not None
 
 
+def test_optional_ollama_ranking_cannot_bypass_safety_filter() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="browser.read-page",
+                name="Browser read page",
+                tags=["browser", "reading"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+                inputs=[],
+            ),
+            _routine(
+                routine_id="social-content.linkedin-approved-publish",
+                name="LinkedIn approved publish",
+                tags=["social", "linkedin", "publish"],
+                required_site="linkedin.com",
+                safety_class="high",
+                approval_policy="manifest_required",
+                schedule_policy="manual",
+                inputs=[],
+            ),
+        ),
+    )
+    request = GoalRoutingRequest(
+        user_goal="Review browser content",
+        normalized_intent="browser linkedin publish",
+        max_safety_class="low",
+    )
+    plan = route_goal_to_routine(catalog, request)
+
+    ranked = rank_goal_plan_with_optional_model(
+        catalog,
+        request,
+        plan,
+        LocalModelConfig(enabled=True, use_for_goal_ranking=True),
+        ranker=_StaticGoalRanker(
+            GoalModelSuggestion(
+                selected_routine_id="social-content.linkedin-approved-publish",
+                candidate_order=("social-content.linkedin-approved-publish",),
+                explanation="Invalidly tries to pick a filtered high-risk routine.",
+                raw_output=(
+                    '{"selected_routine_id":'
+                    '"social-content.linkedin-approved-publish"}'
+                ),
+            ),
+        ),
+    )
+
+    assert ranked.selected_routine_id == plan.selected_routine_id
+    assert ranked.model_ranking is not None
+    assert ranked.model_ranking.status == "rejected"
+    assert all(
+        candidate.safety_class == "low" for candidate in ranked.candidate_routines
+    )
+
+
+def test_optional_ollama_ranking_cannot_bypass_required_approvals() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="browser.read-page",
+                name="Browser read page",
+                tags=["browser", "reading"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+                inputs=[],
+            ),
+            _routine(
+                routine_id="social-content.linkedin-approved-publish",
+                name="LinkedIn approved publish",
+                tags=["browser", "publish"],
+                safety_class="high",
+                approval_policy="manifest_required",
+                schedule_policy="manual",
+                inputs=[],
+            ),
+        ),
+    )
+    request = GoalRoutingRequest(
+        user_goal="Handle browser publishing",
+        normalized_intent="browser",
+        max_safety_class="high",
+    )
+    plan = route_goal_to_routine(catalog, request)
+
+    ranked = rank_goal_plan_with_optional_model(
+        catalog,
+        request,
+        plan,
+        LocalModelConfig(enabled=True, use_for_goal_ranking=True),
+        ranker=_StaticGoalRanker(
+            GoalModelSuggestion(
+                selected_routine_id="social-content.linkedin-approved-publish",
+                candidate_order=(
+                    "social-content.linkedin-approved-publish",
+                    "browser.read-page",
+                ),
+                explanation="Publishing is preferred.",
+                raw_output=(
+                    '{"selected_routine_id":'
+                    '"social-content.linkedin-approved-publish"}'
+                ),
+            ),
+        ),
+    )
+
+    assert ranked.selected_routine_id == "social-content.linkedin-approved-publish"
+    assert ranked.execution_status == "blocked"
+    assert ranked.execution_ready is False
+    assert ranked.approvals[0].required is True
+    assert ranked.explanation == "Selected routine is blocked by required approvals."
+
+
 def test_goal_execution_resolves_only_validated_routine_ids() -> None:
     catalog = RoutineCatalog(
         root=Path("routine_packs"),
