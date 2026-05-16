@@ -432,7 +432,7 @@ abuse, and hidden automation are not supported.
 - [x] Add planner dry-run that never moves the desktop.
 - [x] Add optional Ollama ranking and explanation behind a disabled-by-default
       config flag.
-- [ ] Add model disclosure fields to traces: provider, model, prompt class,
+- [x] Add model disclosure fields to traces: provider, model, prompt class,
       input artifact references, output hash, and whether the output affected
       routine selection.
 - [ ] Add safety rule that only validated routine IDs can be executed.

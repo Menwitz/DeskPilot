@@ -117,6 +117,7 @@ class GoalModelRanking:
     status: GoalModelRankingStatus = "disabled"
     selected_routine_id: str | None = None
     candidate_order: tuple[str, ...] = ()
+    input_artifact_references: tuple[str, ...] = ()
     explanation: str = ""
     output_hash: str | None = None
     affected_selection: bool = False
@@ -132,6 +133,7 @@ class GoalModelRanking:
             "status": self.status,
             "selected_routine_id": self.selected_routine_id,
             "candidate_order": list(self.candidate_order),
+            "input_artifact_references": list(self.input_artifact_references),
             "explanation": self.explanation,
             "output_hash": self.output_hash,
             "affected_selection": self.affected_selection,
@@ -579,6 +581,10 @@ def _model_ranking_from_value(value: object) -> GoalModelRanking | None:
         ),
         selected_routine_id=_optional_string(data, "selected_routine_id"),
         candidate_order=_string_tuple(data.get("candidate_order"), "candidate_order"),
+        input_artifact_references=_string_tuple(
+            data.get("input_artifact_references"),
+            "input_artifact_references",
+        ),
         explanation=_optional_string(data, "explanation") or "",
         output_hash=_optional_string(data, "output_hash"),
         affected_selection=_optional_bool(data, "affected_selection") or False,
@@ -614,6 +620,8 @@ def _model_ranking_errors(
         errors.append("model ranking selected_routine_id must reference a candidate")
     if len(ranking.candidate_order) != len(set(ranking.candidate_order)):
         errors.append("model ranking candidate_order entries must be unique")
+    if any(not item.strip() for item in ranking.input_artifact_references):
+        errors.append("model ranking input_artifact_references must not be blank")
     unknown_ids = [
         routine_id
         for routine_id in ranking.candidate_order

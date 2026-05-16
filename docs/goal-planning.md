@@ -80,6 +80,11 @@ Pass `--config` to opt into local Ollama ranking through the normal
 configuration file. With the default config, model assistance is reported as
 disabled and no model request is made.
 
+Every `plan-goal` run writes a local goal trace under `trace_root`, or under
+`--trace-root` when supplied. The trace includes `goal-plan.json`,
+`goal-plan-report.json`, `goal-plan-report.md`, `trace-schema.json`, and
+`action-log.jsonl`.
+
 ## Optional Ollama Ranking
 
 `rank_goal_plan_with_optional_model()` applies local model assistance after the
@@ -93,8 +98,9 @@ contains the user goal and candidate routine metadata, then asks for JSON with:
 The response is advisory. DeskPilot rejects unknown or duplicate routine IDs,
 keeps the deterministic plan when Ollama is unavailable, and stores
 `model_ranking` metadata on the `GoalPlan`: provider, model, prompt class,
-status, selected routine ID, candidate order, explanation, output hash, error,
-and whether the model changed the selected routine.
+input artifact references, status, selected routine ID, candidate order,
+explanation, output hash, error, and whether the model changed the selected
+routine.
 
 Accepted reranking still runs through the deterministic safety boundary:
 missing inputs, approvals, schedule eligibility, and safety-class limits are

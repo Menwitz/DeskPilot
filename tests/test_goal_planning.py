@@ -406,6 +406,8 @@ def test_goal_planner_cli_dry_run_reports_plan_without_desktop_input(
             "query",
             "--routine-pack-root",
             str(root),
+            "--trace-root",
+            str(tmp_path / "traces"),
         ],
     )
 
@@ -415,6 +417,7 @@ def test_goal_planner_cli_dry_run_reports_plan_without_desktop_input(
     assert "selected: browser.search-web" in output
     assert "status: ready" in output
     assert "dry-run preview:" not in output
+    assert "trace:" in output
 
 
 def test_optional_model_ranking_is_disabled_by_default() -> None:

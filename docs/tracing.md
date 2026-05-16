@@ -233,7 +233,7 @@ runs. Every file-backed run writes `trace-schema.json`, every action-log row
 includes `trace_schema_version`, and `final-report.json` embeds the schema used
 for the run.
 
-The schema defines five top-level evidence sections:
+The schema defines six top-level evidence sections:
 
 - `observation`: screenshots, active-window process, focus, cursor, monitor,
   DPI, OCR, UIA, and CV state.
@@ -243,3 +243,6 @@ The schema defines five top-level evidence sections:
 - `verification`: post-action checks and post-action evidence.
 - `state_delta`: focus changes, visible text changes, viewport movement, and
   other observed differences before and after input.
+- `model_assistance`: optional local-model disclosure fields, including
+  provider, model, prompt class, input artifact references, output hash, and
+  whether the model affected routine selection.

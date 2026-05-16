@@ -43,6 +43,7 @@ from desktop_agent.goal_planning import (
     rank_goal_plan_with_optional_model,
     route_goal_to_routine,
 )
+from desktop_agent.goal_reporting import write_goal_plan_trace
 from desktop_agent.mouse_demo import (
     MouseDemoError,
     run_browser_fixture,
@@ -326,6 +327,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     plan_goal_parser.add_argument("--session-state", action="append", default=[])
     plan_goal_parser.add_argument("--config", type=Path)
+    plan_goal_parser.add_argument("--trace-root", type=Path)
     _add_routine_catalog_options(plan_goal_parser)
 
     inspect_parser = subparsers.add_parser(
@@ -920,6 +922,8 @@ def _plan_goal(args: argparse.Namespace) -> int:
         print("  prompts:")
         for prompt in prompts:
             print(f"    - {prompt.kind}:{prompt.key}: {prompt.prompt}")
+    trace_dir = write_goal_plan_trace(plan, args.trace_root or config.trace_root)
+    print(f"trace: {trace_dir}")
     return 0
 
 

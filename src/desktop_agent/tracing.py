@@ -90,6 +90,17 @@ class TraceSchemaV2:
                         "viewport_moved",
                     ],
                 },
+                "model_assistance": {
+                    "description": "optional local model decision disclosure",
+                    "typical_fields": [
+                        "provider",
+                        "model",
+                        "prompt_class",
+                        "input_artifact_references",
+                        "output_hash",
+                        "affected_selection",
+                    ],
+                },
             },
         }
 

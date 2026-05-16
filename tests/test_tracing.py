@@ -138,6 +138,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
         "input",
         "verification",
         "state_delta",
+        "model_assistance",
     }
     assert final_report["abort_reason"] is None
     assert final_report["steps"][0]["candidate_id"] == "candidate-Submit"
