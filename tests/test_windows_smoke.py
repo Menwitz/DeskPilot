@@ -180,26 +180,30 @@ def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> No
     promotion_exit_code = main(
         [
             "proof",
-            "validate-suite",
+            "promote-suite",
             str(trace_root),
             "--allow-missing-video",
-            "--require-preflight",
-            "--require-review",
             "--write-status-json",
             "--write-archive",
         ],
     )
     assert promotion_exit_code == 0, "proof suite review-gated promotion failed"
+    promotion_payload = json.loads(
+        (trace_root / "proof-suite-promotion.json").read_text(encoding="utf-8"),
+    )
     status_payload = json.loads(
         (trace_root / "proof-suite-status.json").read_text(encoding="utf-8"),
     )
+    assert promotion_payload["promotion_ready"] is True
     assert status_payload["status"] == "passed"
     assert status_payload["review_status_path"] == str(
         trace_root / "proof-suite-review-status.json",
     )
     assert (trace_root / "proof-suite-artifacts.zip").exists()
     with zipfile.ZipFile(trace_root / "proof-suite-artifacts.zip") as archive:
-        assert "proof-suite-review-status.json" in archive.namelist()
+        names = set(archive.namelist())
+    assert "proof-suite-review-status.json" in names
+    assert "proof-suite-promotion.json" in names
 
 
 def _complete_smoke_review_template(review_path: Path) -> None:

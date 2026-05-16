@@ -70,8 +70,8 @@ Run it only from an owned, unlocked Windows desktop or VM. From source, pass
 `-DeskPilotCommand bin\deskpilot.exe`. Use `-ExternalVideo` when recording with
 an external screen recorder instead of built-in `ffmpeg` capture. The script
 writes `proof-preflight.json`, runs all four proof commands, validates the
-suite, writes review artifacts, and prints the final human-review promotion
-commands.
+suite, writes review artifacts, and prints the final `proof promote-suite`
+command that emits `proof-suite-promotion.json` after human review passes.
 
 Real `run` verification still requires an unlocked Windows desktop with the
 browser or native fixture visible.

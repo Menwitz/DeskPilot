@@ -57,6 +57,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       review record.
 - [ ] Run `desktop-agent proof validate-suite <trace-root>
       --require-preflight --require-review` before final promotion.
+- [ ] Run `desktop-agent proof promote-suite <trace-root> --write-report
+      --write-status-json --write-runbook --write-archive` and archive
+      `proof-suite-promotion.json` as the final promotion decision.
 
 ## Required Proof Bundle
 
@@ -108,6 +111,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       blocking errors.
 - [ ] Final `validate-suite --require-preflight --require-review` fails if
       either preflight readiness or human review sign-off is missing or failed.
+- [ ] `proof-suite-promotion.json` records `promotion_ready: true` only after
+      proof bundles, preflight, and human review gates all pass.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 

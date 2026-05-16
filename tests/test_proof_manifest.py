@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import cast
 
 from desktop_agent.proof_manifest import (
+    proof_suite_promotion_metadata,
     proof_suite_status_metadata,
     render_proof_suite_report,
     render_proof_suite_review_template,
@@ -15,6 +16,7 @@ from desktop_agent.proof_manifest import (
     write_proof_preflight_report,
     write_proof_review_status,
     write_proof_suite_archive,
+    write_proof_suite_promotion,
     write_proof_suite_report,
     write_proof_suite_review_template,
     write_proof_suite_runbook,
@@ -409,6 +411,89 @@ def test_write_proof_suite_status_records_monitoring_payload(
     assert proofs[1]["status"] == "missing"
 
 
+def test_write_proof_suite_promotion_records_final_gates(tmp_path: Path) -> None:
+    for proof_name in (
+        "browser-fixture",
+        "native-fixture",
+        "mixed-fixture",
+        "recovery-fixture",
+    ):
+        _write_proof_bundle(
+            tmp_path,
+            proof_name=proof_name,
+            trace_dir_name=proof_name,
+            include_video=False,
+        )
+    write_proof_preflight_report(
+        run_proof_preflight(
+            tmp_path,
+            require_windows=False,
+            require_video=False,
+        ),
+    )
+    _write_completed_review_status(tmp_path)
+    result = validate_proof_suite(
+        tmp_path,
+        require_video=False,
+        require_preflight=True,
+        require_review=True,
+    )
+
+    payload = proof_suite_promotion_metadata(result, require_video=False)
+    promotion_path = write_proof_suite_promotion(result, require_video=False)
+    saved_payload = json.loads(promotion_path.read_text(encoding="utf-8"))
+
+    assert result.passed
+    assert promotion_path == tmp_path / "proof-suite-promotion.json"
+    assert saved_payload == payload
+    assert payload["status"] == "passed"
+    assert payload["promotion_ready"] is True
+    assert payload["gates"] == {
+        "proof_bundles": "passed",
+        "preflight": "passed",
+        "human_review": "passed",
+        "video": "external_or_disabled",
+    }
+
+
+def test_write_proof_suite_promotion_requires_preflight_and_review(
+    tmp_path: Path,
+) -> None:
+    for proof_name in (
+        "browser-fixture",
+        "native-fixture",
+        "mixed-fixture",
+        "recovery-fixture",
+    ):
+        _write_proof_bundle(
+            tmp_path,
+            proof_name=proof_name,
+            trace_dir_name=proof_name,
+            include_video=False,
+        )
+    result = validate_proof_suite(tmp_path, require_video=False)
+
+    payload = proof_suite_promotion_metadata(result, require_video=False)
+
+    assert payload["status"] == "failed"
+    assert payload["promotion_ready"] is False
+    assert payload["gates"] == {
+        "proof_bundles": "passed",
+        "preflight": "missing",
+        "human_review": "missing",
+        "video": "external_or_disabled",
+    }
+    errors = cast(list[str], payload["errors"])
+    assert (
+        f"proof preflight report not found: {tmp_path / 'proof-preflight.json'}"
+        in errors
+    )
+    assert (
+        f"proof review status not found: {tmp_path / 'proof-suite-review-status.json'}"
+        in errors
+    )
+
+
 def test_write_proof_suite_runbook_lists_next_operator_commands(
     tmp_path: Path,
 ) -> None:
@@ -535,6 +620,7 @@ def test_write_proof_suite_archive_packages_review_artifacts(
     )
     _write_completed_review_status(tmp_path)
     result = validate_proof_suite(tmp_path, require_video=False)
+    write_proof_suite_promotion(result, require_video=False)
 
     archive_path = write_proof_suite_archive(result, require_video=False)
 
@@ -547,6 +633,7 @@ def test_write_proof_suite_archive_packages_review_artifacts(
     assert "proof-suite-review.md" in names
     assert "proof-preflight.json" in names
     assert "proof-suite-review-status.json" in names
+    assert "proof-suite-promotion.json" in names
     assert "browser-fixture/proof-manifest.json" in names
     assert "browser-fixture/browser-fixture-report.json" in names
     assert "browser-fixture/action-log.jsonl" in names

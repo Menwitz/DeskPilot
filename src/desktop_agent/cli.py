@@ -101,6 +101,7 @@ from desktop_agent.proof_manifest import (
     write_proof_preflight_report,
     write_proof_review_status,
     write_proof_suite_archive,
+    write_proof_suite_promotion,
     write_proof_suite_report,
     write_proof_suite_review_template,
     write_proof_suite_runbook,
@@ -654,6 +655,41 @@ def _build_parser() -> argparse.ArgumentParser:
         "--review-template-path",
         type=Path,
         help="write the human review template to an explicit Markdown path",
+    )
+    proof_promote_suite_parser = proof_subparsers.add_parser(
+        "promote-suite",
+        help="write final proof-suite promotion JSON after all gates pass",
+    )
+    proof_promote_suite_parser.add_argument("trace_root", type=Path)
+    proof_promote_suite_parser.add_argument(
+        "--allow-missing-video",
+        action="store_true",
+        help="promote artifacts with an externally reviewed recording",
+    )
+    proof_promote_suite_parser.add_argument(
+        "--promotion-path",
+        type=Path,
+        help="write the promotion JSON to an explicit path",
+    )
+    proof_promote_suite_parser.add_argument(
+        "--write-report",
+        action="store_true",
+        help="write proof-suite-report.md alongside the promotion result",
+    )
+    proof_promote_suite_parser.add_argument(
+        "--write-status-json",
+        action="store_true",
+        help="write proof-suite-status.json alongside the promotion result",
+    )
+    proof_promote_suite_parser.add_argument(
+        "--write-runbook",
+        action="store_true",
+        help="write proof-suite-next-actions.md alongside the promotion result",
+    )
+    proof_promote_suite_parser.add_argument(
+        "--write-archive",
+        action="store_true",
+        help="write proof-suite-artifacts.zip after promotion JSON is written",
     )
     proof_browser_parser = proof_subparsers.add_parser(
         "browser-fixture",
@@ -2781,6 +2817,8 @@ def _proof(args: argparse.Namespace) -> int:
         return _proof_validate(args)
     if args.proof_command == "validate-suite":
         return _proof_validate_suite(args)
+    if args.proof_command == "promote-suite":
+        return _proof_promote_suite(args)
     if args.proof_command == "browser-fixture":
         return _proof_browser_fixture(args)
     if args.proof_command == "native-fixture":
@@ -2895,6 +2933,55 @@ def _proof_validate_suite(args: argparse.Namespace) -> int:
             args.review_template_path,
         )
         print(f"review_template: {review_path}")
+    return 0 if result.passed else 1
+
+
+def _proof_promote_suite(args: argparse.Namespace) -> int:
+    require_video = not args.allow_missing_video
+    result = validate_proof_suite(
+        args.trace_root,
+        require_video=require_video,
+        require_preflight=True,
+        require_review=True,
+    )
+    print(f"trace_root: {args.trace_root}")
+    print(f"promotion: {'passed' if result.passed else 'failed'}")
+    for warning in result.warnings:
+        print(f"warning: {warning}")
+    for duplicate in result.duplicate_proofs:
+        print(f"warning: duplicate proof bundle: {duplicate}")
+    for bundle in result.bundle_results:
+        proof_name = bundle.proof_name or str(bundle.trace_dir)
+        print(
+            f"proof {proof_name}: {'passed' if bundle.passed else 'failed'} "
+            f"({bundle.trace_dir})",
+        )
+        for warning in bundle.warnings:
+            print(f"warning: {proof_name}: {warning}")
+    for error in result.errors:
+        print(f"error: {error}")
+
+    promotion_path = write_proof_suite_promotion(
+        result,
+        args.promotion_path,
+        require_video=require_video,
+    )
+    print(f"promotion_json: {promotion_path}")
+    if args.write_report:
+        report_path = write_proof_suite_report(result)
+        print(f"report: {report_path}")
+    if args.write_status_json:
+        status_path = write_proof_suite_status(result)
+        print(f"status_json: {status_path}")
+    if args.write_runbook:
+        runbook_path = write_proof_suite_runbook(
+            result,
+            require_video=require_video,
+        )
+        print(f"runbook: {runbook_path}")
+    if args.write_archive:
+        archive_path = write_proof_suite_archive(result, require_video=require_video)
+        print(f"archive: {archive_path}")
     return 0 if result.passed else 1
 
 

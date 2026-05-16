@@ -1932,6 +1932,36 @@ def test_cli_proof_validate_suite_writes_review_template(
     assert "- [ ] Pass" in review
 
 
+def test_cli_proof_promote_suite_writes_promotion_json(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    promotion_path = tmp_path / "monitoring" / "promotion.json"
+    write_proof_manifest(trace_dir)
+
+    status = main(
+        [
+            "proof",
+            "promote-suite",
+            str(tmp_path),
+            "--allow-missing-video",
+            "--promotion-path",
+            str(promotion_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    payload = json.loads(promotion_path.read_text(encoding="utf-8"))
+    assert status == 1
+    assert "promotion: failed" in output
+    assert f"promotion_json: {promotion_path}" in output
+    assert payload["status"] == "failed"
+    assert payload["promotion_ready"] is False
+    assert "proof preflight report not found" in "\n".join(payload["errors"])
+    assert "proof review status not found" in "\n".join(payload["errors"])
+
+
 def test_cli_proof_validate_review_writes_status(
     tmp_path: Path,
     capsys: CaptureFixture[str],

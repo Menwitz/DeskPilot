@@ -24,6 +24,7 @@ PROOF_SUITE_RUNBOOK_NAME = "proof-suite-next-actions.md"
 PROOF_SUITE_ARCHIVE_NAME = "proof-suite-artifacts.zip"
 PROOF_SUITE_REVIEW_NAME = "proof-suite-review.md"
 PROOF_SUITE_REVIEW_STATUS_NAME = "proof-suite-review-status.json"
+PROOF_SUITE_PROMOTION_NAME = "proof-suite-promotion.json"
 PROOF_PREFLIGHT_REPORT_NAME = "proof-preflight.json"
 
 
@@ -650,6 +651,74 @@ def proof_suite_status_metadata(validation: ProofSuiteValidation) -> dict[str, o
     }
 
 
+def proof_suite_promotion_metadata(
+    validation: ProofSuiteValidation,
+    *,
+    require_video: bool = True,
+) -> dict[str, object]:
+    """Build the final proof promotion payload for release evidence."""
+
+    errors = _proof_suite_promotion_errors(validation)
+    proof_manifest_paths = {
+        bundle.proof_name: str(bundle.manifest_path)
+        for bundle in validation.bundle_results
+        if bundle.proof_name is not None
+    }
+    return {
+        "schema_version": 1,
+        "trace_root": str(validation.trace_root),
+        "status": "passed" if not errors else "failed",
+        "promotion_ready": not errors,
+        "require_video": require_video,
+        "gates": {
+            "proof_bundles": _proof_bundle_gate_status(validation),
+            "preflight": _artifact_gate_status(
+                validation.preflight_report_path,
+                validation.preflight_errors,
+            ),
+            "human_review": _artifact_gate_status(
+                validation.review_status_path,
+                validation.review_errors,
+            ),
+            "video": "required" if require_video else "external_or_disabled",
+        },
+        "expected_proofs": list(validation.expected_proofs),
+        "proof_manifest_paths": proof_manifest_paths,
+        "preflight_report_path": str(validation.preflight_report_path)
+        if validation.preflight_report_path is not None
+        else None,
+        "review_status_path": str(validation.review_status_path)
+        if validation.review_status_path is not None
+        else None,
+        "errors": errors,
+        "warnings": list(validation.warnings),
+    }
+
+
+def write_proof_suite_promotion(
+    validation: ProofSuiteValidation,
+    output_path: Path | None = None,
+    *,
+    require_video: bool = True,
+) -> Path:
+    """Write the final machine-readable proof promotion decision."""
+
+    promotion_path = output_path or validation.trace_root / PROOF_SUITE_PROMOTION_NAME
+    promotion_path.parent.mkdir(parents=True, exist_ok=True)
+    promotion_path.write_text(
+        json.dumps(
+            proof_suite_promotion_metadata(
+                validation,
+                require_video=require_video,
+            ),
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    return promotion_path
+
+
 def write_proof_suite_status(
     validation: ProofSuiteValidation,
     output_path: Path | None = None,
@@ -918,6 +987,47 @@ def _suite_level_errors(validation: ProofSuiteValidation) -> list[str]:
     ]
 
 
+def _proof_suite_promotion_errors(validation: ProofSuiteValidation) -> list[str]:
+    errors = list(validation.errors)
+    # Promotion is stricter than ordinary validation: the final record must
+    # prove that both machine preflight and human review gates were completed.
+    if validation.preflight_report_path is None and not any(
+        error.startswith("proof preflight report not found")
+        for error in errors
+    ):
+        errors.append(
+            f"proof preflight report not found: "
+            f"{validation.trace_root / PROOF_PREFLIGHT_REPORT_NAME}",
+        )
+    if validation.review_status_path is None and not any(
+        error.startswith("proof review status not found")
+        for error in errors
+    ):
+        errors.append(
+            f"proof review status not found: "
+            f"{validation.trace_root / PROOF_SUITE_REVIEW_STATUS_NAME}",
+        )
+    return errors
+
+
+def _proof_bundle_gate_status(validation: ProofSuiteValidation) -> str:
+    if validation.missing_proofs or validation.duplicate_proofs:
+        return "failed"
+    if any(not bundle.passed for bundle in validation.bundle_results):
+        return "failed"
+    if len(validation.bundle_results) != len(validation.expected_proofs):
+        return "failed"
+    return "passed"
+
+
+def _artifact_gate_status(path: Path | None, errors: tuple[str, ...]) -> str:
+    if path is None:
+        return "missing"
+    if errors:
+        return "failed"
+    return "passed"
+
+
 def _write_zip_text(
     archive: zipfile.ZipFile,
     written_names: set[str],
@@ -940,6 +1050,9 @@ def _proof_suite_archive_files(
     review_status_path = validation.trace_root / PROOF_SUITE_REVIEW_STATUS_NAME
     if review_status_path.exists():
         paths.append(review_status_path)
+    promotion_path = validation.trace_root / PROOF_SUITE_PROMOTION_NAME
+    if promotion_path.exists():
+        paths.append(promotion_path)
     for bundle in validation.bundle_results:
         paths.append(bundle.manifest_path)
         paths.extend(path for _, path in bundle.artifact_paths)
