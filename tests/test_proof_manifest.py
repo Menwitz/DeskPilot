@@ -1,4 +1,5 @@
 import json
+import zipfile
 from pathlib import Path
 from typing import cast
 
@@ -8,6 +9,7 @@ from desktop_agent.proof_manifest import (
     render_proof_suite_runbook,
     validate_proof_bundle,
     validate_proof_suite,
+    write_proof_suite_archive,
     write_proof_suite_report,
     write_proof_suite_runbook,
     write_proof_suite_status,
@@ -195,6 +197,31 @@ def test_write_proof_suite_runbook_lists_next_operator_commands(
         f"{tmp_path} --allow-missing-video --write-report "
         "--write-status-json --write-runbook"
     ) in runbook
+
+
+def test_write_proof_suite_archive_packages_review_artifacts(
+    tmp_path: Path,
+) -> None:
+    _write_proof_bundle(
+        tmp_path,
+        proof_name="browser-fixture",
+        trace_dir_name="browser-fixture",
+        include_video=False,
+    )
+    result = validate_proof_suite(tmp_path, require_video=False)
+
+    archive_path = write_proof_suite_archive(result, require_video=False)
+
+    assert archive_path == tmp_path / "proof-suite-artifacts.zip"
+    with zipfile.ZipFile(archive_path) as archive:
+        names = set(archive.namelist())
+    assert "proof-suite-report.md" in names
+    assert "proof-suite-status.json" in names
+    assert "proof-suite-next-actions.md" in names
+    assert "browser-fixture/proof-manifest.json" in names
+    assert "browser-fixture/browser-fixture-report.json" in names
+    assert "browser-fixture/action-log.jsonl" in names
+    assert "browser-fixture/screenshots/shot-1.png" in names
 
 
 def _write_proof_bundle(

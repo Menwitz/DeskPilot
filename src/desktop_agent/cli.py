@@ -96,6 +96,7 @@ from desktop_agent.preview import build_dry_run_preview, render_dry_run_preview
 from desktop_agent.proof_manifest import (
     validate_proof_bundle,
     validate_proof_suite,
+    write_proof_suite_archive,
     write_proof_suite_report,
     write_proof_suite_runbook,
     write_proof_suite_status,
@@ -572,6 +573,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--runbook-path",
         type=Path,
         help="write the next-actions runbook to an explicit Markdown path",
+    )
+    proof_validate_suite_parser.add_argument(
+        "--write-archive",
+        action="store_true",
+        help="write proof-suite-artifacts.zip after validation",
+    )
+    proof_validate_suite_parser.add_argument(
+        "--archive-path",
+        type=Path,
+        help="write the proof suite artifact archive to an explicit zip path",
     )
     proof_browser_parser = proof_subparsers.add_parser(
         "browser-fixture",
@@ -2758,6 +2769,13 @@ def _proof_validate_suite(args: argparse.Namespace) -> int:
             require_video=not args.allow_missing_video,
         )
         print(f"runbook: {runbook_path}")
+    if args.write_archive or args.archive_path:
+        archive_path = write_proof_suite_archive(
+            result,
+            args.archive_path,
+            require_video=not args.allow_missing_video,
+        )
+        print(f"archive: {archive_path}")
     return 0 if result.passed else 1
 
 

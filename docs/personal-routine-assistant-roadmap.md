@@ -165,6 +165,9 @@ abuse, and hidden automation are not supported.
 - [x] Add a proof suite next-actions runbook that lists missing proof commands,
       invalid bundle revalidation commands, duplicate review items, and final
       promotion commands.
+- [x] Add a proof suite artifact archive containing generated review files,
+      proof manifests, action logs, reports, screenshots, and video artifacts
+      when present.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

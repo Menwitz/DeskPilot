@@ -1,4 +1,5 @@
 import json
+import zipfile
 from pathlib import Path
 
 from pytest import CaptureFixture, MonkeyPatch
@@ -1787,6 +1788,36 @@ def test_cli_proof_validate_suite_writes_runbook(
     assert "# DeskPilot Windows Proof Suite Next Actions" in runbook
     assert "desktop-agent proof browser-fixture" in runbook
     assert "--allow-missing-video --write-report" in runbook
+
+
+def test_cli_proof_validate_suite_writes_archive(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    archive_path = tmp_path / "review" / "suite.zip"
+    write_proof_manifest(trace_dir)
+
+    status = main(
+        [
+            "proof",
+            "validate-suite",
+            str(tmp_path),
+            "--allow-missing-video",
+            "--write-archive",
+            "--archive-path",
+            str(archive_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    with zipfile.ZipFile(archive_path) as archive:
+        names = set(archive.namelist())
+    assert status == 1
+    assert f"archive: {archive_path}" in output
+    assert "proof-suite-report.md" in names
+    assert "proof-suite-status.json" in names
+    assert "proof-suite-next-actions.md" in names
 
 
 def test_cli_benchmark_run_writes_metrics_and_report(

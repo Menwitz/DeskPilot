@@ -35,6 +35,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Run `desktop-agent proof validate-suite <trace-root> --write-runbook`
       and follow `proof-suite-next-actions.md` until no missing or invalid proof
       bundle remains.
+- [ ] Run `desktop-agent proof validate-suite <trace-root> --write-archive`
+      and store `proof-suite-artifacts.zip` with the review record.
 
 ## Required Proof Bundle
 
@@ -73,6 +75,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] `proof-suite-next-actions.md` lists missing proof commands, invalid bundle
       revalidation commands, duplicate review items, and final promotion
       commands.
+- [ ] `proof-suite-artifacts.zip` contains the generated suite report, status
+      JSON, next-actions runbook, proof manifests, action logs, command reports,
+      screenshots, and video artifacts when present.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 

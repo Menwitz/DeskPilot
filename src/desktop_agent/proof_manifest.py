@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shlex
+import zipfile
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,6 +18,7 @@ REQUIRED_WINDOWS_PROOF_NAMES: tuple[str, ...] = (
 PROOF_SUITE_REPORT_NAME = "proof-suite-report.md"
 PROOF_SUITE_STATUS_NAME = "proof-suite-status.json"
 PROOF_SUITE_RUNBOOK_NAME = "proof-suite-next-actions.md"
+PROOF_SUITE_ARCHIVE_NAME = "proof-suite-artifacts.zip"
 
 
 @dataclass(frozen=True)
@@ -569,6 +571,53 @@ def write_proof_suite_runbook(
     return runbook_path
 
 
+def write_proof_suite_archive(
+    validation: ProofSuiteValidation,
+    output_path: Path | None = None,
+    *,
+    require_video: bool = True,
+) -> Path:
+    """Write one local archive with generated suite docs and proof artifacts."""
+
+    archive_path = output_path or validation.trace_root / PROOF_SUITE_ARCHIVE_NAME
+    archive_path.parent.mkdir(parents=True, exist_ok=True)
+    written_names: set[str] = set()
+    with zipfile.ZipFile(
+        archive_path,
+        mode="w",
+        compression=zipfile.ZIP_DEFLATED,
+    ) as archive:
+        _write_zip_text(
+            archive,
+            written_names,
+            PROOF_SUITE_REPORT_NAME,
+            render_proof_suite_report(validation),
+        )
+        _write_zip_text(
+            archive,
+            written_names,
+            PROOF_SUITE_STATUS_NAME,
+            json.dumps(
+                proof_suite_status_metadata(validation),
+                indent=2,
+                sort_keys=True,
+            ),
+        )
+        _write_zip_text(
+            archive,
+            written_names,
+            PROOF_SUITE_RUNBOOK_NAME,
+            render_proof_suite_runbook(validation, require_video=require_video),
+        )
+        for artifact_path in _proof_suite_archive_files(validation):
+            archive_name = _archive_name(validation.trace_root, artifact_path)
+            if archive_name in written_names:
+                continue
+            archive.write(artifact_path, archive_name)
+            written_names.add(archive_name)
+    return archive_path
+
+
 def _proof_errors_for_bundle(
     validation: ProofSuiteValidation,
     proof_name: str,
@@ -579,6 +628,36 @@ def _proof_errors_for_bundle(
         for error in validation.errors
         if error.startswith(prefix)
     ]
+
+
+def _write_zip_text(
+    archive: zipfile.ZipFile,
+    written_names: set[str],
+    archive_name: str,
+    text: str,
+) -> None:
+    if archive_name in written_names:
+        return
+    archive.writestr(archive_name, text)
+    written_names.add(archive_name)
+
+
+def _proof_suite_archive_files(
+    validation: ProofSuiteValidation,
+) -> tuple[Path, ...]:
+    paths: list[Path] = []
+    for bundle in validation.bundle_results:
+        paths.append(bundle.manifest_path)
+        paths.extend(path for _, path in bundle.artifact_paths)
+    return tuple(path for path in paths if path.exists() and path.is_file())
+
+
+def _archive_name(trace_root: Path, artifact_path: Path) -> str:
+    try:
+        relative = artifact_path.resolve().relative_to(trace_root.resolve())
+    except ValueError:
+        relative = Path("external-artifacts") / artifact_path.name
+    return relative.as_posix()
 
 
 def _proof_collection_command(
