@@ -77,6 +77,11 @@ desktop-agent export-routine-pack browser --output traces/browser-pack.zip
 one `routine-pack.yaml`. It validates the manifest before copying the pack into
 the target root and refuses to overwrite an installed pack unless `--replace` is
 provided.
+Before copying, import also scans the incoming pack against installed packs for
+duplicate pack/version records, duplicate routine IDs, duplicate routine input
+signatures, and duplicate task selector signatures. Duplicate pack/version and
+routine IDs block install unless `--replace` is provided; input and selector
+duplicates are surfaced as warnings for operator review.
 
 `export-routine-pack` validates the installed manifest and writes either a
 directory or `.zip` archive depending on the `--output` path.

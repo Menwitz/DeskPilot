@@ -107,6 +107,7 @@ from desktop_agent.routine_pack_manifest import (
     routine_pack_trust_warnings,
 )
 from desktop_agent.routine_pack_ops import (
+    RoutinePackConflict,
     RoutinePackOperationError,
     export_routine_pack,
     import_routine_pack,
@@ -1072,6 +1073,7 @@ def _import_routine_pack(args: argparse.Namespace) -> int:
     print(f"{action} routine pack: {result.manifest.id}")
     print(f"source: {result.source_path}")
     print(f"installed: {result.installed_path}")
+    _print_routine_pack_conflicts(result.conflicts)
     _print_trust_warning_messages(result.trust_warnings)
     return 0
 
@@ -1104,6 +1106,17 @@ def _print_trust_warning_messages(
     print("trust_warnings:")
     for warning in warnings:
         print(f"  - {warning.message}")
+
+
+def _print_routine_pack_conflicts(
+    conflicts: tuple[RoutinePackConflict, ...],
+) -> None:
+    if not conflicts:
+        print("conflicts: none")
+        return
+    print("conflicts:")
+    for conflict in conflicts:
+        print(f"  - {conflict.severity}/{conflict.kind}: {conflict.message}")
 
 
 def _run_routine(args: argparse.Namespace, *, dry_run: bool) -> int:

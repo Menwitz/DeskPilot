@@ -7,6 +7,7 @@ from pytest import CaptureFixture
 from desktop_agent.cli import main
 from desktop_agent.routine_pack_ops import (
     RoutinePackOperationError,
+    detect_routine_pack_conflicts,
     export_routine_pack,
     import_routine_pack,
 )
@@ -70,6 +71,61 @@ def test_routine_pack_import_surfaces_unverified_trust_warning(
     output = capsys.readouterr().out
     assert "trust_warnings:" in output
     assert "pack is unverified" in output
+
+
+def test_routine_pack_conflicts_detect_ids_inputs_selectors_and_versions(
+    tmp_path: Path,
+) -> None:
+    installed_root = tmp_path / "installed"
+    existing = _write_pack(
+        tmp_path / "existing-pack",
+        pack_id="existing-pack",
+        routine_id="shared.routine",
+        input_name="query",
+        target="Search",
+    )
+    incoming_duplicate_id = _write_pack(
+        tmp_path / "incoming-duplicate-id",
+        pack_id="incoming-pack",
+        routine_id="shared.routine",
+        input_name="query",
+        target="Search",
+    )
+    incoming_overlap = _write_pack(
+        tmp_path / "incoming-overlap",
+        pack_id="incoming-overlap",
+        routine_id="incoming.routine",
+        input_name="query",
+        target="Search",
+    )
+    import_routine_pack(existing, installed_root)
+
+    duplicate_id_conflicts = detect_routine_pack_conflicts(
+        incoming_duplicate_id,
+        installed_root,
+    )
+    overlap_conflicts = detect_routine_pack_conflicts(incoming_overlap, installed_root)
+    duplicate_kinds = {conflict.kind for conflict in duplicate_id_conflicts}
+    overlap_kinds = {conflict.kind for conflict in overlap_conflicts}
+
+    assert "routine_id" in duplicate_kinds
+    assert overlap_kinds >= {"input_signature", "selector_signature"}
+    with pytest.raises(RoutinePackOperationError, match="duplicate routine id"):
+        import_routine_pack(incoming_duplicate_id, installed_root)
+
+
+def test_routine_pack_conflicts_detect_installed_pack_version(
+    tmp_path: Path,
+) -> None:
+    installed_root = tmp_path / "installed"
+    first = _write_pack(tmp_path / "first-pack", pack_id="sample-pack")
+    second = _write_pack(tmp_path / "second-pack", pack_id="sample-pack")
+    import_routine_pack(first, installed_root)
+
+    conflicts = detect_routine_pack_conflicts(second, installed_root)
+
+    assert conflicts[0].kind == "pack_version"
+    assert conflicts[0].severity == "error"
 
 
 def test_routine_pack_cli_lists_shows_imports_and_exports(
@@ -138,12 +194,54 @@ def _write_pack(
     root: Path,
     *,
     pack_id: str,
+    routine_id: str | None = None,
+    input_name: str = "topic",
+    target: str = "Target",
     trust_level: str = "trusted_local",
 ) -> Path:
     root.mkdir(parents=True)
     (root / "README.md").write_text("# Sample Pack\n", encoding="utf-8")
+    task_path = root / "tasks" / "sample.yaml"
+    task_path.parent.mkdir()
+    task_path.write_text(
+        "\n".join(
+            [
+                "name: Sample task",
+                "allowed_windows:",
+                "  - Sample Window",
+                "steps:",
+                "  - id: click-target",
+                "    action: click_text",
+                f"    target: {target}",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
     (root / "sample.routine.yaml").write_text(
-        "# placeholder routine definition for pack copy tests\n",
+        "\n".join(
+            [
+                f"id: {routine_id or f'{pack_id}.routine'}",
+                "name: Sample routine",
+                "description: Sample routine definition for pack copy tests.",
+                "goal: Exercise routine pack import and export.",
+                "required_app: Sample Window",
+                "tags:",
+                "  - sample",
+                "inputs:",
+                f"  - {input_name}",
+                "outputs:",
+                "  - result",
+                "safety_class: low",
+                "schedule_policy: manual",
+                "approval_policy: none",
+                "expected_duration_seconds: 30",
+                "reference:",
+                "  type: task",
+                "  path: tasks/sample.yaml",
+                "",
+            ],
+        ),
         encoding="utf-8",
     )
     (root / "routine-pack.yaml").write_text(

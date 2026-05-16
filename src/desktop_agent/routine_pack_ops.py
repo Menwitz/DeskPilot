@@ -5,8 +5,11 @@ from __future__ import annotations
 import shutil
 import tempfile
 import zipfile
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
+
+import yaml
 
 from desktop_agent.routine_pack_manifest import (
     ROUTINE_PACK_MANIFEST_FILENAME,
@@ -17,10 +20,31 @@ from desktop_agent.routine_pack_manifest import (
     load_routine_pack_manifests,
     routine_pack_trust_warnings,
 )
+from desktop_agent.routines import RoutineDefinition, load_routine_definition
 
 
 class RoutinePackOperationError(ValueError):
     """Raised when a routine pack import or export cannot be completed."""
+
+
+@dataclass(frozen=True)
+class RoutinePackConflict:
+    """Conflict found before installing or replacing a routine pack."""
+
+    kind: str
+    severity: str
+    incoming: str
+    existing: str
+    message: str
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "kind": self.kind,
+            "severity": self.severity,
+            "incoming": self.incoming,
+            "existing": self.existing,
+            "message": self.message,
+        }
 
 
 @dataclass(frozen=True)
@@ -32,6 +56,7 @@ class RoutinePackImportResult:
     installed_path: Path
     replaced_existing: bool
     trust_warnings: tuple[RoutinePackTrustWarning, ...] = ()
+    conflicts: tuple[RoutinePackConflict, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -43,6 +68,7 @@ class RoutinePackExportResult:
     output_path: Path
     archive: bool
     trust_warnings: tuple[RoutinePackTrustWarning, ...] = ()
+    conflicts: tuple[RoutinePackConflict, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -130,6 +156,31 @@ def remove_routine_pack(
     return RoutinePackRemoveResult(manifest=manifest, removed_path=pack_dir)
 
 
+def detect_routine_pack_conflicts(
+    source: Path,
+    routine_pack_root: Path,
+) -> tuple[RoutinePackConflict, ...]:
+    """Compare an incoming pack with installed packs before installation."""
+    incoming_manifest = load_routine_pack_manifest(source)
+    installed_manifests = (
+        load_routine_pack_manifests(routine_pack_root)
+        if routine_pack_root.exists()
+        else ()
+    )
+    incoming_records = _pack_routine_records(incoming_manifest)
+    installed_records = tuple(
+        record
+        for manifest in installed_manifests
+        for record in _pack_routine_records(manifest)
+    )
+    conflicts: list[RoutinePackConflict] = []
+    conflicts.extend(_pack_version_conflicts(incoming_manifest, installed_manifests))
+    conflicts.extend(_routine_id_conflicts(incoming_records, installed_records))
+    conflicts.extend(_routine_input_conflicts(incoming_records, installed_records))
+    conflicts.extend(_selector_conflicts(incoming_records, installed_records))
+    return tuple(conflicts)
+
+
 def _import_routine_pack_dir(
     source_dir: Path,
     routine_pack_root: Path,
@@ -140,6 +191,15 @@ def _import_routine_pack_dir(
     manifest = load_routine_pack_manifest(source_dir)
     destination = routine_pack_root / manifest.id
     replaced_existing = destination.exists()
+    conflicts = detect_routine_pack_conflicts(source_dir, routine_pack_root)
+    blocking_conflicts = tuple(
+        conflict for conflict in conflicts if conflict.severity == "error"
+    )
+    if blocking_conflicts and not replace:
+        raise RoutinePackOperationError(
+            "routine pack conflicts: "
+            + "; ".join(conflict.message for conflict in blocking_conflicts),
+        )
     if replaced_existing and not replace:
         raise RoutinePackOperationError(
             f"routine pack already installed: {manifest.id}",
@@ -155,6 +215,7 @@ def _import_routine_pack_dir(
         installed_path=destination,
         replaced_existing=replaced_existing,
         trust_warnings=routine_pack_trust_warnings(installed_manifest),
+        conflicts=conflicts,
     )
 
 
@@ -190,6 +251,159 @@ def _resolve_extracted_pack_dir(extracted_root: Path) -> Path:
             "routine pack archive must contain exactly one manifest",
         )
     return candidates[0]
+
+
+@dataclass(frozen=True)
+class _RoutineRecord:
+    pack_id: str
+    routine: RoutineDefinition
+    selectors: tuple[str, ...]
+
+
+def _pack_routine_records(manifest: RoutinePackManifest) -> tuple[_RoutineRecord, ...]:
+    if manifest.source_path is None:
+        return ()
+    pack_root = manifest.source_path.parent
+    records: list[_RoutineRecord] = []
+    for routine_path in _routine_paths_for_manifest(pack_root, manifest.routine_globs):
+        try:
+            routine = load_routine_definition(routine_path)
+        except ValueError:
+            continue
+        records.append(
+            _RoutineRecord(
+                pack_id=manifest.id,
+                routine=routine,
+                selectors=_selector_signatures_for_routine(routine),
+            ),
+        )
+    return tuple(records)
+
+
+def _routine_paths_for_manifest(
+    pack_root: Path,
+    routine_globs: Iterable[str],
+) -> tuple[Path, ...]:
+    paths: set[Path] = set()
+    for pattern in routine_globs:
+        paths.update(pack_root.glob(pattern))
+    return tuple(sorted(path for path in paths if path.is_file()))
+
+
+def _pack_version_conflicts(
+    incoming: RoutinePackManifest,
+    installed: tuple[RoutinePackManifest, ...],
+) -> tuple[RoutinePackConflict, ...]:
+    conflicts: list[RoutinePackConflict] = []
+    for existing in installed:
+        if existing.id == incoming.id:
+            conflicts.append(
+                RoutinePackConflict(
+                    kind="pack_version",
+                    severity="error",
+                    incoming=f"{incoming.id}@{incoming.version}",
+                    existing=f"{existing.id}@{existing.version}",
+                    message=(
+                        f"pack {incoming.id} already installed "
+                        f"as version {existing.version}"
+                    ),
+                ),
+            )
+    return tuple(conflicts)
+
+
+def _routine_id_conflicts(
+    incoming: tuple[_RoutineRecord, ...],
+    installed: tuple[_RoutineRecord, ...],
+) -> tuple[RoutinePackConflict, ...]:
+    conflicts: list[RoutinePackConflict] = []
+    installed_by_id = {record.routine.id: record for record in installed}
+    for record in incoming:
+        existing = installed_by_id.get(record.routine.id)
+        if existing is not None:
+            conflicts.append(
+                RoutinePackConflict(
+                    kind="routine_id",
+                    severity="error",
+                    incoming=record.routine.id,
+                    existing=f"{existing.pack_id}:{existing.routine.id}",
+                    message=f"duplicate routine id: {record.routine.id}",
+                ),
+            )
+    return tuple(conflicts)
+
+
+def _routine_input_conflicts(
+    incoming: tuple[_RoutineRecord, ...],
+    installed: tuple[_RoutineRecord, ...],
+) -> tuple[RoutinePackConflict, ...]:
+    conflicts: list[RoutinePackConflict] = []
+    installed_by_inputs = {
+        record.routine.inputs: record for record in installed if record.routine.inputs
+    }
+    for record in incoming:
+        if not record.routine.inputs:
+            continue
+        existing = installed_by_inputs.get(record.routine.inputs)
+        if existing is not None and existing.routine.id != record.routine.id:
+            signature = ",".join(record.routine.inputs)
+            conflicts.append(
+                RoutinePackConflict(
+                    kind="input_signature",
+                    severity="warning",
+                    incoming=f"{record.routine.id}:{signature}",
+                    existing=f"{existing.routine.id}:{signature}",
+                    message=f"duplicate routine input signature: {signature}",
+                ),
+            )
+    return tuple(conflicts)
+
+
+def _selector_conflicts(
+    incoming: tuple[_RoutineRecord, ...],
+    installed: tuple[_RoutineRecord, ...],
+) -> tuple[RoutinePackConflict, ...]:
+    conflicts: list[RoutinePackConflict] = []
+    installed_by_selector = {
+        selector: record for record in installed for selector in record.selectors
+    }
+    for record in incoming:
+        for selector in record.selectors:
+            existing = installed_by_selector.get(selector)
+            if existing is not None and existing.routine.id != record.routine.id:
+                conflicts.append(
+                    RoutinePackConflict(
+                        kind="selector_signature",
+                        severity="warning",
+                        incoming=f"{record.routine.id}:{selector}",
+                        existing=f"{existing.routine.id}:{selector}",
+                        message=f"duplicate selector signature: {selector}",
+                    ),
+                )
+    return tuple(conflicts)
+
+
+def _selector_signatures_for_routine(routine: RoutineDefinition) -> tuple[str, ...]:
+    if routine.reference.kind != "task" or routine.reference.task_path is None:
+        return ()
+    task_path = routine.reference.task_path
+    if not task_path.exists():
+        return ()
+    loaded = yaml.safe_load(task_path.read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        return ()
+    steps = loaded.get("steps")
+    if not isinstance(steps, list):
+        return ()
+    selectors: list[str] = []
+    for step in steps:
+        if not isinstance(step, dict):
+            continue
+        action = step.get("action")
+        target = step.get("target")
+        if isinstance(action, str) and isinstance(target, str) and target:
+            selectors.append(f"{action}:{target}")
+    return tuple(selectors)
 
 
 def _write_pack_archive(source_dir: Path, output: Path) -> None:
