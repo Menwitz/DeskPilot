@@ -425,7 +425,7 @@ abuse, and hidden automation are not supported.
       execution status.
 - [x] Add routine index search by ID, name, app, site, tags, inputs, outputs,
       risk class, and schedule eligibility.
-- [ ] Add deterministic router with exact app/site matching, tag matching,
+- [x] Add deterministic router with exact app/site matching, tag matching,
       input compatibility, risk filtering, and confidence ranking.
 - [ ] Add missing-input prompts for routine variables and required session
       state.

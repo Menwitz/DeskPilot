@@ -9,7 +9,9 @@ from desktop_agent.goal_planning import (
     GoalPlanApproval,
     GoalPlanCandidate,
     GoalPlanError,
+    GoalRoutingRequest,
     goal_plan_from_mapping,
+    route_goal_to_routine,
     search_routine_index_for_goal,
     validate_goal_plan,
 )
@@ -241,6 +243,113 @@ def test_goal_routine_index_search_can_filter_ineligible_schedules() -> None:
     assert results == ()
 
 
+def test_goal_router_uses_exact_site_tags_inputs_and_confidence_ranking() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="browser.read-page",
+                name="Browser read page",
+                tags=["browser", "reading"],
+                required_site="example.com",
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+                inputs=["url"],
+            ),
+            _routine(
+                routine_id="social-content.linkedin-approved-publish",
+                name="LinkedIn approved publish",
+                tags=["social", "linkedin", "publish"],
+                required_site="linkedin.com",
+                safety_class="high",
+                approval_policy="manifest_required",
+                schedule_policy="manual",
+                inputs=["approval manifest"],
+            ),
+        ),
+    )
+
+    plan = route_goal_to_routine(
+        catalog,
+        GoalRoutingRequest(
+            user_goal="Publish the approved LinkedIn draft",
+            normalized_intent="linkedin publish approved manifest",
+            required_site="linkedin.com",
+            tags=("publish",),
+            provided_inputs=("approval manifest",),
+            max_safety_class="high",
+        ),
+    )
+
+    assert plan.selected_routine_id == "social-content.linkedin-approved-publish"
+    assert plan.execution_status == "blocked"
+    assert plan.approvals[0].policy == "manifest_required"
+    assert plan.candidate_routines[0].score > 0
+
+
+def test_goal_router_filters_above_max_safety_class() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="social-content.linkedin-approved-publish",
+                name="LinkedIn approved publish",
+                tags=["social", "linkedin", "publish"],
+                required_site="linkedin.com",
+                safety_class="high",
+                approval_policy="manifest_required",
+                schedule_policy="manual",
+            ),
+        ),
+    )
+
+    plan = route_goal_to_routine(
+        catalog,
+        GoalRoutingRequest(
+            user_goal="Publish the approved LinkedIn draft",
+            normalized_intent="linkedin publish",
+            required_site="linkedin.com",
+            max_safety_class="medium",
+        ),
+    )
+
+    assert plan.selected_routine_id is None
+    assert plan.execution_status == "blocked"
+    assert plan.candidate_routines == ()
+
+
+def test_goal_router_marks_missing_inputs_before_execution_ready() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="browser.search-web",
+                name="Browser web search",
+                tags=["browser", "search"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+                inputs=["query"],
+            ),
+        ),
+    )
+
+    plan = route_goal_to_routine(
+        catalog,
+        GoalRoutingRequest(
+            user_goal="Search the web",
+            normalized_intent="browser search",
+            tags=("search",),
+            max_safety_class="low",
+        ),
+    )
+
+    assert plan.selected_routine_id == "browser.search-web"
+    assert plan.execution_status == "blocked"
+    assert plan.missing_inputs == ("query",)
+
+
 def _routine(
     *,
     routine_id: str,
@@ -250,6 +359,7 @@ def _routine(
     approval_policy: str,
     schedule_policy: str,
     required_site: str | None = None,
+    inputs: list[str] | None = None,
     allowed_time_windows: list[dict[str, object]] | None = None,
 ) -> RoutineDefinition:
     payload: dict[str, object] = {
@@ -258,7 +368,7 @@ def _routine(
         "description": "Routine for goal-planning search tests.",
         "goal": "Match a user goal to a routine.",
         "tags": tags,
-        "inputs": ["input"],
+        "inputs": inputs or ["input"],
         "outputs": ["output"],
         "safety_class": safety_class,
         "schedule_policy": schedule_policy,

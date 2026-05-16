@@ -41,3 +41,17 @@ When a timestamp is supplied, scheduled routines with allowed time windows are
 marked `inside_allowed_time_window` or `outside_allowed_time_window`. Callers
 can set `require_schedule_eligible` to remove routines that are outside their
 allowed window before routing or execution.
+
+## Deterministic Router
+
+`route_goal_to_routine()` applies deterministic rules over the routine index:
+
+- exact required app/site filters when the goal supplies those constraints.
+- tag and input compatibility bonuses.
+- max safety-class filtering.
+- schedule eligibility filtering.
+- stable score ordering with routine ID as the tie-breaker.
+
+The router returns a `GoalPlan`. Missing inputs or unsatisfied approvals keep the
+plan `blocked`; a routine is only `ready` when selected, fully supplied, and
+approved.

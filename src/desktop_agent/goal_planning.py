@@ -22,6 +22,12 @@ GoalExecutionStatus = Literal[
 SUPPORTED_GOAL_EXECUTION_STATUSES: frozenset[str] = frozenset(
     {"draft", "blocked", "ready", "running", "completed", "failed", "canceled"},
 )
+GOAL_ROUTER_SAFETY_RANK: dict[str, int] = {
+    "low": 0,
+    "medium": 1,
+    "high": 2,
+    "sensitive": 3,
+}
 
 
 class GoalPlanError(ValueError):
@@ -72,6 +78,7 @@ class GoalPlanApproval:
 class GoalRoutineIndexResult:
     """Routine index hit prepared for goal-plan candidate ranking."""
 
+    routine: RoutineDefinition
     candidate: GoalPlanCandidate
     schedule_eligible: bool
     schedule_reason: str
@@ -82,6 +89,20 @@ class GoalRoutineIndexResult:
             "schedule_eligible": self.schedule_eligible,
             "schedule_reason": self.schedule_reason,
         }
+
+
+@dataclass(frozen=True)
+class GoalRoutingRequest:
+    """Deterministic routine-router inputs derived from a user goal."""
+
+    user_goal: str
+    normalized_intent: str
+    required_app: str | None = None
+    required_site: str | None = None
+    tags: tuple[str, ...] = ()
+    provided_inputs: tuple[str, ...] = ()
+    max_safety_class: str = "sensitive"
+    now: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -172,6 +193,7 @@ def search_routine_index_for_goal(
             continue
         results.append(
             GoalRoutineIndexResult(
+                routine=result.routine,
                 candidate=GoalPlanCandidate(
                     routine_id=result.routine.id,
                     routine_name=result.routine.name,
@@ -185,6 +207,70 @@ def search_routine_index_for_goal(
             ),
         )
     return tuple(results)
+
+
+def route_goal_to_routine(
+    catalog: RoutineCatalog,
+    request: GoalRoutingRequest,
+) -> GoalPlan:
+    """Select the best known routine using deterministic router rules."""
+    validate_goal_routing_request(request)
+    indexed_results = search_routine_index_for_goal(
+        catalog,
+        request.normalized_intent or request.user_goal,
+        now=request.now,
+        require_schedule_eligible=True,
+        limit=100,
+    )
+    ranked_candidates = _rank_goal_candidates(indexed_results, request)
+    selected = ranked_candidates[0] if ranked_candidates else None
+    missing_inputs = (
+        _missing_inputs(catalog, selected.routine_id, request.provided_inputs)
+        if selected is not None
+        else ()
+    )
+    approvals = _approval_requirements(catalog, selected.routine_id) if selected else ()
+    execution_status: GoalExecutionStatus = "ready"
+    explanation = "Selected routine by deterministic ranking."
+    selected_routine_id = selected.routine_id if selected else None
+    if selected is None:
+        execution_status = "blocked"
+        explanation = "No eligible routine matched the goal and constraints."
+    elif missing_inputs:
+        execution_status = "blocked"
+        explanation = "Selected routine is blocked by missing inputs."
+    elif any(approval.required and not approval.satisfied for approval in approvals):
+        execution_status = "blocked"
+        explanation = "Selected routine is blocked by required approvals."
+    plan = GoalPlan(
+        user_goal=request.user_goal,
+        normalized_intent=request.normalized_intent,
+        candidate_routines=tuple(ranked_candidates),
+        selected_routine_id=selected_routine_id,
+        missing_inputs=missing_inputs,
+        approvals=approvals,
+        explanation=explanation,
+        execution_status=execution_status,
+    )
+    validate_goal_plan(plan)
+    return plan
+
+
+def validate_goal_routing_request(request: GoalRoutingRequest) -> None:
+    """Validate deterministic router constraints before scoring routines."""
+    errors: list[str] = []
+    if not request.user_goal.strip():
+        errors.append("user_goal is required")
+    if not request.normalized_intent.strip():
+        errors.append("normalized_intent is required")
+    if request.max_safety_class not in GOAL_ROUTER_SAFETY_RANK:
+        errors.append("max_safety_class must be low, medium, high, or sensitive")
+    if any(not tag.strip() for tag in request.tags):
+        errors.append("tags entries must not be blank")
+    if any(not item.strip() for item in request.provided_inputs):
+        errors.append("provided_inputs entries must not be blank")
+    if errors:
+        raise GoalPlanError("; ".join(errors))
 
 
 def validate_goal_plan(plan: GoalPlan) -> None:
@@ -330,6 +416,122 @@ def _string_tuple(value: object, key: str) -> tuple[str, ...]:
             raise GoalPlanError(f"{key} entries must be strings")
         result.append(item)
     return tuple(result)
+
+
+def _rank_goal_candidates(
+    indexed_results: tuple[GoalRoutineIndexResult, ...],
+    request: GoalRoutingRequest,
+) -> tuple[GoalPlanCandidate, ...]:
+    candidates: list[GoalPlanCandidate] = []
+    for result in indexed_results:
+        routine_score = _router_score(result, request)
+        if routine_score is None:
+            continue
+        candidates.append(
+            GoalPlanCandidate(
+                routine_id=result.candidate.routine_id,
+                routine_name=result.candidate.routine_name,
+                score=routine_score,
+                matched_fields=result.candidate.matched_fields,
+                safety_class=result.candidate.safety_class,
+                approval_policy=result.candidate.approval_policy,
+            ),
+        )
+    return tuple(sorted(candidates, key=lambda item: (-item.score, item.routine_id)))
+
+
+def _router_score(
+    result: GoalRoutineIndexResult,
+    request: GoalRoutingRequest,
+) -> float | None:
+    candidate = result.candidate
+    routine = result.routine
+    if not _safety_allowed(candidate.safety_class, request.max_safety_class):
+        return None
+    if request.required_site and not _text_matches(
+        routine.required_site,
+        request.required_site,
+    ):
+        return None
+    if request.required_app and not _text_matches(
+        routine.required_app,
+        request.required_app,
+    ):
+        return None
+    score = candidate.score
+    score += _tag_bonus(routine, request.tags)
+    score += _input_bonus(routine, request.provided_inputs)
+    if request.required_site:
+        score += 25
+    if request.required_app:
+        score += 25
+    if result.schedule_eligible:
+        score += 5
+    return score
+
+
+def _safety_allowed(safety_class: str, max_safety_class: str) -> bool:
+    return GOAL_ROUTER_SAFETY_RANK.get(safety_class, 99) <= GOAL_ROUTER_SAFETY_RANK[
+        max_safety_class
+    ]
+
+
+def _tag_bonus(routine: RoutineDefinition, requested_tags: tuple[str, ...]) -> float:
+    if not requested_tags:
+        return 0
+    routine_tags = {tag.casefold() for tag in routine.tags}
+    return sum(3 for tag in requested_tags if tag.casefold() in routine_tags)
+
+
+def _input_bonus(
+    routine: RoutineDefinition,
+    provided_inputs: tuple[str, ...],
+) -> float:
+    if not provided_inputs:
+        return 0
+    routine_inputs = {item.casefold() for item in routine.inputs}
+    return float(
+        sum(2 for item in provided_inputs if item.casefold() in routine_inputs)
+    )
+
+
+def _missing_inputs(
+    catalog: RoutineCatalog,
+    routine_id: str,
+    provided_inputs: tuple[str, ...],
+) -> tuple[str, ...]:
+    routine = catalog.by_id(routine_id)
+    if routine is None:
+        return ()
+    provided = {item.casefold() for item in provided_inputs}
+    return tuple(item for item in routine.inputs if item.casefold() not in provided)
+
+
+def _approval_requirements(
+    catalog: RoutineCatalog,
+    routine_id: str,
+) -> tuple[GoalPlanApproval, ...]:
+    routine = catalog.by_id(routine_id)
+    if routine is None or routine.approval_policy == "none":
+        return ()
+    return (
+        GoalPlanApproval(
+            policy=routine.approval_policy,
+            required=True,
+            satisfied=False,
+            reason="Routine approval policy requires operator review.",
+        ),
+    )
+
+
+def _tokens(value: str) -> tuple[str, ...]:
+    return tuple(value.casefold().replace("_", " ").replace("-", " ").split())
+
+
+def _text_matches(value: str | None, expected: str) -> bool:
+    if value is None:
+        return False
+    return value.casefold() == expected.casefold()
 
 
 def _schedule_eligibility(
