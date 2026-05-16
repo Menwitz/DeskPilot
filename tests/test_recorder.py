@@ -274,6 +274,43 @@ def test_recorder_generates_supported_task_steps_from_events() -> None:
     assert task.steps[7].target == "Done"
 
 
+def test_recorder_infers_verification_from_post_action_state_delta() -> None:
+    session = _session_with_events(
+        (
+            RecorderEvent.create(
+                "selected_point",
+                active_window="DeskPilot Fixture",
+                candidate_context=(
+                    RecorderCandidateContext(
+                        source="ocr",
+                        label="Submit",
+                        bounds={"x": 20, "y": 40, "width": 120, "height": 24},
+                    ),
+                ),
+            ),
+            RecorderEvent.create(
+                "observation",
+                active_window="DeskPilot Fixture",
+                metadata={
+                    "state_delta": {
+                        "visible_text_added": ["Success"],
+                        "target_appeared": True,
+                    },
+                },
+            ),
+        ),
+    )
+
+    task = generate_task_from_recorder_session(session)
+
+    BasicTaskValidator().validate(task, RuntimeConfig())
+    assert len(task.steps) == 1
+    assert task.steps[0].action == "click_text"
+    assert task.steps[0].verify is not None
+    assert task.steps[0].verify.type == "visible_text"
+    assert task.steps[0].verify.text == "Success"
+
+
 def test_cli_record_exposes_start_pause_stop_save_discard_controls(
     tmp_path: Path,
     capsys: CaptureFixture[str],

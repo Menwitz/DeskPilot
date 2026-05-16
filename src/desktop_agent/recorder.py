@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import json
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from importlib import import_module
 from pathlib import Path
 from typing import Literal, Protocol, cast
 from uuid import uuid4
 
-from desktop_agent.task_dsl import TaskDefinition, TaskStep
+from desktop_agent.task_dsl import TaskDefinition, TaskStep, VerificationDefinition
 
 RECORDER_SESSION_FORMAT = "deskpilot_recorder_session_v1"
 RecorderStatus = Literal["recording", "paused", "stopped", "saved"]
@@ -417,6 +417,9 @@ def capture_image_snippet_for_point(
 def generate_task_from_recorder_session(session: RecorderSession) -> TaskDefinition:
     steps: list[TaskStep] = []
     for index, event in enumerate(session.events, start=1):
+        verification = _verification_from_state_delta(event)
+        if verification is not None and steps and steps[-1].verify is None:
+            steps[-1] = replace(steps[-1], verify=verification)
         step = _step_from_recorder_event(index, event)
         if step is not None:
             steps.append(step)
@@ -644,6 +647,53 @@ def _observation_step_from_event(index: int, event: RecorderEvent) -> TaskStep |
             action="assert_visible",
             target=target,
         )
+    return None
+
+
+def _verification_from_state_delta(
+    event: RecorderEvent,
+) -> VerificationDefinition | None:
+    if event.event_type != "observation":
+        return None
+    state_delta = _state_delta_payload(event.metadata)
+    if state_delta is None:
+        return None
+
+    added_text = _first_non_empty_string(state_delta.get("visible_text_added"))
+    if added_text is not None:
+        return VerificationDefinition(type="visible_text", text=added_text)
+
+    # If the trace only says the target appeared, replay should still verify a
+    # concrete after-state string when one is available.
+    if state_delta.get("target_appeared") is True:
+        after_text = _first_non_empty_string(state_delta.get("visible_text_after"))
+        if after_text is not None:
+            return VerificationDefinition(type="visible_text", text=after_text)
+    return None
+
+
+def _state_delta_payload(metadata: dict[str, object]) -> dict[str, object] | None:
+    nested = metadata.get("state_delta")
+    if isinstance(nested, dict):
+        return dict(nested)
+    delta_keys = {
+        "visible_text_added",
+        "visible_text_after",
+        "target_appeared",
+    }
+    if any(key in metadata for key in delta_keys):
+        return metadata
+    return None
+
+
+def _first_non_empty_string(value: object) -> str | None:
+    if isinstance(value, str) and value.strip():
+        return value
+    if not isinstance(value, list | tuple):
+        return None
+    for item in value:
+        if isinstance(item, str) and item.strip():
+            return item
     return None
 
 

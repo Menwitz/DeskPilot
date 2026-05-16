@@ -288,7 +288,7 @@ abuse, and hidden automation are not supported.
       `press_key`, `scroll`, `wait_for`, and `assert_visible` steps.
 - [x] Infer allowed windows from observed active windows and require operator
       confirmation before save.
-- [ ] Infer verification suggestions from post-action state deltas.
+- [x] Infer verification suggestions from post-action state deltas.
 - [ ] Add review metadata for routine name, description, inputs, outputs, tags,
       risk class, and expected duration.
 - [ ] Add tests using fake recorder event streams.

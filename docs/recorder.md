@@ -2,8 +2,8 @@
 
 DeskPilot includes an early local recorder control surface behind
 `desktop-agent record`. The first implementation manages recording session
-state only; later Phase 4 work will add event capture, selector extraction, and
-YAML generation.
+state and reviewed event conversion; later Phase 4 work will add live event
+capture, review metadata, and richer YAML export controls.
 
 ## Controls
 
@@ -52,3 +52,6 @@ The recorder generator can already convert reviewed session events into a
 `press_key`, `scroll`, `wait_for`, and `assert_visible` steps. It prefers UIA
 context, then OCR context, then image snippets for clicked points. Generated
 tasks infer `allowed_windows` from the active-window titles recorded on events.
+When an observation event carries planner-style `state_delta` metadata, the
+generator adds a visible-text verification suggestion to the previous action
+from newly appeared text such as `visible_text_added`.
