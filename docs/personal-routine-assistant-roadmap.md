@@ -648,7 +648,7 @@ abuse, and hidden automation are not supported.
       pack versions.
 - [x] Add pack-level test runner and proof bundle generator.
 - [x] Add signed-pack investigation for later releases.
-- [ ] Add optional local report-server design after native app and trace schema
+- [x] Add optional local report-server design after native app and trace schema
       stabilize.
 - [ ] Add Linux X11 adapter plan after Windows beta proof is complete.
 - [ ] Keep Wayland support as a research track until screenshot and input

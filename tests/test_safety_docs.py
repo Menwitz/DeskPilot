@@ -104,6 +104,22 @@ def test_signed_routine_pack_investigation_keeps_safety_boundary() -> None:
         assert phrase in documentation
 
 
+def test_local_report_server_design_stays_read_only_and_optional() -> None:
+    documentation = Path("docs/local-report-server-design.md").read_text(
+        encoding="utf-8",
+    )
+
+    for phrase in (
+        "fully functional without a report server",
+        "No execution authority",
+        "Read-only by default",
+        "loopback only",
+        "Redaction-aware",
+        "Keep any future team/reporting sync separate",
+    ):
+        assert phrase in documentation
+
+
 def test_windows_proof_docs_cover_manual_evidence_review() -> None:
     documentation = "\n".join(
         [
