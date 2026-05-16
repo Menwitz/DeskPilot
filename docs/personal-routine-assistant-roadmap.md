@@ -691,7 +691,7 @@ abuse, and hidden automation are not supported.
 - [x] Recorder tests with fake UIA/OCR/CV event streams that generate valid YAML.
 - [x] Trace tests proving every real action has before/after evidence and replay
       output.
-- [ ] Redaction tests for screenshots, OCR text, typed text, variables, reports,
+- [x] Redaction tests for screenshots, OCR text, typed text, variables, reports,
       and video metadata.
 - [ ] App service tests for catalog, run queue, approvals, recorder review, and
       trace viewer state transitions.

@@ -141,3 +141,35 @@ def test_ocr_text_masking_and_suppression() -> None:
         "*************"
     )
     assert mask_ocr_text("Visible total", RedactionPolicy(ocr_text="suppress")) is None
+
+
+def test_redaction_policy_matrix_covers_all_evidence_surfaces() -> None:
+    policy = redaction_policy_from_mapping(
+        {
+            "screenshots": "metadata_only",
+            "ocr_text": "suppress",
+            "typed_text": "suppress",
+            "content_variables": "suppress",
+            "video": "disabled",
+            "reports": "redacted",
+        }
+    )
+    metadata = policy.metadata()
+
+    assert validate_redaction_policy(policy) == []
+    assert should_capture_screenshot(policy, save_enabled=True) is False
+    assert should_save_ocr_text(policy, save_enabled=True) is False
+    assert mask_ocr_text("Visible total", policy) is None
+    assert typed_text_redaction_metadata("secret", policy) == {
+        "typed_text_redaction": "suppress",
+        "typed_text_suppressed": True,
+        "typed_text_value": None,
+    }
+    assert content_variable_redaction_metadata(("post_text", "post_url"), policy) == {
+        "content_variable_names": [],
+        "content_variable_count": 2,
+        "content_variable_name_redaction": "suppress",
+        "content_variables_redacted": True,
+    }
+    assert metadata["video"] == "disabled"
+    assert metadata["reports"] == "redacted"
