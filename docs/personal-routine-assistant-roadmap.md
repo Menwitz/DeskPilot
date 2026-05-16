@@ -706,7 +706,7 @@ abuse, and hidden automation are not supported.
 - [ ] DeskPilot can prove real Windows browser, native, mixed, and recovery
       workflows with video plus traces.
 - [x] A user can record a routine, review generated YAML, save it, and rerun it.
-- [ ] A user can state a goal and get a selected known routine or a clear
+- [x] A user can state a goal and get a selected known routine or a clear
       missing-input prompt.
 - [ ] A user can run, pause, resume, stop, approve, and replay routines from the
       native app.
