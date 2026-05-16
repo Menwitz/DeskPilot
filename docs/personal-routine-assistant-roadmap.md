@@ -176,7 +176,7 @@ abuse, and hidden automation are not supported.
 - [x] O1: Turn observe-decide-act-verify into a first-class trace contract.
 - [x] KR1: 100% of real input actions have pre-action and post-action evidence.
 - [x] KR2: Verification supports `passed`, `failed`, and `inconclusive`.
-- [ ] KR3: Replay summarizes screenshots, focus state, cursor readback, target
+- [x] KR3: Replay summarizes screenshots, focus state, cursor readback, target
       reasoning, and state delta for each step.
 - [ ] KR4: Failed actions include enough evidence to diagnose target, focus,
       timing, safety, or verification failure.
