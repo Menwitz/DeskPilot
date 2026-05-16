@@ -505,7 +505,7 @@ abuse, and hidden automation are not supported.
 - [x] O1: Add robust recovery planning.
 - [x] KR1: Recover from loading delays, stale observations, duplicated labels,
       disabled controls, occlusion, focus loss, and minor layout changes.
-- [ ] KR2: Recovery choices stay inside retry, timeout, approval, and
+- [x] KR2: Recovery choices stay inside retry, timeout, approval, and
       allowed-window bounds.
 - [ ] KR3: Failed-run analysis can propose YAML selector, region, checkpoint, or
       recovery improvements.
