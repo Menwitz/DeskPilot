@@ -1375,6 +1375,8 @@ def test_cli_replay_summarizes_goal_plan_trace(
             ),
         ),
         selected_routine_id="browser.search-web",
+        expected_evidence=("search results",),
+        abort_conditions=("browser signed out",),
         explanation="The browser search routine matches the goal.",
         execution_status="ready",
         model_ranking=GoalModelRanking(
@@ -1401,8 +1403,11 @@ def test_cli_replay_summarizes_goal_plan_trace(
     assert "goal plan: Search the web" in output
     assert "status: ready" in output
     assert "selected: browser.search-web" in output
+    assert "expected_evidence: search results" in output
+    assert "abort_conditions: browser signed out" in output
     assert (
-        "- goal_plan: goal plan ready [selected browser.search-web candidates 1]"
+        "- goal_plan: goal plan ready [selected browser.search-web candidates 1 "
+        "expected_evidence 1 abort_conditions 1]"
         in output
     )
     assert (
@@ -1413,6 +1418,8 @@ def test_cli_replay_summarizes_goal_plan_trace(
     assert f"summary: {summary_path}" in output
     assert "# DeskPilot Goal Plan Replay Summary" in summary
     assert "- Desktop input required: `False`" in summary
+    assert "- Expected evidence: `search results`" in summary
+    assert "- Abort conditions: `browser signed out`" in summary
     assert "`browser.search-web` score `10` safety `low` approval `none`" in summary
 
 

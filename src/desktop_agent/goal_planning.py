@@ -214,6 +214,8 @@ class GoalPlan:
     selected_routine_id: str | None = None
     missing_inputs: tuple[str, ...] = ()
     approvals: tuple[GoalPlanApproval, ...] = ()
+    expected_evidence: tuple[str, ...] = ()
+    abort_conditions: tuple[str, ...] = ()
     explanation: str = ""
     execution_status: GoalExecutionStatus = "draft"
     model_ranking: GoalModelRanking | None = None
@@ -249,6 +251,8 @@ class GoalPlan:
             "selected_routine_id": self.selected_routine_id,
             "missing_inputs": list(self.missing_inputs),
             "approvals": [approval.metadata() for approval in self.approvals],
+            "expected_evidence": list(self.expected_evidence),
+            "abort_conditions": list(self.abort_conditions),
             "explanation": self.explanation,
             "execution_status": self.execution_status,
             "execution_ready": self.execution_ready,
@@ -267,6 +271,14 @@ def goal_plan_from_mapping(data: dict[str, object]) -> GoalPlan:
         selected_routine_id=_optional_string(data, "selected_routine_id"),
         missing_inputs=_string_tuple(data.get("missing_inputs"), "missing_inputs"),
         approvals=_approval_tuple(data.get("approvals")),
+        expected_evidence=_string_tuple(
+            data.get("expected_evidence"),
+            "expected_evidence",
+        ),
+        abort_conditions=_string_tuple(
+            data.get("abort_conditions"),
+            "abort_conditions",
+        ),
         explanation=_optional_string(data, "explanation") or "",
         execution_status=cast(
             GoalExecutionStatus,
@@ -415,6 +427,11 @@ def route_goal_to_routine(
         else ()
     )
     approvals = _approval_requirements(catalog, selected.routine_id) if selected else ()
+    expected_evidence, abort_conditions = (
+        _selected_routine_plan_context(catalog, selected.routine_id)
+        if selected is not None
+        else ((), ())
+    )
     execution_status: GoalExecutionStatus = "ready"
     explanation = "Selected routine by deterministic ranking."
     selected_routine_id = selected.routine_id if selected else None
@@ -437,6 +454,8 @@ def route_goal_to_routine(
         selected_routine_id=selected_routine_id,
         missing_inputs=missing_inputs,
         approvals=approvals,
+        expected_evidence=expected_evidence,
+        abort_conditions=abort_conditions,
         explanation=explanation,
         execution_status=execution_status,
     )
@@ -571,6 +590,10 @@ def validate_goal_plan(plan: GoalPlan) -> None:
         errors.append("selected_routine_id must reference a candidate routine")
     if any(not item.strip() for item in plan.missing_inputs):
         errors.append("missing_inputs entries must not be blank")
+    if any(not item.strip() for item in plan.expected_evidence):
+        errors.append("expected_evidence entries must not be blank")
+    if any(not item.strip() for item in plan.abort_conditions):
+        errors.append("abort_conditions entries must not be blank")
     for approval in plan.approvals:
         errors.extend(_approval_errors(approval))
     if plan.model_ranking is not None:
@@ -881,6 +904,17 @@ def _approval_requirements(
     )
 
 
+def _selected_routine_plan_context(
+    catalog: RoutineCatalog,
+    routine_id: str,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    routine = catalog.by_id(routine_id)
+    if routine is None:
+        return (), ()
+    # Goal plans expose reviewed proof context without loading executable YAML.
+    return routine.outputs, routine.schedule.stop_conditions
+
+
 def _tokens(value: str) -> tuple[str, ...]:
     return tuple(value.casefold().replace("_", " ").replace("-", " ").split())
 
@@ -966,6 +1000,11 @@ def _apply_model_suggestion(
         if selected_routine_id is not None
         else ()
     )
+    expected_evidence, abort_conditions = (
+        _selected_routine_plan_context(catalog, selected_routine_id)
+        if selected_routine_id is not None
+        else ((), ())
+    )
     status, explanation = _selection_status(
         selected_routine_id,
         missing_inputs,
@@ -983,6 +1022,8 @@ def _apply_model_suggestion(
         selected_routine_id=selected_routine_id,
         missing_inputs=missing_inputs,
         approvals=approvals,
+        expected_evidence=expected_evidence,
+        abort_conditions=abort_conditions,
         explanation=explanation,
         execution_status=status,
         model_ranking=GoalModelRanking(

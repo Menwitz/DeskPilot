@@ -413,7 +413,7 @@ abuse, and hidden automation are not supported.
 - [x] KR1: Deterministic rules match goals to routines by app, site, tags,
       input/output types, safety class, and historical success.
 - [x] KR2: Planner asks for missing required inputs before execution.
-- [ ] KR3: Planner shows selected routine, alternatives, risk, approvals,
+- [x] KR3: Planner shows selected routine, alternatives, risk, approvals,
       expected evidence, and abort conditions.
 - [ ] KR4: Optional Ollama output cannot bypass validation, safety checks, or
       approvals.

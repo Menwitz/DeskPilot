@@ -29,6 +29,8 @@ def write_goal_plan_trace(plan: GoalPlan, trace_root: Path) -> Path:
                 "selected_routine_id": plan.selected_routine_id,
                 "execution_status": plan.execution_status,
                 "candidate_count": len(plan.candidate_routines),
+                "expected_evidence": list(plan.expected_evidence),
+                "abort_conditions": list(plan.abort_conditions),
             },
         ),
     ]
@@ -136,6 +138,8 @@ def _goal_plan_report_payload(
         "trace_schema": TRACE_SCHEMA_V2.to_dict(),
         "status": plan.execution_status,
         "selected_routine_id": plan.selected_routine_id,
+        "expected_evidence": list(plan.expected_evidence),
+        "abort_conditions": list(plan.abort_conditions),
         "trace_dir": str(trace_dir),
         "goal_plan_path": str(goal_plan_path),
         # Goal planning traces are dry-run artifacts; replay must never move I/O.
@@ -156,6 +160,8 @@ def _goal_plan_report_markdown(
         f"- Status: `{plan.execution_status}`",
         f"- Selected routine: `{plan.selected_routine_id or 'none'}`",
         f"- Candidates: `{len(plan.candidate_routines)}`",
+        f"- Expected evidence: `{_joined_or_none(plan.expected_evidence)}`",
+        f"- Abort conditions: `{_joined_or_none(plan.abort_conditions)}`",
     ]
     if model_disclosure is not None:
         lines.extend(
@@ -173,6 +179,10 @@ def _goal_plan_report_markdown(
             ],
         )
     return "\n".join(lines) + "\n"
+
+
+def _joined_or_none(items: tuple[str, ...]) -> str:
+    return ", ".join(items) if items else "none"
 
 
 def _write_action_log(path: Path, events: list[TraceEvent]) -> None:

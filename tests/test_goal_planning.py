@@ -46,6 +46,8 @@ def test_goal_plan_schema_tracks_candidates_selection_and_readiness() -> None:
             ),
         ),
         selected_routine_id="browser.read-page",
+        expected_evidence=("visible article text",),
+        abort_conditions=("stop if page changes",),
         explanation="The browser reading routine matches the requested page review.",
         execution_status="ready",
     )
@@ -62,6 +64,8 @@ def test_goal_plan_schema_tracks_candidates_selection_and_readiness() -> None:
         "tags",
         "outputs",
     ]
+    assert metadata["expected_evidence"] == ["visible article text"]
+    assert metadata["abort_conditions"] == ["stop if page changes"]
 
 
 def test_goal_plan_schema_blocks_missing_inputs_and_unsatisfied_approvals() -> None:
@@ -291,6 +295,8 @@ def test_goal_router_uses_exact_site_tags_inputs_and_confidence_ranking() -> Non
                 approval_policy="manifest_required",
                 schedule_policy="manual",
                 inputs=["approval manifest"],
+                outputs=["published post visible"],
+                stop_conditions=["approval revoked"],
             ),
         ),
     )
@@ -310,6 +316,8 @@ def test_goal_router_uses_exact_site_tags_inputs_and_confidence_ranking() -> Non
     assert plan.selected_routine_id == "social-content.linkedin-approved-publish"
     assert plan.execution_status == "blocked"
     assert plan.approvals[0].policy == "manifest_required"
+    assert plan.expected_evidence == ("published post visible",)
+    assert plan.abort_conditions == ("approval revoked",)
     assert plan.candidate_routines[0].score > 0
 
 
@@ -527,6 +535,7 @@ def test_goal_planner_cli_dry_run_reports_plan_without_desktop_input(
     assert "goal plan:" in output
     assert "selected: browser.search-web" in output
     assert "status: ready" in output
+    assert "expected_evidence: search results" in output
     assert "dry-run preview:" not in output
     assert "trace:" in output
 
@@ -588,12 +597,14 @@ def test_optional_ollama_ranking_can_reorder_valid_candidates() -> None:
                 approval_policy="none",
                 schedule_policy="manual",
                 inputs=[],
+                outputs=["search results"],
+                stop_conditions=["browser signed out"],
             ),
         ),
     )
     request = GoalRoutingRequest(
-        user_goal="Search the web",
-        normalized_intent="browser",
+        user_goal="Read browser content",
+        normalized_intent="browser read",
     )
     plan = route_goal_to_routine(catalog, request)
 
@@ -622,6 +633,8 @@ def test_optional_ollama_ranking_can_reorder_valid_candidates() -> None:
     assert ranked.model_ranking.status == "applied"
     assert ranked.model_ranking.affected_selection is True
     assert ranked.model_ranking.output_hash is not None
+    assert ranked.expected_evidence == ("search results",)
+    assert ranked.abort_conditions == ("browser signed out",)
     assert ranked.metadata()["model_ranking"] is not None
 
 
@@ -735,6 +748,7 @@ def _routine(
     allowed_time_windows: list[dict[str, object]] | None = None,
     cooldown_seconds: float | None = None,
     stop_conditions: list[str] | None = None,
+    outputs: list[str] | None = None,
 ) -> RoutineDefinition:
     payload: dict[str, object] = {
         "id": routine_id,
@@ -743,7 +757,7 @@ def _routine(
         "goal": "Match a user goal to a routine.",
         "tags": tags,
         "inputs": inputs if inputs is not None else ["input"],
-        "outputs": ["output"],
+        "outputs": outputs if outputs is not None else ["output"],
         "safety_class": safety_class,
         "schedule_policy": schedule_policy,
         "approval_policy": approval_policy,

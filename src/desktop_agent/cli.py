@@ -1230,6 +1230,10 @@ def _plan_goal(args: argparse.Namespace) -> int:
     print(f"  status: {plan.execution_status}")
     print(f"  selected: {plan.selected_routine_id or 'none'}")
     print(f"  explanation: {plan.explanation}")
+    if plan.expected_evidence:
+        print(f"  expected_evidence: {', '.join(plan.expected_evidence)}")
+    if plan.abort_conditions:
+        print(f"  abort_conditions: {', '.join(plan.abort_conditions)}")
     print("  candidates:")
     for candidate in plan.candidate_routines:
         print(
@@ -2194,6 +2198,10 @@ def _replay_goal_plan(args: argparse.Namespace) -> int:
     print(f"status: {plan.execution_status}")
     print(f"selected: {plan.selected_routine_id or 'none'}")
     print(f"candidates: {len(plan.candidate_routines)}")
+    if plan.expected_evidence:
+        print(f"expected_evidence: {', '.join(plan.expected_evidence)}")
+    if plan.abort_conditions:
+        print(f"abort_conditions: {', '.join(plan.abort_conditions)}")
     if plan.missing_inputs:
         print(f"missing_inputs: {', '.join(plan.missing_inputs)}")
     for line in _goal_plan_replay_timeline_lines(events):
@@ -2323,6 +2331,12 @@ def _goal_plan_replay_event_suffix(event: dict[str, object]) -> str:
             bits.append(f"selected {selected}")
         if isinstance(candidate_count, int):
             bits.append(f"candidates {candidate_count}")
+        expected_evidence = metadata.get("expected_evidence")
+        abort_conditions = metadata.get("abort_conditions")
+        if isinstance(expected_evidence, list) and expected_evidence:
+            bits.append(f"expected_evidence {len(expected_evidence)}")
+        if isinstance(abort_conditions, list) and abort_conditions:
+            bits.append(f"abort_conditions {len(abort_conditions)}")
     if phase == "model_assistance":
         provider = metadata.get("provider")
         model = metadata.get("model")
@@ -2369,6 +2383,10 @@ def _goal_plan_replay_summary_markdown(
         f"- Candidates: `{len(plan.candidate_routines)}`",
         f"- Desktop input required: `{desktop_input_required}`",
     ]
+    if plan.expected_evidence:
+        lines.append(f"- Expected evidence: `{', '.join(plan.expected_evidence)}`")
+    if plan.abort_conditions:
+        lines.append(f"- Abort conditions: `{', '.join(plan.abort_conditions)}`")
     if plan.missing_inputs:
         lines.append(f"- Missing inputs: `{', '.join(plan.missing_inputs)}`")
     if plan.candidate_routines:

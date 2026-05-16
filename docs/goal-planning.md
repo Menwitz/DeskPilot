@@ -19,6 +19,10 @@ exist in the catalog and compile through the normal task/playbook pipeline.
   candidates.
 - `missing_inputs`: required variables or session state that block execution.
 - `approvals`: approval requirements and whether they are satisfied.
+- `expected_evidence`: selected routine outputs that should be visible in proof
+  or trace review.
+- `abort_conditions`: selected routine stop conditions that should halt or
+  hand off execution.
 - `explanation`: operator-facing reason for the selection or block.
 - `execution_status`: `draft`, `blocked`, `ready`, `running`, `completed`,
   `failed`, or `canceled`.
@@ -59,7 +63,10 @@ allowed window before routing or execution.
 
 The router returns a `GoalPlan`. Missing inputs or unsatisfied approvals keep the
 plan `blocked`; a routine is only `ready` when selected, fully supplied, and
-approved.
+approved. When a single routine is selected, the plan also copies its reviewed
+outputs into `expected_evidence` and its reviewed schedule stop conditions into
+`abort_conditions` so CLI dry-runs, traces, and replay summaries show the proof
+expectations before execution.
 
 ## Missing-Input Prompts
 

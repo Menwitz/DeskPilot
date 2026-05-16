@@ -26,6 +26,8 @@ def test_goal_plan_trace_writes_model_disclosure_fields(tmp_path: Path) -> None:
             ),
         ),
         selected_routine_id="browser.search-web",
+        expected_evidence=("search results",),
+        abort_conditions=("browser signed out",),
         explanation="Model-assisted ranking kept the search routine.",
         execution_status="ready",
         model_ranking=GoalModelRanking(
@@ -60,12 +62,16 @@ def test_goal_plan_trace_writes_model_disclosure_fields(tmp_path: Path) -> None:
     assert report["trace_dir"] == str(trace_dir)
     assert report["replayable"] is True
     assert report["desktop_input_required"] is False
+    assert report["expected_evidence"] == ["search results"]
+    assert report["abort_conditions"] == ["browser signed out"]
     assert report["replay_command"] == f"desktop-agent replay {trace_dir}"
     assert report["model_disclosure"]["provider"] == "ollama"
     assert metadata["provider"] == "ollama"
     assert metadata["model"] == "llama3.1"
     assert metadata["model_name"] == "llama3.1"
     assert metadata["prompt_class"] == "goal_routine_ranking"
+    assert action_log[0]["metadata"]["expected_evidence"] == ["search results"]
+    assert action_log[0]["metadata"]["abort_conditions"] == ["browser signed out"]
     assert metadata["input_artifact_references"] == [
         "goal-plan.json#user_goal",
         "goal-plan.json#normalized_intent",
