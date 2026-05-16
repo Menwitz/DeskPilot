@@ -179,10 +179,15 @@ def _proposals_for_failed_step(
         return ()
     failure_category = _string_value(metadata.get("failure_category"), "unknown")
     if failure_category in {"selection_ambiguity", "layout_change"}:
+        proposal_type = (
+            "recovery_review"
+            if failure_category == "layout_change"
+            else "selector_region_review"
+        )
         return (
             FailedRunYamlProposal(
                 step_id=step_id,
-                proposal_type="selector_or_region_review",
+                proposal_type=proposal_type,
                 rationale=_selector_rationale(metadata, failure_category),
                 yaml_snippet=_selector_yaml_snippet(step_id, failure_category),
             ),
@@ -230,8 +235,13 @@ def _selector_yaml_snippet(step_id: str, category: str) -> str:
             "        - retry_alternate_selector_family\n"
             "        - abort_with_trace"
         )
+    # Ambiguous target failures need both a more stable selector and a tighter
+    # region hint so review can choose the least brittle YAML change.
     return (
         f"- id: {step_id}\n"
+        "  selector:\n"
+        "    text: REVIEW_TARGET_TEXT\n"
+        "    role: REVIEW_ROLE\n"
         "  region:\n"
         "    x: REVIEW\n"
         "    y: REVIEW\n"

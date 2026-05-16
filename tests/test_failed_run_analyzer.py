@@ -33,10 +33,40 @@ def test_failed_run_analyzer_proposes_review_only_selector_yaml() -> None:
     proposal = analysis.proposals[0]
     assert analysis.routine_id == "browser.search"
     assert proposal.step_id == "click-submit"
-    assert proposal.proposal_type == "selector_or_region_review"
+    assert proposal.proposal_type == "selector_region_review"
     assert proposal.review_required is True
     assert proposal.applies_automatically is False
+    assert "selector:" in proposal.yaml_snippet
     assert "region:" in proposal.yaml_snippet
+
+
+def test_failed_run_analyzer_proposes_recovery_yaml_for_layout_change() -> None:
+    analysis = analyze_failed_run_report(
+        {
+            "task_name": "Browser search",
+            "status": "failed",
+            "steps": [
+                {
+                    "step_id": "click-submit",
+                    "status": "failed",
+                    "metadata": {
+                        "failure_category": "layout_change",
+                        "diagnostic_bundle": {
+                            "candidate_count": 1,
+                            "candidates_by_source": {"ocr": 1},
+                        },
+                    },
+                },
+            ],
+        },
+    )
+
+    proposal = analysis.proposals[0]
+    assert proposal.proposal_type == "recovery_review"
+    assert proposal.review_required is True
+    assert proposal.applies_automatically is False
+    assert "recovery:" in proposal.yaml_snippet
+    assert "retry_alternate_selector_family" in proposal.yaml_snippet
 
 
 def test_failed_run_analyzer_writes_json_and_markdown(tmp_path: Path) -> None:
@@ -107,6 +137,8 @@ def test_failed_run_analyzer_indexes_local_artifacts_without_rerun(
     artifacts = {artifact["name"]: artifact for artifact in payload["artifacts"]}
     assert payload["diagnostic_ready"] is True
     assert payload["desktop_input_rerun_required"] is False
+    assert payload["proposals"][0]["proposal_type"] == "allowed_window_review"
+    assert "allowed_windows:" in payload["proposals"][0]["yaml_snippet"]
     assert artifacts["final_report"]["present"] is True
     assert artifacts["action_log"]["present"] is True
     assert artifacts["task_snapshot"]["present"] is True

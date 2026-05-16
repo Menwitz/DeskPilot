@@ -507,7 +507,7 @@ abuse, and hidden automation are not supported.
       disabled controls, occlusion, focus loss, and minor layout changes.
 - [x] KR2: Recovery choices stay inside retry, timeout, approval, and
       allowed-window bounds.
-- [ ] KR3: Failed-run analysis can propose YAML selector, region, checkpoint, or
+- [x] KR3: Failed-run analysis can propose YAML selector, region, checkpoint, or
       recovery improvements.
 - [ ] KR4: Brittle routines are flagged or quarantined after repeated failures.
 

@@ -262,7 +262,7 @@ def test_failure_analysis_review_tracks_review_only_yaml_proposals(
         proposals=(
             FailedRunYamlProposal(
                 step_id="click-submit",
-                proposal_type="selector_or_region_review",
+                proposal_type="selector_region_review",
                 rationale="Ambiguous target.",
                 yaml_snippet="- id: click-submit\n  region:\n    x: REVIEW",
             ),
