@@ -58,7 +58,7 @@ abuse, and hidden automation are not supported.
 - [ ] Beta catalog: 300 routines validate, dry-run, and carry safety metadata.
 - [x] Planner release: goal-to-routine planning selects routines and asks for
       missing inputs.
-- [ ] UI release: PySide6 app supports library, approvals, run queue, pause,
+- [x] UI release: PySide6 app supports library, approvals, run queue, pause,
       stop, recorder review, and trace replay.
 - [ ] Hardened local product: redaction, packaging, routine packs, failure
       analysis, and Windows proof gates are complete.
