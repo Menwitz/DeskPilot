@@ -534,7 +534,7 @@ abuse, and hidden automation are not supported.
 - [x] Non-recoverable failures stop with clear handoff or abort reason.
 - [x] Recovery reports show chosen policy, rejected policies, attempts, and
       evidence.
-- [ ] Suggested routine fixes are review-only until accepted by the operator.
+- [x] Suggested routine fixes are review-only until accepted by the operator.
 
 ## Phase 10: Local AI Expansion
 
