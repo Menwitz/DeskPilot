@@ -623,7 +623,7 @@ abuse, and hidden automation are not supported.
 
 ### Goals
 
-- [ ] Make DeskPilot extensible beyond the first built-in routine catalog.
+- [x] Make DeskPilot extensible beyond the first built-in routine catalog.
 - [ ] Support trusted local routine packs.
 - [ ] Prepare for optional team/reporting features after local product
       stability.
