@@ -65,3 +65,16 @@ def test_windows_installer_script_packages_cli_app_and_local_assets() -> None:
     assert "install.ps1" in script
     assert "uninstall.ps1" in script
     assert "Compress-Archive" in script
+
+
+def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
+    script = Path("scripts/verify-windows-package.ps1").read_text(encoding="utf-8")
+
+    assert "dist/deskpilot.exe" in script
+    assert "dist/deskpilot-app.exe" in script
+    assert "& $ExePath --help" in script
+    assert "& $ExePath dry-run examples/browser-task.yaml" in script
+    assert "& $ExePath list-routines --routine-pack-root $RoutinePackRoot" in script
+    assert "& $ExePath replay $TraceDir" in script
+    assert "& $AppExePath --check" in script
+    assert "final-report.json" in script

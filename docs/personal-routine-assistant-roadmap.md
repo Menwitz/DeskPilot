@@ -606,7 +606,7 @@ abuse, and hidden automation are not supported.
 - [x] Add trace schema migration tests.
 - [x] Add routine catalog migration tests.
 - [x] Add Windows installer build script for the CLI and PySide6 app.
-- [ ] Add packaged-app smoke tests for help, dry-run, routine listing, and trace
+- [x] Add packaged-app smoke tests for help, dry-run, routine listing, and trace
       replay.
 - [ ] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.

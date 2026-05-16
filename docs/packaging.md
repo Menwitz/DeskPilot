@@ -12,8 +12,8 @@ DeskPilot packages the Windows executable with PyInstaller.
 - `scripts/build-windows-exe.ps1` builds `dist/deskpilot.exe` on Windows.
 - `scripts/build-windows-installer.ps1` builds both executables and writes a
   local installer bundle plus `dist/DeskPilot-Windows.zip`.
-- `scripts/verify-windows-package.ps1` runs packaged `--help` and `dry-run`
-  checks.
+- `scripts/verify-windows-package.ps1` runs packaged `--help`, dry-run,
+  routine listing, trace replay, and native app smoke checks.
 
 Install the native operator app dependencies with:
 
@@ -50,6 +50,11 @@ The installer bundle contains:
 Run `dist\deskpilot-windows-installer\install.ps1` to copy the bundle to the
 current user's local app-data directory. Pass `-AddUserPath` only when the user
 wants `bin\` added to their user PATH.
+
+`scripts\verify-windows-package.ps1` creates a local smoke trace under
+`dist\package-smoke`, runs `deskpilot.exe replay` against it, lists routines
+from `routine_packs\`, and runs `deskpilot-app.exe --check` when the app
+executable exists.
 
 Real `run` verification still requires an unlocked Windows desktop with the
 browser or native fixture visible.
