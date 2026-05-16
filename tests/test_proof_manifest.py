@@ -454,6 +454,14 @@ def test_write_proof_suite_promotion_records_final_gates(tmp_path: Path) -> None
         "human_review": "passed",
         "video": "external_or_disabled",
     }
+    artifact_digests = cast(list[dict[str, object]], payload["artifact_digests"])
+    archive_names = {str(item["archive_name"]) for item in artifact_digests}
+    assert "proof-preflight.json" in archive_names
+    assert "proof-suite-review-status.json" in archive_names
+    assert "browser-fixture/proof-manifest.json" in archive_names
+    assert "proof-suite-promotion.json" not in archive_names
+    assert all(str(item["sha256"]) for item in artifact_digests)
+    assert all(isinstance(item["size_bytes"], int) for item in artifact_digests)
 
 
 def test_write_proof_suite_promotion_requires_preflight_and_review(

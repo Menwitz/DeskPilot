@@ -1958,6 +1958,7 @@ def test_cli_proof_promote_suite_writes_promotion_json(
     assert f"promotion_json: {promotion_path}" in output
     assert payload["status"] == "failed"
     assert payload["promotion_ready"] is False
+    assert isinstance(payload["artifact_digests"], list)
     assert "proof preflight report not found" in "\n".join(payload["errors"])
     assert "proof review status not found" in "\n".join(payload["errors"])
 

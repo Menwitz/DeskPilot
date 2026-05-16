@@ -10,6 +10,7 @@ import sys
 import zipfile
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from hashlib import sha256
 from pathlib import Path
 
 REQUIRED_WINDOWS_PROOF_NAMES: tuple[str, ...] = (
@@ -690,6 +691,7 @@ def proof_suite_promotion_metadata(
         "review_status_path": str(validation.review_status_path)
         if validation.review_status_path is not None
         else None,
+        "artifact_digests": _proof_suite_artifact_digests(validation),
         "errors": errors,
         "warnings": list(validation.warnings),
     }
@@ -1026,6 +1028,42 @@ def _artifact_gate_status(path: Path | None, errors: tuple[str, ...]) -> str:
     if errors:
         return "failed"
     return "passed"
+
+
+def _proof_suite_artifact_digests(
+    validation: ProofSuiteValidation,
+) -> list[dict[str, object]]:
+    digests: list[dict[str, object]] = []
+    seen_names: set[str] = set()
+    for artifact_path in sorted(
+        _proof_suite_archive_files(validation),
+        key=lambda path: _archive_name(validation.trace_root, path),
+    ):
+        archive_name = _archive_name(validation.trace_root, artifact_path)
+        if (
+            archive_name in seen_names
+            or archive_name == PROOF_SUITE_PROMOTION_NAME
+        ):
+            # The promotion record cannot hash itself without becoming unstable.
+            continue
+        seen_names.add(archive_name)
+        digests.append(
+            {
+                "archive_name": archive_name,
+                "path": str(artifact_path),
+                "size_bytes": artifact_path.stat().st_size,
+                "sha256": _sha256_file(artifact_path),
+            },
+        )
+    return digests
+
+
+def _sha256_file(path: Path) -> str:
+    digest = sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _write_zip_text(

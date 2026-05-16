@@ -190,6 +190,8 @@ abuse, and hidden automation are not supported.
       artifacts in one repeatable operator flow.
 - [x] Add a final proof-suite promotion JSON that records `promotion_ready`
       only after proof bundles, preflight, and human review gates pass.
+- [x] Add SHA-256 artifact digests and byte sizes to proof-suite promotion
+      records for later archive integrity checks.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

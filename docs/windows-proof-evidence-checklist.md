@@ -113,6 +113,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       either preflight readiness or human review sign-off is missing or failed.
 - [ ] `proof-suite-promotion.json` records `promotion_ready: true` only after
       proof bundles, preflight, and human review gates all pass.
+- [ ] `proof-suite-promotion.json` includes SHA-256 digests and byte sizes for
+      promoted evidence artifacts so archived evidence can be checked later.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 

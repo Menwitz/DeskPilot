@@ -72,6 +72,8 @@ an external screen recorder instead of built-in `ffmpeg` capture. The script
 writes `proof-preflight.json`, runs all four proof commands, validates the
 suite, writes review artifacts, and prints the final `proof promote-suite`
 command that emits `proof-suite-promotion.json` after human review passes.
+That promotion JSON includes SHA-256 digests and byte sizes for the promoted
+evidence artifacts so a copied archive can be checked later.
 
 Real `run` verification still requires an unlocked Windows desktop with the
 browser or native fixture visible.
