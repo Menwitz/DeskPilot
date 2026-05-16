@@ -238,6 +238,28 @@ def test_scheduler_acceptance_pause_resume_cancel_and_retry_later() -> None:
     ]
 
 
+def test_scheduler_acceptance_manual_handoff_terminal_state() -> None:
+    queue = RunQueue().enqueue("browser.read-page")
+    queue = queue.transition("run-0001", "running", reason="window ready")
+    running_entry = queue.by_id("run-0001")
+    assert running_entry is not None
+
+    handoff_event = scheduler_trace_event(
+        running_entry,
+        "operator_intervention",
+        reason="manual handoff requested",
+        operator_intervention="manual_handoff",
+    )
+    queue = queue.transition("run-0001", "handed_off", reason="manual handoff")
+    handed_off_entry = queue.by_id("run-0001")
+    assert handed_off_entry is not None
+
+    assert handoff_event.metadata["scheduler_event"] == "operator_intervention"
+    assert handoff_event.metadata["operator_intervention"] == "manual_handoff"
+    assert handed_off_entry.status == "handed_off"
+    assert handed_off_entry.terminal is True
+
+
 def test_scheduler_safety_gate_allows_ready_desktop_context() -> None:
     entry = RunQueue().enqueue("browser.read-page").next_pending()
     routine = _routine(required_app="Microsoft Edge", required_site="example.com")

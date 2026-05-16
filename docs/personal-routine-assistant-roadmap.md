@@ -367,7 +367,7 @@ abuse, and hidden automation are not supported.
 - [x] O1: Add routine scheduling and activity pacing.
 - [x] KR1: Routines can define allowed time windows, cooldowns, max actions per
       hour, and stop-after conditions.
-- [ ] KR2: Scheduler supports pause, resume, cancel, retry later, and manual
+- [x] KR2: Scheduler supports pause, resume, cancel, retry later, and manual
       handoff.
 - [ ] KR3: Timing decisions are recorded and reproducible when a seed is set.
 - [ ] KR4: The operator can see why the assistant waited, resumed, skipped, or
