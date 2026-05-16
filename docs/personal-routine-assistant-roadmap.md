@@ -616,7 +616,7 @@ abuse, and hidden automation are not supported.
 - [x] Redacted traces preserve enough metadata to debug failures.
 - [x] Full-evidence traces remain available when explicitly selected or left as
       default.
-- [ ] Packaged Windows app launches and can run dry-run workflows.
+- [x] Packaged Windows app launches and can run dry-run workflows.
 - [ ] Schema migrations preserve old traces and routines.
 
 ## Phase 12: Beta Release And Ecosystem
