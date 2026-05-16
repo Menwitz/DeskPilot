@@ -111,6 +111,7 @@ def test_routine_pack_service_installs_lists_and_removes_packs(tmp_path: Path) -
     assert install_result.installed_path == tmp_path / "installed" / "sample-pack"
     assert [pack.pack_id for pack in packs] == ["sample-pack"]
     assert packs[0].trust_level == "trusted_local"
+    assert packs[0].trust_warning_count == 0
     assert remove_result.removed_path == tmp_path / "installed" / "sample-pack"
     assert not remove_result.removed_path.exists()
 

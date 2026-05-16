@@ -41,6 +41,37 @@ def test_routine_pack_import_rejects_existing_without_replace(tmp_path: Path) ->
         import_routine_pack(source, install_root)
 
 
+def test_routine_pack_import_surfaces_unverified_trust_warning(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    source = _write_pack(
+        tmp_path / "source-pack",
+        pack_id="sample-pack",
+        trust_level="unverified_local",
+    )
+    install_root = tmp_path / "installed"
+
+    result = import_routine_pack(source, install_root)
+    assert len(result.trust_warnings) == 1
+
+    assert (
+        main(
+            [
+                "import-routine-pack",
+                str(source),
+                "--routine-pack-root",
+                str(install_root),
+                "--replace",
+            ],
+        )
+        == 0
+    )
+    output = capsys.readouterr().out
+    assert "trust_warnings:" in output
+    assert "pack is unverified" in output
+
+
 def test_routine_pack_cli_lists_shows_imports_and_exports(
     tmp_path: Path,
     capsys: CaptureFixture[str],
@@ -66,7 +97,10 @@ def test_routine_pack_cli_lists_shows_imports_and_exports(
         main(["list-routine-packs", "--routine-pack-root", str(install_root)])
         == 0
     )
-    assert "sample-pack\t0.1.0\ttrusted_local\tSample Pack" in capsys.readouterr().out
+    assert (
+        "sample-pack\t0.1.0\ttrusted_local\tSample Pack\twarnings=0"
+        in capsys.readouterr().out
+    )
 
     assert (
         main(
@@ -100,7 +134,12 @@ def test_routine_pack_cli_lists_shows_imports_and_exports(
     assert (export_path / "routine-pack.yaml").exists()
 
 
-def _write_pack(root: Path, *, pack_id: str) -> Path:
+def _write_pack(
+    root: Path,
+    *,
+    pack_id: str,
+    trust_level: str = "trusted_local",
+) -> Path:
     root.mkdir(parents=True)
     (root / "README.md").write_text("# Sample Pack\n", encoding="utf-8")
     (root / "sample.routine.yaml").write_text(
@@ -116,7 +155,7 @@ def _write_pack(root: Path, *, pack_id: str) -> Path:
                 "description: Sample local routine pack.",
                 'version: "0.1.0"',
                 "publisher: Local Operator",
-                "trust_level: trusted_local",
+                f"trust_level: {trust_level}",
                 "routine_globs:",
                 '  - "*.routine.yaml"',
                 "docs:",

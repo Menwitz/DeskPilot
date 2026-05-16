@@ -33,10 +33,10 @@ selected targets, screenshot paths, verification suggestions, and review status
 before the operator saves a routine.
 
 The Routine Packs page includes the routine-pack manager contract. It shows
-installed pack IDs, selected pack, install source, pending action, and explicit
-install, replace, remove, and export actions. Install and remove operations go
-through manifest validation and local pack operations rather than ad hoc file
-copying.
+installed pack IDs, selected pack, install source, pending action, trust
+warnings, and explicit install, replace, remove, and export actions. Install and
+remove operations go through manifest validation and local pack operations
+rather than ad hoc file copying.
 
 The Trace Viewer page includes the trace timeline contract. It shows video,
 screenshots, action log, candidate reasoning, state delta, final report, and

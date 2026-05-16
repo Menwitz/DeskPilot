@@ -7,6 +7,7 @@ from desktop_agent.routine_pack_manifest import (
     load_routine_pack_manifest,
     load_routine_pack_manifests,
     routine_pack_manifest_from_mapping,
+    routine_pack_trust_warnings,
 )
 
 EXPECTED_ROUTINE_PACKS = {
@@ -112,6 +113,40 @@ def test_routine_pack_manifest_rejects_parent_traversal() -> None:
                 },
             },
         )
+
+
+def test_routine_pack_manifest_warns_for_unverified_local_pack() -> None:
+    manifest = routine_pack_manifest_from_mapping(
+        {
+            "pack_schema_version": "1",
+            "id": "unverified-pack",
+            "name": "Unverified Pack",
+            "description": "Needs operator review.",
+            "version": "0.1.0",
+            "publisher": "Unknown",
+            "trust_level": "unverified_local",
+            "routine_globs": ["*.routine.yaml"],
+            "docs": ["README.md"],
+            "fixtures": [],
+            "tests": [],
+            "safety": {
+                "max_safety_class": "medium",
+                "requires_review": True,
+                "external_mutation_allowed": False,
+                "approval_required": True,
+            },
+            "proof": {
+                "windows_proof_required": True,
+                "expected_artifacts": ["final-report.json"],
+            },
+        },
+    )
+    warnings = routine_pack_trust_warnings(manifest)
+    metadata = manifest.metadata()
+
+    assert len(warnings) == 1
+    assert "pack is unverified" in warnings[0].message
+    assert metadata["trust_warnings"]
 
 
 def test_routine_pack_manifest_rejects_duplicate_ids(tmp_path: Path) -> None:

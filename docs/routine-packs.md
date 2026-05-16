@@ -47,6 +47,12 @@ Supported `trust_level` values are:
 - `trusted_local`: installed from a local source the operator has reviewed.
 - `unverified_local`: present locally but not trusted for automatic promotion.
 
+Unverified local packs produce trust warnings in manifest metadata,
+`list-routine-packs`, `show-routine-pack`, `import-routine-pack`, and the
+operator app routine-pack service. The warning tells the operator to review the
+manifest, routines, docs, tests, and proof expectations before installing or
+running the pack.
+
 `safety.max_safety_class` records the highest allowed safety class for routines
 in the pack. `external_mutation_allowed` and `approval_required` make the pack's
 mutation posture explicit before import or installation work begins.

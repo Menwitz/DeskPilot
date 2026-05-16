@@ -221,6 +221,7 @@ def test_routine_pack_manager_tracks_install_and_remove_state(tmp_path: Path) ->
         selected_pack_id="browser",
         install_source_path=tmp_path / "local-pack",
         pending_action="remove",
+        trust_warnings=("pack is unverified",),
         status="review",
     )
 
@@ -231,8 +232,10 @@ def test_routine_pack_manager_tracks_install_and_remove_state(tmp_path: Path) ->
     assert metadata["selected_pack_id"] == "browser"
     assert metadata["install_source_path"] == str(tmp_path / "local-pack")
     assert metadata["pending_action"] == "remove"
+    assert metadata["trust_warnings"] == ["pack is unverified"]
     assert metadata["actions"] == ["install", "replace", "remove", "export"]
     assert "Routine Packs" in text
+    assert "pack is unverified" in text
     assert "Actions: install, replace, remove, export" in text
 
 

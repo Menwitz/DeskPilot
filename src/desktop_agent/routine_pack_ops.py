@@ -12,8 +12,10 @@ from desktop_agent.routine_pack_manifest import (
     ROUTINE_PACK_MANIFEST_FILENAME,
     RoutinePackManifest,
     RoutinePackManifestError,
+    RoutinePackTrustWarning,
     load_routine_pack_manifest,
     load_routine_pack_manifests,
+    routine_pack_trust_warnings,
 )
 
 
@@ -29,6 +31,7 @@ class RoutinePackImportResult:
     source_path: Path
     installed_path: Path
     replaced_existing: bool
+    trust_warnings: tuple[RoutinePackTrustWarning, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -39,6 +42,7 @@ class RoutinePackExportResult:
     source_path: Path
     output_path: Path
     archive: bool
+    trust_warnings: tuple[RoutinePackTrustWarning, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -99,6 +103,7 @@ def export_routine_pack(
             source_path=source_dir,
             output_path=output,
             archive=True,
+            trust_warnings=routine_pack_trust_warnings(manifest),
         )
     if output.exists():
         shutil.rmtree(output)
@@ -108,6 +113,7 @@ def export_routine_pack(
         source_path=source_dir,
         output_path=output,
         archive=False,
+        trust_warnings=routine_pack_trust_warnings(manifest),
     )
 
 
@@ -148,6 +154,7 @@ def _import_routine_pack_dir(
         source_path=original_source,
         installed_path=destination,
         replaced_existing=replaced_existing,
+        trust_warnings=routine_pack_trust_warnings(installed_manifest),
     )
 
 

@@ -163,6 +163,7 @@ class RoutinePackManagerState:
     selected_pack_id: str | None = None
     install_source_path: Path | None = None
     pending_action: str | None = None
+    trust_warnings: tuple[str, ...] = ()
     status: str = "idle"
     actions: tuple[str, ...] = ("install", "replace", "remove", "export")
 
@@ -174,6 +175,7 @@ class RoutinePackManagerState:
                 str(self.install_source_path) if self.install_source_path else None
             ),
             "pending_action": self.pending_action,
+            "trust_warnings": list(self.trust_warnings),
             "status": self.status,
             "actions": list(self.actions),
         }
@@ -413,6 +415,7 @@ def render_routine_pack_manager_text(state: RoutinePackManagerState) -> str:
             f"- Selected pack: {state.selected_pack_id or 'none'}",
             f"- Install source: {state.install_source_path or 'none'}",
             f"- Pending action: {state.pending_action or 'none'}",
+            f"- Trust warnings: {', '.join(state.trust_warnings) or 'none'}",
             f"- Actions: {', '.join(state.actions)}",
         ],
     ) + "\n"
@@ -603,6 +606,7 @@ def _page_widget(qt_widgets: Any, page: OperatorAppPage) -> Any:
         layout.addWidget(qt_widgets.QLabel("Installed packs: pending"))
         layout.addWidget(qt_widgets.QLabel("Selected pack: pending"))
         layout.addWidget(qt_widgets.QLabel("Install source: pending"))
+        layout.addWidget(qt_widgets.QLabel("Trust warnings: pending"))
         layout.addWidget(qt_widgets.QLabel("Actions: install, replace, remove, export"))
     if "failure_analysis_review" in page.panel_ids:
         layout.addWidget(qt_widgets.QLabel("Failure Analysis Review"))

@@ -100,8 +100,11 @@ from desktop_agent.recorder import (
 )
 from desktop_agent.redaction import RedactionPolicy
 from desktop_agent.routine_pack_manifest import (
+    RoutinePackManifest,
     RoutinePackManifestError,
+    RoutinePackTrustWarning,
     load_routine_pack_manifests,
+    routine_pack_trust_warnings,
 )
 from desktop_agent.routine_pack_ops import (
     RoutinePackOperationError,
@@ -1017,9 +1020,10 @@ def _generate_routine_docs(args: argparse.Namespace) -> int:
 def _list_routine_packs(args: argparse.Namespace) -> int:
     manifests = load_routine_pack_manifests(args.routine_pack_root)
     for manifest in manifests:
+        warning_count = len(routine_pack_trust_warnings(manifest))
         print(
             f"{manifest.id}\t{manifest.version}\t"
-            f"{manifest.trust_level}\t{manifest.name}",
+            f"{manifest.trust_level}\t{manifest.name}\twarnings={warning_count}",
         )
     return 0
 
@@ -1054,6 +1058,7 @@ def _show_routine_pack(args: argparse.Namespace) -> int:
         "proof.expected_artifacts: "
         f"{', '.join(manifest.proof.expected_artifacts)}",
     )
+    _print_routine_pack_warnings(manifest)
     return 0
 
 
@@ -1067,6 +1072,7 @@ def _import_routine_pack(args: argparse.Namespace) -> int:
     print(f"{action} routine pack: {result.manifest.id}")
     print(f"source: {result.source_path}")
     print(f"installed: {result.installed_path}")
+    _print_trust_warning_messages(result.trust_warnings)
     return 0
 
 
@@ -1080,7 +1086,24 @@ def _export_routine_pack(args: argparse.Namespace) -> int:
     kind = "archive" if result.archive else "directory"
     print(f"exported routine pack: {result.manifest.id}")
     print(f"output_{kind}: {result.output_path}")
+    _print_trust_warning_messages(result.trust_warnings)
     return 0
+
+
+def _print_routine_pack_warnings(manifest: RoutinePackManifest) -> None:
+    warnings = routine_pack_trust_warnings(manifest)
+    _print_trust_warning_messages(warnings)
+
+
+def _print_trust_warning_messages(
+    warnings: tuple[RoutinePackTrustWarning, ...],
+) -> None:
+    if not warnings:
+        print("trust_warnings: none")
+        return
+    print("trust_warnings:")
+    for warning in warnings:
+        print(f"  - {warning.message}")
 
 
 def _run_routine(args: argparse.Namespace, *, dry_run: bool) -> int:

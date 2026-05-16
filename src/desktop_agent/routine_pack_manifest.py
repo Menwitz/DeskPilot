@@ -57,6 +57,22 @@ class RoutinePackProofExpectations:
 
 
 @dataclass(frozen=True)
+class RoutinePackTrustWarning:
+    """Operator-facing warning for a routine pack that needs review."""
+
+    pack_id: str
+    trust_level: str
+    message: str
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "pack_id": self.pack_id,
+            "trust_level": self.trust_level,
+            "message": self.message,
+        }
+
+
+@dataclass(frozen=True)
 class RoutinePackManifest:
     """Reviewed local metadata for one installable routine pack."""
 
@@ -89,6 +105,10 @@ class RoutinePackManifest:
             "tests": list(self.tests),
             "safety": self.safety.metadata(),
             "proof": self.proof.metadata(),
+            "trust_warnings": [
+                warning.metadata()
+                for warning in routine_pack_trust_warnings(self)
+            ],
         }
 
 
@@ -177,6 +197,39 @@ def validate_routine_pack_manifest(manifest: RoutinePackManifest) -> None:
     )
     if errors:
         raise RoutinePackManifestError("; ".join(errors))
+
+
+def routine_pack_trust_warnings(
+    manifest: RoutinePackManifest,
+) -> tuple[RoutinePackTrustWarning, ...]:
+    """Return review warnings for packs that should not be silently trusted."""
+    warnings: list[RoutinePackTrustWarning] = []
+    if manifest.trust_level == "unverified_local":
+        warnings.append(
+            RoutinePackTrustWarning(
+                pack_id=manifest.id,
+                trust_level=manifest.trust_level,
+                message=(
+                    "pack is unverified; review manifest, routines, docs, tests, "
+                    "and proof expectations before installing or running"
+                ),
+            ),
+        )
+    if (
+        manifest.safety.external_mutation_allowed
+        and not manifest.safety.approval_required
+    ):
+        warnings.append(
+            RoutinePackTrustWarning(
+                pack_id=manifest.id,
+                trust_level=manifest.trust_level,
+                message=(
+                    "pack allows external mutations without declaring approval "
+                    "requirements"
+                ),
+            ),
+        )
+    return tuple(warnings)
 
 
 def _safety_metadata_from_value(value: object) -> RoutinePackSafetyMetadata:

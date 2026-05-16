@@ -643,7 +643,7 @@ abuse, and hidden automation are not supported.
 - [x] Add routine-pack manifest schema.
 - [x] Add routine-pack import/export commands.
 - [x] Add app UI for installing and removing routine packs.
-- [ ] Add trust warnings for unverified local packs.
+- [x] Add trust warnings for unverified local packs.
 - [ ] Add conflict detection for duplicate routine IDs, selectors, inputs, and
       pack versions.
 - [ ] Add pack-level test runner and proof bundle generator.

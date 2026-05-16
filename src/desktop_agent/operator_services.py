@@ -10,6 +10,7 @@ from typing import Protocol, cast
 from desktop_agent.routine_pack_manifest import (
     RoutinePackManifest,
     load_routine_pack_manifests,
+    routine_pack_trust_warnings,
 )
 from desktop_agent.routine_pack_ops import (
     RoutinePackImportResult,
@@ -79,6 +80,7 @@ class RoutinePackListItem:
     version: str
     trust_level: str
     max_safety_class: str
+    trust_warning_count: int = 0
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -87,6 +89,7 @@ class RoutinePackListItem:
             "version": self.version,
             "trust_level": self.trust_level,
             "max_safety_class": self.max_safety_class,
+            "trust_warning_count": self.trust_warning_count,
         }
 
 
@@ -368,6 +371,7 @@ def _routine_pack_list_item(manifest: RoutinePackManifest) -> RoutinePackListIte
         version=manifest.version,
         trust_level=manifest.trust_level,
         max_safety_class=manifest.safety.max_safety_class,
+        trust_warning_count=len(routine_pack_trust_warnings(manifest)),
     )
 
 
