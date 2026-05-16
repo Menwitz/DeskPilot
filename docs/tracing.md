@@ -166,6 +166,9 @@ summary and per-step timeline without rerunning actions. Timeline rows group
 trace events by `step_id` and include compact markers for observations,
 selected candidates, verification outcomes, recovery reasons, manual handoff,
 state-delta changes, and scroll movement.
+Add `--write-summary` to write `replay-summary.md` in the trace directory with
+the timeline, screenshot paths from pre/post action evidence, and state-delta
+changes.
 
 `desktop-agent proof replay <trace-dir>` reads `proof-manifest.json` and prints
 the proof name, original command, status, environment metadata, and artifact

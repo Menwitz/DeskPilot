@@ -222,6 +222,11 @@ def _build_parser() -> argparse.ArgumentParser:
     replay_parser = subparsers.add_parser("replay", help="summarize a trace directory")
     replay_parser.add_argument("trace_dir", type=Path)
     replay_parser.add_argument("--verbose", action="store_true")
+    replay_parser.add_argument(
+        "--write-summary",
+        action="store_true",
+        help="write replay-summary.md with timeline, screenshots, and state deltas",
+    )
 
     proof_parser = subparsers.add_parser("proof", help="proof artifact tools")
     proof_subparsers = proof_parser.add_subparsers(dest="proof_command")
@@ -1107,6 +1112,9 @@ def _replay(args: argparse.Namespace) -> int:
         print(f"reason: {report['abort_reason']}")
     for line in _replay_timeline_lines(report):
         print(line)
+    if args.write_summary:
+        summary_path = _write_replay_summary(args.trace_dir, report)
+        print(f"summary: {summary_path}")
     if args.verbose:
         print(json.dumps(report, indent=2, sort_keys=True))
     return 0
@@ -1188,6 +1196,96 @@ def _replay_event_suffix(event: dict[str, object]) -> str:
     if not details:
         return ""
     return " [" + "; ".join(details) + "]"
+
+
+def _write_replay_summary(trace_dir: Path, report: dict[str, object]) -> Path:
+    summary_path = trace_dir / "replay-summary.md"
+    summary_path.write_text(
+        _replay_summary_markdown(trace_dir, report),
+        encoding="utf-8",
+    )
+    return summary_path
+
+
+def _replay_summary_markdown(trace_dir: Path, report: dict[str, object]) -> str:
+    lines = [
+        "# DeskPilot Replay Summary",
+        "",
+        f"- Trace: `{trace_dir}`",
+        f"- Task: `{report.get('task_name', 'unknown')}`",
+        f"- Status: `{report.get('status', 'unknown')}`",
+    ]
+    abort_reason = report.get("abort_reason")
+    if abort_reason:
+        lines.append(f"- Reason: `{abort_reason}`")
+    lines.extend(["", "## Timeline"])
+    timeline = _replay_timeline_lines(report)
+    if timeline:
+        lines.extend(timeline[1:])
+    else:
+        lines.append("- No step timeline available.")
+    lines.extend(["", "## Evidence"])
+    evidence_lines = _replay_evidence_lines(report)
+    if evidence_lines:
+        lines.extend(evidence_lines)
+    else:
+        lines.append("- No screenshot or state-delta evidence found.")
+    return "\n".join(lines) + "\n"
+
+
+def _replay_evidence_lines(report: dict[str, object]) -> list[str]:
+    events = report.get("events")
+    if not isinstance(events, list):
+        return []
+    lines: list[str] = []
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        metadata = event.get("metadata")
+        if not isinstance(metadata, dict):
+            continue
+        raw_phase = event.get("phase")
+        phase = raw_phase if isinstance(raw_phase, str) else "event"
+        _append_evidence_bundle(lines, phase, metadata, "pre_action_evidence")
+        _append_evidence_bundle(lines, phase, metadata, "post_action_evidence")
+        if phase == "state_delta":
+            _append_state_delta_lines(lines, metadata)
+    return lines
+
+
+def _append_evidence_bundle(
+    lines: list[str],
+    phase: str,
+    metadata: dict[object, object],
+    key: str,
+) -> None:
+    bundle = metadata.get(key)
+    if not isinstance(bundle, dict):
+        return
+    screenshot_path = bundle.get("screenshot_path")
+    active_window_title = bundle.get("active_window_title")
+    lines.append(f"- `{phase}` `{key}`")
+    if isinstance(screenshot_path, str):
+        lines.append(f"  - Screenshot: `{screenshot_path}`")
+    if isinstance(active_window_title, str):
+        lines.append(f"  - Active window: `{active_window_title}`")
+
+
+def _append_state_delta_lines(
+    lines: list[str],
+    metadata: dict[object, object],
+) -> None:
+    lines.append("- `state_delta` changes")
+    for key, label in (
+        ("visible_text_added", "Visible text added"),
+        ("visible_text_removed", "Visible text removed"),
+        ("target_appeared", "Target appeared"),
+        ("target_disappeared", "Target disappeared"),
+        ("scroll_moved", "Scroll moved"),
+    ):
+        value = metadata.get(key)
+        if value not in (None, [], False):
+            lines.append(f"  - {label}: `{value}`")
 
 
 def _proof(args: argparse.Namespace) -> int:

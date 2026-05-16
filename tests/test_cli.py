@@ -1260,6 +1260,80 @@ def test_cli_replay_prints_step_timeline(
     assert "3. verify_result: verified [outcome passed]" in output
 
 
+def test_cli_replay_writes_markdown_summary(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    trace_dir.mkdir()
+    before = trace_dir / "screenshots" / "before.png"
+    after = trace_dir / "screenshots" / "after.png"
+    (trace_dir / "final-report.json").write_text(
+        json.dumps(
+            {
+                "task_name": "fixture",
+                "status": "passed",
+                "steps": [
+                    {
+                        "step_id": "click-submit",
+                        "action": "click_text",
+                        "status": "passed",
+                        "attempts": 1,
+                    },
+                ],
+                "events": [
+                    {
+                        "phase": "observe_screen",
+                        "message": "screen observed",
+                        "metadata": {
+                            "step_id": "click-submit",
+                            "pre_action_evidence": {
+                                "screenshot_path": str(before),
+                                "active_window_title": "DeskPilot Fixture",
+                            },
+                        },
+                    },
+                    {
+                        "phase": "observe_after_action",
+                        "message": "screen observed after action",
+                        "metadata": {
+                            "step_id": "click-submit",
+                            "post_action_evidence": {
+                                "screenshot_path": str(after),
+                                "active_window_title": "DeskPilot Fixture - Done",
+                            },
+                        },
+                    },
+                    {
+                        "phase": "state_delta",
+                        "message": "visual state delta summarized",
+                        "metadata": {
+                            "step_id": "click-submit",
+                            "visible_text_added": ["Success"],
+                            "target_appeared": True,
+                        },
+                    },
+                ],
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    status = main(["replay", str(trace_dir), "--write-summary"])
+
+    output = capsys.readouterr().out
+    summary_path = trace_dir / "replay-summary.md"
+    summary = summary_path.read_text(encoding="utf-8")
+    assert status == 0
+    assert f"summary: {summary_path}" in output
+    assert "# DeskPilot Replay Summary" in summary
+    assert "- step click-submit (click_text) passed after 1 attempt(s)" in summary
+    assert f"Screenshot: `{before}`" in summary
+    assert f"Screenshot: `{after}`" in summary
+    assert "Visible text added: `['Success']`" in summary
+    assert "Target appeared: `True`" in summary
+
+
 def test_cli_replay_points_to_proof_replay_for_manifest_trace(
     tmp_path: Path,
     capsys: CaptureFixture[str],

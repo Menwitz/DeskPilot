@@ -198,7 +198,7 @@ abuse, and hidden automation are not supported.
 - [x] Add verification outcome `inconclusive` and route it to retry or manual
       handoff.
 - [x] Add trace replay timeline output for each step.
-- [ ] Add trace replay Markdown or HTML summary with screenshots and state
+- [x] Add trace replay Markdown or HTML summary with screenshots and state
       deltas.
 
 ### Acceptance Criteria
