@@ -24,7 +24,7 @@ abuse, and hidden automation are not supported.
       Facebook, YouTube, and TikTok.
 - [ ] DeskPilot becomes a personal local routine assistant.
 - [x] DeskPilot ships a native PySide6 operator app.
-- [ ] DeskPilot supports a 300-routine catalog.
+- [x] DeskPilot supports a 300-routine catalog.
 - [x] DeskPilot supports recorder-generated editable YAML and playbooks.
 - [x] DeskPilot supports goal-to-routine planning.
 - [x] DeskPilot supports optional local Ollama planning and ranking.
@@ -55,7 +55,7 @@ abuse, and hidden automation are not supported.
       with video plus traces.
 - [x] Alpha assistant: recorder, routine library, and native app can run local
       routines manually.
-- [ ] Beta catalog: 300 routines validate, dry-run, and carry safety metadata.
+- [x] Beta catalog: 300 routines validate, dry-run, and carry safety metadata.
 - [x] Planner release: goal-to-routine planning selects routines and asks for
       missing inputs.
 - [x] UI release: PySide6 app supports library, approvals, run queue, pause,
@@ -307,16 +307,16 @@ abuse, and hidden automation are not supported.
 ### Goals
 
 - [x] Build a broad catalog of reusable routines on top of YAML and playbooks.
-- [ ] Reach 300 validated routines across browser, native Windows, and
+- [x] Reach 300 validated routines across browser, native Windows, and
       social/content workflows.
 - [x] Make routine quality measurable and reviewable.
 
 ### OKRs
 
-- [ ] O1: Ship a 300-routine catalog.
-- [ ] KR1: Add 100 browser routines.
-- [ ] KR2: Add 100 native Windows routines.
-- [ ] KR3: Add 100 social/content routines.
+- [x] O1: Ship a 300-routine catalog.
+- [x] KR1: Add 100 browser routines.
+- [x] KR2: Add 100 native Windows routines.
+- [x] KR3: Add 100 social/content routines.
 - [x] KR4: Every routine has metadata, inputs, outputs, safety class, dry-run
       coverage, and trace expectations.
 - [x] KR5: High-risk routines require approval and checkpoint coverage.
@@ -402,7 +402,7 @@ abuse, and hidden automation are not supported.
 
 ### Acceptance Criteria
 
-- [ ] 300 routines validate.
+- [x] 300 routines validate.
 - [x] Every routine has dry-run coverage.
 - [x] Every high-risk routine has approval metadata and checkpoint coverage.
 - [x] Every routine can be listed, inspected, and compiled from the CLI.
