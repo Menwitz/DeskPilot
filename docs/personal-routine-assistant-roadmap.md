@@ -552,7 +552,7 @@ abuse, and hidden automation are not supported.
 - [x] KR2: Model output can rank routines, summarize traces, extract draft
       inputs, and suggest YAML improvements.
 - [x] KR3: Model output cannot execute raw desktop actions directly.
-- [ ] KR4: Every model-assisted decision is disclosed in the trace.
+- [x] KR4: Every model-assisted decision is disclosed in the trace.
 
 ### Tasks
 
