@@ -684,7 +684,7 @@ abuse, and hidden automation are not supported.
 
 ## Cross-Phase Test Matrix
 
-- [ ] Unit tests for routine, desktop I/O action, trace, recorder, goal plan,
+- [x] Unit tests for routine, desktop I/O action, trace, recorder, goal plan,
       model provider, proof manifest, and routine pack schemas.
 - [ ] Planner tests for goal-to-routine selection, missing inputs, approvals,
       manual handoff, schedule windows, cooldowns, and stop reasons.
