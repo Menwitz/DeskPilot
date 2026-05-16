@@ -420,7 +420,7 @@ abuse, and hidden automation are not supported.
 
 ### Tasks
 
-- [ ] Add `GoalPlan` schema with user goal, normalized intent, candidate
+- [x] Add `GoalPlan` schema with user goal, normalized intent, candidate
       routines, selected routine, missing inputs, approvals, explanation, and
       execution status.
 - [ ] Add routine index search by ID, name, app, site, tags, inputs, outputs,
