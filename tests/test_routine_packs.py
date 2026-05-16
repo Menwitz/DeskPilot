@@ -45,7 +45,7 @@ def test_builtin_routine_catalog_has_broad_reusable_surface_coverage() -> None:
 
     assert len(catalog.routines) >= 30
     assert pack_counts["browser"] >= 50
-    assert pack_counts["native"] >= 35
+    assert pack_counts["native"] >= 50
     assert pack_counts["social-content"] >= 56
 
 
@@ -336,6 +336,21 @@ def test_native_routine_pack_contains_seed_categories() -> None:
         "native.quick-link-menu-open",
         "native.system-about-open",
         "native.display-settings-open",
+        "native.file-explorer-address-focus",
+        "native.file-explorer-refresh",
+        "native.file-explorer-properties-dialog-review",
+        "native.file-explorer-rename-review",
+        "native.file-explorer-preview-pane-toggle",
+        "native.file-explorer-details-pane-toggle",
+        "native.taskbar-search-open",
+        "native.taskbar-search-query-review",
+        "native.system-tray-focus",
+        "native.settings-bluetooth-open",
+        "native.settings-network-open",
+        "native.settings-apps-open",
+        "native.settings-privacy-open",
+        "native.settings-windows-update-open",
+        "native.settings-storage-open",
     }
     routines = {
         routine.id: routine

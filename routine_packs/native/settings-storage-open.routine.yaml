@@ -1,0 +1,20 @@
+id: native.settings-storage-open
+name: Windows storage settings open
+description: Open storage settings through the Run dialog for read-only review.
+goal: Navigate directly to storage settings without changing cleanup policies.
+required_app: Settings
+tags:
+  - native
+  - settings
+  - review
+inputs:
+  - Windows desktop
+outputs:
+  - storage settings visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/settings-storage-open.yaml

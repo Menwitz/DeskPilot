@@ -1,0 +1,19 @@
+name: File Explorer refresh task
+allowed_windows:
+  - File Explorer
+timeout_seconds: 20
+steps:
+  - id: confirm-explorer
+    action: wait_for
+    target: File Explorer
+  - id: refresh-view
+    action: press_key
+    text: f5
+    verify:
+      type: visible_text
+      text: File Explorer
+  - id: confirm-refresh
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: File Explorer

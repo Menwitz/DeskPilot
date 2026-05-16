@@ -1,0 +1,24 @@
+name: File Explorer rename review task
+allowed_windows:
+  - File Explorer
+timeout_seconds: 25
+steps:
+  - id: confirm-explorer-selection
+    action: wait_for
+    target: File Explorer
+  - id: enter-rename-mode
+    action: press_key
+    text: f2
+    requires_confirmation: true
+    checkpoint:
+      type: visible_text
+      text: File Explorer
+    verify:
+      type: visible_text
+      text: File Explorer
+  - id: cancel-rename-mode
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: File Explorer

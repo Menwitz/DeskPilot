@@ -354,6 +354,9 @@ abuse, and hidden automation are not supported.
 - [x] Add second native scale-out batch for window snap/minimize/restore,
       desktop and virtual desktop navigation, action/notification center,
       Start search, emoji panel, quick link menu, and system/display settings.
+- [x] Add third native scale-out batch for File Explorer address, refresh,
+      properties, rename review, preview/details panes, taskbar search, system
+      tray focus, and direct Settings page review routines.
 - [x] Add social/content routines for LinkedIn, Medium, X/Twitter, Instagram,
       Facebook, YouTube, and TikTok read-only, draft, and approved publish
       surfaces.

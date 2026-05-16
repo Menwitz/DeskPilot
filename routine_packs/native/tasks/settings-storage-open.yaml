@@ -1,0 +1,29 @@
+name: Windows storage settings open task
+allowed_windows:
+  - Windows
+  - Settings
+timeout_seconds: 30
+steps:
+  - id: open-run-dialog
+    action: press_key
+    text: win+r
+    verify:
+      type: visible_text
+      text: Run
+  - id: type-storage-settings-uri
+    action: type_text
+    text: "ms-settings:storagesense"
+    verify:
+      type: visible_text
+      text: "ms-settings:storagesense"
+  - id: submit-settings-uri
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Storage
+  - id: confirm-settings-page
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Settings

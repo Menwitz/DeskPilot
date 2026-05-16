@@ -1,0 +1,20 @@
+id: native.system-tray-focus
+name: Windows system tray focus
+description: Move keyboard focus to the Windows system tray without selecting an item.
+goal: Prepare tray status inspection using keyboard-visible focus movement.
+required_app: Windows
+tags:
+  - native
+  - windows
+  - status
+inputs:
+  - Windows desktop
+outputs:
+  - system tray focused
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 10
+reference:
+  type: task
+  path: tasks/system-tray-focus.yaml

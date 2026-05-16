@@ -1,0 +1,20 @@
+id: native.file-explorer-rename-review
+name: File Explorer rename review
+description: Enter rename mode for the selected item after confirmation and exit without typing.
+goal: Review whether a selected Explorer item is rename-ready without changing its name.
+required_app: File Explorer
+tags:
+  - native
+  - file-explorer
+  - review
+inputs:
+  - selected Explorer item
+outputs:
+  - rename mode reviewed
+safety_class: medium
+schedule_policy: manual
+approval_policy: confirm
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/file-explorer-rename-review.yaml

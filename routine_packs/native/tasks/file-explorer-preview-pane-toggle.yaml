@@ -1,0 +1,19 @@
+name: File Explorer preview pane toggle task
+allowed_windows:
+  - File Explorer
+timeout_seconds: 20
+steps:
+  - id: confirm-explorer
+    action: wait_for
+    target: File Explorer
+  - id: toggle-preview-pane
+    action: press_key
+    text: alt+p
+    verify:
+      type: visible_text
+      text: File Explorer
+  - id: confirm-explorer-after-toggle
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: File Explorer

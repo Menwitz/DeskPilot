@@ -1,0 +1,20 @@
+id: native.file-explorer-address-focus
+name: File Explorer address focus
+description: Focus the File Explorer address bar for path review without changing location.
+goal: Prepare the current Explorer path for review or copy-ready inspection.
+required_app: File Explorer
+tags:
+  - native
+  - file-explorer
+  - navigation
+inputs:
+  - active File Explorer window
+outputs:
+  - address bar focused
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 10
+reference:
+  type: task
+  path: tasks/file-explorer-address-focus.yaml

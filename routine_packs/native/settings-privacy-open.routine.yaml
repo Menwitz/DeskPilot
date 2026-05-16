@@ -1,0 +1,20 @@
+id: native.settings-privacy-open
+name: Windows privacy settings open
+description: Open privacy settings through the Run dialog for read-only review.
+goal: Navigate directly to privacy settings without changing permissions.
+required_app: Settings
+tags:
+  - native
+  - settings
+  - review
+inputs:
+  - Windows desktop
+outputs:
+  - privacy settings visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/settings-privacy-open.yaml

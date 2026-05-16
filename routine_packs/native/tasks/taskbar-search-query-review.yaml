@@ -1,0 +1,23 @@
+name: Windows taskbar search query review task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: open-search
+    action: press_key
+    text: win+s
+    verify:
+      type: visible_text
+      text: Search
+  - id: type-reviewed-query
+    action: type_text
+    text: Documents
+    verify:
+      type: visible_text
+      text: Documents
+  - id: close-search
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: Windows

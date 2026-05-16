@@ -1,0 +1,20 @@
+name: File Explorer properties dialog review task
+allowed_windows:
+  - File Explorer
+timeout_seconds: 30
+steps:
+  - id: confirm-explorer-selection
+    action: wait_for
+    target: File Explorer
+  - id: open-properties
+    action: press_key
+    text: alt+enter
+    verify:
+      type: visible_text
+      text: Properties
+  - id: close-properties
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: File Explorer

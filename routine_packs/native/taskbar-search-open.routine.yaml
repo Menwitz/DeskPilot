@@ -1,0 +1,20 @@
+id: native.taskbar-search-open
+name: Windows taskbar search open
+description: Open Windows taskbar search and close it after confirming the surface.
+goal: Prepare local app or file search without selecting a result.
+required_app: Windows
+tags:
+  - native
+  - windows
+  - search
+inputs:
+  - Windows desktop
+outputs:
+  - taskbar search visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 10
+reference:
+  type: task
+  path: tasks/taskbar-search-open.yaml

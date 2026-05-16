@@ -1,0 +1,20 @@
+id: native.taskbar-search-query-review
+name: Windows taskbar search query review
+description: Open taskbar search, type a reviewed query, and close without launching a result.
+goal: Review local search results before an operator decides what to open.
+required_app: Windows
+tags:
+  - native
+  - windows
+  - search
+inputs:
+  - reviewed search query
+outputs:
+  - search results reviewed
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/taskbar-search-query-review.yaml

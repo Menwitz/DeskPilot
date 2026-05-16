@@ -1,0 +1,16 @@
+name: Windows system tray focus task
+allowed_windows:
+  - Windows
+timeout_seconds: 20
+steps:
+  - id: focus-system-tray
+    action: press_key
+    text: win+b
+    verify:
+      type: visible_text
+      text: Windows
+  - id: confirm-tray-focus
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Windows

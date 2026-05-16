@@ -1,0 +1,20 @@
+id: native.file-explorer-preview-pane-toggle
+name: File Explorer preview pane toggle
+description: Toggle the File Explorer preview pane and keep the Explorer surface active.
+goal: Expose or hide the preview pane during a local file review routine.
+required_app: File Explorer
+tags:
+  - native
+  - file-explorer
+  - review
+inputs:
+  - active File Explorer window
+outputs:
+  - preview pane toggled
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 10
+reference:
+  type: task
+  path: tasks/file-explorer-preview-pane-toggle.yaml

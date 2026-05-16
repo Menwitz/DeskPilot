@@ -1,0 +1,17 @@
+name: Windows taskbar search open task
+allowed_windows:
+  - Windows
+timeout_seconds: 20
+steps:
+  - id: open-search
+    action: press_key
+    text: win+s
+    verify:
+      type: visible_text
+      text: Search
+  - id: close-search
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: Windows

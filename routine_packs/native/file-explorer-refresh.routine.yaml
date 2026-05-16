@@ -1,0 +1,20 @@
+id: native.file-explorer-refresh
+name: File Explorer refresh
+description: Refresh the active File Explorer view and verify the window remains available.
+goal: Update the visible folder contents before a review or handoff.
+required_app: File Explorer
+tags:
+  - native
+  - file-explorer
+  - refresh
+inputs:
+  - active File Explorer window
+outputs:
+  - refreshed Explorer view
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 10
+reference:
+  type: task
+  path: tasks/file-explorer-refresh.yaml

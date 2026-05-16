@@ -1,0 +1,20 @@
+id: native.file-explorer-properties-dialog-review
+name: File Explorer properties dialog review
+description: Open the selected item properties dialog for review and close it without changes.
+goal: Inspect properties for the selected Explorer item while preserving state.
+required_app: File Explorer
+tags:
+  - native
+  - file-explorer
+  - review
+inputs:
+  - selected Explorer item
+outputs:
+  - properties dialog reviewed
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/file-explorer-properties-dialog-review.yaml

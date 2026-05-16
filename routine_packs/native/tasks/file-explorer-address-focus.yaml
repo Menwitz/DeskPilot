@@ -1,0 +1,19 @@
+name: File Explorer address focus task
+allowed_windows:
+  - File Explorer
+timeout_seconds: 20
+steps:
+  - id: confirm-explorer
+    action: wait_for
+    target: File Explorer
+  - id: focus-address
+    action: press_key
+    text: alt+d
+    verify:
+      type: visible_text
+      text: File Explorer
+  - id: confirm-address-focus
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: File Explorer
