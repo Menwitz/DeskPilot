@@ -7,6 +7,7 @@ from desktop_agent.proof_manifest import (
     proof_suite_status_metadata,
     render_proof_suite_report,
     render_proof_suite_runbook,
+    run_proof_preflight,
     validate_proof_bundle,
     validate_proof_suite,
     write_proof_suite_archive,
@@ -14,6 +15,40 @@ from desktop_agent.proof_manifest import (
     write_proof_suite_runbook,
     write_proof_suite_status,
 )
+
+
+def test_run_proof_preflight_passes_on_windows_with_video_tool(
+    tmp_path: Path,
+) -> None:
+    result = run_proof_preflight(
+        tmp_path / "traces",
+        platform_name="win32",
+        path_lookup=lambda command: "/usr/bin/ffmpeg" if command == "ffmpeg" else None,
+    )
+
+    assert result.passed
+    assert result.metadata()["status"] == "passed"
+    assert tuple(check.name for check in result.checks) == (
+        "windows-platform",
+        "trace-root",
+        "video-capture",
+    )
+
+
+def test_run_proof_preflight_reports_platform_and_video_failures(
+    tmp_path: Path,
+) -> None:
+    result = run_proof_preflight(
+        tmp_path / "traces",
+        platform_name="darwin",
+        path_lookup=lambda _command: None,
+    )
+
+    assert not result.passed
+    statuses = {check.name: check.status for check in result.checks}
+    assert statuses["windows-platform"] == "failed"
+    assert statuses["trace-root"] == "passed"
+    assert statuses["video-capture"] == "failed"
 
 
 def test_validate_proof_bundle_accepts_complete_evidence(tmp_path: Path) -> None:

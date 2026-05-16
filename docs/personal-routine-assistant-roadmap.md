@@ -168,6 +168,8 @@ abuse, and hidden automation are not supported.
 - [x] Add a proof suite artifact archive containing generated review files,
       proof manifests, action logs, reports, screenshots, and video artifacts
       when present.
+- [x] Add a no-input proof preflight command for Windows platform, trace-root,
+      and video-capture readiness checks before the proof countdown.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

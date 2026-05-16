@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import shlex
+import shutil
+import sys
 import zipfile
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -145,6 +148,60 @@ class ProofSuiteValidation:
             proof_name = result.proof_name or str(result.trace_dir)
             errors.extend(f"{proof_name}: {error}" for error in result.errors)
         return tuple(errors)
+
+
+@dataclass(frozen=True)
+class ProofPreflightCheck:
+    """One no-input readiness check before a Windows proof run."""
+
+    name: str
+    status: str
+    message: str
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "name": self.name,
+            "status": self.status,
+            "message": self.message,
+        }
+
+
+@dataclass(frozen=True)
+class ProofPreflightResult:
+    """No-input readiness result for collecting proof suite evidence."""
+
+    trace_root: Path
+    checks: tuple[ProofPreflightCheck, ...]
+
+    @property
+    def passed(self) -> bool:
+        return all(check.status != "failed" for check in self.checks)
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "trace_root": str(self.trace_root),
+            "status": "passed" if self.passed else "failed",
+            "checks": [check.metadata() for check in self.checks],
+        }
+
+
+def run_proof_preflight(
+    trace_root: Path,
+    *,
+    require_windows: bool = True,
+    require_video: bool = True,
+    ffmpeg_path: str = "ffmpeg",
+    platform_name: str = sys.platform,
+    path_lookup: Callable[[str], str | None] = shutil.which,
+) -> ProofPreflightResult:
+    """Check local proof-suite prerequisites without sending desktop input."""
+
+    checks = (
+        _windows_preflight_check(platform_name, require_windows),
+        _trace_root_preflight_check(trace_root),
+        _video_preflight_check(ffmpeg_path, require_video, path_lookup),
+    )
+    return ProofPreflightResult(trace_root=trace_root, checks=checks)
 
 
 def validate_proof_bundle(
@@ -658,6 +715,93 @@ def _archive_name(trace_root: Path, artifact_path: Path) -> str:
     except ValueError:
         relative = Path("external-artifacts") / artifact_path.name
     return relative.as_posix()
+
+
+def _windows_preflight_check(
+    platform_name: str,
+    require_windows: bool,
+) -> ProofPreflightCheck:
+    if not require_windows:
+        return ProofPreflightCheck(
+            name="windows-platform",
+            status="warning",
+            message="Windows platform requirement was disabled for this preflight.",
+        )
+    if platform_name == "win32":
+        return ProofPreflightCheck(
+            name="windows-platform",
+            status="passed",
+            message="Running on Windows.",
+        )
+    return ProofPreflightCheck(
+        name="windows-platform",
+        status="failed",
+        message=(
+            "Proof suite must run on Windows; "
+            f"current platform is {platform_name}."
+        ),
+    )
+
+
+def _trace_root_preflight_check(trace_root: Path) -> ProofPreflightCheck:
+    if trace_root.exists() and not trace_root.is_dir():
+        return ProofPreflightCheck(
+            name="trace-root",
+            status="failed",
+            message=f"Trace root exists but is not a directory: {trace_root}",
+        )
+    writable_path = trace_root if trace_root.exists() else trace_root.parent
+    if not writable_path.exists():
+        return ProofPreflightCheck(
+            name="trace-root",
+            status="failed",
+            message=f"Trace root parent does not exist: {writable_path}",
+        )
+    if not os.access(writable_path, os.W_OK):
+        return ProofPreflightCheck(
+            name="trace-root",
+            status="failed",
+            message=f"Trace root is not writable: {writable_path}",
+        )
+    return ProofPreflightCheck(
+        name="trace-root",
+        status="passed",
+        message=f"Trace root can be written: {trace_root}",
+    )
+
+
+def _video_preflight_check(
+    ffmpeg_path: str,
+    require_video: bool,
+    path_lookup: Callable[[str], str | None],
+) -> ProofPreflightCheck:
+    if not require_video:
+        return ProofPreflightCheck(
+            name="video-capture",
+            status="warning",
+            message="Video capture is disabled; external recording must be justified.",
+        )
+    if _ffmpeg_available(ffmpeg_path, path_lookup):
+        return ProofPreflightCheck(
+            name="video-capture",
+            status="passed",
+            message=f"ffmpeg is available for proof video capture: {ffmpeg_path}",
+        )
+    return ProofPreflightCheck(
+        name="video-capture",
+        status="failed",
+        message=f"ffmpeg was not found for proof video capture: {ffmpeg_path}",
+    )
+
+
+def _ffmpeg_available(
+    ffmpeg_path: str,
+    path_lookup: Callable[[str], str | None],
+) -> bool:
+    path = Path(ffmpeg_path)
+    if path.is_absolute() or len(path.parts) > 1:
+        return path.exists() and path.is_file()
+    return path_lookup(ffmpeg_path) is not None
 
 
 def _proof_collection_command(

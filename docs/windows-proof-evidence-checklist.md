@@ -11,6 +11,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Close unrelated sensitive windows before starting the countdown.
 - [ ] Start screen recording before running the command.
 - [ ] Run the command from the repository root with an explicit `--trace-root`.
+- [ ] Run `desktop-agent proof preflight --trace-root <trace-root>` and resolve
+      failed Windows platform, trace-root, or video-capture checks before the
+      proof countdown.
 - [ ] Prefer built-in recording with `--record-video --video-fps 15` when
       `ffmpeg` is installed on the Windows VM.
 - [ ] Use `--video-policy disabled` when the run may not record screen video.

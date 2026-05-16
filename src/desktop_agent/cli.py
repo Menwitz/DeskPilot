@@ -94,6 +94,7 @@ from desktop_agent.platforms.windows.uia import (
 )
 from desktop_agent.preview import build_dry_run_preview, render_dry_run_preview
 from desktop_agent.proof_manifest import (
+    run_proof_preflight,
     validate_proof_bundle,
     validate_proof_suite,
     write_proof_suite_archive,
@@ -523,6 +524,27 @@ def _build_parser() -> argparse.ArgumentParser:
         "--open-artifacts",
         action="store_true",
         help="open existing proof artifact paths with the OS file manager",
+    )
+    proof_preflight_parser = proof_subparsers.add_parser(
+        "preflight",
+        help="check Windows proof prerequisites without sending desktop input",
+    )
+    proof_preflight_parser.add_argument(
+        "--trace-root",
+        default=Path("traces"),
+        type=Path,
+    )
+    proof_preflight_parser.add_argument("--ffmpeg-path", default="ffmpeg")
+    proof_preflight_parser.add_argument(
+        "--allow-non-windows",
+        action="store_true",
+        help="do not fail preflight when running outside Windows",
+    )
+    proof_preflight_parser.add_argument(
+        "--video-policy",
+        choices=("full", "disabled"),
+        default="full",
+        help="disable proof video preflight when using external recording",
     )
     proof_validate_parser = proof_subparsers.add_parser(
         "validate",
@@ -2702,6 +2724,8 @@ def _append_step_evidence_lines(
 def _proof(args: argparse.Namespace) -> int:
     if args.proof_command == "replay":
         return _proof_replay(args)
+    if args.proof_command == "preflight":
+        return _proof_preflight(args)
     if args.proof_command == "validate":
         return _proof_validate(args)
     if args.proof_command == "validate-suite":
@@ -2716,6 +2740,20 @@ def _proof(args: argparse.Namespace) -> int:
         return _proof_recovery_fixture(args)
     print("error: proof subcommand required")
     return 2
+
+
+def _proof_preflight(args: argparse.Namespace) -> int:
+    result = run_proof_preflight(
+        args.trace_root,
+        require_windows=not args.allow_non_windows,
+        require_video=args.video_policy != "disabled",
+        ffmpeg_path=args.ffmpeg_path,
+    )
+    print(f"trace_root: {args.trace_root}")
+    print(f"preflight: {'passed' if result.passed else 'failed'}")
+    for check in result.checks:
+        print(f"check {check.name}: {check.status} - {check.message}")
+    return 0 if result.passed else 1
 
 
 def _proof_validate(args: argparse.Namespace) -> int:

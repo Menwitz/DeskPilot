@@ -1687,6 +1687,29 @@ def test_cli_proof_validate_reports_bundle_errors(
     assert "error: action_log_path is empty" in output
 
 
+def test_cli_proof_preflight_reports_non_windows_failure(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    status = main(
+        [
+            "proof",
+            "preflight",
+            "--trace-root",
+            str(tmp_path / "traces"),
+            "--video-policy",
+            "disabled",
+        ],
+    )
+
+    output = capsys.readouterr().out
+    assert status == 1
+    assert "preflight: failed" in output
+    assert "check windows-platform: failed" in output
+    assert "check trace-root: passed" in output
+    assert "check video-capture: warning" in output
+
+
 def test_cli_proof_validate_suite_reports_missing_bundles(
     tmp_path: Path,
     capsys: CaptureFixture[str],
