@@ -19,6 +19,20 @@ Benchmark acceptance remains a threshold check, not a performance claim. Treat
 baseline comparisons, repeated local traces, and Windows checklist evidence as
 the source for any actual improvement claim.
 
+## Windows Evidence Gate Status
+
+Local CI, dry-runs, fixture tests, and benchmark acceptance prove the
+cross-platform task, playbook, safety, tracing, and reporting foundation. They
+do not prove that DeskPilot is a finished personal routine assistant or that the
+real Windows desktop workflow is production-ready.
+
+Real product proof still requires owned, unlocked Windows evidence bundles with
+video, traces, pre-action and post-action screenshots, cursor readbacks,
+active-window metadata, target reasoning, and final reports for browser,
+native, mixed, and recovery workflows. Those gates are tracked in
+[Personal Routine Assistant Roadmap](personal-routine-assistant-roadmap.md) and
+must remain separate from local-only quality checks.
+
 ## Human-Like Execution Safety Release
 
 Date: 2026-05-14
