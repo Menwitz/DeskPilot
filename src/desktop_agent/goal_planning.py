@@ -11,7 +11,12 @@ from datetime import datetime
 from typing import Literal, Protocol, cast
 
 from desktop_agent.config import LocalModelConfig
-from desktop_agent.routines import RoutineCatalog, RoutineDefinition
+from desktop_agent.routines import (
+    RoutineCatalog,
+    RoutineDefinition,
+    RoutineDefinitionError,
+    require_validated_routine_for_execution,
+)
 from desktop_agent.scheduler import select_schedule_time
 
 GoalExecutionStatus = Literal[
@@ -466,6 +471,23 @@ def rank_goal_plan_with_optional_model(
             ),
         )
     return _apply_model_suggestion(catalog, request, plan, config, suggestion)
+
+
+def selected_routine_for_goal_execution(
+    catalog: RoutineCatalog,
+    plan: GoalPlan,
+) -> RoutineDefinition:
+    """Resolve a goal plan to an executable routine through the catalog gate."""
+    validate_goal_plan(plan)
+    if plan.selected_routine_id is None:
+        raise GoalPlanError("goal plan has no selected routine")
+    try:
+        return require_validated_routine_for_execution(
+            catalog,
+            plan.selected_routine_id,
+        )
+    except RoutineDefinitionError as exc:
+        raise GoalPlanError(str(exc)) from exc
 
 
 def validate_missing_input_prompt(prompt: GoalMissingInputPrompt) -> None:

@@ -136,6 +136,12 @@ desktop-agent run-routine browser.search
 `RoutineDefinition.report_metadata()` to the resulting task so traces and
 reports preserve the routine ID, safety class, policies, and reference kind.
 
+Before `dry-run-routine` or `run-routine` can enter the execution pipeline,
+DeskPilot applies `routine_execution_gate()`. The gate allows only slug-safe
+routine IDs that exist in the loaded, validated catalog and are not
+quarantined. Unknown IDs, malformed IDs, invalid routine definitions, and
+quarantined routines stop before task compilation or desktop input.
+
 `generate-routine-docs` writes `docs/routine-catalog-index.md` and
 `docs/routine-documentation-template.md` by default. The generated catalog index
 summarizes routine counts, approval gaps, Windows proof requirements,

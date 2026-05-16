@@ -20,6 +20,7 @@ from desktop_agent.goal_planning import (
     rank_goal_plan_with_optional_model,
     route_goal_to_routine,
     search_routine_index_for_goal,
+    selected_routine_for_goal_execution,
     validate_goal_plan,
     validate_missing_input_prompt,
 )
@@ -555,6 +556,60 @@ def test_optional_ollama_ranking_rejects_unknown_routine_ids() -> None:
     assert ranked.model_ranking.status == "rejected"
     assert ranked.model_ranking.affected_selection is False
     assert ranked.model_ranking.error is not None
+
+
+def test_goal_execution_resolves_only_validated_routine_ids() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="browser.read-page",
+                name="Browser read page",
+                tags=["browser", "reading"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+                inputs=[],
+            ),
+        ),
+    )
+    plan = GoalPlan(
+        user_goal="Read page",
+        normalized_intent="browser read",
+        candidate_routines=(
+            GoalPlanCandidate(
+                routine_id="browser.read-page",
+                routine_name="Browser read page",
+                score=10,
+            ),
+        ),
+        selected_routine_id="browser.read-page",
+        execution_status="ready",
+    )
+
+    routine = selected_routine_for_goal_execution(catalog, plan)
+
+    assert routine.id == "browser.read-page"
+
+
+def test_goal_execution_rejects_candidate_ids_missing_from_catalog() -> None:
+    catalog = RoutineCatalog(root=Path("routine_packs"), routines=())
+    plan = GoalPlan(
+        user_goal="Invent an action",
+        normalized_intent="invented",
+        candidate_routines=(
+            GoalPlanCandidate(
+                routine_id="invented.raw-action",
+                routine_name="Invented raw action",
+                score=1,
+            ),
+        ),
+        selected_routine_id="invented.raw-action",
+        execution_status="ready",
+    )
+
+    with pytest.raises(GoalPlanError, match="unknown_routine_id"):
+        selected_routine_for_goal_execution(catalog, plan)
 
 
 def _routine(

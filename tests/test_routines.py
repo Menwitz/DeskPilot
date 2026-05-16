@@ -7,12 +7,15 @@ from pytest import CaptureFixture
 from desktop_agent.cli import main
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.routines import (
+    RoutineCatalog,
     RoutineDefinitionError,
     load_routine_catalog,
     load_routine_definition,
     render_routine_catalog_index,
     render_routine_documentation_template,
+    require_validated_routine_for_execution,
     routine_definition_from_mapping,
+    routine_execution_gate,
     routine_promotion_gates,
     routine_quarantine_status,
 )
@@ -385,6 +388,73 @@ def test_routine_quarantine_status_uses_failed_evidence_count() -> None:
 
     assert routine_quarantine_status(routine) == "quarantined"
     assert routine.report_metadata()["routine_quarantine_status"] == "quarantined"
+
+
+def test_routine_execution_gate_allows_only_validated_catalog_routines() -> None:
+    routine = routine_definition_from_mapping(
+        {
+            "id": "browser.search",
+            "name": "Browser search",
+            "description": "Search from a browser input.",
+            "goal": "Reach browser search results.",
+            "tags": ["browser", "search"],
+            "inputs": ["query"],
+            "outputs": ["results"],
+            "safety_class": "low",
+            "schedule_policy": "manual",
+            "approval_policy": "none",
+            "expected_duration_seconds": 30,
+            "reference": {
+                "type": "task",
+                "path": "tasks/browser-search.yaml",
+            },
+        },
+    )
+    catalog = RoutineCatalog(root=Path("routine_packs"), routines=(routine,))
+
+    allowed = routine_execution_gate(catalog, "browser.search")
+    invalid = routine_execution_gate(catalog, "../browser.search")
+    unknown = routine_execution_gate(catalog, "browser.unknown")
+
+    assert allowed.allowed is True
+    assert allowed.reason == "validated_catalog_routine"
+    assert allowed.metadata()["routine_found"] is True
+    assert require_validated_routine_for_execution(catalog, "browser.search") == routine
+    assert invalid.allowed is False
+    assert invalid.reason == "invalid_routine_id"
+    assert unknown.allowed is False
+    assert unknown.reason == "unknown_routine_id"
+
+
+def test_routine_execution_gate_blocks_quarantined_routines() -> None:
+    routine = routine_definition_from_mapping(
+        {
+            "id": "browser.flaky",
+            "name": "Flaky browser routine",
+            "description": "A routine with repeated failed evidence.",
+            "goal": "Show quarantine blocking.",
+            "tags": ["browser"],
+            "inputs": [],
+            "outputs": [],
+            "safety_class": "low",
+            "schedule_policy": "manual",
+            "approval_policy": "none",
+            "expected_duration_seconds": 30,
+            "failed_evidence_count": 3,
+            "reference": {
+                "type": "task",
+                "path": "tasks/flaky.yaml",
+            },
+        },
+    )
+    catalog = RoutineCatalog(root=Path("routine_packs"), routines=(routine,))
+
+    gate = routine_execution_gate(catalog, "browser.flaky")
+
+    assert gate.allowed is False
+    assert gate.reason == "routine_quarantined"
+    with pytest.raises(RoutineDefinitionError, match="routine_quarantined"):
+        require_validated_routine_for_execution(catalog, "browser.flaky")
 
 
 def test_routine_catalog_rejects_duplicate_ids(tmp_path: Path) -> None:

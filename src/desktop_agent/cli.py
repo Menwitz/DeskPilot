@@ -91,6 +91,7 @@ from desktop_agent.routines import (
     load_routine_catalog,
     render_routine_catalog_index,
     render_routine_documentation_template,
+    require_validated_routine_for_execution,
     routine_promotion_gates,
     routine_quarantine_status,
 )
@@ -863,7 +864,7 @@ def _generate_routine_docs(args: argparse.Namespace) -> int:
 
 
 def _run_routine(args: argparse.Namespace, *, dry_run: bool) -> int:
-    routine = _load_routine(args)
+    routine = _load_executable_routine(args)
     task = _compile_routine_task(routine, playbook_dir=args.playbook_dir)
     task_path = (
         routine.reference.task_path
@@ -871,6 +872,11 @@ def _run_routine(args: argparse.Namespace, *, dry_run: bool) -> int:
         else Path(f"routine-{routine.id}.yaml")
     )
     return _run_loaded_task(args, task, task_path, dry_run=dry_run)
+
+
+def _load_executable_routine(args: argparse.Namespace) -> RoutineDefinition:
+    catalog = load_routine_catalog(args.routine_pack_root)
+    return require_validated_routine_for_execution(catalog, args.routine_id)
 
 
 def _plan_goal(args: argparse.Namespace) -> int:

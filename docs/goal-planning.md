@@ -105,3 +105,9 @@ routine.
 Accepted reranking still runs through the deterministic safety boundary:
 missing inputs, approvals, schedule eligibility, and safety-class limits are
 computed from the selected validated routine before the plan can become ready.
+
+Before a selected goal routine can execute,
+`selected_routine_for_goal_execution()` resolves it through the same routine
+execution gate used by `run-routine`. A model-selected ID must already exist in
+the loaded catalog, pass routine schema validation, and be active rather than
+quarantined.

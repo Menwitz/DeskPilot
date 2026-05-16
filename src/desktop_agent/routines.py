@@ -206,6 +206,24 @@ class RoutinePromotionGate:
 
 
 @dataclass(frozen=True)
+class RoutineExecutionGate:
+    """Safety decision for turning a routine ID into executable content."""
+
+    routine_id: str
+    allowed: bool
+    reason: str
+    routine: RoutineDefinition | None = None
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "routine_id": self.routine_id,
+            "allowed": self.allowed,
+            "reason": self.reason,
+            "routine_found": self.routine is not None,
+        }
+
+
+@dataclass(frozen=True)
 class RoutineCatalog:
     """Loaded routine catalog with ID lookup and local search."""
 
@@ -417,6 +435,61 @@ def routine_quarantine_status(routine: RoutineDefinition) -> str:
     if routine.failed_evidence_count >= ROUTINE_QUARANTINE_FAILURE_THRESHOLD:
         return "quarantined"
     return "active"
+
+
+def routine_execution_gate(
+    catalog: RoutineCatalog,
+    routine_id: str,
+) -> RoutineExecutionGate:
+    """Return whether a routine ID may enter the execution pipeline."""
+    if not ROUTINE_ID_PATTERN.fullmatch(routine_id):
+        return RoutineExecutionGate(
+            routine_id=routine_id,
+            allowed=False,
+            reason="invalid_routine_id",
+        )
+    routine = catalog.by_id(routine_id)
+    if routine is None:
+        return RoutineExecutionGate(
+            routine_id=routine_id,
+            allowed=False,
+            reason="unknown_routine_id",
+        )
+    try:
+        validate_routine_definition(routine)
+    except RoutineDefinitionError:
+        return RoutineExecutionGate(
+            routine_id=routine_id,
+            allowed=False,
+            reason="invalid_routine_definition",
+            routine=routine,
+        )
+    if routine_quarantine_status(routine) != "active":
+        return RoutineExecutionGate(
+            routine_id=routine_id,
+            allowed=False,
+            reason="routine_quarantined",
+            routine=routine,
+        )
+    return RoutineExecutionGate(
+        routine_id=routine_id,
+        allowed=True,
+        reason="validated_catalog_routine",
+        routine=routine,
+    )
+
+
+def require_validated_routine_for_execution(
+    catalog: RoutineCatalog,
+    routine_id: str,
+) -> RoutineDefinition:
+    """Return a routine only after the execution safety gate passes."""
+    gate = routine_execution_gate(catalog, routine_id)
+    if not gate.allowed or gate.routine is None:
+        raise RoutineDefinitionError(
+            f"routine execution blocked: {gate.reason} ({routine_id})",
+        )
+    return gate.routine
 
 
 def render_routine_documentation_template() -> str:
