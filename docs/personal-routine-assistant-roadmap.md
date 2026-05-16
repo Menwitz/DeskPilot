@@ -53,7 +53,7 @@ abuse, and hidden automation are not supported.
 
 - [ ] Proof demo: real Windows browser, native, mixed, and recovery workflows
       with video plus traces.
-- [ ] Alpha assistant: recorder, routine library, and native app can run local
+- [x] Alpha assistant: recorder, routine library, and native app can run local
       routines manually.
 - [ ] Beta catalog: 300 routines validate, dry-run, and carry safety metadata.
 - [ ] Planner release: goal-to-routine planning selects routines and asks for
