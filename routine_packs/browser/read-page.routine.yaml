@@ -1,0 +1,19 @@
+id: browser.read-page
+name: Browser read page
+description: Wait for an article or page body and scroll through visible content.
+goal: Review visible page content while preserving local trace evidence.
+required_app: Browser
+tags:
+  - browser
+  - reading
+inputs:
+  - page
+outputs:
+  - reviewed page
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference:
+  type: task
+  path: tasks/read-page.yaml

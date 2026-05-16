@@ -1,0 +1,19 @@
+id: browser.search-web
+name: Browser web search
+description: Search from a browser search field and wait for results text.
+goal: Reach search results for a reviewed query.
+required_app: Browser
+tags:
+  - browser
+  - search
+inputs:
+  - query
+outputs:
+  - search results
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 30
+reference:
+  type: task
+  path: tasks/search-web.yaml

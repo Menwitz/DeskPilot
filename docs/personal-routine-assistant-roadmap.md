@@ -334,7 +334,7 @@ abuse, and hidden automation are not supported.
 - [x] Add routine promotion gates: schema validation, dry-run, fixture test,
       Windows proof when applicable, trace replay review, and documentation.
 - [x] Add routine quarantine status for routines with repeated failed evidence.
-- [ ] Add browser routines for navigation, forms, search, reading, content
+- [x] Add browser routines for navigation, forms, search, reading, content
       extraction, writing surfaces, downloads, and settings pages.
 - [ ] Add native routines for Notepad, Calculator, Settings, File Explorer,
       clipboard, app switching, window management, and simple Office-like

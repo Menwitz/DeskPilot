@@ -1,0 +1,19 @@
+id: browser.settings-open
+name: Browser open settings
+description: Open the browser settings surface and verify settings are visible.
+goal: Navigate to browser settings for review without changing options.
+required_app: Browser
+tags:
+  - browser
+  - settings
+inputs:
+  - browser session
+outputs:
+  - settings view
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/settings-open.yaml

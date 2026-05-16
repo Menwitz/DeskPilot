@@ -1,0 +1,14 @@
+name: Browser open settings task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-settings
+    action: type_text
+    text: browser://settings
+  - id: load-settings
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Settings

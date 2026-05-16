@@ -1,0 +1,19 @@
+id: browser.download-open
+name: Browser open downloads
+description: Open the browser downloads surface and verify the downloads view.
+goal: Review browser downloads without opening downloaded files.
+required_app: Browser
+tags:
+  - browser
+  - downloads
+inputs:
+  - browser session
+outputs:
+  - downloads view
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/download-open.yaml

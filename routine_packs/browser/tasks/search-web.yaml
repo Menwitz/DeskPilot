@@ -1,0 +1,17 @@
+name: Browser web search task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: focus-search
+    action: click_text
+    target: Search
+  - id: type-query
+    action: type_text
+    text: DeskPilot routine catalog
+  - id: submit-search
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Results

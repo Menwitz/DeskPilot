@@ -1,0 +1,19 @@
+id: browser.extract-visible-text
+name: Browser extract visible text
+description: Locate visible page text and hand off reviewed extraction.
+goal: Capture visible browser content for local review.
+required_app: Browser
+tags:
+  - browser
+  - extraction
+inputs:
+  - page
+outputs:
+  - visible text notes
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 40
+reference:
+  type: task
+  path: tasks/extract-visible-text.yaml

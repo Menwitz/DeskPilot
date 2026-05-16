@@ -1,0 +1,14 @@
+name: Browser fill basic form task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: focus-field
+    action: click_text
+    target: Name
+  - id: type-field-text
+    action: type_text
+    text: Reviewed field text
+    verify:
+      type: visible_text
+      text: Reviewed field text

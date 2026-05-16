@@ -1,0 +1,15 @@
+name: Browser extract visible text task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: find-content
+    action: wait_for
+    target: Content
+  - id: handoff-extraction
+    action: manual_handoff
+    handoff_prompt: Review visible browser text and record the needed excerpt.
+    expected_operator_work: Copy or summarize visible text into local notes.
+    verify:
+      type: visible_text
+      text: Content

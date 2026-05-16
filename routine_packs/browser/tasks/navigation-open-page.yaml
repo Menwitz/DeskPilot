@@ -1,0 +1,17 @@
+name: Browser open page task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: focus-address-bar
+    action: press_key
+    text: ctrl+l
+  - id: type-url
+    action: type_text
+    text: https://example.com
+  - id: load-page
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Example

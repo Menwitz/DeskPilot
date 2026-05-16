@@ -1,0 +1,19 @@
+id: browser.form-fill-basic
+name: Browser fill basic form
+description: Focus a browser form field, type reviewed text, and confirm it appears.
+goal: Prepare a simple browser form without submitting it.
+required_app: Browser
+tags:
+  - browser
+  - forms
+inputs:
+  - field text
+outputs:
+  - filled form field
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/form-fill-basic.yaml

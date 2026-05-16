@@ -1,0 +1,14 @@
+name: Browser read page task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: wait-for-body
+    action: wait_for
+    target: Article
+  - id: scroll-page
+    action: scroll
+    text: "-3"
+  - id: confirm-content
+    action: assert_visible
+    target: Article

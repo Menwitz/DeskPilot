@@ -1,0 +1,11 @@
+name: Browser open downloads task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-downloads
+    action: press_key
+    text: ctrl+j
+    verify:
+      type: visible_text
+      text: Downloads

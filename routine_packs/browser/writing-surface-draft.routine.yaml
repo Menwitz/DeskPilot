@@ -1,0 +1,20 @@
+id: browser.writing-surface-draft
+name: Browser draft writing surface
+description: Focus a browser editor and type reviewed draft text without publishing.
+goal: Prepare editable draft content in a browser writing surface.
+required_app: Browser
+tags:
+  - browser
+  - writing
+  - draft
+inputs:
+  - draft text
+outputs:
+  - prepared draft
+safety_class: medium
+schedule_policy: manual
+approval_policy: confirm
+expected_duration_seconds: 60
+reference:
+  type: task
+  path: tasks/writing-surface-draft.yaml

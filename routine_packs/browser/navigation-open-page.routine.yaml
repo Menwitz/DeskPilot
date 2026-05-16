@@ -1,0 +1,19 @@
+id: browser.navigation-open-page
+name: Browser open page
+description: Focus the address bar, enter a URL, and wait for page content.
+goal: Navigate to a known browser page with visible confirmation.
+required_app: Browser
+tags:
+  - browser
+  - navigation
+inputs:
+  - url
+outputs:
+  - loaded page
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/navigation-open-page.yaml
