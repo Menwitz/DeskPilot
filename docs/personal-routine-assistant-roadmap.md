@@ -588,7 +588,7 @@ abuse, and hidden automation are not supported.
 ### OKRs
 
 - [x] O1: Harden privacy and packaging.
-- [ ] KR1: Redaction policies cover screenshots, OCR text, typed text,
+- [x] KR1: Redaction policies cover screenshots, OCR text, typed text,
       variables, reports, and video.
 - [ ] KR2: Users can choose full evidence, metadata-only traces, or routine-level
       redaction rules.
