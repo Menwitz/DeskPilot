@@ -521,6 +521,57 @@ def test_cli_record_export_task_writes_valid_browser_fixture_yaml(
     assert task.metadata["routine_tags"] == ["browser", "search"]
 
 
+def test_cli_record_export_task_writes_valid_native_fixture_yaml(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    state_path = tmp_path / "recorder-state.json"
+    output_path = tmp_path / "native-routine.yaml"
+    snippet_path = tmp_path / "snippets" / "native-action.pgm"
+    snippet_path.parent.mkdir(parents=True)
+    snippet_path.write_bytes(b"P5\n1 1\n255\n\x00")
+    controller = RecorderController(state_path)
+    controller.start(
+        name="Native fixture",
+        review=RecorderReviewMetadata(
+            routine_name="Native action routine",
+            description="Open a native fixture and trigger the image-only action",
+            outputs=("native action completed",),
+            tags=("native",),
+            risk_class="low",
+        ),
+    )
+    for event in _fake_native_event_stream():
+        controller.record_event(event)
+    controller.stop()
+
+    status = main(
+        [
+            "record",
+            "export-task",
+            "--state",
+            str(state_path),
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    task = YamlTaskLoader().load(output_path)
+    BasicTaskValidator().validate(task, RuntimeConfig())
+    assert status == 0
+    assert "recording task exported:" in output
+    assert task.name == "Native action routine"
+    assert task.allowed_windows == ("Native Fixture",)
+    assert [step.action for step in task.steps] == [
+        "click_uia",
+        "scroll",
+        "click_image",
+    ]
+    assert task.steps[2].image == snippet_path
+    assert task.metadata["routine_outputs"] == ["native action completed"]
+
+
 def test_cli_record_exposes_start_pause_stop_save_discard_controls(
     tmp_path: Path,
     capsys: CaptureFixture[str],

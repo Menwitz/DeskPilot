@@ -101,6 +101,8 @@ final reports can surface the operator-reviewed routine contract.
 ## Test Coverage
 
 Recorder tests include fake browser and native event streams that generate valid
-tasks without real desktop input. The browser stream also runs through the
-dry-run execution pipeline and checks `task.json` plus `final-report.json` for
-the reviewed routine metadata and inferred verification.
+tasks without real desktop input. Browser and native streams both export through
+`record export-task` and reload through `YamlTaskLoader`; the browser stream
+also runs through the dry-run execution pipeline and checks `task.json` plus
+`final-report.json` for the reviewed routine metadata and inferred
+verification.
