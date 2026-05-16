@@ -319,7 +319,7 @@ abuse, and hidden automation are not supported.
 - [ ] KR3: Add 100 social/content routines.
 - [ ] KR4: Every routine has metadata, inputs, outputs, safety class, dry-run
       coverage, and trace expectations.
-- [ ] KR5: High-risk routines require approval and checkpoint coverage.
+- [x] KR5: High-risk routines require approval and checkpoint coverage.
 
 ### Tasks
 
