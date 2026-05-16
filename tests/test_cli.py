@@ -1886,6 +1886,34 @@ def test_cli_proof_validate_suite_writes_archive(
     assert "proof-suite-next-actions.md" in names
 
 
+def test_cli_proof_validate_suite_writes_review_template(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    review_path = tmp_path / "review" / "suite-review.md"
+    write_proof_manifest(trace_dir)
+
+    status = main(
+        [
+            "proof",
+            "validate-suite",
+            str(tmp_path),
+            "--allow-missing-video",
+            "--write-review-template",
+            "--review-template-path",
+            str(review_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    review = review_path.read_text(encoding="utf-8")
+    assert status == 1
+    assert f"review_template: {review_path}" in output
+    assert "# DeskPilot Windows Proof Suite Review" in review
+    assert "- Decision: `[ ] pass` `[ ] fail`" in review
+
+
 def test_cli_benchmark_run_writes_metrics_and_report(
     tmp_path: Path,
     capsys: CaptureFixture[str],

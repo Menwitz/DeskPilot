@@ -153,6 +153,7 @@ def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> No
             "--write-status-json",
             "--write-runbook",
             "--write-archive",
+            "--write-review-template",
         ],
     )
 
@@ -162,6 +163,7 @@ def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> No
     assert (trace_root / "proof-suite-status.json").exists()
     assert (trace_root / "proof-suite-next-actions.md").exists()
     assert (trace_root / "proof-suite-artifacts.zip").exists()
+    assert (trace_root / "proof-suite-review.md").exists()
 
 
 def _require_windows_smoke() -> None:

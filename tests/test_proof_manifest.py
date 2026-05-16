@@ -6,6 +6,7 @@ from typing import cast
 from desktop_agent.proof_manifest import (
     proof_suite_status_metadata,
     render_proof_suite_report,
+    render_proof_suite_review_template,
     render_proof_suite_runbook,
     run_proof_preflight,
     validate_proof_bundle,
@@ -13,6 +14,7 @@ from desktop_agent.proof_manifest import (
     write_proof_preflight_report,
     write_proof_suite_archive,
     write_proof_suite_report,
+    write_proof_suite_review_template,
     write_proof_suite_runbook,
     write_proof_suite_status,
 )
@@ -344,6 +346,29 @@ def test_write_proof_suite_runbook_lists_next_operator_commands(
     ) in runbook
 
 
+def test_write_proof_suite_review_template_lists_signoff_checks(
+    tmp_path: Path,
+) -> None:
+    _write_proof_bundle(
+        tmp_path,
+        proof_name="browser-fixture",
+        trace_dir_name="browser-fixture",
+        include_video=False,
+    )
+    result = validate_proof_suite(tmp_path, require_video=False)
+
+    review = render_proof_suite_review_template(result)
+    review_path = write_proof_suite_review_template(result)
+
+    assert review_path == tmp_path / "proof-suite-review.md"
+    assert review_path.read_text(encoding="utf-8") == review
+    assert "# DeskPilot Windows Proof Suite Review" in review
+    assert "- Decision: `[ ] pass` `[ ] fail`" in review
+    assert "### browser-fixture" in review
+    assert "- [ ] Video or justified external recording reviewed." in review
+    assert "- [ ] missing proof bundle: native-fixture" in review
+
+
 def test_write_proof_suite_archive_packages_review_artifacts(
     tmp_path: Path,
 ) -> None:
@@ -370,6 +395,7 @@ def test_write_proof_suite_archive_packages_review_artifacts(
     assert "proof-suite-report.md" in names
     assert "proof-suite-status.json" in names
     assert "proof-suite-next-actions.md" in names
+    assert "proof-suite-review.md" in names
     assert "proof-preflight.json" in names
     assert "browser-fixture/proof-manifest.json" in names
     assert "browser-fixture/browser-fixture-report.json" in names

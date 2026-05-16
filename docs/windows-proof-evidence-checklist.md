@@ -44,6 +44,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       bundle remains.
 - [ ] Run `desktop-agent proof validate-suite <trace-root> --write-archive`
       and store `proof-suite-artifacts.zip` with the review record.
+- [ ] Run `desktop-agent proof validate-suite <trace-root>
+      --write-review-template`, complete `proof-suite-review.md`, and store it
+      with the review record.
 
 ## Required Proof Bundle
 
@@ -83,10 +86,13 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       revalidation commands, duplicate review items, and final promotion
       commands.
 - [ ] `proof-suite-artifacts.zip` contains the generated suite report, status
-      JSON, next-actions runbook, proof manifests, action logs, command reports,
-      screenshots, video artifacts, and preflight report when present.
+      JSON, next-actions runbook, review template, proof manifests, action logs,
+      command reports, screenshots, video artifacts, and preflight report when
+      present.
 - [ ] `proof-preflight.json` records Windows platform, trace-root, and
       video-capture readiness checks before the desktop run begins.
+- [ ] `proof-suite-review.md` records reviewer name, review date, decision,
+      required review checks, per-proof bundle checks, and blocking findings.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 

@@ -100,6 +100,7 @@ from desktop_agent.proof_manifest import (
     write_proof_preflight_report,
     write_proof_suite_archive,
     write_proof_suite_report,
+    write_proof_suite_review_template,
     write_proof_suite_runbook,
     write_proof_suite_status,
 )
@@ -621,6 +622,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--archive-path",
         type=Path,
         help="write the proof suite artifact archive to an explicit zip path",
+    )
+    proof_validate_suite_parser.add_argument(
+        "--write-review-template",
+        action="store_true",
+        help="write proof-suite-review.md after validation",
+    )
+    proof_validate_suite_parser.add_argument(
+        "--review-template-path",
+        type=Path,
+        help="write the human review template to an explicit Markdown path",
     )
     proof_browser_parser = proof_subparsers.add_parser(
         "browser-fixture",
@@ -2834,6 +2845,12 @@ def _proof_validate_suite(args: argparse.Namespace) -> int:
             require_video=not args.allow_missing_video,
         )
         print(f"archive: {archive_path}")
+    if args.write_review_template or args.review_template_path:
+        review_path = write_proof_suite_review_template(
+            result,
+            args.review_template_path,
+        )
+        print(f"review_template: {review_path}")
     return 0 if result.passed else 1
 
 

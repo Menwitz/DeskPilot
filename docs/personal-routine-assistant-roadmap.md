@@ -176,6 +176,8 @@ abuse, and hidden automation are not supported.
       archives when present.
 - [x] Add `--require-preflight` suite validation so proof promotion can fail
       when `proof-preflight.json` is missing or failed.
+- [x] Add a proof suite human review template for reviewer name, review date,
+      decision, required checks, per-proof checks, and blocking findings.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

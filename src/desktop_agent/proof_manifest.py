@@ -22,6 +22,7 @@ PROOF_SUITE_REPORT_NAME = "proof-suite-report.md"
 PROOF_SUITE_STATUS_NAME = "proof-suite-status.json"
 PROOF_SUITE_RUNBOOK_NAME = "proof-suite-next-actions.md"
 PROOF_SUITE_ARCHIVE_NAME = "proof-suite-artifacts.zip"
+PROOF_SUITE_REVIEW_NAME = "proof-suite-review.md"
 PROOF_PREFLIGHT_REPORT_NAME = "proof-preflight.json"
 
 
@@ -655,6 +656,96 @@ def write_proof_suite_runbook(
     return runbook_path
 
 
+def render_proof_suite_review_template(validation: ProofSuiteValidation) -> str:
+    """Render a human reviewer sign-off template for a proof suite."""
+
+    bundles_by_name = {
+        bundle.proof_name: bundle
+        for bundle in validation.bundle_results
+        if bundle.proof_name is not None
+    }
+    lines = [
+        "# DeskPilot Windows Proof Suite Review",
+        "",
+        f"- Trace root: `{validation.trace_root}`",
+        "- Suite status at review start: "
+        f"`{'passed' if validation.passed else 'failed'}`",
+        "- Reviewer:",
+        "- Review date:",
+        "- Decision: `[ ] pass` `[ ] fail`",
+        "- Notes:",
+        "",
+        "## Required Review Checks",
+        "",
+        "- [ ] The run happened on an owned, unlocked Windows desktop or VM.",
+        "- [ ] The visible recording matches the command reports and action logs.",
+        "- [ ] Every proof manifest points at local artifacts in the reviewed bundle.",
+        "- [ ] Cursor readback and active-window evidence are present for each step.",
+        "- [ ] Any missing video has a documented external recording justification.",
+        "",
+        "## Proof Bundle Review",
+        "",
+    ]
+    for proof_name in validation.expected_proofs:
+        bundle = bundles_by_name.get(proof_name)
+        status = (
+            "missing"
+            if bundle is None
+            else ("passed" if bundle.passed else "failed")
+        )
+        lines.extend(
+            [
+                f"### {proof_name}",
+                "",
+                f"- Validation status: `{status}`",
+            ],
+        )
+        if bundle is not None:
+            lines.extend(
+                [
+                    f"- Trace directory: `{bundle.trace_dir}`",
+                    f"- Manifest: `{bundle.manifest_path}`",
+                ],
+            )
+        lines.extend(
+            [
+                "- [ ] Video or justified external recording reviewed.",
+                "- [ ] Action log reviewed.",
+                "- [ ] Command report reviewed.",
+                "- [ ] Screenshots reviewed.",
+                "- [ ] Step evidence reviewed.",
+                "",
+            ],
+        )
+    lines.extend(
+        [
+            "## Blocking Findings",
+            "",
+        ],
+    )
+    if validation.errors:
+        lines.extend(f"- [ ] {error}" for error in validation.errors)
+    else:
+        lines.append("- [ ] None.")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def write_proof_suite_review_template(
+    validation: ProofSuiteValidation,
+    output_path: Path | None = None,
+) -> Path:
+    """Write the human reviewer sign-off template for a proof suite."""
+
+    review_path = output_path or validation.trace_root / PROOF_SUITE_REVIEW_NAME
+    review_path.parent.mkdir(parents=True, exist_ok=True)
+    review_path.write_text(
+        render_proof_suite_review_template(validation),
+        encoding="utf-8",
+    )
+    return review_path
+
+
 def write_proof_suite_archive(
     validation: ProofSuiteValidation,
     output_path: Path | None = None,
@@ -692,6 +783,12 @@ def write_proof_suite_archive(
             written_names,
             PROOF_SUITE_RUNBOOK_NAME,
             render_proof_suite_runbook(validation, require_video=require_video),
+        )
+        _write_zip_text(
+            archive,
+            written_names,
+            PROOF_SUITE_REVIEW_NAME,
+            render_proof_suite_review_template(validation),
         )
         for artifact_path in _proof_suite_archive_files(validation):
             archive_name = _archive_name(validation.trace_root, artifact_path)
