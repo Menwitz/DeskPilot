@@ -7,6 +7,12 @@ task YAML and website playbooks. A routine definition describes what the routine
 is for, what it needs, what it produces, how risky it is, and which executable
 task or playbook flow implements it.
 
+A skill is a reusable routine fragment or capability, such as browser search,
+email drafting, file organization, or a shared verification pattern. In the
+current schema, routines reference skills indirectly through task YAML or
+website playbook flows; a dedicated skill reference type remains future schema
+work.
+
 ## Schema
 
 ```yaml

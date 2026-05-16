@@ -40,7 +40,7 @@ abuse, and hidden automation are not supported.
       into a task.
 - [x] Define `routine` as a user-facing reusable workflow with metadata, inputs,
       outputs, safety class, schedule policy, and trace expectations.
-- [ ] Define `skill` as a reusable routine fragment or capability that a
+- [x] Define `skill` as a reusable routine fragment or capability that a
       routine can reference.
 - [ ] Define `goal plan` as the planner output that maps a user goal to one or
       more known routines.
