@@ -112,6 +112,10 @@ from desktop_agent.routine_pack_ops import (
     export_routine_pack,
     import_routine_pack,
 )
+from desktop_agent.routine_pack_runner import (
+    run_routine_pack_tests,
+    write_routine_pack_proof_bundle,
+)
 from desktop_agent.routines import (
     RoutineDefinition,
     RoutineDefinitionError,
@@ -201,6 +205,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _import_routine_pack(args)
         if args.command == "export-routine-pack":
             return _export_routine_pack(args)
+        if args.command == "test-routine-pack":
+            return _test_routine_pack(args)
+        if args.command == "write-routine-pack-proof":
+            return _write_routine_pack_proof(args)
         if args.command == "plan-goal":
             return _plan_goal(args)
         if args.command == "local-model":
@@ -393,6 +401,22 @@ def _build_parser() -> argparse.ArgumentParser:
     export_routine_pack_parser.add_argument("--output", required=True, type=Path)
     export_routine_pack_parser.add_argument("--replace", action="store_true")
     _add_routine_catalog_options(export_routine_pack_parser)
+
+    test_routine_pack_parser = subparsers.add_parser(
+        "test-routine-pack",
+        help="validate one routine pack without desktop input",
+    )
+    test_routine_pack_parser.add_argument("pack_id")
+    test_routine_pack_parser.add_argument("--output", type=Path)
+    _add_routine_catalog_options(test_routine_pack_parser)
+
+    proof_routine_pack_parser = subparsers.add_parser(
+        "write-routine-pack-proof",
+        help="write a local proof bundle for one routine pack",
+    )
+    proof_routine_pack_parser.add_argument("pack_id")
+    proof_routine_pack_parser.add_argument("--output", required=True, type=Path)
+    _add_routine_catalog_options(proof_routine_pack_parser)
 
     plan_goal_parser = subparsers.add_parser(
         "plan-goal",
@@ -1090,6 +1114,40 @@ def _export_routine_pack(args: argparse.Namespace) -> int:
     print(f"output_{kind}: {result.output_path}")
     _print_trust_warning_messages(result.trust_warnings)
     return 0
+
+
+def _test_routine_pack(args: argparse.Namespace) -> int:
+    result = run_routine_pack_tests(args.routine_pack_root, args.pack_id)
+    print(f"routine pack: {result.pack_id}")
+    print(f"status: {result.status}")
+    print(f"routines: {result.routine_count}")
+    print(f"validated_routines: {result.validated_routine_count}")
+    if result.errors:
+        print("errors:")
+        for error in result.errors:
+            print(f"  - {error}")
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(
+            json.dumps(result.metadata(), indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+        print(f"report: {args.output}")
+    return 1 if result.status == "failed" else 0
+
+
+def _write_routine_pack_proof(args: argparse.Namespace) -> int:
+    result = write_routine_pack_proof_bundle(
+        args.routine_pack_root,
+        args.pack_id,
+        args.output,
+    )
+    print(f"routine pack proof: {result.pack_id}")
+    print(f"status: {result.test_result.status}")
+    print(f"bundle: {result.bundle_dir}")
+    print(f"report: {result.report_path}")
+    print(f"checklist: {result.checklist_path}")
+    return 1 if result.test_result.status == "failed" else 0
 
 
 def _print_routine_pack_warnings(manifest: RoutinePackManifest) -> None:

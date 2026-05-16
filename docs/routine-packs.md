@@ -71,6 +71,8 @@ desktop-agent list-routine-packs
 desktop-agent show-routine-pack browser
 desktop-agent import-routine-pack ./local-pack --routine-pack-root routine_packs
 desktop-agent export-routine-pack browser --output traces/browser-pack.zip
+desktop-agent test-routine-pack browser --output traces/browser-pack-test.json
+desktop-agent write-routine-pack-proof browser --output traces/browser-pack-proof
 ```
 
 `import-routine-pack` accepts a local directory or zip archive containing exactly
@@ -85,3 +87,8 @@ duplicates are surfaced as warnings for operator review.
 
 `export-routine-pack` validates the installed manifest and writes either a
 directory or `.zip` archive depending on the `--output` path.
+
+`test-routine-pack` validates the manifest, routine YAML, and referenced task
+YAML without real desktop input. `write-routine-pack-proof` writes
+`pack-test-report.json`, `proof-checklist.md`, and a manifest copy so the pack's
+proof status can be reviewed or attached to release evidence.

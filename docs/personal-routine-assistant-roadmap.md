@@ -646,7 +646,7 @@ abuse, and hidden automation are not supported.
 - [x] Add trust warnings for unverified local packs.
 - [x] Add conflict detection for duplicate routine IDs, selectors, inputs, and
       pack versions.
-- [ ] Add pack-level test runner and proof bundle generator.
+- [x] Add pack-level test runner and proof bundle generator.
 - [ ] Add signed-pack investigation for later releases.
 - [ ] Add optional local report-server design after native app and trace schema
       stabilize.
