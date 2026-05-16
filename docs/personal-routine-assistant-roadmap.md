@@ -592,7 +592,7 @@ abuse, and hidden automation are not supported.
       variables, reports, and video.
 - [x] KR2: Users can choose full evidence, metadata-only traces, or routine-level
       redaction rules.
-- [ ] KR3: Windows installer includes CLI, PySide6 app, default config, examples,
+- [x] KR3: Windows installer includes CLI, PySide6 app, default config, examples,
       and docs.
 - [ ] KR4: Trace and routine schema migrations are versioned and tested.
 
