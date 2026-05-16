@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
@@ -139,17 +139,20 @@ class RecorderReviewPanelState:
 class TraceViewerTimelineState:
     """Trace viewer timeline fields for reviewing local evidence."""
 
+    trace_kind: str = "run"
     video_path: Path | None = None
     screenshot_paths: tuple[Path, ...] = ()
     action_log_path: Path | None = None
     candidate_reasoning: tuple[str, ...] = ()
     state_delta: tuple[str, ...] = ()
     verification_results: tuple[str, ...] = ()
+    proof_gates: tuple[str, ...] = ()
     final_report_path: Path | None = None
     status: str = "empty"
 
     def metadata(self) -> dict[str, object]:
         return {
+            "trace_kind": self.trace_kind,
             "video_path": str(self.video_path) if self.video_path else None,
             "screenshot_paths": [str(path) for path in self.screenshot_paths],
             "action_log_path": (
@@ -158,6 +161,7 @@ class TraceViewerTimelineState:
             "candidate_reasoning": list(self.candidate_reasoning),
             "state_delta": list(self.state_delta),
             "verification_results": list(self.verification_results),
+            "proof_gates": list(self.proof_gates),
             "final_report_path": (
                 str(self.final_report_path) if self.final_report_path else None
             ),
@@ -408,6 +412,7 @@ def render_trace_viewer_timeline_text(state: TraceViewerTimelineState) -> str:
         [
             "Trace Timeline",
             f"- Status: {state.status}",
+            f"- Trace kind: {state.trace_kind}",
             f"- Video: {video}",
             f"- Screenshots: {screenshots}",
             f"- Action log: {action_log}",
@@ -416,9 +421,53 @@ def render_trace_viewer_timeline_text(state: TraceViewerTimelineState) -> str:
             f"- State delta: {', '.join(state.state_delta) or 'none'}",
             "- Verification results: "
             f"{', '.join(state.verification_results) or 'none'}",
+            f"- Proof gates: {', '.join(state.proof_gates) or 'none'}",
             f"- Final report: {final_report}",
         ],
     ) + "\n"
+
+
+def trace_viewer_timeline_from_report(
+    report: Mapping[str, object],
+    *,
+    report_path: Path | None = None,
+) -> TraceViewerTimelineState:
+    """Create trace-viewer state from a local report JSON payload."""
+
+    status = report.get("status")
+    gates = report.get("gates")
+    return TraceViewerTimelineState(
+        trace_kind=_trace_kind_from_report(report, report_path),
+        proof_gates=_proof_gate_lines(gates),
+        final_report_path=report_path,
+        status=status if isinstance(status, str) else "loaded",
+    )
+
+
+def _trace_kind_from_report(
+    report: Mapping[str, object],
+    report_path: Path | None,
+) -> str:
+    if report_path is not None:
+        if report_path.name == "proof-finalization-status.json":
+            return "proof_suite"
+        if report_path.name == "goal-plan-report.json":
+            return "goal_plan"
+    if "gates" in report and "checked_artifacts" in report:
+        return "proof_suite"
+    if "selected_routine_id" in report:
+        return "goal_plan"
+    return "run"
+
+
+def _proof_gate_lines(gates: object) -> tuple[str, ...]:
+    if not isinstance(gates, Mapping):
+        return ()
+    lines: list[str] = []
+    for name, status in gates.items():
+        if isinstance(name, str) and isinstance(status, str):
+            lines.append(f"{name}: {status}")
+    return tuple(lines)
 
 
 def render_routine_pack_manager_text(state: RoutinePackManagerState) -> str:

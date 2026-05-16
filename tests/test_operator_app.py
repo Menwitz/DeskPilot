@@ -29,6 +29,7 @@ from desktop_agent.operator_app_shell import (
     render_settings_panel_text,
     render_trace_viewer_timeline_text,
     settings_panel_from_runtime_config,
+    trace_viewer_timeline_from_report,
 )
 
 
@@ -214,18 +215,52 @@ def test_trace_viewer_timeline_tracks_evidence_paths_and_reasoning(
         str(tmp_path / "after.png"),
     ]
     assert metadata["action_log_path"] == str(tmp_path / "action-log.jsonl")
+    assert metadata["trace_kind"] == "run"
     assert metadata["candidate_reasoning"] == [
         "selected candidate-1",
         "rejected candidate-2",
     ]
     assert metadata["state_delta"] == ["visible_text_changed"]
     assert metadata["verification_results"] == ["click-submit passed"]
+    assert metadata["proof_gates"] == []
     assert metadata["final_report_path"] == str(tmp_path / "final-report.json")
     assert metadata["status"] == "loaded"
     assert "Trace Timeline" in text
+    assert "Trace kind: run" in text
     assert "proof-video.mp4" in text
     assert "selected candidate-1" in text
     assert "click-submit passed" in text
+
+
+def test_trace_viewer_timeline_loads_proof_suite_status(
+    tmp_path: Path,
+) -> None:
+    state = trace_viewer_timeline_from_report(
+        {
+            "status": "passed",
+            "gates": {
+                "suite_validation": "passed",
+                "promotion_verification": "passed",
+                "archive_verification": "passed",
+            },
+            "checked_artifacts": {"promotion": [], "archive": []},
+        },
+        report_path=tmp_path / "proof-finalization-status.json",
+    )
+    metadata = state.metadata()
+    text = render_trace_viewer_timeline_text(state)
+
+    assert metadata["trace_kind"] == "proof_suite"
+    assert metadata["proof_gates"] == [
+        "suite_validation: passed",
+        "promotion_verification: passed",
+        "archive_verification: passed",
+    ]
+    assert metadata["final_report_path"] == str(
+        tmp_path / "proof-finalization-status.json",
+    )
+    assert "Trace kind: proof_suite" in text
+    assert "suite_validation: passed" in text
 
 
 def test_routine_pack_manager_tracks_install_and_remove_state(tmp_path: Path) -> None:

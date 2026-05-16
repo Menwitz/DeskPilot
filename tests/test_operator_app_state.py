@@ -201,6 +201,7 @@ def test_operator_app_controller_tracks_trace_viewer_state(tmp_path: Path) -> No
         candidate_reasoning=("selected candidate-1",),
         state_delta=("visible text added Success",),
         verification_results=("visible text verification passed",),
+        proof_gates=("suite_validation: passed",),
         final_report_path=tmp_path / "final-report.json",
         status="loaded",
     )
@@ -211,6 +212,9 @@ def test_operator_app_controller_tracks_trace_viewer_state(tmp_path: Path) -> No
     assert state.current_page_id == "trace_viewer"
     assert state.trace_viewer == timeline
     assert metadata["trace_viewer"] == timeline.metadata()
+    trace_viewer = metadata["trace_viewer"]
+    assert isinstance(trace_viewer, dict)
+    assert trace_viewer["proof_gates"] == ["suite_validation: passed"]
 
 
 class _FakeRunnerService:

@@ -208,6 +208,8 @@ abuse, and hidden automation are not supported.
       rollup for suite, promotion, and archive verification gates.
 - [x] Surface proof-suite finalization rollups through the local trace service
       for operator UI and monitoring discovery.
+- [x] Add proof-suite gate details to native trace-viewer state so local proof
+      reports can show suite, promotion, and archive status in the app.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.
