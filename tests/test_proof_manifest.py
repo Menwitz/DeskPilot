@@ -10,6 +10,7 @@ from desktop_agent.proof_manifest import (
     run_proof_preflight,
     validate_proof_bundle,
     validate_proof_suite,
+    write_proof_preflight_report,
     write_proof_suite_archive,
     write_proof_suite_report,
     write_proof_suite_runbook,
@@ -49,6 +50,28 @@ def test_run_proof_preflight_reports_platform_and_video_failures(
     assert statuses["windows-platform"] == "failed"
     assert statuses["trace-root"] == "passed"
     assert statuses["video-capture"] == "failed"
+
+
+def test_write_proof_preflight_report_records_readiness_checks(
+    tmp_path: Path,
+) -> None:
+    result = run_proof_preflight(
+        tmp_path / "traces",
+        platform_name="darwin",
+        path_lookup=lambda _command: None,
+    )
+
+    report_path = write_proof_preflight_report(result)
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+
+    assert report_path == tmp_path / "traces" / "proof-preflight.json"
+    assert payload["status"] == "failed"
+    assert payload["trace_root"] == str(tmp_path / "traces")
+    assert [check["name"] for check in payload["checks"]] == [
+        "windows-platform",
+        "trace-root",
+        "video-capture",
+    ]
 
 
 def test_validate_proof_bundle_accepts_complete_evidence(tmp_path: Path) -> None:

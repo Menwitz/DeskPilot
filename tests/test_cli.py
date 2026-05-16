@@ -1710,6 +1710,34 @@ def test_cli_proof_preflight_reports_non_windows_failure(
     assert "check video-capture: warning" in output
 
 
+def test_cli_proof_preflight_writes_report(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    report_path = tmp_path / "review" / "preflight.json"
+
+    status = main(
+        [
+            "proof",
+            "preflight",
+            "--trace-root",
+            str(tmp_path / "traces"),
+            "--video-policy",
+            "disabled",
+            "--write-report",
+            "--report-path",
+            str(report_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    assert status == 1
+    assert f"report: {report_path}" in output
+    assert payload["status"] == "failed"
+    assert payload["trace_root"] == str(tmp_path / "traces")
+
+
 def test_cli_proof_validate_suite_reports_missing_bundles(
     tmp_path: Path,
     capsys: CaptureFixture[str],

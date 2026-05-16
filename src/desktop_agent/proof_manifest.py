@@ -22,6 +22,7 @@ PROOF_SUITE_REPORT_NAME = "proof-suite-report.md"
 PROOF_SUITE_STATUS_NAME = "proof-suite-status.json"
 PROOF_SUITE_RUNBOOK_NAME = "proof-suite-next-actions.md"
 PROOF_SUITE_ARCHIVE_NAME = "proof-suite-artifacts.zip"
+PROOF_PREFLIGHT_REPORT_NAME = "proof-preflight.json"
 
 
 @dataclass(frozen=True)
@@ -202,6 +203,21 @@ def run_proof_preflight(
         _video_preflight_check(ffmpeg_path, require_video, path_lookup),
     )
     return ProofPreflightResult(trace_root=trace_root, checks=checks)
+
+
+def write_proof_preflight_report(
+    result: ProofPreflightResult,
+    output_path: Path | None = None,
+) -> Path:
+    """Write a machine-readable no-input proof preflight report."""
+
+    report_path = output_path or result.trace_root / PROOF_PREFLIGHT_REPORT_NAME
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(
+        json.dumps(result.metadata(), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    return report_path
 
 
 def validate_proof_bundle(

@@ -14,6 +14,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Run `desktop-agent proof preflight --trace-root <trace-root>` and resolve
       failed Windows platform, trace-root, or video-capture checks before the
       proof countdown.
+- [ ] Run `desktop-agent proof preflight --trace-root <trace-root>
+      --write-report` and archive `proof-preflight.json` with the proof review
+      record.
 - [ ] Prefer built-in recording with `--record-video --video-fps 15` when
       `ffmpeg` is installed on the Windows VM.
 - [ ] Use `--video-policy disabled` when the run may not record screen video.
@@ -81,6 +84,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] `proof-suite-artifacts.zip` contains the generated suite report, status
       JSON, next-actions runbook, proof manifests, action logs, command reports,
       screenshots, and video artifacts when present.
+- [ ] `proof-preflight.json` records Windows platform, trace-root, and
+      video-capture readiness checks before the desktop run begins.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 

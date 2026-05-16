@@ -97,6 +97,7 @@ from desktop_agent.proof_manifest import (
     run_proof_preflight,
     validate_proof_bundle,
     validate_proof_suite,
+    write_proof_preflight_report,
     write_proof_suite_archive,
     write_proof_suite_report,
     write_proof_suite_runbook,
@@ -545,6 +546,16 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=("full", "disabled"),
         default="full",
         help="disable proof video preflight when using external recording",
+    )
+    proof_preflight_parser.add_argument(
+        "--write-report",
+        action="store_true",
+        help="write proof-preflight.json after preflight",
+    )
+    proof_preflight_parser.add_argument(
+        "--report-path",
+        type=Path,
+        help="write the preflight report to an explicit JSON path",
     )
     proof_validate_parser = proof_subparsers.add_parser(
         "validate",
@@ -2753,6 +2764,9 @@ def _proof_preflight(args: argparse.Namespace) -> int:
     print(f"preflight: {'passed' if result.passed else 'failed'}")
     for check in result.checks:
         print(f"check {check.name}: {check.status} - {check.message}")
+    if args.write_report or args.report_path:
+        report_path = write_proof_preflight_report(result, args.report_path)
+        print(f"report: {report_path}")
     return 0 if result.passed else 1
 
 
