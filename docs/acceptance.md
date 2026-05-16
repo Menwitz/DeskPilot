@@ -48,6 +48,10 @@ expected results, and trace evidence to collect.
 Use [Windows Proof Evidence Checklist](windows-proof-evidence-checklist.md) for
 manual proof bundles that must include video, trace, screenshots, manifest,
 action log, replay output, and reviewer signoff.
+A proof bundle is the Windows run package containing the command, environment
+metadata, video or video policy, trace directory, screenshots, action log,
+proof manifest, replay output, and final report needed to review a real-input
+run without rerunning desktop input.
 The checklist also includes opt-in `pytest -m windows_smoke` coverage for
 unlocked owned Windows sessions; those tests stay skipped by default outside
 that environment.

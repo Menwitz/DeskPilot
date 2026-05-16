@@ -46,7 +46,7 @@ abuse, and hidden automation are not supported.
       more known routines.
 - [x] Define `manual handoff` as a planned pause where the operator must inspect,
       approve, or complete a step.
-- [ ] Define `proof bundle` as a Windows run package containing command,
+- [x] Define `proof bundle` as a Windows run package containing command,
       environment metadata, video, trace, screenshots, and final report.
 
 ## Release Ladder
