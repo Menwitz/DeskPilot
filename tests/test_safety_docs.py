@@ -120,6 +120,22 @@ def test_local_report_server_design_stays_read_only_and_optional() -> None:
         assert phrase in documentation
 
 
+def test_linux_x11_plan_remains_after_windows_beta() -> None:
+    documentation = Path("docs/linux-x11-adapter-plan.md").read_text(
+        encoding="utf-8",
+    )
+
+    for phrase in (
+        "post-Windows-beta plan",
+        "Windows proof pack is complete",
+        "X11ScreenObserver",
+        "X11Actuator",
+        "Never run from a headless session",
+        "Preserve allowed-window checks",
+    ):
+        assert phrase in documentation
+
+
 def test_windows_proof_docs_cover_manual_evidence_review() -> None:
     documentation = "\n".join(
         [
