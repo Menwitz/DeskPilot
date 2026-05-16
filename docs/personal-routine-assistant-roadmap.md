@@ -369,7 +369,7 @@ abuse, and hidden automation are not supported.
       hour, and stop-after conditions.
 - [x] KR2: Scheduler supports pause, resume, cancel, retry later, and manual
       handoff.
-- [ ] KR3: Timing decisions are recorded and reproducible when a seed is set.
+- [x] KR3: Timing decisions are recorded and reproducible when a seed is set.
 - [ ] KR4: The operator can see why the assistant waited, resumed, skipped, or
       asked for approval.
 
