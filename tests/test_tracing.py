@@ -10,6 +10,7 @@ from desktop_agent.perception import (
     PerceptionEngine,
 )
 from desktop_agent.planner import ExecutionEngine
+from desktop_agent.redaction import RedactionPolicy
 from desktop_agent.safety import LocalSafetyPolicy
 from desktop_agent.screen import Bounds, ScreenObservation
 from desktop_agent.task_dsl import (
@@ -89,6 +90,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
                 policy_preset="strict_qa",
                 require_operator_approval=True,
                 confirmed_steps=("click-submit",),
+                redaction_policy=RedactionPolicy(evidence_mode="redacted"),
                 execution_profile=ExecutionProfile(
                     enabled=True,
                     keyboard_interval_seconds=(0.01, 0.03),
@@ -149,6 +151,8 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert config_payload["execution_profile"]["persona"] == "normal"
     assert config_payload["local_model"]["enabled"] is False
     assert config_payload["local_model"]["use_for_goal_ranking"] is False
+    assert config_payload["redaction_policy"]["evidence_mode"] == "redacted"
+    assert config_payload["redaction_policy"]["screenshots"] == "full"
     assert audit_payload["policy_preset"] == "strict_qa"
     assert audit_payload["sensitive_steps"][0]["step_id"] == "click-submit"
     assert config_payload["execution_profile"]["keyboard_interval_seconds"] == [

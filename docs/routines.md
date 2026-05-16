@@ -40,6 +40,14 @@ schedule:
     - operator_check_in_required
 failed_evidence_count: 0
 quarantine_status: active
+redaction_policy:
+  evidence_mode: full
+  screenshots: full
+  ocr_text: full
+  typed_text: full
+  content_variables: fingerprint_only
+  video: full
+  reports: full
 reference:
   type: task
   path: tasks/browser-search.yaml
@@ -67,6 +75,9 @@ Supported safety classes are `low`, `medium`, `high`, and `sensitive`.
 Supported schedule policies are `manual`, `on_demand`, and `scheduled`.
 Supported approval policies are `none`, `confirm`, `manifest_required`, and
 `manual_handoff`.
+Routine-level `redaction_policy` uses the same schema as runtime config and is
+included in compiled routine metadata. It does not remove full local evidence by
+default; redaction modes must be explicit.
 
 `RoutineDefinition.report_metadata()` returns JSON-safe fields for future trace,
 monitoring, search, and catalog quality reports.

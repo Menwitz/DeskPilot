@@ -6,11 +6,17 @@ import json
 import re
 from collections import Counter
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal, cast
 
 import yaml
+
+from desktop_agent.redaction import (
+    RedactionPolicy,
+    redaction_policy_from_mapping,
+    validate_redaction_policy,
+)
 
 ROUTINE_ID_PATTERN = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
 SUPPORTED_ROUTINE_SAFETY_CLASSES: frozenset[str] = frozenset(
@@ -158,6 +164,7 @@ class RoutineDefinition:
     quarantine_failure_threshold: int = ROUTINE_QUARANTINE_FAILURE_THRESHOLD
     quarantine_status: str = "active"
     quarantine_reason: str | None = None
+    redaction_policy: RedactionPolicy = field(default_factory=RedactionPolicy)
     source_path: Path | None = None
 
     def report_metadata(self) -> dict[str, object]:
@@ -179,6 +186,7 @@ class RoutineDefinition:
             ),
             "routine_quarantine_status": quarantine,
             "routine_quarantine_reason": self.quarantine_reason,
+            "routine_redaction_policy": self.redaction_policy.metadata(),
             "routine_promotion_gates": [
                 gate.metadata() for gate in routine_promotion_gates(self)
             ],
@@ -390,6 +398,9 @@ def routine_definition_from_mapping(
             _optional_string(data, "quarantine_status") or "active"
         ),
         quarantine_reason=_optional_string(data, "quarantine_reason"),
+        redaction_policy=_redaction_policy_from_value(
+            data.get("redaction_policy"),
+        ),
         source_path=source_path,
     )
     validate_routine_definition(routine)
@@ -442,6 +453,12 @@ def validate_routine_definition(routine: RoutineDefinition) -> None:
         errors.append("quarantine_reason is required when routine is quarantined")
     errors.extend(_reference_errors(routine.reference))
     errors.extend(_schedule_errors(routine.schedule))
+    errors.extend(
+        validate_redaction_policy(
+            routine.redaction_policy,
+            prefix="routine.redaction_policy",
+        ),
+    )
     if errors:
         raise RoutineDefinitionError("; ".join(errors))
 
@@ -952,6 +969,16 @@ def _reference_from_value(value: object, base_dir: Path) -> RoutineReference:
             playbook_flow=_required_string(data, "flow"),
         )
     raise RoutineDefinitionError("reference type must be task or playbook")
+
+
+def _redaction_policy_from_value(value: object) -> RedactionPolicy:
+    if value is None:
+        return RedactionPolicy()
+    data = _mapping(value, "redaction_policy must be a mapping")
+    try:
+        return redaction_policy_from_mapping(data)
+    except ValueError as exc:
+        raise RoutineDefinitionError(str(exc)) from exc
 
 
 def _routine_search_fields(

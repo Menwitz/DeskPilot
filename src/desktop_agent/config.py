@@ -9,6 +9,11 @@ from urllib.parse import urlparse
 
 import yaml
 
+from desktop_agent.redaction import (
+    RedactionPolicy,
+    redaction_policy_from_mapping,
+    validate_redaction_policy,
+)
 from desktop_agent.window_allowlist import window_allowlist_errors
 
 EXECUTION_PERSONAS: frozenset[str] = frozenset({"careful", "normal", "fast"})
@@ -73,6 +78,7 @@ class RuntimeConfig:
     execution_profile: ExecutionProfile = field(default_factory=ExecutionProfile)
     confirmed_steps: tuple[str, ...] = field(default_factory=tuple)
     local_model: LocalModelConfig = field(default_factory=LocalModelConfig)
+    redaction_policy: RedactionPolicy = field(default_factory=RedactionPolicy)
 
 
 @dataclass(frozen=True)
@@ -95,6 +101,7 @@ class ConfigOverrides:
     execution_profile: ExecutionProfile | None = None
     confirmed_steps: tuple[str, ...] | None = None
     local_model: LocalModelConfig | None = None
+    redaction_policy: RedactionPolicy | None = None
 
 
 class ConfigError(ValueError):
@@ -279,6 +286,10 @@ def apply_config_overrides(
         ),
         confirmed_steps=_coalesce(overrides.confirmed_steps, config.confirmed_steps),
         local_model=_coalesce(overrides.local_model, config.local_model),
+        redaction_policy=_coalesce(
+            overrides.redaction_policy,
+            config.redaction_policy,
+        ),
     )
 
 
@@ -300,6 +311,7 @@ def config_overrides_from_mapping(data: dict[str, object]) -> ConfigOverrides:
         execution_profile=_optional_execution_profile(data, "execution_profile"),
         confirmed_steps=_optional_string_tuple(data, "confirmed_steps"),
         local_model=_optional_local_model_config(data, "local_model"),
+        redaction_policy=_optional_redaction_policy_config(data, "redaction_policy"),
     )
 
 
@@ -329,6 +341,7 @@ def validate_config(config: RuntimeConfig) -> None:
         )
     errors.extend(_validate_execution_profile(config.execution_profile))
     errors.extend(_validate_local_model(config.local_model))
+    errors.extend(validate_redaction_policy(config.redaction_policy))
 
     if errors:
         raise ConfigError("; ".join(errors))
@@ -579,6 +592,21 @@ def _optional_local_model_config(
             defaults.use_for_goal_ranking,
         ),
     )
+
+
+def _optional_redaction_policy_config(
+    data: dict[str, object],
+    key: str,
+) -> RedactionPolicy | None:
+    if key not in data:
+        return None
+    value = data[key]
+    if not isinstance(value, dict):
+        raise ConfigError("redaction_policy must be a mapping")
+    try:
+        return redaction_policy_from_mapping(cast(dict[str, object], value))
+    except ValueError as exc:
+        raise ConfigError(str(exc)) from exc
 
 
 def _validate_execution_profile(profile: ExecutionProfile) -> list[str]:

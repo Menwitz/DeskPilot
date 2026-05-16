@@ -313,6 +313,7 @@ def _config_to_dict(config: RuntimeConfig) -> dict[str, object]:
         "execution_profile": _execution_profile_to_dict(config.execution_profile),
         "confirmed_steps": list(config.confirmed_steps),
         "local_model": _local_model_to_dict(config.local_model),
+        "redaction_policy": config.redaction_policy.metadata(),
     }
 
 

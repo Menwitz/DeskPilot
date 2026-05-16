@@ -897,6 +897,7 @@ def _show_routine(args: argparse.Namespace) -> int:
     print(f"quarantine_status: {routine_quarantine_status(routine)}")
     if routine.quarantine_reason:
         print(f"quarantine_reason: {routine.quarantine_reason}")
+    print(f"redaction_policy: {routine.redaction_policy.metadata()}")
     print(f"reference: {_routine_reference_summary(routine)}")
     print("promotion_gates:")
     for gate in routine_promotion_gates(routine):
@@ -1151,6 +1152,8 @@ def _routine_to_yaml_dict(routine: RoutineDefinition) -> dict[str, object]:
     _put_optional(payload, "required_site", routine.required_site)
     if routine.schedule != type(routine.schedule)():
         payload["schedule"] = _routine_schedule_to_yaml_dict(routine)
+    if routine.redaction_policy != type(routine.redaction_policy)():
+        payload["redaction_policy"] = routine.redaction_policy.metadata()
     _put_optional(payload, "quarantine_reason", routine.quarantine_reason)
     return payload
 

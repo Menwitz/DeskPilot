@@ -12,6 +12,7 @@ from desktop_agent.config import (
     execution_profile_for_activity,
     resolve_runtime_config,
 )
+from desktop_agent.redaction import RedactionPolicy
 from desktop_agent.task_dsl import YamlTaskLoader
 
 
@@ -102,6 +103,9 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
                 "  require_operator_approval: true",
                 "  confirmed_steps:",
                 "    - submit",
+                "  redaction_policy:",
+                "    evidence_mode: metadata_only",
+                "    typed_text: mask",
                 "  execution_profile:",
                 "    persona: fast",
                 "    enabled: true",
@@ -124,6 +128,9 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
     assert task.config_overrides.policy_preset == "exploratory_testing"
     assert task.config_overrides.require_operator_approval is True
     assert task.config_overrides.confirmed_steps == ("submit",)
+    assert task.config_overrides.redaction_policy is not None
+    assert task.config_overrides.redaction_policy.evidence_mode == "metadata_only"
+    assert task.config_overrides.redaction_policy.typed_text == "mask"
     assert task.config_overrides.execution_profile is not None
     assert task.config_overrides.execution_profile.activity_profile is None
     assert task.config_overrides.execution_profile.persona == "fast"
@@ -252,6 +259,8 @@ def test_local_model_config_defaults_to_disabled() -> None:
     assert config.local_model.enabled is False
     assert config.local_model.provider == "ollama"
     assert config.local_model.use_for_goal_ranking is False
+    assert config.redaction_policy.evidence_mode == "full"
+    assert config.redaction_policy.screenshots == "full"
 
 
 def test_yaml_config_loader_loads_opt_in_local_ollama_ranking(
@@ -294,7 +303,6 @@ def test_local_model_config_rejects_nonlocal_or_half_enabled_ranking() -> None:
                 ),
             ),
         )
-
     with pytest.raises(ConfigError, match="use_for_goal_ranking"):
         resolve_runtime_config(
             RuntimeConfig(
@@ -302,5 +310,57 @@ def test_local_model_config_rejects_nonlocal_or_half_enabled_ranking() -> None:
                     enabled=False,
                     use_for_goal_ranking=True,
                 ),
+            ),
+        )
+
+
+def test_yaml_config_loader_loads_global_redaction_policy(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "redaction_policy:",
+                "  evidence_mode: redacted",
+                "  screenshots: metadata_only",
+                "  ocr_text: suppress",
+                "  typed_text: mask",
+                "  content_variables: mask_names",
+                "  video: disabled",
+                "  reports: redacted",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    config = YamlConfigLoader().load(config_path)
+
+    assert config.redaction_policy.evidence_mode == "redacted"
+    assert config.redaction_policy.screenshots == "metadata_only"
+    assert config.redaction_policy.ocr_text == "suppress"
+    assert config.redaction_policy.typed_text == "mask"
+    assert config.redaction_policy.content_variables == "mask_names"
+    assert config.redaction_policy.video == "disabled"
+    assert config.redaction_policy.reports == "redacted"
+
+
+def test_run_level_redaction_policy_overrides_file_config() -> None:
+    config = resolve_runtime_config(
+        RuntimeConfig(
+            redaction_policy=RedactionPolicy(evidence_mode="redacted"),
+        ),
+        cli_overrides=ConfigOverrides(
+            redaction_policy=RedactionPolicy(evidence_mode="metadata_only"),
+        ),
+    )
+
+    assert config.redaction_policy.evidence_mode == "metadata_only"
+
+
+def test_redaction_policy_rejects_unknown_modes() -> None:
+    with pytest.raises(ConfigError, match=r"redaction_policy\.screenshots"):
+        resolve_runtime_config(
+            RuntimeConfig(
+                redaction_policy=RedactionPolicy(screenshots="erase"),
             ),
         )

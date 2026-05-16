@@ -49,6 +49,14 @@ local_model:
   endpoint: http://127.0.0.1:11434
   request_timeout_seconds: 10.0
   use_for_goal_ranking: false
+redaction_policy:
+  evidence_mode: full
+  screenshots: full
+  ocr_text: full
+  typed_text: full
+  content_variables: fingerprint_only
+  video: full
+  reports: full
 ```
 
 ## Allowed Windows
@@ -71,6 +79,13 @@ local subdirectory containing normalized config, task JSON, action logs, final
 reports, and optional screenshots/OCR/CV artifacts. Content variable files and
 approval manifests remain at their original local paths; reports store only
 their paths, approved step IDs, variable names, and fingerprints.
+
+`redaction_policy` is part of the resolved runtime config and is written to
+`config.json` for every run. The default keeps full local evidence available:
+`evidence_mode: full`, screenshots/OCR/typed text/video/reports set to `full`,
+and content variables represented by fingerprints. A project config supplies
+the global policy, routine definitions can carry a routine-level policy, and
+task `config.redaction_policy` can provide a run-level override.
 
 ## Task Overrides
 

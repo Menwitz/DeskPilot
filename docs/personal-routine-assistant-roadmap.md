@@ -598,7 +598,7 @@ abuse, and hidden automation are not supported.
 
 ### Tasks
 
-- [ ] Add redaction policy schema at global, routine, and run levels.
+- [x] Add redaction policy schema at global, routine, and run levels.
 - [ ] Add screenshot blur masks and sensitive-zone definitions.
 - [ ] Add typed-text masking and content-variable masking.
 - [ ] Add OCR suppression and metadata-only trace mode.

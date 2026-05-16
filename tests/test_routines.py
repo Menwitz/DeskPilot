@@ -102,6 +102,69 @@ def test_routine_definition_schema_loads_playbook_reference() -> None:
     assert routine.report_metadata()["routine_safety_class"] == "medium"
 
 
+def test_routine_definition_schema_loads_redaction_policy() -> None:
+    routine = routine_definition_from_mapping(
+        {
+            "id": "browser.redacted-review",
+            "name": "Redacted browser review",
+            "description": "Review a page with redacted evidence.",
+            "goal": "Review owned browser content with masked text.",
+            "required_app": "Microsoft Edge",
+            "required_site": "example.com",
+            "tags": ["browser", "review"],
+            "inputs": ["url"],
+            "outputs": ["summary"],
+            "safety_class": "medium",
+            "schedule_policy": "manual",
+            "approval_policy": "none",
+            "expected_duration_seconds": 60,
+            "redaction_policy": {
+                "evidence_mode": "redacted",
+                "screenshots": "metadata_only",
+                "typed_text": "mask",
+                "reports": "redacted",
+            },
+            "reference": {
+                "type": "task",
+                "path": "tasks/browser-review.yaml",
+            },
+        },
+    )
+
+    metadata = routine.report_metadata()["routine_redaction_policy"]
+
+    assert isinstance(metadata, dict)
+    assert metadata["evidence_mode"] == "redacted"
+    assert metadata["screenshots"] == "metadata_only"
+    assert metadata["typed_text"] == "mask"
+
+
+def test_routine_definition_rejects_invalid_redaction_policy() -> None:
+    with pytest.raises(
+        RoutineDefinitionError,
+        match=r"routine\.redaction_policy\.video",
+    ):
+        routine_definition_from_mapping(
+            {
+                "id": "browser.bad-redaction",
+                "name": "Bad redaction",
+                "description": "Invalid redaction policy.",
+                "goal": "Reject invalid redaction.",
+                "required_app": None,
+                "required_site": None,
+                "tags": [],
+                "inputs": [],
+                "outputs": [],
+                "safety_class": "low",
+                "schedule_policy": "manual",
+                "approval_policy": "none",
+                "expected_duration_seconds": 10,
+                "redaction_policy": {"video": "erase"},
+                "reference": {"type": "task", "path": "task.yaml"},
+            },
+        )
+
+
 def test_routine_definition_schema_loads_schedule_constraints(
     tmp_path: Path,
     capsys: CaptureFixture[str],
