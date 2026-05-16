@@ -53,7 +53,9 @@ rationale, YAML snippets, `review_required`, and `applies_automatically` fields
 so proposed fixes remain manual until approved.
 The trace service can analyze a failed trace, write
 `failed-run-analysis.json` and `failed-run-analysis.md`, and return concise
-failure reasons for the app timeline.
+failure reasons for the app timeline. The app controller can also hydrate the
+trace-viewer state directly from a local trace report, including proof-suite
+finalization reports discovered by the trace service.
 
 The Settings page includes trace root, screenshot saving, video capture, Ollama
 enablement, emergency hotkey, default activity profile, and proof-mode fields.

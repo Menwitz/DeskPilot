@@ -12,6 +12,7 @@ from desktop_agent.operator_app_state import (
     OperatorAppStateError,
 )
 from desktop_agent.operator_services import (
+    LocalTraceService,
     OperatorApprovalDecision,
     OperatorDryRunResult,
     OperatorRunControlResult,
@@ -215,6 +216,35 @@ def test_operator_app_controller_tracks_trace_viewer_state(tmp_path: Path) -> No
     trace_viewer = metadata["trace_viewer"]
     assert isinstance(trace_viewer, dict)
     assert trace_viewer["proof_gates"] == ["suite_validation: passed"]
+
+
+def test_operator_app_controller_loads_trace_report_state(
+    tmp_path: Path,
+) -> None:
+    trace_root = tmp_path / "traces"
+    trace_dir = trace_root / "proof-suite"
+    trace_dir.mkdir(parents=True)
+    (trace_dir / "proof-finalization-status.json").write_text(
+        (
+            '{"status":"passed","gates":{"suite_validation":"passed"},'
+            '"checked_artifacts":{"promotion":[],"archive":[]}}'
+        ),
+        encoding="utf-8",
+    )
+    controller = OperatorAppController(
+        _FakeRunnerService({}),
+        traces=LocalTraceService(trace_root),
+    )
+
+    state = controller.view_trace_report(trace_dir)
+
+    assert state.current_page_id == "trace_viewer"
+    assert state.trace_viewer is not None
+    assert state.trace_viewer.trace_kind == "proof_suite"
+    assert state.trace_viewer.proof_gates == ("suite_validation: passed",)
+    assert state.trace_viewer.final_report_path == (
+        trace_dir / "proof-finalization-status.json"
+    )
 
 
 class _FakeRunnerService:

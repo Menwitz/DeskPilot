@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from pathlib import Path
 
 from desktop_agent.operator_app_shell import (
     ApprovalDialogState,
@@ -11,8 +12,9 @@ from desktop_agent.operator_app_shell import (
     RecorderReviewPanelState,
     TraceViewerTimelineState,
     operator_app_shell_spec,
+    trace_viewer_timeline_from_report,
 )
-from desktop_agent.operator_services import ApprovalService, RunnerService
+from desktop_agent.operator_services import ApprovalService, RunnerService, TraceService
 
 
 class OperatorAppStateError(ValueError):
@@ -58,11 +60,13 @@ class OperatorAppController:
         runner: RunnerService,
         *,
         approvals: ApprovalService | None = None,
+        traces: TraceService | None = None,
         shell: OperatorAppShell | None = None,
         state: OperatorAppState | None = None,
     ) -> None:
         self._runner = runner
         self._approvals = approvals
+        self._traces = traces
         active_shell = shell or operator_app_shell_spec()
         self.state = state or OperatorAppState(
             shell=active_shell,
@@ -245,6 +249,18 @@ class OperatorAppController:
             trace_viewer=timeline,
         )
         return self.state
+
+    def view_trace_report(self, trace_dir: Path) -> OperatorAppState:
+        if self._traces is None:
+            raise OperatorAppStateError("trace service is not configured")
+        report = self._traces.read_report(trace_dir)
+        summary = self._traces.trace_summary(trace_dir)
+        return self.view_trace(
+            trace_viewer_timeline_from_report(
+                report,
+                report_path=summary.report_path,
+            ),
+        )
 
     def _require_started_run(self) -> None:
         if self.state.live_run.current_routine_id is None:

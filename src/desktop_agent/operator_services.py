@@ -429,6 +429,10 @@ class TraceService(Protocol):
         """Read a trace report JSON file."""
         ...
 
+    def trace_summary(self, trace_dir: Path) -> TraceSummary:
+        """Return one local trace summary for app state hydration."""
+        ...
+
     def inspect_failed_trace(self, trace_dir: Path) -> OperatorFailedTraceInspection:
         """Analyze a failed trace and write local review artifacts."""
         ...
@@ -936,6 +940,11 @@ class LocalTraceService:
                     raise OperatorServiceError("trace report must contain a mapping")
                 return cast(dict[str, object], loaded)
         raise OperatorServiceError(f"trace report not found: {trace_dir}")
+
+    def trace_summary(self, trace_dir: Path) -> TraceSummary:
+        if not trace_dir.exists() or not trace_dir.is_dir():
+            raise OperatorServiceError(f"trace directory not found: {trace_dir}")
+        return _trace_summary(trace_dir)
 
     def inspect_failed_trace(self, trace_dir: Path) -> OperatorFailedTraceInspection:
         report = self.read_report(trace_dir)

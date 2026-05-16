@@ -210,6 +210,8 @@ abuse, and hidden automation are not supported.
       for operator UI and monitoring discovery.
 - [x] Add proof-suite gate details to native trace-viewer state so local proof
       reports can show suite, promotion, and archive status in the app.
+- [x] Add an operator controller path that hydrates trace-viewer state directly
+      from local trace reports, including proof-suite finalization reports.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.
