@@ -10,6 +10,7 @@ The Phase 8 shell defines these pages:
 
 - Dashboard: daily status, recent runs, and next safe action.
 - Routine Library: list, search, inspect, dry-run, and run routines.
+- Routine Packs: install, replace, export, and remove local routine packs.
 - Record: capture a demonstrated routine and review generated YAML.
 - Run Queue: monitor scheduled, running, paused, and blocked routines.
 - Approvals: review high-risk steps before local execution continues.
@@ -30,6 +31,12 @@ and explicit approve/deny actions before high-risk work can continue.
 The Record page includes the recorder review panel. It shows generated YAML,
 selected targets, screenshot paths, verification suggestions, and review status
 before the operator saves a routine.
+
+The Routine Packs page includes the routine-pack manager contract. It shows
+installed pack IDs, selected pack, install source, pending action, and explicit
+install, replace, remove, and export actions. Install and remove operations go
+through manifest validation and local pack operations rather than ad hoc file
+copying.
 
 The Trace Viewer page includes the trace timeline contract. It shows video,
 screenshots, action log, candidate reasoning, state delta, final report, and
@@ -70,6 +77,8 @@ initial concrete bundle is local-only and wraps existing project modules:
 - Scheduler service: expose immutable run queue metadata.
 - Approval service: list active routines requiring operator approval.
 - Trace service: list local trace directories and read JSON reports.
+- Routine-pack service: list installed packs, install validated local packs,
+  and remove installed packs.
 
 The PySide widgets should use these services instead of shelling out to CLI
 commands. This keeps the app, CLI, tests, and future packaging on the same local

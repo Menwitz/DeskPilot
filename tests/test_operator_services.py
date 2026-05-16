@@ -6,6 +6,7 @@ import pytest
 
 from desktop_agent.operator_services import (
     LocalCatalogService,
+    LocalRoutinePackService,
     LocalSchedulerService,
     LocalTraceService,
     OperatorServiceError,
@@ -51,6 +52,7 @@ def test_local_operator_services_expose_catalog_runner_approvals_and_queue(
     assert unknown_gate.allowed is False
     assert queue_metadata["run_queue_size"] == 0
     assert "generate_yaml" in services.recorder.capabilities()
+    assert services.routine_packs.list_packs() == ()
 
 
 def test_local_trace_service_lists_and_reads_reports(tmp_path: Path) -> None:
@@ -98,6 +100,21 @@ def test_scheduler_service_reports_injected_queue() -> None:
     assert entries[0]["routine_id"] == "browser.search"
 
 
+def test_routine_pack_service_installs_lists_and_removes_packs(tmp_path: Path) -> None:
+    source = _write_pack(tmp_path / "source-pack", pack_id="sample-pack")
+    service = LocalRoutinePackService(tmp_path / "installed")
+
+    install_result = service.install_pack(source)
+    packs = service.list_packs()
+    remove_result = service.remove_pack("sample-pack")
+
+    assert install_result.installed_path == tmp_path / "installed" / "sample-pack"
+    assert [pack.pack_id for pack in packs] == ["sample-pack"]
+    assert packs[0].trust_level == "trusted_local"
+    assert remove_result.removed_path == tmp_path / "installed" / "sample-pack"
+    assert not remove_result.removed_path.exists()
+
+
 def _write_routine(path: Path, *, routine_id: str, approval_policy: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -127,3 +144,39 @@ def _write_routine(path: Path, *, routine_id: str, approval_policy: str) -> None
         ),
         encoding="utf-8",
     )
+
+
+def _write_pack(root: Path, *, pack_id: str) -> Path:
+    root.mkdir(parents=True)
+    (root / "README.md").write_text("# Sample Pack\n", encoding="utf-8")
+    (root / "routine-pack.yaml").write_text(
+        "\n".join(
+            [
+                'pack_schema_version: "1"',
+                f"id: {pack_id}",
+                "name: Sample Pack",
+                "description: Sample pack for operator service tests.",
+                'version: "0.1.0"',
+                "publisher: Local Operator",
+                "trust_level: trusted_local",
+                "routine_globs:",
+                '  - "*.routine.yaml"',
+                "docs:",
+                "  - README.md",
+                "fixtures: []",
+                "tests: []",
+                "safety:",
+                "  max_safety_class: low",
+                "  requires_review: true",
+                "  external_mutation_allowed: false",
+                "  approval_required: false",
+                "proof:",
+                "  windows_proof_required: false",
+                "  expected_artifacts:",
+                "    - final-report.json",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+    return root

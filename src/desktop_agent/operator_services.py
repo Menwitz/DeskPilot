@@ -7,6 +7,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, cast
 
+from desktop_agent.routine_pack_manifest import (
+    RoutinePackManifest,
+    load_routine_pack_manifests,
+)
+from desktop_agent.routine_pack_ops import (
+    RoutinePackImportResult,
+    RoutinePackRemoveResult,
+    import_routine_pack,
+    remove_routine_pack,
+)
 from desktop_agent.routines import (
     RoutineCatalog,
     RoutineDefinition,
@@ -57,6 +67,26 @@ class TraceSummary:
             "report_path": str(self.report_path) if self.report_path else None,
             "status": self.status,
             "kind": self.kind,
+        }
+
+
+@dataclass(frozen=True)
+class RoutinePackListItem:
+    """Small routine-pack row for app install and removal views."""
+
+    pack_id: str
+    name: str
+    version: str
+    trust_level: str
+    max_safety_class: str
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "pack_id": self.pack_id,
+            "name": self.name,
+            "version": self.version,
+            "trust_level": self.trust_level,
+            "max_safety_class": self.max_safety_class,
         }
 
 
@@ -116,6 +146,27 @@ class TraceService(Protocol):
         ...
 
 
+class RoutinePackService(Protocol):
+    """Routine-pack install and removal API consumed by the operator app."""
+
+    def list_packs(self) -> tuple[RoutinePackListItem, ...]:
+        """Return installed routine-pack rows."""
+        ...
+
+    def install_pack(
+        self,
+        source: Path,
+        *,
+        replace: bool = False,
+    ) -> RoutinePackImportResult:
+        """Install a validated local routine pack directory or archive."""
+        ...
+
+    def remove_pack(self, pack_id: str) -> RoutinePackRemoveResult:
+        """Remove one installed local routine pack."""
+        ...
+
+
 @dataclass(frozen=True)
 class LocalOperatorServices:
     """Concrete local service bundle injected into the operator app shell."""
@@ -126,6 +177,7 @@ class LocalOperatorServices:
     scheduler: SchedulerService
     approvals: ApprovalService
     traces: TraceService
+    routine_packs: RoutinePackService
 
 
 class LocalCatalogService:
@@ -238,6 +290,28 @@ class LocalTraceService:
         raise OperatorServiceError(f"trace report not found: {trace_dir}")
 
 
+class LocalRoutinePackService:
+    """Routine-pack boundary backed by local manifest import and removal ops."""
+
+    def __init__(self, root: Path = Path("routine_packs")) -> None:
+        self._root = root
+
+    def list_packs(self) -> tuple[RoutinePackListItem, ...]:
+        manifests = load_routine_pack_manifests(self._root)
+        return tuple(_routine_pack_list_item(manifest) for manifest in manifests)
+
+    def install_pack(
+        self,
+        source: Path,
+        *,
+        replace: bool = False,
+    ) -> RoutinePackImportResult:
+        return import_routine_pack(source, self._root, replace=replace)
+
+    def remove_pack(self, pack_id: str) -> RoutinePackRemoveResult:
+        return remove_routine_pack(self._root, pack_id)
+
+
 def default_local_operator_services(
     *,
     routine_pack_root: Path = Path("routine_packs"),
@@ -252,6 +326,7 @@ def default_local_operator_services(
         scheduler=LocalSchedulerService(),
         approvals=LocalApprovalService(catalog),
         traces=LocalTraceService(trace_root),
+        routine_packs=LocalRoutinePackService(routine_pack_root),
     )
 
 
@@ -283,6 +358,16 @@ def _trace_summary(trace_dir: Path) -> TraceSummary:
         report_path=None,
         status=None,
         kind="unknown",
+    )
+
+
+def _routine_pack_list_item(manifest: RoutinePackManifest) -> RoutinePackListItem:
+    return RoutinePackListItem(
+        pack_id=manifest.id,
+        name=manifest.name,
+        version=manifest.version,
+        trust_level=manifest.trust_level,
+        max_safety_class=manifest.safety.max_safety_class,
     )
 
 

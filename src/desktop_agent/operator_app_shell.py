@@ -156,6 +156,30 @@ class TraceViewerTimelineState:
 
 
 @dataclass(frozen=True)
+class RoutinePackManagerState:
+    """Routine-pack install and removal fields shown in the operator app."""
+
+    installed_pack_ids: tuple[str, ...] = ()
+    selected_pack_id: str | None = None
+    install_source_path: Path | None = None
+    pending_action: str | None = None
+    status: str = "idle"
+    actions: tuple[str, ...] = ("install", "replace", "remove", "export")
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "installed_pack_ids": list(self.installed_pack_ids),
+            "selected_pack_id": self.selected_pack_id,
+            "install_source_path": (
+                str(self.install_source_path) if self.install_source_path else None
+            ),
+            "pending_action": self.pending_action,
+            "status": self.status,
+            "actions": list(self.actions),
+        }
+
+
+@dataclass(frozen=True)
 class FailureAnalysisProposalState:
     """One review-only failed-run proposal shown in the operator app."""
 
@@ -241,6 +265,12 @@ def operator_app_shell_spec() -> OperatorAppShell:
             page_id="routine_library",
             title="Routine Library",
             purpose="List, search, inspect, dry-run, and run routines.",
+        ),
+        OperatorAppPage(
+            page_id="routine_packs",
+            title="Routine Packs",
+            purpose="Install, replace, export, and remove local routine packs.",
+            panel_ids=("routine_pack_manager",),
         ),
         OperatorAppPage(
             page_id="record",
@@ -369,6 +399,21 @@ def render_trace_viewer_timeline_text(state: TraceViewerTimelineState) -> str:
             f"{', '.join(state.candidate_reasoning) or 'none'}",
             f"- State delta: {', '.join(state.state_delta) or 'none'}",
             f"- Final report: {final_report}",
+        ],
+    ) + "\n"
+
+
+def render_routine_pack_manager_text(state: RoutinePackManagerState) -> str:
+    """Render routine-pack install and removal details for diagnostics."""
+    return "\n".join(
+        [
+            "Routine Packs",
+            f"- Status: {state.status}",
+            f"- Installed packs: {', '.join(state.installed_pack_ids) or 'none'}",
+            f"- Selected pack: {state.selected_pack_id or 'none'}",
+            f"- Install source: {state.install_source_path or 'none'}",
+            f"- Pending action: {state.pending_action or 'none'}",
+            f"- Actions: {', '.join(state.actions)}",
         ],
     ) + "\n"
 
@@ -553,6 +598,12 @@ def _page_widget(qt_widgets: Any, page: OperatorAppPage) -> Any:
         layout.addWidget(qt_widgets.QLabel("Candidate reasoning: pending"))
         layout.addWidget(qt_widgets.QLabel("State delta: pending"))
         layout.addWidget(qt_widgets.QLabel("Final report: pending"))
+    if "routine_pack_manager" in page.panel_ids:
+        layout.addWidget(qt_widgets.QLabel("Routine Packs"))
+        layout.addWidget(qt_widgets.QLabel("Installed packs: pending"))
+        layout.addWidget(qt_widgets.QLabel("Selected pack: pending"))
+        layout.addWidget(qt_widgets.QLabel("Install source: pending"))
+        layout.addWidget(qt_widgets.QLabel("Actions: install, replace, remove, export"))
     if "failure_analysis_review" in page.panel_ids:
         layout.addWidget(qt_widgets.QLabel("Failure Analysis Review"))
         layout.addWidget(qt_widgets.QLabel("Proposal count: pending"))

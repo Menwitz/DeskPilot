@@ -41,6 +41,14 @@ class RoutinePackExportResult:
     archive: bool
 
 
+@dataclass(frozen=True)
+class RoutinePackRemoveResult:
+    """Result of removing one installed routine pack."""
+
+    manifest: RoutinePackManifest
+    removed_path: Path
+
+
 def import_routine_pack(
     source: Path,
     routine_pack_root: Path,
@@ -101,6 +109,19 @@ def export_routine_pack(
         output_path=output,
         archive=False,
     )
+
+
+def remove_routine_pack(
+    routine_pack_root: Path,
+    pack_id: str,
+) -> RoutinePackRemoveResult:
+    """Validate and remove one installed routine pack directory."""
+    manifest = _manifest_by_id(routine_pack_root, pack_id)
+    if manifest.source_path is None:
+        raise RoutinePackOperationError(f"routine pack has no source path: {pack_id}")
+    pack_dir = manifest.source_path.parent
+    shutil.rmtree(pack_dir)
+    return RoutinePackRemoveResult(manifest=manifest, removed_path=pack_dir)
 
 
 def _import_routine_pack_dir(

@@ -14,6 +14,7 @@ from desktop_agent.operator_app_shell import (
     FailureAnalysisReviewPanelState,
     LiveRunPanelState,
     RecorderReviewPanelState,
+    RoutinePackManagerState,
     SettingsPanelState,
     TraceViewerTimelineState,
     default_live_run_panel_state,
@@ -24,6 +25,7 @@ from desktop_agent.operator_app_shell import (
     render_live_run_panel_text,
     render_operator_app_shell_text,
     render_recorder_review_text,
+    render_routine_pack_manager_text,
     render_settings_panel_text,
     render_trace_viewer_timeline_text,
     settings_panel_from_runtime_config,
@@ -56,6 +58,7 @@ def test_operator_app_shell_exposes_required_pages() -> None:
     assert [page.page_id for page in shell.pages] == [
         "dashboard",
         "routine_library",
+        "routine_packs",
         "record",
         "run_queue",
         "approvals",
@@ -64,6 +67,8 @@ def test_operator_app_shell_exposes_required_pages() -> None:
         "help",
     ]
     assert shell.pages[0].panel_ids == ("live_run",)
+    packs_page = next(page for page in shell.pages if page.page_id == "routine_packs")
+    assert packs_page.panel_ids == ("routine_pack_manager",)
     record_page = next(page for page in shell.pages if page.page_id == "record")
     assert record_page.panel_ids == ("recorder_review",)
     approvals_page = next(page for page in shell.pages if page.page_id == "approvals")
@@ -208,6 +213,27 @@ def test_trace_viewer_timeline_tracks_evidence_paths_and_reasoning(
     assert "Trace Timeline" in text
     assert "proof-video.mp4" in text
     assert "selected candidate-1" in text
+
+
+def test_routine_pack_manager_tracks_install_and_remove_state(tmp_path: Path) -> None:
+    state = RoutinePackManagerState(
+        installed_pack_ids=("browser", "native"),
+        selected_pack_id="browser",
+        install_source_path=tmp_path / "local-pack",
+        pending_action="remove",
+        status="review",
+    )
+
+    metadata = state.metadata()
+    text = render_routine_pack_manager_text(state)
+
+    assert metadata["installed_pack_ids"] == ["browser", "native"]
+    assert metadata["selected_pack_id"] == "browser"
+    assert metadata["install_source_path"] == str(tmp_path / "local-pack")
+    assert metadata["pending_action"] == "remove"
+    assert metadata["actions"] == ["install", "replace", "remove", "export"]
+    assert "Routine Packs" in text
+    assert "Actions: install, replace, remove, export" in text
 
 
 def test_failure_analysis_review_tracks_review_only_yaml_proposals(
