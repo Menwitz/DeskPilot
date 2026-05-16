@@ -1,0 +1,19 @@
+id: native.window-manage
+name: Window maximize
+description: Maximize the focused window and verify focus remains available.
+goal: Prepare a native window for reliable visible automation.
+required_app: Windows desktop
+tags:
+  - native
+  - window-management
+inputs:
+  - focused window
+outputs:
+  - maximized window
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/window-manage.yaml

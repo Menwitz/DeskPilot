@@ -1,0 +1,14 @@
+name: Notepad draft task
+allowed_windows:
+  - Notepad
+timeout_seconds: 45
+steps:
+  - id: focus-text-area
+    action: click_text
+    target: Text Editor
+  - id: type-draft
+    action: type_text
+    text: Reviewed Notepad draft
+    verify:
+      type: visible_text
+      text: Reviewed Notepad draft

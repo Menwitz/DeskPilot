@@ -1,0 +1,15 @@
+name: Office-like draft task
+allowed_windows:
+  - Document
+  - Office
+timeout_seconds: 60
+steps:
+  - id: focus-document
+    action: click_text
+    target: Document
+  - id: type-document-draft
+    action: type_text
+    text: Reviewed document draft
+    verify:
+      type: visible_text
+      text: Reviewed document draft

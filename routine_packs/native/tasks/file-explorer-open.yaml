@@ -1,0 +1,12 @@
+name: File Explorer open task
+allowed_windows:
+  - File Explorer
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: open-file-explorer
+    action: press_key
+    text: win+e
+    verify:
+      type: visible_text
+      text: File Explorer

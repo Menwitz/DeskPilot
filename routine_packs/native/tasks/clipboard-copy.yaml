@@ -1,0 +1,13 @@
+name: Clipboard copy task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: select-current-field
+    action: press_key
+    text: ctrl+a
+  - id: copy-selection
+    action: press_key
+    text: ctrl+c
+    verify:
+      type: focused

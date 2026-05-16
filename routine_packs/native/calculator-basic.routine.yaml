@@ -1,0 +1,19 @@
+id: native.calculator-basic
+name: Calculator basic calculation
+description: Enter a simple calculation in Calculator and verify the result.
+goal: Complete a local Calculator check with visible confirmation.
+required_app: Calculator
+tags:
+  - native
+  - calculator
+inputs:
+  - calculation
+outputs:
+  - calculation result
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/calculator-basic.yaml

@@ -1,0 +1,20 @@
+id: native.office-like-draft
+name: Office-like draft
+description: Focus an Office-like document surface and type reviewed draft text.
+goal: Prepare editable local document text without saving or submitting.
+required_app: Office-like editor
+tags:
+  - native
+  - office
+  - writing
+inputs:
+  - draft text
+outputs:
+  - document draft
+safety_class: medium
+schedule_policy: manual
+approval_policy: confirm
+expected_duration_seconds: 60
+reference:
+  type: task
+  path: tasks/office-like-draft.yaml

@@ -1,0 +1,12 @@
+name: Windows open settings task
+allowed_windows:
+  - Settings
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: open-settings
+    action: press_key
+    text: win+i
+    verify:
+      type: visible_text
+      text: Settings

@@ -1,0 +1,19 @@
+id: native.clipboard-copy
+name: Clipboard copy selection
+description: Copy the current reviewed selection to the local clipboard.
+goal: Preserve selected local content for a following routine step.
+required_app: Windows desktop
+tags:
+  - native
+  - clipboard
+inputs:
+  - selected text
+outputs:
+  - clipboard content
+safety_class: medium
+schedule_policy: manual
+approval_policy: confirm
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/clipboard-copy.yaml

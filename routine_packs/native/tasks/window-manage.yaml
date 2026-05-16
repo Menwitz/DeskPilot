@@ -1,0 +1,10 @@
+name: Window maximize task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: maximize-window
+    action: press_key
+    text: win+up
+    verify:
+      type: focused

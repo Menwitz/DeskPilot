@@ -1,0 +1,14 @@
+name: Calculator basic task
+allowed_windows:
+  - Calculator
+timeout_seconds: 30
+steps:
+  - id: enter-calculation
+    action: type_text
+    text: 2+2
+  - id: submit-calculation
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: "4"

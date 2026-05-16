@@ -1,0 +1,19 @@
+id: native.settings-open
+name: Windows open settings
+description: Open Windows Settings for review without changing options.
+goal: Reach the Settings surface with visible confirmation.
+required_app: Settings
+tags:
+  - native
+  - settings
+inputs:
+  - windows session
+outputs:
+  - settings view
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/settings-open.yaml

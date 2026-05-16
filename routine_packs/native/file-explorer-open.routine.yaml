@@ -1,0 +1,19 @@
+id: native.file-explorer-open
+name: File Explorer open folder
+description: Open File Explorer and verify the file surface is visible.
+goal: Prepare for reviewed local file work.
+required_app: File Explorer
+tags:
+  - native
+  - files
+inputs:
+  - folder context
+outputs:
+  - explorer view
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/file-explorer-open.yaml

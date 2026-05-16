@@ -1,0 +1,10 @@
+name: App switch task
+allowed_windows:
+  - Windows
+timeout_seconds: 30
+steps:
+  - id: switch-app
+    action: press_key
+    text: alt+tab
+    verify:
+      type: focused

@@ -336,7 +336,7 @@ abuse, and hidden automation are not supported.
 - [x] Add routine quarantine status for routines with repeated failed evidence.
 - [x] Add browser routines for navigation, forms, search, reading, content
       extraction, writing surfaces, downloads, and settings pages.
-- [ ] Add native routines for Notepad, Calculator, Settings, File Explorer,
+- [x] Add native routines for Notepad, Calculator, Settings, File Explorer,
       clipboard, app switching, window management, and simple Office-like
       surfaces.
 - [ ] Add social/content routines for LinkedIn, Medium, X/Twitter, Instagram,
