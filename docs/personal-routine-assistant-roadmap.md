@@ -526,7 +526,7 @@ abuse, and hidden automation are not supported.
 - [x] Add routine quarantine status after configured failure thresholds.
 - [x] Add failed-run analyzer that proposes YAML updates but does not apply them
       without review.
-- [ ] Add app UI for reviewing failure analysis suggestions.
+- [x] Add app UI for reviewing failure analysis suggestions.
 
 ### Acceptance Criteria
 

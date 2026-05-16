@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from desktop_agent.config import RuntimeConfig
+from desktop_agent.failed_run_analyzer import FailedRunAnalysis
 
 
 class OperatorAppUnavailableError(RuntimeError):
@@ -155,6 +156,55 @@ class TraceViewerTimelineState:
 
 
 @dataclass(frozen=True)
+class FailureAnalysisProposalState:
+    """One review-only failed-run proposal shown in the operator app."""
+
+    step_id: str
+    proposal_type: str
+    rationale: str
+    yaml_snippet: str
+    review_required: bool = True
+    applies_automatically: bool = False
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "step_id": self.step_id,
+            "proposal_type": self.proposal_type,
+            "rationale": self.rationale,
+            "yaml_snippet": self.yaml_snippet,
+            "review_required": self.review_required,
+            "applies_automatically": self.applies_automatically,
+        }
+
+
+@dataclass(frozen=True)
+class FailureAnalysisReviewPanelState:
+    """Failed-run analysis review fields shown in the trace viewer."""
+
+    trace_dir: Path | None = None
+    analysis_json_path: Path | None = None
+    analysis_markdown_path: Path | None = None
+    proposals: tuple[FailureAnalysisProposalState, ...] = ()
+    status: str = "empty"
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "trace_dir": str(self.trace_dir) if self.trace_dir else None,
+            "analysis_json_path": (
+                str(self.analysis_json_path) if self.analysis_json_path else None
+            ),
+            "analysis_markdown_path": (
+                str(self.analysis_markdown_path)
+                if self.analysis_markdown_path
+                else None
+            ),
+            "proposal_count": len(self.proposals),
+            "proposals": [proposal.metadata() for proposal in self.proposals],
+            "status": self.status,
+        }
+
+
+@dataclass(frozen=True)
 class SettingsPanelState:
     """Settings panel fields exposed by the operator app."""
 
@@ -213,7 +263,7 @@ def operator_app_shell_spec() -> OperatorAppShell:
             page_id="trace_viewer",
             title="Trace Viewer",
             purpose="Inspect screenshots, action logs, evidence, and reports.",
-            panel_ids=("trace_timeline",),
+            panel_ids=("trace_timeline", "failure_analysis_review"),
         ),
         OperatorAppPage(
             page_id="settings",
@@ -321,6 +371,61 @@ def render_trace_viewer_timeline_text(state: TraceViewerTimelineState) -> str:
             f"- Final report: {final_report}",
         ],
     ) + "\n"
+
+
+def failure_analysis_review_from_analysis(
+    analysis: FailedRunAnalysis,
+    *,
+    trace_dir: Path | None = None,
+) -> FailureAnalysisReviewPanelState:
+    """Build UI review state from a failed-run analysis artifact."""
+    proposals = tuple(
+        FailureAnalysisProposalState(
+            step_id=proposal.step_id,
+            proposal_type=proposal.proposal_type,
+            rationale=proposal.rationale,
+            yaml_snippet=proposal.yaml_snippet,
+            review_required=proposal.review_required,
+            applies_automatically=proposal.applies_automatically,
+        )
+        for proposal in analysis.proposals
+    )
+    return FailureAnalysisReviewPanelState(
+        trace_dir=trace_dir,
+        analysis_json_path=trace_dir / "failed-run-analysis.json"
+        if trace_dir is not None
+        else None,
+        analysis_markdown_path=trace_dir / "failed-run-analysis.md"
+        if trace_dir is not None
+        else None,
+        proposals=proposals,
+        status="ready" if proposals else "empty",
+    )
+
+
+def render_failure_analysis_review_text(
+    state: FailureAnalysisReviewPanelState,
+) -> str:
+    """Render failed-run analysis review details for diagnostics and tests."""
+    lines = [
+        "Failure Analysis Review",
+        f"- Status: {state.status}",
+        f"- Trace: {state.trace_dir or 'none'}",
+        f"- Analysis JSON: {state.analysis_json_path or 'none'}",
+        f"- Analysis Markdown: {state.analysis_markdown_path or 'none'}",
+        f"- Proposal count: {len(state.proposals)}",
+    ]
+    for proposal in state.proposals:
+        lines.extend(
+            [
+                f"- Step {proposal.step_id}: {proposal.proposal_type}",
+                f"  - Review required: {proposal.review_required}",
+                f"  - Applies automatically: {proposal.applies_automatically}",
+                f"  - Rationale: {proposal.rationale}",
+                f"  - YAML: {proposal.yaml_snippet}",
+            ],
+        )
+    return "\n".join(lines) + "\n"
 
 
 def settings_panel_from_runtime_config(
@@ -448,6 +553,12 @@ def _page_widget(qt_widgets: Any, page: OperatorAppPage) -> Any:
         layout.addWidget(qt_widgets.QLabel("Candidate reasoning: pending"))
         layout.addWidget(qt_widgets.QLabel("State delta: pending"))
         layout.addWidget(qt_widgets.QLabel("Final report: pending"))
+    if "failure_analysis_review" in page.panel_ids:
+        layout.addWidget(qt_widgets.QLabel("Failure Analysis Review"))
+        layout.addWidget(qt_widgets.QLabel("Proposal count: pending"))
+        layout.addWidget(qt_widgets.QLabel("Review required: true"))
+        layout.addWidget(qt_widgets.QLabel("Applies automatically: false"))
+        layout.addWidget(qt_widgets.QLabel("YAML proposals: pending"))
     if "settings" in page.panel_ids:
         layout.addWidget(qt_widgets.QLabel("Settings"))
         layout.addWidget(qt_widgets.QLabel("Trace root: traces"))

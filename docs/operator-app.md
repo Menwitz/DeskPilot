@@ -13,7 +13,8 @@ The Phase 8 shell defines these pages:
 - Record: capture a demonstrated routine and review generated YAML.
 - Run Queue: monitor scheduled, running, paused, and blocked routines.
 - Approvals: review high-risk steps before local execution continues.
-- Trace Viewer: inspect screenshots, action logs, evidence, and reports.
+- Trace Viewer: inspect screenshots, action logs, evidence, reports, and
+  review-only failed-run analysis proposals.
 - Settings: configure local trace, safety, model, and proof options.
 - Help: show local guidance, safety boundaries, and diagnostics.
 
@@ -33,6 +34,9 @@ before the operator saves a routine.
 The Trace Viewer page includes the trace timeline contract. It shows video,
 screenshots, action log, candidate reasoning, state delta, final report, and
 load status so failed runs can be inspected without rerunning desktop input.
+The same page includes failure-analysis review state with proposal count,
+rationale, YAML snippets, `review_required`, and `applies_automatically` fields
+so proposed fixes remain manual until approved.
 
 The Settings page includes trace root, screenshot saving, video capture, Ollama
 enablement, emergency hotkey, default activity profile, and proof-mode fields.

@@ -4,16 +4,23 @@ from pathlib import Path
 from pytest import CaptureFixture
 
 from desktop_agent.config import ExecutionProfile, LocalModelConfig, RuntimeConfig
+from desktop_agent.failed_run_analyzer import (
+    FailedRunAnalysis,
+    FailedRunYamlProposal,
+)
 from desktop_agent.operator_app import main
 from desktop_agent.operator_app_shell import (
     ApprovalDialogState,
+    FailureAnalysisReviewPanelState,
     LiveRunPanelState,
     RecorderReviewPanelState,
     SettingsPanelState,
     TraceViewerTimelineState,
     default_live_run_panel_state,
+    failure_analysis_review_from_analysis,
     operator_app_shell_spec,
     render_approval_dialog_text,
+    render_failure_analysis_review_text,
     render_live_run_panel_text,
     render_operator_app_shell_text,
     render_recorder_review_text,
@@ -62,7 +69,7 @@ def test_operator_app_shell_exposes_required_pages() -> None:
     approvals_page = next(page for page in shell.pages if page.page_id == "approvals")
     assert approvals_page.panel_ids == ("approval_dialog",)
     trace_page = next(page for page in shell.pages if page.page_id == "trace_viewer")
-    assert trace_page.panel_ids == ("trace_timeline",)
+    assert trace_page.panel_ids == ("trace_timeline", "failure_analysis_review")
     settings_page = next(page for page in shell.pages if page.page_id == "settings")
     assert settings_page.panel_ids == ("settings",)
     assert shell.metadata()["pages"]
@@ -201,6 +208,52 @@ def test_trace_viewer_timeline_tracks_evidence_paths_and_reasoning(
     assert "Trace Timeline" in text
     assert "proof-video.mp4" in text
     assert "selected candidate-1" in text
+
+
+def test_failure_analysis_review_tracks_review_only_yaml_proposals(
+    tmp_path: Path,
+) -> None:
+    analysis = FailedRunAnalysis(
+        task_name="Browser search",
+        status="failed",
+        routine_id="browser.search",
+        proposals=(
+            FailedRunYamlProposal(
+                step_id="click-submit",
+                proposal_type="selector_or_region_review",
+                rationale="Ambiguous target.",
+                yaml_snippet="- id: click-submit\n  region:\n    x: REVIEW",
+            ),
+        ),
+    )
+
+    state = failure_analysis_review_from_analysis(
+        analysis,
+        trace_dir=tmp_path / "trace",
+    )
+    metadata = state.metadata()
+    text = render_failure_analysis_review_text(state)
+
+    assert metadata["trace_dir"] == str(tmp_path / "trace")
+    assert metadata["analysis_json_path"] == str(
+        tmp_path / "trace" / "failed-run-analysis.json",
+    )
+    assert metadata["proposal_count"] == 1
+    proposals = metadata["proposals"]
+    assert isinstance(proposals, list)
+    proposal = proposals[0]
+    assert isinstance(proposal, dict)
+    assert proposal["review_required"] is True
+    assert proposal["applies_automatically"] is False
+    assert "Failure Analysis Review" in text
+    assert "Applies automatically: False" in text
+
+
+def test_failure_analysis_review_defaults_to_empty() -> None:
+    state = FailureAnalysisReviewPanelState()
+
+    assert state.status == "empty"
+    assert state.metadata()["proposal_count"] == 0
 
 
 def test_settings_panel_tracks_runtime_config_and_app_toggles(tmp_path: Path) -> None:
