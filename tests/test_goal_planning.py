@@ -5,15 +5,18 @@ from typing import cast
 import pytest
 
 from desktop_agent.goal_planning import (
+    GoalMissingInputPrompt,
     GoalPlan,
     GoalPlanApproval,
     GoalPlanCandidate,
     GoalPlanError,
     GoalRoutingRequest,
     goal_plan_from_mapping,
+    missing_input_prompts,
     route_goal_to_routine,
     search_routine_index_for_goal,
     validate_goal_plan,
+    validate_missing_input_prompt,
 )
 from desktop_agent.routines import (
     RoutineCatalog,
@@ -348,6 +351,37 @@ def test_goal_router_marks_missing_inputs_before_execution_ready() -> None:
     assert plan.selected_routine_id == "browser.search-web"
     assert plan.execution_status == "blocked"
     assert plan.missing_inputs == ("query",)
+
+
+def test_missing_input_prompts_cover_routine_inputs_and_session_state() -> None:
+    plan = GoalPlan(
+        user_goal="Search the web",
+        normalized_intent="browser search",
+        missing_inputs=("query",),
+        execution_status="blocked",
+    )
+
+    prompts = missing_input_prompts(
+        plan,
+        required_session_state=("browser signed in",),
+    )
+    metadata = [prompt.metadata() for prompt in prompts]
+
+    assert [prompt.kind for prompt in prompts] == ["routine_input", "session_state"]
+    assert prompts[0].key == "query"
+    assert "Provide a value" in prompts[0].prompt
+    assert metadata[1]["key"] == "browser signed in"
+
+
+def test_missing_input_prompt_validation_rejects_blank_prompt() -> None:
+    with pytest.raises(GoalPlanError, match="prompt text"):
+        validate_missing_input_prompt(
+            GoalMissingInputPrompt(
+                key="query",
+                prompt="",
+                kind="routine_input",
+            ),
+        )
 
 
 def _routine(

@@ -55,3 +55,11 @@ allowed window before routing or execution.
 The router returns a `GoalPlan`. Missing inputs or unsatisfied approvals keep the
 plan `blocked`; a routine is only `ready` when selected, fully supplied, and
 approved.
+
+## Missing-Input Prompts
+
+`missing_input_prompts()` turns blocked plan inputs into explicit operator
+prompts. Routine variables use kind `routine_input`; required session
+prerequisites such as "browser signed in" use kind `session_state`. Prompt
+metadata is JSON-safe so the future CLI dry-run and operator UI can show the
+same required inputs before execution.

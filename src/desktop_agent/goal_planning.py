@@ -18,6 +18,7 @@ GoalExecutionStatus = Literal[
     "failed",
     "canceled",
 ]
+GoalMissingPromptKind = Literal["routine_input", "session_state"]
 
 SUPPORTED_GOAL_EXECUTION_STATUSES: frozenset[str] = frozenset(
     {"draft", "blocked", "ready", "running", "completed", "failed", "canceled"},
@@ -71,6 +72,24 @@ class GoalPlanApproval:
             "required": self.required,
             "satisfied": self.satisfied,
             "reason": self.reason,
+        }
+
+
+@dataclass(frozen=True)
+class GoalMissingInputPrompt:
+    """Operator prompt for a missing routine input or session state."""
+
+    key: str
+    prompt: str
+    kind: GoalMissingPromptKind
+    required: bool = True
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "key": self.key,
+            "prompt": self.prompt,
+            "kind": self.kind,
+            "required": self.required,
         }
 
 
@@ -209,6 +228,33 @@ def search_routine_index_for_goal(
     return tuple(results)
 
 
+def missing_input_prompts(
+    plan: GoalPlan,
+    *,
+    required_session_state: tuple[str, ...] = (),
+) -> tuple[GoalMissingInputPrompt, ...]:
+    """Build editable prompts for routine variables and session prerequisites."""
+    prompts = [
+        GoalMissingInputPrompt(
+            key=input_name,
+            prompt=f"Provide a value for routine input: {input_name}",
+            kind="routine_input",
+        )
+        for input_name in plan.missing_inputs
+    ]
+    prompts.extend(
+        GoalMissingInputPrompt(
+            key=state_name,
+            prompt=f"Confirm required session state is ready: {state_name}",
+            kind="session_state",
+        )
+        for state_name in required_session_state
+    )
+    for prompt in prompts:
+        validate_missing_input_prompt(prompt)
+    return tuple(prompts)
+
+
 def route_goal_to_routine(
     catalog: RoutineCatalog,
     request: GoalRoutingRequest,
@@ -254,6 +300,19 @@ def route_goal_to_routine(
     )
     validate_goal_plan(plan)
     return plan
+
+
+def validate_missing_input_prompt(prompt: GoalMissingInputPrompt) -> None:
+    """Validate prompt text before it is shown by CLI or operator UI layers."""
+    errors: list[str] = []
+    if not prompt.key.strip():
+        errors.append("prompt key is required")
+    if not prompt.prompt.strip():
+        errors.append("prompt text is required")
+    if prompt.kind not in {"routine_input", "session_state"}:
+        errors.append("prompt kind must be routine_input or session_state")
+    if errors:
+        raise GoalPlanError("; ".join(errors))
 
 
 def validate_goal_routing_request(request: GoalRoutingRequest) -> None:

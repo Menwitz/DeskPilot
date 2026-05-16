@@ -427,7 +427,7 @@ abuse, and hidden automation are not supported.
       risk class, and schedule eligibility.
 - [x] Add deterministic router with exact app/site matching, tag matching,
       input compatibility, risk filtering, and confidence ranking.
-- [ ] Add missing-input prompts for routine variables and required session
+- [x] Add missing-input prompts for routine variables and required session
       state.
 - [ ] Add planner dry-run that never moves the desktop.
 - [ ] Add optional Ollama ranking and explanation behind a disabled-by-default
