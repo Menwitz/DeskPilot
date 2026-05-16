@@ -77,6 +77,11 @@ from desktop_agent.recorder import (
     RecorderReviewMetadata,
     generate_task_from_recorder_session,
 )
+from desktop_agent.routines import (
+    RoutineDefinition,
+    RoutineDefinitionError,
+    load_routine_catalog,
+)
 from desktop_agent.safety import (
     LocalSafetyPolicy,
     NoopEmergencyStopMonitor,
@@ -129,6 +134,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_site_task(args, dry_run=False)
         if args.command == "dry-run-site":
             return _run_site_task(args, dry_run=True)
+        if args.command == "list-routines":
+            return _list_routines(args)
+        if args.command == "show-routine":
+            return _show_routine(args)
+        if args.command == "compile-routine":
+            return _compile_routine(args)
+        if args.command == "export-routine":
+            return _export_routine(args)
+        if args.command == "run-routine":
+            return _run_routine(args, dry_run=False)
+        if args.command == "dry-run-routine":
+            return _run_routine(args, dry_run=True)
         if args.command == "inspect-screen":
             return _inspect_screen(args)
         if args.command == "calibrate-target":
@@ -154,6 +171,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ApprovalManifestError,
         SitePlaybookValidationError,
         RecorderError,
+        RoutineDefinitionError,
         TaskValidationError,
         MouseDemoError,
         OSError,
@@ -210,6 +228,55 @@ def _build_parser() -> argparse.ArgumentParser:
         help="validate and plan a website playbook flow without desktop input",
     )
     _add_site_run_options(dry_run_site_parser)
+
+    list_routines_parser = subparsers.add_parser(
+        "list-routines",
+        help="list routine catalog entries",
+    )
+    _add_routine_catalog_options(list_routines_parser)
+    list_routines_parser.add_argument("--query")
+
+    show_routine_parser = subparsers.add_parser(
+        "show-routine",
+        help="show one routine catalog entry",
+    )
+    show_routine_parser.add_argument("routine_id")
+    _add_routine_catalog_options(show_routine_parser)
+
+    compile_routine_parser = subparsers.add_parser(
+        "compile-routine",
+        help="compile a routine into task YAML",
+    )
+    compile_routine_parser.add_argument("routine_id")
+    compile_routine_parser.add_argument("--output", required=True, type=Path)
+    _add_routine_catalog_options(compile_routine_parser)
+    _add_site_catalog_options(compile_routine_parser)
+
+    export_routine_parser = subparsers.add_parser(
+        "export-routine",
+        help="export one routine definition as YAML",
+    )
+    export_routine_parser.add_argument("routine_id")
+    export_routine_parser.add_argument("--output", required=True, type=Path)
+    _add_routine_catalog_options(export_routine_parser)
+
+    run_routine_parser = subparsers.add_parser(
+        "run-routine",
+        help="execute a routine catalog entry",
+    )
+    run_routine_parser.add_argument("routine_id")
+    _add_routine_catalog_options(run_routine_parser)
+    _add_site_catalog_options(run_routine_parser)
+    _add_runtime_options(run_routine_parser)
+
+    dry_run_routine_parser = subparsers.add_parser(
+        "dry-run-routine",
+        help="validate and plan a routine without desktop input",
+    )
+    dry_run_routine_parser.add_argument("routine_id")
+    _add_routine_catalog_options(dry_run_routine_parser)
+    _add_site_catalog_options(dry_run_routine_parser)
+    _add_runtime_options(dry_run_routine_parser)
 
     inspect_parser = subparsers.add_parser(
         "inspect-screen",
@@ -536,6 +603,14 @@ def _add_site_catalog_options(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_routine_catalog_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--routine-pack-root",
+        default=Path("routine_packs"),
+        type=Path,
+    )
+
+
 def _add_site_run_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("site")
     parser.add_argument("flow")
@@ -644,6 +719,154 @@ def _list_flows(args: argparse.Namespace) -> int:
         else:
             print(flow.id)
     return 0
+
+
+def _list_routines(args: argparse.Namespace) -> int:
+    catalog = load_routine_catalog(args.routine_pack_root)
+    routines = (
+        [result.routine for result in catalog.search(args.query)]
+        if args.query
+        else list(catalog.routines)
+    )
+    for routine in routines:
+        print(f"{routine.id}\t{routine.name}")
+    return 0
+
+
+def _show_routine(args: argparse.Namespace) -> int:
+    routine = _load_routine(args)
+    print(f"id: {routine.id}")
+    print(f"name: {routine.name}")
+    print(f"description: {routine.description}")
+    print(f"goal: {routine.goal}")
+    if routine.required_app:
+        print(f"required_app: {routine.required_app}")
+    if routine.required_site:
+        print(f"required_site: {routine.required_site}")
+    print(f"tags: {', '.join(routine.tags)}")
+    print(f"safety_class: {routine.safety_class}")
+    print(f"schedule_policy: {routine.schedule_policy}")
+    print(f"approval_policy: {routine.approval_policy}")
+    print(f"expected_duration_seconds: {routine.expected_duration_seconds:g}")
+    print(f"reference: {_routine_reference_summary(routine)}")
+    return 0
+
+
+def _compile_routine(args: argparse.Namespace) -> int:
+    routine = _load_routine(args)
+    task = _compile_routine_task(routine, playbook_dir=args.playbook_dir)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        yaml.safe_dump(_task_to_yaml_dict(task), sort_keys=False),
+        encoding="utf-8",
+    )
+    print(f"compiled routine: {routine.id}")
+    print(f"task: {args.output}")
+    return 0
+
+
+def _export_routine(args: argparse.Namespace) -> int:
+    routine = _load_routine(args)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        yaml.safe_dump(_routine_to_yaml_dict(routine), sort_keys=False),
+        encoding="utf-8",
+    )
+    print(f"exported routine: {routine.id}")
+    print(f"routine: {args.output}")
+    return 0
+
+
+def _run_routine(args: argparse.Namespace, *, dry_run: bool) -> int:
+    routine = _load_routine(args)
+    task = _compile_routine_task(routine, playbook_dir=args.playbook_dir)
+    task_path = (
+        routine.reference.task_path
+        if routine.reference.kind == "task" and routine.reference.task_path
+        else Path(f"routine-{routine.id}.yaml")
+    )
+    return _run_loaded_task(args, task, task_path, dry_run=dry_run)
+
+
+def _load_routine(args: argparse.Namespace) -> RoutineDefinition:
+    catalog = load_routine_catalog(args.routine_pack_root)
+    routine = catalog.by_id(args.routine_id)
+    if routine is None:
+        raise RoutineDefinitionError(f"unknown routine: {args.routine_id}")
+    return routine
+
+
+def _compile_routine_task(
+    routine: RoutineDefinition,
+    *,
+    playbook_dir: Path,
+) -> TaskDefinition:
+    if routine.reference.kind == "task":
+        if routine.reference.task_path is None:
+            raise RoutineDefinitionError("routine task reference path is required")
+        task = YamlTaskLoader().load(routine.reference.task_path)
+    else:
+        if not routine.reference.playbook_site or not routine.reference.playbook_flow:
+            raise RoutineDefinitionError("routine playbook reference is incomplete")
+        task = _compile_site_flow(
+            playbook_dir,
+            routine.reference.playbook_site,
+            routine.reference.playbook_flow,
+        )
+    return replace(
+        task,
+        name=routine.name,
+        metadata={
+            **task.metadata,
+            **routine.report_metadata(),
+            "routine_source_path": str(routine.source_path)
+            if routine.source_path
+            else None,
+        },
+    )
+
+
+def _routine_reference_summary(routine: RoutineDefinition) -> str:
+    reference = routine.reference
+    if reference.kind == "task":
+        return f"task:{reference.task_path}"
+    return f"playbook:{reference.playbook_site}/{reference.playbook_flow}"
+
+
+def _routine_to_yaml_dict(routine: RoutineDefinition) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "id": routine.id,
+        "name": routine.name,
+        "description": routine.description,
+        "goal": routine.goal,
+        "tags": list(routine.tags),
+        "inputs": list(routine.inputs),
+        "outputs": list(routine.outputs),
+        "safety_class": routine.safety_class,
+        "schedule_policy": routine.schedule_policy,
+        "approval_policy": routine.approval_policy,
+        "expected_duration_seconds": routine.expected_duration_seconds,
+        "reference": _routine_reference_to_yaml_dict(routine),
+    }
+    _put_optional(payload, "required_app", routine.required_app)
+    _put_optional(payload, "required_site", routine.required_site)
+    return payload
+
+
+def _routine_reference_to_yaml_dict(
+    routine: RoutineDefinition,
+) -> dict[str, object]:
+    reference = routine.reference
+    if reference.kind == "task":
+        return {
+            "type": "task",
+            "path": str(reference.task_path) if reference.task_path else "",
+        }
+    return {
+        "type": "playbook",
+        "site": reference.playbook_site or "",
+        "flow": reference.playbook_flow or "",
+    }
 
 
 def _compile_site(args: argparse.Namespace) -> int:

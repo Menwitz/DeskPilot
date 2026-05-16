@@ -74,3 +74,22 @@ The catalog validator rejects duplicate routine IDs and reuses the
 `RoutineDefinition` validation rules for every loaded file. Search is a local
 token index over routine IDs, names, tags, required app/site, description, goal,
 inputs, and outputs.
+
+## CLI
+
+Routine catalog commands use `routine_packs/` by default and accept
+`--routine-pack-root` for tests or alternate catalogs.
+
+```bash
+desktop-agent list-routines
+desktop-agent list-routines --query "browser search"
+desktop-agent show-routine browser.search
+desktop-agent compile-routine browser.search --output traces/browser-search.yaml
+desktop-agent export-routine browser.search --output traces/browser-search.routine.yaml
+desktop-agent dry-run-routine browser.search --no-screenshots
+desktop-agent run-routine browser.search
+```
+
+`compile-routine`, `dry-run-routine`, and `run-routine` attach
+`RoutineDefinition.report_metadata()` to the resulting task so traces and
+reports preserve the routine ID, safety class, policies, and reference kind.

@@ -329,7 +329,7 @@ abuse, and hidden automation are not supported.
       required app/site, tags, inputs, outputs, safety class, schedule policy,
       approval policy, expected duration, and task/playbook reference.
 - [x] Add catalog loader, validator, and search index.
-- [ ] Add commands: `list-routines`, `show-routine`, `compile-routine`,
+- [x] Add commands: `list-routines`, `show-routine`, `compile-routine`,
       `dry-run-routine`, `run-routine`, and `export-routine`.
 - [ ] Add routine promotion gates: schema validation, dry-run, fixture test,
       Windows proof when applicable, trace replay review, and documentation.

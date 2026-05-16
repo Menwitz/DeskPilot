@@ -1,13 +1,18 @@
 from pathlib import Path
 
 import pytest
+import yaml
+from pytest import CaptureFixture
 
+from desktop_agent.cli import main
+from desktop_agent.config import RuntimeConfig
 from desktop_agent.routines import (
     RoutineDefinitionError,
     load_routine_catalog,
     load_routine_definition,
     routine_definition_from_mapping,
 )
+from desktop_agent.task_dsl import BasicTaskValidator, YamlTaskLoader
 
 
 def test_routine_definition_schema_loads_task_reference(tmp_path: Path) -> None:
@@ -200,6 +205,130 @@ def test_routine_catalog_rejects_duplicate_ids(tmp_path: Path) -> None:
 
     with pytest.raises(RoutineDefinitionError, match="duplicate routine id"):
         load_routine_catalog(tmp_path)
+
+
+def test_routine_cli_lists_shows_compiles_exports_and_dry_runs(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    root = tmp_path / "routine_packs"
+    task_path = root / "browser" / "tasks" / "browser-search.yaml"
+    routine_path = root / "browser" / "search.routine.yaml"
+    compiled_path = tmp_path / "compiled-browser-search.yaml"
+    exported_path = tmp_path / "exported-browser-search.routine.yaml"
+    config_path = tmp_path / "config.yaml"
+    _write_task(task_path)
+    _write_routine(
+        routine_path,
+        routine_id="browser.search",
+        name="Browser search",
+        description="Search from a browser input.",
+        goal="Reach browser search results.",
+        tags=("browser", "search"),
+        required_app="Microsoft Edge",
+        required_site="example.com",
+        task_path="tasks/browser-search.yaml",
+    )
+    config_path.write_text(f"trace_root: {tmp_path / 'traces'}\n", encoding="utf-8")
+
+    assert main(["list-routines", "--routine-pack-root", str(root)]) == 0
+    assert "browser.search\tBrowser search" in capsys.readouterr().out
+
+    assert (
+        main(
+            [
+                "list-routines",
+                "--routine-pack-root",
+                str(root),
+                "--query",
+                "search",
+            ],
+        )
+        == 0
+    )
+    assert "browser.search\tBrowser search" in capsys.readouterr().out
+
+    assert (
+        main(["show-routine", "browser.search", "--routine-pack-root", str(root)])
+        == 0
+    )
+    show_output = capsys.readouterr().out
+    assert "safety_class: low" in show_output
+    assert "reference: task:" in show_output
+
+    assert (
+        main(
+            [
+                "compile-routine",
+                "browser.search",
+                "--routine-pack-root",
+                str(root),
+                "--output",
+                str(compiled_path),
+            ],
+        )
+        == 0
+    )
+    compiled_task = YamlTaskLoader().load(compiled_path)
+    BasicTaskValidator().validate(compiled_task, RuntimeConfig())
+    assert compiled_task.name == "Browser search"
+    assert compiled_task.metadata["routine_id"] == "browser.search"
+
+    assert (
+        main(
+            [
+                "export-routine",
+                "browser.search",
+                "--routine-pack-root",
+                str(root),
+                "--output",
+                str(exported_path),
+            ],
+        )
+        == 0
+    )
+    exported = yaml.safe_load(exported_path.read_text(encoding="utf-8"))
+    assert exported["id"] == "browser.search"
+    assert exported["reference"]["type"] == "task"
+
+    assert (
+        main(
+            [
+                "dry-run-routine",
+                "browser.search",
+                "--routine-pack-root",
+                str(root),
+                "--config",
+                str(config_path),
+                "--no-screenshots",
+            ],
+        )
+        == 0
+    )
+    assert "task: Browser search" in capsys.readouterr().out
+
+
+def _write_task(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "\n".join(
+            [
+                "name: raw browser task",
+                "allowed_windows:",
+                "  - Browser Fixture",
+                "timeout_seconds: 30",
+                "steps:",
+                "  - id: click-search",
+                "    action: click_text",
+                "    target: Search",
+                "    verify:",
+                "      type: visible_text",
+                "      text: Results",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
 
 
 def _write_routine(
