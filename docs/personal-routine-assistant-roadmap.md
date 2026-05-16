@@ -306,7 +306,7 @@ abuse, and hidden automation are not supported.
 
 ### Goals
 
-- [ ] Build a broad catalog of reusable routines on top of YAML and playbooks.
+- [x] Build a broad catalog of reusable routines on top of YAML and playbooks.
 - [ ] Reach 300 validated routines across browser, native Windows, and
       social/content workflows.
 - [x] Make routine quality measurable and reviewable.

@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 from pathlib import Path
 
 from pytest import CaptureFixture
@@ -26,6 +27,26 @@ def test_expected_routine_pack_directories_are_documented() -> None:
     assert (root / "README.md").exists()
     for pack in EXPECTED_ROUTINE_PACKS:
         assert (root / pack / "README.md").exists()
+
+
+def test_builtin_routine_catalog_has_broad_reusable_surface_coverage() -> None:
+    pack_root = Path("routine_packs")
+    catalog = load_routine_catalog(pack_root)
+    pack_counts: Counter[str] = Counter()
+
+    for routine in catalog.routines:
+        assert routine.source_path is not None
+        pack_name = routine.source_path.relative_to(pack_root).parts[0]
+        pack_counts[pack_name] += 1
+        assert routine.reference.kind in {"task", "playbook"}
+        if routine.reference.kind == "task":
+            assert routine.reference.task_path is not None
+            assert routine.reference.task_path.exists()
+
+    assert len(catalog.routines) >= 30
+    assert pack_counts["browser"] >= 8
+    assert pack_counts["native"] >= 8
+    assert pack_counts["social-content"] >= 21
 
 
 def test_builtin_routines_are_listable_inspectable_and_compilable_from_cli(
