@@ -38,6 +38,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] `proof-manifest.json` lists command, DeskPilot version, Python version,
       platform, Windows version when available, monitor geometry, DPI scale,
       started-at time, completed-at time, and artifact paths.
+- [ ] `desktop-agent proof validate <trace-dir>` rejects missing command,
+      runtime, Windows version, monitor geometry, DPI scale, or timestamp
+      metadata before promotion.
 - [ ] The manifest `artifacts.trace_dir` points at the reviewed trace directory.
 - [ ] The manifest `artifacts.report_path` exists.
 - [ ] The manifest `artifacts.action_log_path` exists.

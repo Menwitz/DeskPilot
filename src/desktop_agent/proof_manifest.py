@@ -170,6 +170,7 @@ def validate_proof_bundle(
     status = _string_value(manifest.get("status"))
     if status != "passed":
         errors.append(f"proof status is not passed: {status or 'missing'}")
+    _validate_manifest_metadata(manifest, errors)
 
     artifacts = manifest.get("artifacts")
     if not isinstance(artifacts, dict):
@@ -510,6 +511,68 @@ def _load_json_object(
         errors.append(f"{label} must contain a JSON object")
         return None
     return payload
+
+
+def _validate_manifest_metadata(
+    manifest: Mapping[str, object],
+    errors: list[str],
+) -> None:
+    if manifest.get("schema_version") != 1:
+        errors.append("proof manifest schema_version must be 1")
+    if not _string_value(manifest.get("proof_name")):
+        errors.append("proof manifest missing proof_name")
+    command = manifest.get("command")
+    if not (
+        isinstance(command, list)
+        and command
+        and all(_string_value(item) for item in command)
+    ):
+        errors.append("proof manifest command must be a non-empty string list")
+    for key in (
+        "started_at",
+        "completed_at",
+        "executable_version",
+        "python_version",
+        "platform",
+    ):
+        if not _string_value(manifest.get(key)):
+            errors.append(f"proof manifest missing {key}")
+    platform_name = _string_value(manifest.get("platform"))
+    if platform_name == "win32" and not _string_value(manifest.get("windows_version")):
+        errors.append("proof manifest missing windows_version for win32 proof")
+    _validate_monitor_geometry(manifest.get("monitor_geometry"), errors)
+    _validate_dpi_scale(manifest.get("dpi_scale"), errors)
+
+
+def _validate_monitor_geometry(value: object, errors: list[str]) -> None:
+    if not isinstance(value, dict):
+        errors.append("proof manifest monitor_geometry must be a JSON object")
+        return
+    for key in ("left", "top", "width", "height"):
+        if not isinstance(value.get(key), int):
+            errors.append(f"proof manifest monitor_geometry missing integer {key}")
+    width = value.get("width")
+    height = value.get("height")
+    if isinstance(width, int) and width <= 0:
+        errors.append("proof manifest monitor_geometry width must be positive")
+    if isinstance(height, int) and height <= 0:
+        errors.append("proof manifest monitor_geometry height must be positive")
+
+
+def _validate_dpi_scale(value: object, errors: list[str]) -> None:
+    if not (
+        isinstance(value, list)
+        and len(value) == 2
+        and all(_is_json_number(item) for item in value)
+    ):
+        errors.append("proof manifest dpi_scale must be a two-number list")
+        return
+    if any(float(item) <= 0 for item in value):
+        errors.append("proof manifest dpi_scale values must be positive")
+
+
+def _is_json_number(value: object) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
 def _required_artifact_path(

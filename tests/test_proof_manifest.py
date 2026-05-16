@@ -55,6 +55,25 @@ def test_validate_proof_bundle_can_allow_missing_video_for_disabled_capture(
     )
 
 
+def test_validate_proof_bundle_reports_missing_manifest_metadata(
+    tmp_path: Path,
+) -> None:
+    trace_dir = _write_proof_bundle(tmp_path)
+    manifest_path = trace_dir / "proof-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for key in ("command", "started_at", "monitor_geometry", "dpi_scale"):
+        manifest.pop(key)
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    result = validate_proof_bundle(trace_dir)
+
+    assert not result.passed
+    assert "proof manifest command must be a non-empty string list" in result.errors
+    assert "proof manifest missing started_at" in result.errors
+    assert "proof manifest monitor_geometry must be a JSON object" in result.errors
+    assert "proof manifest dpi_scale must be a two-number list" in result.errors
+
+
 def test_validate_proof_suite_requires_all_fixture_bundles(tmp_path: Path) -> None:
     for proof_name in (
         "browser-fixture",
@@ -208,6 +227,19 @@ def _write_proof_bundle(
         "proof_name": proof_name,
         "command": ["desktop-agent", "proof", proof_name],
         "status": "passed",
+        "started_at": "2026-05-16T00:00:00+00:00",
+        "completed_at": "2026-05-16T00:00:01+00:00",
+        "executable_version": "0.1.0",
+        "python_version": "3.12.0",
+        "windows_version": "Windows-11-Fixture",
+        "platform": "win32",
+        "monitor_geometry": {
+            "left": 0,
+            "top": 0,
+            "width": 1280,
+            "height": 720,
+        },
+        "dpi_scale": [1.0, 1.0],
         "artifacts": {
             "trace_dir": str(trace_dir),
             "report_path": str(report_path),
