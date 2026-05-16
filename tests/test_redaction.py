@@ -2,9 +2,12 @@ from desktop_agent.redaction import (
     RedactionPolicy,
     content_variable_redaction_metadata,
     mask_content_variable_names,
+    mask_ocr_text,
     mask_typed_text,
     redaction_policy_from_mapping,
     screenshot_blur_masks,
+    should_capture_screenshot,
+    should_save_ocr_text,
     typed_text_redaction_metadata,
     validate_redaction_policy,
 )
@@ -124,3 +127,17 @@ def test_content_variable_name_masking_reports_counts() -> None:
         "content_variable_name_redaction": "mask_names",
         "content_variables_redacted": True,
     }
+
+
+def test_metadata_only_policy_disables_screenshot_and_ocr_artifacts() -> None:
+    policy = RedactionPolicy(evidence_mode="metadata_only")
+
+    assert should_capture_screenshot(policy, save_enabled=True) is False
+    assert should_save_ocr_text(policy, save_enabled=True) is False
+
+
+def test_ocr_text_masking_and_suppression() -> None:
+    assert mask_ocr_text("Visible total", RedactionPolicy(ocr_text="mask")) == (
+        "*************"
+    )
+    assert mask_ocr_text("Visible total", RedactionPolicy(ocr_text="suppress")) is None

@@ -25,6 +25,10 @@ directory. Trace metadata records their local path, approved step IDs, variable
 names, and content fingerprint so operators can audit the run without exposing
 raw content payloads in reports.
 
+When `redaction_policy.evidence_mode` is `metadata_only`, the resolved runtime
+config disables screenshot and OCR text artifact files while preserving
+structured trace metadata, action logs, and reports.
+
 ## Report Contents
 
 The final report includes the task name, final status, abort reason when

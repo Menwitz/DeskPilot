@@ -6,6 +6,7 @@ from pytest import MonkeyPatch
 
 from desktop_agent import screen
 from desktop_agent.config import RuntimeConfig
+from desktop_agent.redaction import RedactionPolicy
 from desktop_agent.screen import Bounds, MonitorInfo, MssScreenObserver
 
 
@@ -120,3 +121,22 @@ def test_mss_capture_region_writes_png_with_keyword_output(
     assert png_calls == [
         {"data": b"rgb-pixels", "size": (30, 40), "output": str(screenshot_path)}
     ]
+
+
+def test_mss_capture_region_skips_file_for_metadata_only_policy(
+    tmp_path: Path,
+) -> None:
+    observer = MssScreenObserver()
+    monitor = MonitorInfo(left=0, top=0, width=800, height=600, is_primary=True)
+
+    screenshot_path = observer.capture_region(
+        Bounds(x=1, y=2, width=30, height=40),
+        monitor,
+        RuntimeConfig(
+            trace_root=tmp_path,
+            redaction_policy=RedactionPolicy(evidence_mode="metadata_only"),
+        ),
+    )
+
+    assert screenshot_path is None
+    assert not (tmp_path / "screenshots").exists()

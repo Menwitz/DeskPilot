@@ -178,6 +178,32 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert any("state_delta" in line for line in action_log)
 
 
+def test_file_trace_sink_applies_metadata_only_trace_mode(tmp_path: Path) -> None:
+    task = TaskDefinition(
+        name="metadata only",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="wait", action="wait_for", target="Ready"),),
+    )
+    trace_sink = FileTraceSink()
+
+    runtime_config = trace_sink.prepare_run(
+        task,
+        RuntimeConfig(
+            trace_root=tmp_path / "traces",
+            redaction_policy=RedactionPolicy(evidence_mode="metadata_only"),
+        ),
+    )
+
+    assert runtime_config.save_screenshots is False
+    assert runtime_config.save_ocr_text is False
+    assert trace_sink.run_dir is not None
+    config_payload = json.loads((trace_sink.run_dir / "config.json").read_text())
+    assert config_payload["save_screenshots"] is False
+    assert config_payload["save_ocr_text"] is False
+    assert config_payload["redaction_policy"]["evidence_mode"] == "metadata_only"
+
+
 def test_file_trace_sink_includes_recovery_decision_metadata_in_reports(
     tmp_path: Path,
 ) -> None:

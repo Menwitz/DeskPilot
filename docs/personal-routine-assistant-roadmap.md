@@ -601,7 +601,7 @@ abuse, and hidden automation are not supported.
 - [x] Add redaction policy schema at global, routine, and run levels.
 - [x] Add screenshot blur masks and sensitive-zone definitions.
 - [x] Add typed-text masking and content-variable masking.
-- [ ] Add OCR suppression and metadata-only trace mode.
+- [x] Add OCR suppression and metadata-only trace mode.
 - [ ] Add video redaction or video-disable options.
 - [ ] Add trace schema migration tests.
 - [ ] Add routine catalog migration tests.

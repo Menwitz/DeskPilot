@@ -166,6 +166,33 @@ def content_variable_redaction_metadata(
     }
 
 
+def should_capture_screenshot(policy: RedactionPolicy, *, save_enabled: bool) -> bool:
+    """Return whether screenshot files should be written under this policy."""
+    if not save_enabled:
+        return False
+    if policy.evidence_mode == "metadata_only":
+        return False
+    return policy.screenshots != "metadata_only"
+
+
+def should_save_ocr_text(policy: RedactionPolicy, *, save_enabled: bool) -> bool:
+    """Return whether OCR text artifacts should be written under this policy."""
+    if not save_enabled:
+        return False
+    if policy.evidence_mode == "metadata_only":
+        return False
+    return policy.ocr_text != "suppress"
+
+
+def mask_ocr_text(text: str, policy: RedactionPolicy) -> str | None:
+    """Return OCR text according to the configured OCR redaction mode."""
+    if policy.ocr_text == "mask":
+        return "*" * len(text)
+    if policy.ocr_text == "suppress":
+        return None
+    return text
+
+
 def validate_redaction_policy(
     policy: RedactionPolicy,
     *,

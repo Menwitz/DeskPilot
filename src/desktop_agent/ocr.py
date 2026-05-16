@@ -11,6 +11,11 @@ from typing import Any, Literal, Protocol, cast
 
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.perception import ElementCandidate, PerceptionEngine
+from desktop_agent.redaction import (
+    RedactionPolicy,
+    mask_ocr_text,
+    should_save_ocr_text,
+)
 from desktop_agent.screen import Bounds, ScreenObservation
 from desktop_agent.task_dsl import TaskStep
 
@@ -75,8 +80,17 @@ class OcrPerceptionEngine(PerceptionEngine):
             return ()
 
         candidates = ocr_blocks_to_candidates(step, text_blocks, config)
-        if config.save_ocr_text:
-            save_ocr_text_output(step, text_blocks, candidates, config.trace_root)
+        if should_save_ocr_text(
+            config.redaction_policy,
+            save_enabled=config.save_ocr_text,
+        ):
+            save_ocr_text_output(
+                step,
+                text_blocks,
+                candidates,
+                config.trace_root,
+                config.redaction_policy,
+            )
         return candidates
 
 
@@ -133,14 +147,19 @@ def save_ocr_text_output(
     text_blocks: tuple[OcrTextBlock, ...],
     candidates: tuple[ElementCandidate, ...],
     trace_root: Path,
+    redaction_policy: RedactionPolicy | None = None,
 ) -> Path:
+    policy = redaction_policy or RedactionPolicy()
     output_dir = trace_root / "ocr"
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{step.id}.json"
     payload = {
         "step_id": step.id,
-        "blocks": [_block_to_dict(block) for block in text_blocks],
-        "candidates": [_candidate_to_dict(candidate) for candidate in candidates],
+        "ocr_text_redaction": policy.ocr_text,
+        "blocks": [_block_to_dict(block, policy) for block in text_blocks],
+        "candidates": [
+            _candidate_to_dict(candidate, policy) for candidate in candidates
+        ],
     }
     output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return output_path
@@ -218,18 +237,28 @@ def _normalize_text(value: str) -> str:
     return " ".join(value.casefold().split())
 
 
-def _block_to_dict(block: OcrTextBlock) -> dict[str, object]:
+def _block_to_dict(
+    block: OcrTextBlock,
+    policy: RedactionPolicy,
+) -> dict[str, object]:
+    redacted_text = mask_ocr_text(block.text, policy)
     return {
-        "text": block.text,
+        "text": redacted_text,
+        "text_length": len(block.text),
         "bounds": _bounds_to_dict(block.bounds),
         "confidence": block.confidence,
     }
 
 
-def _candidate_to_dict(candidate: ElementCandidate) -> dict[str, object]:
+def _candidate_to_dict(
+    candidate: ElementCandidate,
+    policy: RedactionPolicy,
+) -> dict[str, object]:
+    redacted_label = mask_ocr_text(candidate.label, policy)
     return {
         "id": candidate.id,
-        "label": candidate.label,
+        "label": redacted_label,
+        "label_length": len(candidate.label),
         "bounds": _bounds_to_dict(candidate.bounds),
         "confidence": candidate.confidence,
         "metadata": candidate.metadata,

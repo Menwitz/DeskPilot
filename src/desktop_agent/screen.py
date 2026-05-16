@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Protocol, cast
 
 from desktop_agent.config import RuntimeConfig
+from desktop_agent.redaction import should_capture_screenshot
 
 
 @dataclass(frozen=True)
@@ -126,7 +127,10 @@ class MssScreenObserver(ScreenObserver):
         monitor: MonitorInfo,
         config: RuntimeConfig,
     ) -> Path | None:
-        if not config.save_screenshots:
+        if not should_capture_screenshot(
+            config.redaction_policy,
+            save_enabled=config.save_screenshots,
+        ):
             return None
 
         mss_module = import_module("mss")

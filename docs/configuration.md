@@ -96,6 +96,10 @@ action metadata while the actuator still sends the original text. Set
 `content_variables: mask_names` to replace variable names in site-playbook
 metadata with `variable_1`, `variable_2`, and so on; fingerprints remain based
 on the real local values for approval checks.
+Set `evidence_mode: metadata_only` to suppress screenshot and OCR text artifact
+files for the run while preserving structured metadata and reports. Set
+`ocr_text: suppress` to avoid writing OCR text artifacts while still allowing
+OCR-derived candidates to participate in local target selection.
 
 ## Task Overrides
 

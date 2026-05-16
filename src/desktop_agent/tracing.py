@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Literal, Protocol
 
 from desktop_agent.config import ExecutionProfile, LocalModelConfig, RuntimeConfig
+from desktop_agent.redaction import should_capture_screenshot, should_save_ocr_text
 from desktop_agent.safety_audit import (
     build_safety_audit,
     render_safety_audit_markdown,
@@ -223,7 +224,18 @@ class FileTraceSink(TraceSink):
         self.steps = []
         self._run_dir = _run_directory(config.trace_root, task.name)
         self._run_dir.mkdir(parents=True, exist_ok=False)
-        runtime_config = replace(config, trace_root=self._run_dir)
+        runtime_config = replace(
+            config,
+            trace_root=self._run_dir,
+            save_screenshots=should_capture_screenshot(
+                config.redaction_policy,
+                save_enabled=config.save_screenshots,
+            ),
+            save_ocr_text=should_save_ocr_text(
+                config.redaction_policy,
+                save_enabled=config.save_ocr_text,
+            ),
+        )
         _write_json(self._run_dir / "trace-schema.json", TRACE_SCHEMA_V2.to_dict())
         _write_json(self._run_dir / "config.json", _config_to_dict(runtime_config))
         _write_json(self._run_dir / "task.json", _task_to_dict(task))
