@@ -364,7 +364,7 @@ abuse, and hidden automation are not supported.
 
 ### OKRs
 
-- [ ] O1: Add routine scheduling and activity pacing.
+- [x] O1: Add routine scheduling and activity pacing.
 - [ ] KR1: Routines can define allowed time windows, cooldowns, max actions per
       hour, and stop-after conditions.
 - [ ] KR2: Scheduler supports pause, resume, cancel, retry later, and manual
