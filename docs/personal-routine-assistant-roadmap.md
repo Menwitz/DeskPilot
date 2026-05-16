@@ -686,7 +686,7 @@ abuse, and hidden automation are not supported.
 
 - [x] Unit tests for routine, desktop I/O action, trace, recorder, goal plan,
       model provider, proof manifest, and routine pack schemas.
-- [ ] Planner tests for goal-to-routine selection, missing inputs, approvals,
+- [x] Planner tests for goal-to-routine selection, missing inputs, approvals,
       manual handoff, schedule windows, cooldowns, and stop reasons.
 - [ ] Recorder tests with fake UIA/OCR/CV event streams that generate valid YAML.
 - [ ] Trace tests proving every real action has before/after evidence and replay

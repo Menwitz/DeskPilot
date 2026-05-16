@@ -198,6 +198,8 @@ def test_goal_routine_index_search_covers_risk_and_schedule_fields() -> None:
                 safety_class="high",
                 approval_policy="manifest_required",
                 schedule_policy="scheduled",
+                cooldown_seconds=1800,
+                stop_conditions=["stop if approval revoked"],
                 allowed_time_windows=[
                     {
                         "days": ["mon"],
@@ -213,7 +215,7 @@ def test_goal_routine_index_search_covers_risk_and_schedule_fields() -> None:
 
     results = search_routine_index_for_goal(
         catalog,
-        "linkedin high manifest scheduled",
+        "linkedin high manifest scheduled revoked",
         now=now,
         require_schedule_eligible=True,
     )
@@ -227,6 +229,7 @@ def test_goal_routine_index_search_covers_risk_and_schedule_fields() -> None:
     assert result.schedule_reason == "inside_allowed_time_window"
     assert "safety_class" in result.candidate.matched_fields
     assert "schedule_policy" in result.candidate.matched_fields
+    assert "schedule" in result.candidate.matched_fields
 
 
 def test_goal_routine_index_search_can_filter_ineligible_schedules() -> None:
@@ -635,6 +638,8 @@ def _routine(
     required_site: str | None = None,
     inputs: list[str] | None = None,
     allowed_time_windows: list[dict[str, object]] | None = None,
+    cooldown_seconds: float | None = None,
+    stop_conditions: list[str] | None = None,
 ) -> RoutineDefinition:
     payload: dict[str, object] = {
         "id": routine_id,
@@ -655,8 +660,15 @@ def _routine(
     }
     if required_site is not None:
         payload["required_site"] = required_site
+    schedule: dict[str, object] = {}
     if allowed_time_windows is not None:
-        payload["schedule"] = {"allowed_time_windows": allowed_time_windows}
+        schedule["allowed_time_windows"] = allowed_time_windows
+    if cooldown_seconds is not None:
+        schedule["cooldown_seconds"] = cooldown_seconds
+    if stop_conditions is not None:
+        schedule["stop_conditions"] = stop_conditions
+    if schedule:
+        payload["schedule"] = schedule
     return routine_definition_from_mapping(payload)
 
 
