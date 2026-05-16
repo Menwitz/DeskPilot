@@ -899,6 +899,7 @@ def _show_routine(args: argparse.Namespace) -> int:
     print(f"safety_class: {routine.safety_class}")
     print(f"schedule_policy: {routine.schedule_policy}")
     print(f"approval_policy: {routine.approval_policy}")
+    print(f"routine_schema_version: {routine.schema_version}")
     print(f"expected_duration_seconds: {routine.expected_duration_seconds:g}")
     print("schedule:")
     for line in _routine_schedule_summary(routine).splitlines():
@@ -1144,6 +1145,7 @@ def _routine_reference_summary(routine: RoutineDefinition) -> str:
 
 def _routine_to_yaml_dict(routine: RoutineDefinition) -> dict[str, object]:
     payload: dict[str, object] = {
+        "routine_schema_version": routine.schema_version,
         "id": routine.id,
         "name": routine.name,
         "description": routine.description,

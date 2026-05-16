@@ -8,6 +8,7 @@ playbook flow implements it.
 ## Schema
 
 ```yaml
+routine_schema_version: "2"
 id: browser.search
 name: Browser search
 description: Search from a browser input.
@@ -85,6 +86,20 @@ optional `reason`.
 
 `RoutineDefinition.report_metadata()` returns JSON-safe fields for future trace,
 monitoring, search, and catalog quality reports.
+
+## Schema Migrations
+
+Routine YAML without `routine_schema_version` is treated as legacy schema `1`
+and migrated in memory before validation. The migration layer keeps old routine
+packs loadable by filling reviewed defaults for missing tags, inputs, outputs,
+safety class, schedule policy, approval policy, and expected duration. It also
+converts legacy `task_path`, `playbook.site`/`playbook.flow`, or
+`playbook_site`/`playbook_flow` fields into the current `reference` block.
+
+Loaded routines report `routine_schema_version` and `routine_schema_migration`
+metadata so traces, catalog reports, and operator monitoring can show whether a
+routine came from a migrated definition. Unknown routine schema versions are
+rejected instead of being guessed.
 
 ## Schedule Constraints
 

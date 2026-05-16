@@ -17,6 +17,11 @@ from desktop_agent.redaction import (
     redaction_policy_from_mapping,
     validate_redaction_policy,
 )
+from desktop_agent.routine_migrations import (
+    CURRENT_ROUTINE_SCHEMA_VERSION,
+    RoutineMigrationError,
+    migrate_routine_definition_payload,
+)
 
 ROUTINE_ID_PATTERN = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
 SUPPORTED_ROUTINE_SAFETY_CLASSES: frozenset[str] = frozenset(
@@ -142,6 +147,22 @@ class RoutineSchedule:
 
 
 @dataclass(frozen=True)
+class RoutineSchemaMigration:
+    """Version migration metadata retained for catalog monitoring reports."""
+
+    from_version: str
+    to_version: str
+    applied: bool
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "from_version": self.from_version,
+            "to_version": self.to_version,
+            "applied": self.applied,
+        }
+
+
+@dataclass(frozen=True)
 class RoutineDefinition:
     """Reviewed routine metadata stored in routine packs."""
 
@@ -159,6 +180,14 @@ class RoutineDefinition:
     approval_policy: str
     expected_duration_seconds: float
     reference: RoutineReference
+    schema_version: str = CURRENT_ROUTINE_SCHEMA_VERSION
+    schema_migration: RoutineSchemaMigration = field(
+        default_factory=lambda: RoutineSchemaMigration(
+            from_version=CURRENT_ROUTINE_SCHEMA_VERSION,
+            to_version=CURRENT_ROUTINE_SCHEMA_VERSION,
+            applied=False,
+        ),
+    )
     schedule: RoutineSchedule = RoutineSchedule()
     failed_evidence_count: int = 0
     quarantine_failure_threshold: int = ROUTINE_QUARANTINE_FAILURE_THRESHOLD
@@ -179,6 +208,8 @@ class RoutineDefinition:
             "routine_approval_policy": self.approval_policy,
             "routine_expected_duration_seconds": self.expected_duration_seconds,
             "routine_reference_kind": self.reference.kind,
+            "routine_schema_version": self.schema_version,
+            "routine_schema_migration": self.schema_migration.metadata(),
             "routine_schedule": self.schedule.metadata(),
             "routine_failed_evidence_count": self.failed_evidence_count,
             "routine_quarantine_failure_threshold": (
@@ -363,43 +394,54 @@ def routine_definition_from_mapping(
     source_path: Path | None = None,
 ) -> RoutineDefinition:
     """Parse a routine definition mapping into a typed schema object."""
+    try:
+        migrated_data = migrate_routine_definition_payload(data)
+    except RoutineMigrationError as exc:
+        raise RoutineDefinitionError(str(exc)) from exc
     base_dir = source_path.parent if source_path is not None else Path(".")
     routine = RoutineDefinition(
-        id=_required_string(data, "id"),
-        name=_required_string(data, "name"),
-        description=_required_string(data, "description"),
-        goal=_required_string(data, "goal"),
-        required_app=_optional_string(data, "required_app"),
-        required_site=_optional_string(data, "required_site"),
-        tags=_string_tuple(data.get("tags"), "tags"),
-        inputs=_string_tuple(data.get("inputs"), "inputs"),
-        outputs=_string_tuple(data.get("outputs"), "outputs"),
-        safety_class=_required_string(data, "safety_class"),
-        schedule_policy=_required_string(data, "schedule_policy"),
-        approval_policy=_required_string(data, "approval_policy"),
+        id=_required_string(migrated_data, "id"),
+        name=_required_string(migrated_data, "name"),
+        description=_required_string(migrated_data, "description"),
+        goal=_required_string(migrated_data, "goal"),
+        required_app=_optional_string(migrated_data, "required_app"),
+        required_site=_optional_string(migrated_data, "required_site"),
+        tags=_string_tuple(migrated_data.get("tags"), "tags"),
+        inputs=_string_tuple(migrated_data.get("inputs"), "inputs"),
+        outputs=_string_tuple(migrated_data.get("outputs"), "outputs"),
+        safety_class=_required_string(migrated_data, "safety_class"),
+        schedule_policy=_required_string(migrated_data, "schedule_policy"),
+        approval_policy=_required_string(migrated_data, "approval_policy"),
         expected_duration_seconds=_positive_float(
-            data.get("expected_duration_seconds"),
+            migrated_data.get("expected_duration_seconds"),
             "expected_duration_seconds",
         ),
-        reference=_reference_from_value(data.get("reference"), base_dir),
-        schedule=_schedule_from_value(data.get("schedule")),
+        reference=_reference_from_value(migrated_data.get("reference"), base_dir),
+        schema_version=_required_string(
+            migrated_data,
+            "routine_schema_version",
+        ),
+        schema_migration=_schema_migration_from_value(
+            migrated_data.get("routine_schema_migration"),
+        ),
+        schedule=_schedule_from_value(migrated_data.get("schedule")),
         failed_evidence_count=_optional_non_negative_int(
-            data.get("failed_evidence_count"),
+            migrated_data.get("failed_evidence_count"),
             "failed_evidence_count",
         ),
         quarantine_failure_threshold=(
             _optional_positive_int(
-                data.get("quarantine_failure_threshold"),
+                migrated_data.get("quarantine_failure_threshold"),
                 "quarantine_failure_threshold",
             )
             or ROUTINE_QUARANTINE_FAILURE_THRESHOLD
         ),
         quarantine_status=(
-            _optional_string(data, "quarantine_status") or "active"
+            _optional_string(migrated_data, "quarantine_status") or "active"
         ),
-        quarantine_reason=_optional_string(data, "quarantine_reason"),
+        quarantine_reason=_optional_string(migrated_data, "quarantine_reason"),
         redaction_policy=_redaction_policy_from_value(
-            data.get("redaction_policy"),
+            migrated_data.get("redaction_policy"),
         ),
         source_path=source_path,
     )
@@ -441,6 +483,8 @@ def validate_routine_definition(routine: RoutineDefinition) -> None:
         errors.append(f"unsupported schedule_policy: {routine.schedule_policy}")
     if routine.approval_policy not in SUPPORTED_APPROVAL_POLICIES:
         errors.append(f"unsupported approval_policy: {routine.approval_policy}")
+    if routine.schema_version != CURRENT_ROUTINE_SCHEMA_VERSION:
+        errors.append(f"unsupported routine_schema_version: {routine.schema_version}")
     if routine.expected_duration_seconds <= 0:
         errors.append("expected_duration_seconds must be greater than zero")
     if routine.failed_evidence_count < 0:
@@ -669,8 +713,9 @@ def render_routine_catalog_index(
             "  replay review, documentation, and Windows proof when applicable.",
             "- Report metadata: routine ID, name, tags, safety class, schedule",
             "  policy, schedule constraints, approval policy, expected duration,",
-            "  reference kind, failed evidence count, historical failure count,",
-            "  quarantine status, and promotion gates.",
+            "  reference kind, schema version, migration status, failed evidence",
+            "  count, historical failure count, quarantine status, and promotion",
+            "  gates.",
             "- Quarantine rule: routines are quarantined when explicitly marked or",
             "  when failed evidence or historical failures reach the configured",
             "  threshold.",
@@ -981,6 +1026,15 @@ def _redaction_policy_from_value(value: object) -> RedactionPolicy:
         raise RoutineDefinitionError(str(exc)) from exc
 
 
+def _schema_migration_from_value(value: object) -> RoutineSchemaMigration:
+    data = _mapping(value, "routine_schema_migration must be a mapping")
+    return RoutineSchemaMigration(
+        from_version=_required_string(data, "from_version"),
+        to_version=_required_string(data, "to_version"),
+        applied=_required_bool(data, "applied"),
+    )
+
+
 def _routine_search_fields(
     routine: RoutineDefinition,
 ) -> tuple[tuple[str, int, str], ...]:
@@ -1054,6 +1108,13 @@ def _required_string(data: Mapping[str, object], key: str) -> str:
     value = data.get(key)
     if not isinstance(value, str) or not value:
         raise RoutineDefinitionError(f"{key} is required")
+    return value
+
+
+def _required_bool(data: Mapping[str, object], key: str) -> bool:
+    value = data.get(key)
+    if not isinstance(value, bool):
+        raise RoutineDefinitionError(f"{key} must be a boolean")
     return value
 
 
