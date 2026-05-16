@@ -1,7 +1,14 @@
 from pathlib import Path
 
 from desktop_agent.config import LocalModelConfig
+from desktop_agent.local_model_prompts import (
+    PROMPT_CLASS_ROUTINE_RANKING,
+    build_routine_ranking_prompt,
+)
+from desktop_agent.local_model_validation import validate_routine_ranking_response
 from desktop_agent.local_models import (
+    FakeLocalModelProvider,
+    LocalModelInfo,
     LocalModelStatus,
     OllamaLocalModelProvider,
     write_local_model_status_report,
@@ -101,3 +108,32 @@ def test_local_model_status_report_writes_monitoring_json(tmp_path: Path) -> Non
     assert written_path == output_path
     assert '"provider": "ollama"' in output_path.read_text(encoding="utf-8")
     assert '"status": "available"' in output_path.read_text(encoding="utf-8")
+
+
+def test_fake_local_model_provider_generates_deterministic_json() -> None:
+    provider = FakeLocalModelProvider(
+        models=(LocalModelInfo(name="fake-ranker"),),
+        generated_outputs={
+            PROMPT_CLASS_ROUTINE_RANKING: {
+                "selected_routine_id": "browser.search",
+                "candidate_order": ["browser.search"],
+                "explanation": "The fake ranker prefers search.",
+            },
+        },
+    )
+    prompt = build_routine_ranking_prompt(
+        user_goal="Search the web",
+        normalized_intent="browser search",
+        candidates=({"routine_id": "browser.search", "name": "Search"},),
+    )
+
+    output = provider.generate_json(prompt)
+    validation = validate_routine_ranking_response(
+        output,
+        candidate_ids=("browser.search",),
+    )
+
+    assert provider.status().available is True
+    assert [model.name for model in provider.list_models()] == ["fake-ranker"]
+    assert provider.recorded_prompt_classes == [PROMPT_CLASS_ROUTINE_RANKING]
+    assert validation.accepted is True

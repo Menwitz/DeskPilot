@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Protocol, cast
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
 from desktop_agent.config import LocalModelConfig
+from desktop_agent.local_model_prompts import LocalModelPrompt
 
 JsonObject = Mapping[str, object]
 JsonGetter = Callable[[str, float], JsonObject]
@@ -116,6 +117,63 @@ class OllamaLocalModelProvider:
         if not status.available:
             raise LocalModelProviderError(status.error or "local model unavailable")
         return status.models
+
+
+class LocalModelProvider(Protocol):
+    """Provider boundary used by tests and local model tooling."""
+
+    def status(self, *, probe_when_disabled: bool = False) -> LocalModelStatus: ...
+
+    def list_models(self) -> tuple[LocalModelInfo, ...]: ...
+
+
+@dataclass
+class FakeLocalModelProvider:
+    """In-memory local model provider for deterministic tests."""
+
+    enabled: bool = True
+    provider: str = "fake"
+    endpoint: str = "memory://fake-local-model"
+    available: bool = True
+    models: tuple[LocalModelInfo, ...] = (LocalModelInfo(name="fake-model"),)
+    error: str | None = None
+    generated_outputs: Mapping[str, JsonObject] = field(default_factory=dict)
+    recorded_prompt_classes: list[str] = field(default_factory=list)
+
+    def status(self, *, probe_when_disabled: bool = False) -> LocalModelStatus:
+        _ = probe_when_disabled
+        if not self.enabled:
+            return LocalModelStatus(
+                enabled=False,
+                provider=self.provider,
+                endpoint=self.endpoint,
+                status="disabled",
+                available=False,
+                models=(),
+            )
+        return LocalModelStatus(
+            enabled=self.enabled,
+            provider=self.provider,
+            endpoint=self.endpoint,
+            status="available" if self.available else "unavailable",
+            available=self.available,
+            models=self.models if self.available else (),
+            error=None if self.available else self.error or "fake unavailable",
+        )
+
+    def list_models(self) -> tuple[LocalModelInfo, ...]:
+        status = self.status(probe_when_disabled=True)
+        if not status.available:
+            raise LocalModelProviderError(status.error or "fake unavailable")
+        return status.models
+
+    def generate_json(self, prompt: LocalModelPrompt) -> JsonObject:
+        """Return a preauthored JSON response for the supplied prompt class."""
+        self.recorded_prompt_classes.append(prompt.prompt_class)
+        status = self.status(probe_when_disabled=True)
+        if not status.available:
+            raise LocalModelProviderError(status.error or "fake unavailable")
+        return self.generated_outputs.get(prompt.prompt_class, {})
 
 
 class LocalModelProviderError(RuntimeError):

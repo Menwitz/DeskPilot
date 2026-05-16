@@ -326,6 +326,9 @@ deterministic validation before any suggestion can affect a run.
 Structured response validators reject unknown routine IDs, unknown missing-input
 keys, unknown evidence references, malformed screen summaries, and YAML
 improvement proposals that are not explicitly review-only.
+Tests use an in-memory `FakeLocalModelProvider` that reports deterministic
+model inventory and returns preauthored JSON by prompt class, so local-model
+paths can be covered without network access or a running Ollama process.
 
 For screen review, `desktop-agent inspect-screen --caption-output <path>` writes
 a local caption prompt report from the captured screenshot, OCR text, UIA tree,
