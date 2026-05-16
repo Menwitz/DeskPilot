@@ -58,7 +58,8 @@ Export the reviewed recording to editable task YAML:
 ```bash
 desktop-agent record export-task \
   --state traces/recorder-session.json \
-  --output routines/morning-inbox.yaml
+  --output routines/morning-inbox.yaml \
+  --proof-checklist routines/morning-inbox-proof.md
 ```
 
 The saved JSON uses `deskpilot_recorder_session_v1` and contains the session
@@ -94,9 +95,12 @@ generator adds a visible-text verification suggestion to the previous action
 from newly appeared text such as `visible_text_added`.
 `record export-task` writes the generated `TaskDefinition` as YAML that can be
 loaded by `YamlTaskLoader`, edited, dry-run, and then used in Windows proof
-flows. Generated task metadata includes the reviewed routine name, description,
-inputs, outputs, tags, risk class, and expected duration so trace artifacts and
-final reports can surface the operator-reviewed routine contract.
+flows. With `--proof-checklist`, export also writes an edit/dry-run/Windows
+proof checklist that points to `desktop-agent dry-run`, `desktop-agent run`,
+`desktop-agent replay`, and the fixture proof commands. Generated task metadata
+includes the reviewed routine name, description, inputs, outputs, tags, risk
+class, and expected duration so trace artifacts and final reports can surface
+the operator-reviewed routine contract.
 
 ## Test Coverage
 

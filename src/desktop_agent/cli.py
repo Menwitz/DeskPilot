@@ -351,6 +351,11 @@ def _add_record_options(parser: argparse.ArgumentParser) -> None:
     )
     _add_record_state_option(export_parser)
     export_parser.add_argument("--output", required=True, type=Path)
+    export_parser.add_argument(
+        "--proof-checklist",
+        type=Path,
+        help="write a markdown checklist for dry-run and Windows proof review",
+    )
 
     discard_parser = record_subparsers.add_parser(
         "discard",
@@ -1104,8 +1109,16 @@ def _record(args: argparse.Namespace) -> int:
             yaml.safe_dump(_task_to_yaml_dict(task), sort_keys=False),
             encoding="utf-8",
         )
+        if args.proof_checklist is not None:
+            args.proof_checklist.parent.mkdir(parents=True, exist_ok=True)
+            args.proof_checklist.write_text(
+                _recorded_task_proof_checklist(args.output, task),
+                encoding="utf-8",
+            )
         print(f"recording task exported: {session.session_id}")
         print(f"task: {args.output}")
+        if args.proof_checklist is not None:
+            print(f"proof checklist: {args.proof_checklist}")
         return 0
     if args.record_command == "discard":
         session = controller.discard()
@@ -1140,6 +1153,38 @@ def _record_review_values(values: list[str] | None) -> tuple[str, ...] | None:
     if values is None:
         return None
     return tuple(values)
+
+
+def _recorded_task_proof_checklist(
+    task_path: Path,
+    task: TaskDefinition,
+) -> str:
+    lines = [
+        "# Recorded Routine Proof Checklist",
+        "",
+        f"- Task YAML: `{task_path}`",
+        f"- Routine: `{task.name}`",
+        "",
+        "## Edit And Dry-Run",
+        "",
+        f"- [ ] Review and edit `{task_path}`.",
+        f"- [ ] Run `desktop-agent dry-run {task_path}`.",
+        "- [ ] Confirm the dry-run trace contains `task.json`, `action-log.jsonl`, "
+        "and `final-report.json`.",
+        "",
+        "## Windows Proof Flow",
+        "",
+        "- [ ] Run the edited YAML on an owned Windows desktop with "
+        f"`desktop-agent run {task_path}`.",
+        "- [ ] Capture the run with the same evidence expectations used by "
+        "`docs/windows-proof-evidence-checklist.md`.",
+        "- [ ] Use `desktop-agent replay <trace-dir> --write-summary` for the "
+        "recorded task trace.",
+        "- [ ] For fixture-level proof comparison, run "
+        "`desktop-agent proof browser-fixture` or "
+        "`desktop-agent proof native-fixture` as applicable.",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def _demo_input(args: argparse.Namespace) -> int:

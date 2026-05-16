@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import yaml
 from pytest import CaptureFixture, MonkeyPatch
 
 from desktop_agent.actuation import DryRunActuator
@@ -625,6 +626,61 @@ def test_cli_record_export_task_writes_valid_native_fixture_yaml(
     ]
     assert task.steps[2].image == snippet_path
     assert task.metadata["routine_outputs"] == ["native action completed"]
+
+
+def test_exported_recorder_yaml_can_be_edited_dry_run_and_proof_planned(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    state_path = tmp_path / "recorder-state.json"
+    output_path = tmp_path / "browser-routine.yaml"
+    checklist_path = tmp_path / "browser-routine-proof.md"
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(f"trace_root: {tmp_path / 'traces'}\n", encoding="utf-8")
+    controller = RecorderController(state_path)
+    controller.start(name="Browser fixture")
+    for event in _fake_browser_event_stream():
+        controller.record_event(event)
+    controller.stop()
+
+    assert main(
+        [
+            "record",
+            "export-task",
+            "--state",
+            str(state_path),
+            "--output",
+            str(output_path),
+            "--proof-checklist",
+            str(checklist_path),
+        ],
+    ) == 0
+    capsys.readouterr()
+
+    payload = yaml.safe_load(output_path.read_text(encoding="utf-8"))
+    payload["name"] = "Edited browser search routine"
+    payload["steps"][1]["text"] = "DeskPilot edited query"
+    output_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    status = main(
+        [
+            "dry-run",
+            str(output_path),
+            "--config",
+            str(config_path),
+            "--no-screenshots",
+        ],
+    )
+
+    dry_run_output = capsys.readouterr().out
+    checklist = checklist_path.read_text(encoding="utf-8")
+    assert status == 0
+    assert "task: Edited browser search routine" in dry_run_output
+    assert "desktop-agent dry-run" in checklist
+    assert "desktop-agent run" in checklist
+    assert "desktop-agent replay" in checklist
+    assert "desktop-agent proof browser-fixture" in checklist
+    assert "docs/windows-proof-evidence-checklist.md" in checklist
 
 
 def test_cli_record_exposes_start_pause_stop_save_discard_controls(
