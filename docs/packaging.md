@@ -76,6 +76,8 @@ That promotion JSON includes SHA-256 digests and byte sizes for the promoted
 evidence artifacts so a copied archive can be checked later.
 Run `proof verify-promotion <trace-root>\proof-suite-promotion.json` before
 trusting copied proof evidence.
+Run `proof verify-archive <trace-root>\proof-suite-artifacts.zip` to check the
+self-contained archive members against the promotion digest record.
 
 Real `run` verification still requires an unlocked Windows desktop with the
 browser or native fixture visible.

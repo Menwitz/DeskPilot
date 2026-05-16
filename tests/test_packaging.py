@@ -105,4 +105,5 @@ def test_windows_proof_suite_runner_collects_reviewable_evidence() -> None:
     assert "proof validate-review" in script
     assert "proof promote-suite" in script
     assert "proof verify-promotion" in script
+    assert "proof verify-archive" in script
     assert "proof-suite-review-status.json" in script

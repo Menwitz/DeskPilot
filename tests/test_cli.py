@@ -1990,6 +1990,22 @@ def test_cli_proof_verify_promotion_reports_failed_record(
     assert "error: proof suite promotion status is not passed: failed" in output
 
 
+def test_cli_proof_verify_archive_reports_missing_promotion(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    archive_path = tmp_path / "empty-proof-suite.zip"
+    with zipfile.ZipFile(archive_path, "w") as archive:
+        archive.writestr("placeholder.txt", "empty")
+
+    status = main(["proof", "verify-archive", str(archive_path)])
+
+    output = capsys.readouterr().out
+    assert status == 1
+    assert "archive_verification: failed" in output
+    assert "error: proof suite archive missing proof-suite-promotion.json" in output
+
+
 def test_cli_proof_validate_review_writes_status(
     tmp_path: Path,
     capsys: CaptureFixture[str],

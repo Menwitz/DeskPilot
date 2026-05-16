@@ -98,6 +98,7 @@ from desktop_agent.proof_manifest import (
     validate_proof_bundle,
     validate_proof_review,
     validate_proof_suite,
+    verify_proof_suite_archive,
     verify_proof_suite_promotion,
     write_proof_preflight_report,
     write_proof_review_status,
@@ -697,6 +698,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="verify proof-suite promotion JSON digests against local artifacts",
     )
     proof_verify_promotion_parser.add_argument("promotion_path", type=Path)
+    proof_verify_archive_parser = proof_subparsers.add_parser(
+        "verify-archive",
+        help="verify a zipped proof-suite archive against its promotion record",
+    )
+    proof_verify_archive_parser.add_argument("archive_path", type=Path)
     proof_browser_parser = proof_subparsers.add_parser(
         "browser-fixture",
         help="run a real-input local browser form/navigation proof",
@@ -2827,6 +2833,8 @@ def _proof(args: argparse.Namespace) -> int:
         return _proof_promote_suite(args)
     if args.proof_command == "verify-promotion":
         return _proof_verify_promotion(args)
+    if args.proof_command == "verify-archive":
+        return _proof_verify_archive(args)
     if args.proof_command == "browser-fixture":
         return _proof_browser_fixture(args)
     if args.proof_command == "native-fixture":
@@ -2997,6 +3005,20 @@ def _proof_verify_promotion(args: argparse.Namespace) -> int:
     result = verify_proof_suite_promotion(args.promotion_path)
     print(f"promotion_json: {args.promotion_path}")
     print(f"promotion_verification: {'passed' if result.passed else 'failed'}")
+    print(f"checked_artifacts: {len(result.checked_artifacts)}")
+    for artifact_name in result.checked_artifacts:
+        print(f"artifact: {artifact_name}")
+    for warning in result.warnings:
+        print(f"warning: {warning}")
+    for error in result.errors:
+        print(f"error: {error}")
+    return 0 if result.passed else 1
+
+
+def _proof_verify_archive(args: argparse.Namespace) -> int:
+    result = verify_proof_suite_archive(args.archive_path)
+    print(f"archive: {args.archive_path}")
+    print(f"archive_verification: {'passed' if result.passed else 'failed'}")
     print(f"checked_artifacts: {len(result.checked_artifacts)}")
     for artifact_name in result.checked_artifacts:
         print(f"artifact: {artifact_name}")

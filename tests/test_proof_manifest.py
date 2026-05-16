@@ -14,6 +14,7 @@ from desktop_agent.proof_manifest import (
     validate_proof_bundle,
     validate_proof_review,
     validate_proof_suite,
+    verify_proof_suite_archive,
     verify_proof_suite_promotion,
     write_proof_preflight_report,
     write_proof_review_status,
@@ -528,6 +529,46 @@ def test_verify_proof_suite_promotion_rejects_tampered_artifact(
     )
 
     verification = verify_proof_suite_promotion(promotion_path)
+
+    assert not verification.passed
+    assert any(
+        "browser-fixture/action-log.jsonl sha256 mismatch" in error
+        for error in verification.errors
+    )
+
+
+def test_verify_proof_suite_archive_accepts_matching_digests(
+    tmp_path: Path,
+) -> None:
+    result = _write_review_ready_suite(tmp_path)
+    write_proof_suite_promotion(result, require_video=False)
+    archive_path = write_proof_suite_archive(result, require_video=False)
+
+    verification = verify_proof_suite_archive(archive_path)
+
+    assert verification.passed
+    assert "proof-preflight.json" in verification.checked_artifacts
+    assert "browser-fixture/proof-manifest.json" in verification.checked_artifacts
+
+
+def test_verify_proof_suite_archive_rejects_tampered_member(
+    tmp_path: Path,
+) -> None:
+    result = _write_review_ready_suite(tmp_path)
+    write_proof_suite_promotion(result, require_video=False)
+    archive_path = write_proof_suite_archive(result, require_video=False)
+    tampered_path = tmp_path / "tampered.zip"
+    with (
+        zipfile.ZipFile(archive_path) as source,
+        zipfile.ZipFile(tampered_path, "w") as target,
+    ):
+        for item in source.infolist():
+            data = source.read(item.filename)
+            if item.filename == "browser-fixture/action-log.jsonl":
+                data = b"tampered\n"
+            target.writestr(item, data)
+
+    verification = verify_proof_suite_archive(tampered_path)
 
     assert not verification.passed
     assert any(

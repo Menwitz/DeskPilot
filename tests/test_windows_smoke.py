@@ -196,6 +196,14 @@ def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> No
         ],
     )
     assert verification_exit_code == 0, "proof promotion digest verification failed"
+    archive_verification_exit_code = main(
+        [
+            "proof",
+            "verify-archive",
+            str(trace_root / "proof-suite-artifacts.zip"),
+        ],
+    )
+    assert archive_verification_exit_code == 0, "proof archive verification failed"
     promotion_payload = json.loads(
         (trace_root / "proof-suite-promotion.json").read_text(encoding="utf-8"),
     )

@@ -11,7 +11,7 @@ import zipfile
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from hashlib import sha256
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 REQUIRED_WINDOWS_PROOF_NAMES: tuple[str, ...] = (
     "browser-fixture",
@@ -228,6 +228,20 @@ class ProofPromotionVerification:
     """Validation result for a saved proof-suite promotion digest record."""
 
     promotion_path: Path
+    checked_artifacts: tuple[str, ...]
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    @property
+    def passed(self) -> bool:
+        return not self.errors
+
+
+@dataclass(frozen=True)
+class ProofArchiveVerification:
+    """Validation result for a zipped proof-suite evidence archive."""
+
+    archive_path: Path
     checked_artifacts: tuple[str, ...]
     errors: tuple[str, ...]
     warnings: tuple[str, ...]
@@ -807,6 +821,72 @@ def verify_proof_suite_promotion(promotion_path: Path) -> ProofPromotionVerifica
     )
 
 
+def verify_proof_suite_archive(archive_path: Path) -> ProofArchiveVerification:
+    """Verify a zipped proof-suite archive against its promotion digest record."""
+
+    errors: list[str] = []
+    warnings: list[str] = []
+    checked_artifacts: list[str] = []
+    if not archive_path.exists():
+        return ProofArchiveVerification(
+            archive_path=archive_path,
+            checked_artifacts=(),
+            errors=(f"proof suite archive not found: {archive_path}",),
+            warnings=(),
+        )
+    try:
+        with zipfile.ZipFile(archive_path) as archive:
+            names = set(archive.namelist())
+            for member_name in sorted(names):
+                if _unsafe_archive_member(member_name):
+                    errors.append(f"unsafe proof suite archive member: {member_name}")
+            if PROOF_SUITE_PROMOTION_NAME not in names:
+                errors.append(
+                    f"proof suite archive missing {PROOF_SUITE_PROMOTION_NAME}",
+                )
+                return ProofArchiveVerification(
+                    archive_path=archive_path,
+                    checked_artifacts=(),
+                    errors=tuple(errors),
+                    warnings=tuple(warnings),
+                )
+            payload = _load_json_bytes_object(
+                archive.read(PROOF_SUITE_PROMOTION_NAME),
+                errors,
+                "proof suite promotion",
+            )
+            if payload is not None:
+                _append_promotion_payload_gate_errors(payload, errors)
+                artifact_digests = _promotion_artifact_digest_items(payload, errors)
+                for index, item in enumerate(artifact_digests):
+                    archive_name = (
+                        _string_value(item.get("archive_name")) or f"#{index}"
+                    )
+                    if archive_name not in names:
+                        errors.append(
+                            f"proof suite archive artifact {archive_name} not found",
+                        )
+                        continue
+                    checked_artifacts.append(archive_name)
+                    info = archive.getinfo(archive_name)
+                    data = archive.read(archive_name)
+                    _append_archive_digest_errors(
+                        archive_name,
+                        item,
+                        info.file_size,
+                        _sha256_bytes(data),
+                        errors,
+                    )
+    except zipfile.BadZipFile as exc:
+        errors.append(f"proof suite archive is not a valid zip: {exc}")
+    return ProofArchiveVerification(
+        archive_path=archive_path,
+        checked_artifacts=tuple(checked_artifacts),
+        errors=tuple(errors),
+        warnings=tuple(warnings),
+    )
+
+
 def write_proof_suite_status(
     validation: ProofSuiteValidation,
     output_path: Path | None = None,
@@ -1163,12 +1243,76 @@ def _promotion_artifact_path(
     return None
 
 
+def _append_promotion_payload_gate_errors(
+    payload: Mapping[str, object],
+    errors: list[str],
+) -> None:
+    if payload.get("status") != "passed":
+        errors.append(
+            "proof suite promotion status is not passed: "
+            f"{payload.get('status', 'missing')}",
+        )
+    if payload.get("promotion_ready") is not True:
+        errors.append("proof suite promotion_ready is not true")
+
+
+def _promotion_artifact_digest_items(
+    payload: Mapping[str, object],
+    errors: list[str],
+) -> list[Mapping[str, object]]:
+    artifacts = payload.get("artifact_digests")
+    if not isinstance(artifacts, list) or not artifacts:
+        errors.append("proof suite promotion artifact_digests must be a non-empty list")
+        return []
+    digest_items: list[Mapping[str, object]] = []
+    for index, item in enumerate(artifacts):
+        if not isinstance(item, dict):
+            errors.append(f"proof suite promotion artifact #{index} must be an object")
+            continue
+        digest_items.append(item)
+    return digest_items
+
+
+def _append_archive_digest_errors(
+    archive_name: str,
+    item: Mapping[str, object],
+    actual_size: int,
+    actual_digest: str,
+    errors: list[str],
+) -> None:
+    expected_size = item.get("size_bytes")
+    if not isinstance(expected_size, int):
+        errors.append(f"proof suite archive artifact {archive_name} missing size_bytes")
+    elif actual_size != expected_size:
+        errors.append(
+            f"proof suite archive artifact {archive_name} size mismatch: "
+            f"{actual_size} != {expected_size}",
+        )
+    expected_digest = _string_value(item.get("sha256"))
+    if expected_digest is None:
+        errors.append(f"proof suite archive artifact {archive_name} missing sha256")
+    elif actual_digest != expected_digest:
+        errors.append(
+            f"proof suite archive artifact {archive_name} sha256 mismatch: "
+            f"{actual_digest} != {expected_digest}",
+        )
+
+
 def _sha256_file(path: Path) -> str:
     digest = sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _sha256_bytes(data: bytes) -> str:
+    return sha256(data).hexdigest()
+
+
+def _unsafe_archive_member(name: str) -> bool:
+    path = PurePosixPath(name)
+    return not name or path.is_absolute() or ".." in path.parts
 
 
 def _write_zip_text(
@@ -1390,6 +1534,25 @@ def _load_json_object(
         return None
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        errors.append(f"{label} is not valid JSON: {exc}")
+        return None
+    if not isinstance(payload, dict):
+        errors.append(f"{label} must contain a JSON object")
+        return None
+    return payload
+
+
+def _load_json_bytes_object(
+    data: bytes,
+    errors: list[str],
+    label: str,
+) -> dict[str, object] | None:
+    try:
+        payload = json.loads(data.decode("utf-8"))
+    except UnicodeDecodeError as exc:
+        errors.append(f"{label} is not valid UTF-8: {exc}")
+        return None
     except json.JSONDecodeError as exc:
         errors.append(f"{label} is not valid JSON: {exc}")
         return None

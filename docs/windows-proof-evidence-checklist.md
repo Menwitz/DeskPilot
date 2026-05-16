@@ -63,6 +63,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Run `desktop-agent proof verify-promotion
       <trace-root>/proof-suite-promotion.json` before copying or trusting an
       archived proof pack.
+- [ ] Run `desktop-agent proof verify-archive
+      <trace-root>/proof-suite-artifacts.zip` after writing the archive.
 
 ## Required Proof Bundle
 
@@ -120,6 +122,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       promoted evidence artifacts so archived evidence can be checked later.
 - [ ] `desktop-agent proof verify-promotion` rejects missing or tampered
       promoted artifacts before release evidence is trusted.
+- [ ] `desktop-agent proof verify-archive` rejects copied archives when a
+      promoted artifact digest no longer matches the archive member.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 
