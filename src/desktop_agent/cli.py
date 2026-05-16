@@ -93,6 +93,7 @@ from desktop_agent.platforms.windows.uia import (
     write_uia_tree_snapshot,
 )
 from desktop_agent.preview import build_dry_run_preview, render_dry_run_preview
+from desktop_agent.proof_manifest import validate_proof_bundle
 from desktop_agent.recorder import (
     RECORDER_DEFAULT_RISK_CLASS,
     RecorderController,
@@ -515,6 +516,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--open-artifacts",
         action="store_true",
         help="open existing proof artifact paths with the OS file manager",
+    )
+    proof_validate_parser = proof_subparsers.add_parser(
+        "validate",
+        help="validate a proof bundle without rerunning input",
+    )
+    proof_validate_parser.add_argument("trace_dir", type=Path)
+    proof_validate_parser.add_argument(
+        "--allow-missing-video",
+        action="store_true",
+        help="validate non-video proof artifacts when video capture was disabled",
     )
     proof_browser_parser = proof_subparsers.add_parser(
         "browser-fixture",
@@ -2634,6 +2645,8 @@ def _append_step_evidence_lines(
 def _proof(args: argparse.Namespace) -> int:
     if args.proof_command == "replay":
         return _proof_replay(args)
+    if args.proof_command == "validate":
+        return _proof_validate(args)
     if args.proof_command == "browser-fixture":
         return _proof_browser_fixture(args)
     if args.proof_command == "native-fixture":
@@ -2644,6 +2657,22 @@ def _proof(args: argparse.Namespace) -> int:
         return _proof_recovery_fixture(args)
     print("error: proof subcommand required")
     return 2
+
+
+def _proof_validate(args: argparse.Namespace) -> int:
+    result = validate_proof_bundle(
+        args.trace_dir,
+        require_video=not args.allow_missing_video,
+    )
+    print(f"trace: {args.trace_dir}")
+    print(f"validation: {'passed' if result.passed else 'failed'}")
+    for label, path in result.artifact_paths:
+        print(f"artifact {label}: {path}")
+    for warning in result.warnings:
+        print(f"warning: {warning}")
+    for error in result.errors:
+        print(f"error: {error}")
+    return 0 if result.passed else 1
 
 
 def _proof_browser_fixture(args: argparse.Namespace) -> int:

@@ -20,6 +20,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Run `desktop-agent proof replay <trace-dir>` and save the terminal output.
 - [ ] Run `desktop-agent proof replay <trace-dir> --open-artifacts` for manual
       artifact review.
+- [ ] Run `desktop-agent proof validate <trace-dir>` and save the terminal
+      output; use `--allow-missing-video` only when video capture was
+      intentionally disabled and separately justified.
 
 ## Required Proof Bundle
 
@@ -43,6 +46,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] `action-log.jsonl` contains one monitoring event per visible proof step.
 - [ ] The command report contains final status, per-step status, active-window
       metadata, cursor readback, and post-action evidence where available.
+- [ ] `desktop-agent proof validate <trace-dir>` reports `validation: passed`
+      before a proof bundle is promoted.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 

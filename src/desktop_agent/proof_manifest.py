@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -90,3 +91,318 @@ class ProofManifest:
             "step_count": len(self.steps),
             "steps": [step.metadata() for step in self.steps],
         }
+
+
+@dataclass(frozen=True)
+class ProofBundleValidation:
+    """Review-only validation result for an existing proof artifact bundle."""
+
+    trace_dir: Path
+    manifest_path: Path
+    status: str
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+    artifact_paths: tuple[tuple[str, Path], ...]
+
+    @property
+    def passed(self) -> bool:
+        return not self.errors
+
+
+def validate_proof_bundle(
+    trace_dir: Path,
+    *,
+    require_video: bool = True,
+) -> ProofBundleValidation:
+    """Validate a saved proof bundle without rerunning desktop input."""
+
+    manifest_path = trace_dir / "proof-manifest.json"
+    errors: list[str] = []
+    warnings: list[str] = []
+    artifact_paths: list[tuple[str, Path]] = []
+    manifest = _load_json_object(manifest_path, errors, "proof manifest")
+    if manifest is None:
+        return ProofBundleValidation(
+            trace_dir=trace_dir,
+            manifest_path=manifest_path,
+            status="failed",
+            errors=tuple(errors),
+            warnings=tuple(warnings),
+            artifact_paths=(),
+        )
+
+    status = _string_value(manifest.get("status"))
+    if status != "passed":
+        errors.append(f"proof status is not passed: {status or 'missing'}")
+
+    artifacts = manifest.get("artifacts")
+    if not isinstance(artifacts, dict):
+        errors.append("proof manifest artifacts must be a JSON object")
+        artifacts = {}
+
+    trace_path = _required_artifact_path(
+        artifacts,
+        "trace_dir",
+        manifest_path,
+        errors,
+        artifact_paths,
+    )
+    report_path = _required_artifact_path(
+        artifacts,
+        "report_path",
+        manifest_path,
+        errors,
+        artifact_paths,
+    )
+    action_log_path = _required_artifact_path(
+        artifacts,
+        "action_log_path",
+        manifest_path,
+        errors,
+        artifact_paths,
+    )
+    proof_manifest_artifact = _required_artifact_path(
+        artifacts,
+        "proof_manifest_path",
+        manifest_path,
+        errors,
+        artifact_paths,
+    )
+    if trace_path is not None and not trace_path.is_dir():
+        errors.append(f"artifact trace_dir is not a directory: {trace_path}")
+    if proof_manifest_artifact is not None and proof_manifest_artifact != manifest_path:
+        warnings.append(
+            "proof_manifest_path points at a different path than the reviewed trace",
+        )
+
+    screenshot_paths = _screenshot_paths(artifacts, manifest_path, artifact_paths)
+    if not screenshot_paths:
+        errors.append("proof manifest must list at least one screenshot artifact")
+    for screenshot_path in screenshot_paths:
+        _require_existing_file("screenshot", screenshot_path, errors)
+
+    video_path = _optional_artifact_path(
+        artifacts,
+        "video_path",
+        manifest_path,
+        artifact_paths,
+    )
+    video_log_path = _optional_artifact_path(
+        artifacts,
+        "video_log_path",
+        manifest_path,
+        artifact_paths,
+    )
+    if require_video:
+        if video_path is None:
+            errors.append("proof manifest must include video_path")
+        else:
+            _require_existing_file("video_path", video_path, errors)
+            if video_path.exists() and video_path.stat().st_size == 0:
+                errors.append(f"video_path is empty: {video_path}")
+        if video_log_path is not None:
+            _require_existing_file("video_log_path", video_log_path, errors)
+        video_capture = manifest.get("video_capture")
+        if not isinstance(video_capture, dict):
+            errors.append("video_capture metadata is required when video is required")
+        elif video_capture.get("status") != "passed":
+            errors.append(
+                "video_capture status is not passed: "
+                f"{video_capture.get('status', 'missing')}",
+            )
+    elif video_path is None:
+        warnings.append("video_path is not present; video requirement was disabled")
+
+    if report_path is not None:
+        _validate_report(report_path, manifest_path, errors)
+    if action_log_path is not None:
+        _validate_action_log(action_log_path, errors)
+    _validate_manifest_steps(manifest, errors)
+
+    return ProofBundleValidation(
+        trace_dir=trace_dir,
+        manifest_path=manifest_path,
+        status="passed" if not errors else "failed",
+        errors=tuple(errors),
+        warnings=tuple(warnings),
+        artifact_paths=tuple(artifact_paths),
+    )
+
+
+def _load_json_object(
+    path: Path,
+    errors: list[str],
+    label: str,
+) -> dict[str, object] | None:
+    if not path.exists():
+        errors.append(f"{label} not found: {path}")
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        errors.append(f"{label} is not valid JSON: {exc}")
+        return None
+    if not isinstance(payload, dict):
+        errors.append(f"{label} must contain a JSON object")
+        return None
+    return payload
+
+
+def _required_artifact_path(
+    artifacts: Mapping[object, object],
+    key: str,
+    manifest_path: Path,
+    errors: list[str],
+    artifact_paths: list[tuple[str, Path]],
+) -> Path | None:
+    path = _optional_artifact_path(artifacts, key, manifest_path, artifact_paths)
+    if path is None:
+        errors.append(f"proof manifest missing artifact: {key}")
+        return None
+    if key != "trace_dir":
+        _require_existing_file(key, path, errors)
+    return path
+
+
+def _optional_artifact_path(
+    artifacts: Mapping[object, object],
+    key: str,
+    manifest_path: Path,
+    artifact_paths: list[tuple[str, Path]],
+) -> Path | None:
+    value = artifacts.get(key)
+    if not isinstance(value, str) or not value:
+        return None
+    path = _artifact_path(value, manifest_path)
+    artifact_paths.append((key, path))
+    return path
+
+
+def _artifact_path(value: str, manifest_path: Path) -> Path:
+    path = Path(value)
+    if path.is_absolute() or path.exists():
+        return path
+    # Older manifests may contain paths relative to the trace directory.
+    return manifest_path.parent / path
+
+
+def _screenshot_paths(
+    artifacts: Mapping[object, object],
+    manifest_path: Path,
+    artifact_paths: list[tuple[str, Path]],
+) -> tuple[Path, ...]:
+    screenshots = artifacts.get("screenshots")
+    if not isinstance(screenshots, list):
+        return ()
+    paths: list[Path] = []
+    for index, value in enumerate(screenshots, start=1):
+        if not isinstance(value, str) or not value:
+            continue
+        path = _artifact_path(value, manifest_path)
+        paths.append(path)
+        artifact_paths.append((f"screenshot_{index}", path))
+    return tuple(paths)
+
+
+def _require_existing_file(label: str, path: Path, errors: list[str]) -> None:
+    if not path.exists():
+        errors.append(f"artifact {label} does not exist: {path}")
+    elif not path.is_file():
+        errors.append(f"artifact {label} is not a file: {path}")
+
+
+def _validate_report(
+    report_path: Path,
+    manifest_path: Path,
+    errors: list[str],
+) -> None:
+    report = _load_json_object(report_path, errors, "proof report")
+    if report is None:
+        return
+    if report.get("status") != "passed":
+        errors.append(f"proof report status is not passed: {report.get('status')}")
+
+    steps = report.get("steps")
+    if not isinstance(steps, list) or not steps:
+        errors.append("proof report must contain at least one reviewed step")
+        return
+
+    for index, item in enumerate(steps, start=1):
+        if not isinstance(item, dict):
+            errors.append(f"proof report step {index} must be a JSON object")
+            continue
+        step_id = _string_value(item.get("step_id")) or f"#{index}"
+        metadata = item.get("metadata")
+        if not isinstance(metadata, dict):
+            errors.append(f"proof report step {step_id} missing metadata")
+            continue
+        evidence = metadata.get("post_action_evidence")
+        if not isinstance(evidence, dict):
+            errors.append(
+                f"proof report step {step_id} missing post_action_evidence",
+            )
+            continue
+        _validate_step_evidence(step_id, evidence, manifest_path, errors)
+
+
+def _validate_step_evidence(
+    step_id: str,
+    evidence: Mapping[object, object],
+    manifest_path: Path,
+    errors: list[str],
+) -> None:
+    if evidence.get("status") != "passed":
+        errors.append(
+            f"proof report step {step_id} evidence status is not passed: "
+            f"{evidence.get('status')}",
+        )
+    if not _string_value(evidence.get("active_window_title")):
+        errors.append(f"proof report step {step_id} missing active_window_title")
+    cursor_position = evidence.get("cursor_position")
+    if not (
+        isinstance(cursor_position, list)
+        and len(cursor_position) == 2
+        and all(isinstance(value, int) for value in cursor_position)
+    ):
+        errors.append(f"proof report step {step_id} missing cursor_position")
+    screenshot_value = evidence.get("screenshot_path")
+    if not isinstance(screenshot_value, str) or not screenshot_value:
+        errors.append(f"proof report step {step_id} missing screenshot_path")
+        return
+    screenshot_path = _artifact_path(screenshot_value, manifest_path)
+    _require_existing_file(f"step {step_id} screenshot_path", screenshot_path, errors)
+
+
+def _validate_action_log(action_log_path: Path, errors: list[str]) -> None:
+    if not action_log_path.exists() or not action_log_path.is_file():
+        return
+    lines = [
+        line
+        for line in action_log_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    if not lines:
+        errors.append(f"action_log_path is empty: {action_log_path}")
+
+
+def _validate_manifest_steps(
+    manifest: Mapping[str, object],
+    errors: list[str],
+) -> None:
+    steps = manifest.get("steps")
+    if not isinstance(steps, list) or not steps:
+        errors.append("proof manifest must contain at least one step summary")
+        return
+    for index, item in enumerate(steps, start=1):
+        if not isinstance(item, dict):
+            errors.append(f"proof manifest step {index} must be a JSON object")
+            continue
+        step_id = _string_value(item.get("step_id")) or f"#{index}"
+        if item.get("has_post_action_evidence") is not True:
+            errors.append(f"proof manifest step {step_id} has no post-action evidence")
+
+
+def _string_value(value: object) -> str | None:
+    if isinstance(value, str) and value:
+        return value
+    return None

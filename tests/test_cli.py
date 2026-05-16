@@ -1670,6 +1670,22 @@ def test_cli_proof_replay_opens_existing_artifacts_when_requested(
     assert f"opened artifact: {trace_dir}" in output
 
 
+def test_cli_proof_validate_reports_bundle_errors(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    write_proof_manifest(trace_dir)
+
+    status = main(["proof", "validate", str(trace_dir)])
+
+    output = capsys.readouterr().out
+    assert status == 1
+    assert "validation: failed" in output
+    assert "error: artifact video_path does not exist" in output
+    assert "error: action_log_path is empty" in output
+
+
 def test_cli_benchmark_run_writes_metrics_and_report(
     tmp_path: Path,
     capsys: CaptureFixture[str],
