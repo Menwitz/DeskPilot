@@ -6,6 +6,7 @@ import pytest
 from pytest import CaptureFixture
 
 from desktop_agent.cli import main
+from desktop_agent.operator_services import LocalCatalogService
 from desktop_agent.routine_pack_ops import (
     RoutinePackOperationError,
     detect_routine_pack_conflicts,
@@ -291,6 +292,43 @@ def test_installed_pack_routine_can_remain_quarantined_by_execution_gate(
     assert routine_quarantine_status(routine) == "quarantined"
     assert gate.allowed is False
     assert gate.reason == "routine_quarantined"
+
+
+def test_installed_pack_routine_appears_in_cli_and_app_catalog_search(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    source = _write_pack(
+        tmp_path / "searchable-pack",
+        pack_id="searchable-pack",
+        routine_id="searchable-pack.routine",
+        input_name="search topic",
+        target="Search",
+    )
+    install_root = tmp_path / "installed"
+
+    import_routine_pack(source, install_root)
+
+    assert (
+        main(
+            [
+                "list-routines",
+                "--routine-pack-root",
+                str(install_root),
+                "--query",
+                "search",
+            ],
+        )
+        == 0
+    )
+    cli_output = capsys.readouterr().out
+    app_results = LocalCatalogService(install_root).list_routines("search")
+
+    assert "searchable-pack.routine\tSample routine" in cli_output
+    assert [result.routine_id for result in app_results] == [
+        "searchable-pack.routine",
+    ]
+    assert app_results[0].quarantine_status == "active"
 
 
 def _write_pack(
