@@ -170,6 +170,9 @@ the safety class, mutation risk, approval requirement, reversibility,
 idempotence, effective allowed-window scope, and allowed region. Dry-run
 previews print the same summary so task authors can see likely mutation and
 approval behavior before a routine runs.
+The public action-safety classes are `read_only`, `local_mutation`,
+`external_mutation`, `credential`, `payment`, `delete`, and
+`message_or_publish`.
 
 ## Policy Presets
 

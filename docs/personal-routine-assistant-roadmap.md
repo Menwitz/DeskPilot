@@ -235,7 +235,7 @@ abuse, and hidden automation are not supported.
 - [x] Compile existing `click_text`, `click_image`, `click_uia`, `type_text`,
       `press_key`, `scroll`, `scroll_until`, `wait_for`, `assert_visible`,
       `branch_if_visible`, and `drag` into low-level I/O actions.
-- [ ] Add action safety classes: `read_only`, `local_mutation`,
+- [x] Add action safety classes: `read_only`, `local_mutation`,
       `external_mutation`, `credential`, `payment`, `delete`, and
       `message_or_publish`.
 - [ ] Add action metadata for approval requirement, reversibility,

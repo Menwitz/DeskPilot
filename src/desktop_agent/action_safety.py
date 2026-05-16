@@ -12,6 +12,17 @@ READ_ONLY_ACTIONS: frozenset[str] = frozenset(
 MESSAGE_OR_PUBLISH_CATEGORIES: frozenset[str] = frozenset(
     {"publish", "comment", "message"},
 )
+ACTION_SAFETY_CLASSES: frozenset[str] = frozenset(
+    {
+        "read_only",
+        "local_mutation",
+        "external_mutation",
+        "credential",
+        "payment",
+        "delete",
+        "message_or_publish",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -85,6 +96,12 @@ def action_safety_metadata(
     """Return JSON-safe action safety metadata for traces and previews."""
 
     return action_safety_profile(step, allowed_windows=allowed_windows).metadata()
+
+
+def action_safety_class_supported(safety_class: str) -> bool:
+    """Return whether a resolved safety class is part of the public contract."""
+
+    return safety_class in ACTION_SAFETY_CLASSES
 
 
 def _safety_class(step: TaskStep) -> str:
