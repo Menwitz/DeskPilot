@@ -29,6 +29,7 @@ policy_preset: personal_automation
 require_operator_approval: false
 confirmed_steps: []
 execution_profile:
+  activity_profile: null
   persona: normal
   enabled: false
   action_delay_seconds: [0.0, 0.0]
@@ -80,6 +81,7 @@ config:
   confirmed_steps:
     - submit-payment
   execution_profile:
+    activity_profile: careful
     persona: careful
     enabled: true
     action_delay_seconds: [0.05, 0.25]
@@ -107,6 +109,11 @@ CAPTCHA bypass, bot-detection evasion, credential abuse, or abusive third-party
 automation.
 
 - `enabled` turns profile timing decisions on.
+- `activity_profile` can be `focused`, `careful`, `background_assist`, or
+  `batch_work`. It applies a named bounded preset for action timing, retry
+  timing, keyboard cadence, scroll cadence, movement smoothness, distributions,
+  and persona. Any explicitly supplied field in the same `execution_profile`
+  block overrides the preset while keeping the activity profile name in traces.
 - `persona` can be `fast`, `normal`, or `careful`. It biases sampled timing
   toward the lower, middle, or upper part of configured timing bounds without
   changing actions, targets, retries, or maximum allowed delays.
@@ -149,6 +156,21 @@ automation.
   reports.
 - `random_seed` makes timing decisions reproducible through the shared seeded
   sampler used by bounded runtime randomness.
+
+Built-in activity profiles:
+
+| Activity profile | Intended use | Persona | Action bounds | Retry bounds |
+| --- | --- | --- | --- | --- |
+| `focused` | Active assisted work where the operator is watching. | `normal` | `[0.08, 0.25]` | `[0.25, 0.9]` |
+| `careful` | Slower local workflows that need extra visual confirmation time. | `careful` | `[0.18, 0.65]` | `[0.8, 2.4]` |
+| `background_assist` | Low-priority scheduled work with wider spacing and conservative retries. | `careful` | `[0.45, 1.4]` | `[2.0, 6.0]` |
+| `batch_work` | Repeated low-risk catalog routines with tight bounded pacing. | `fast` | `[0.04, 0.16]` | `[0.2, 0.8]` |
+
+The CLI can apply a profile for one run:
+
+```bash
+desktop-agent dry-run-routine browser.read-page --activity-profile focused
+```
 
 ## Operator Guidance
 

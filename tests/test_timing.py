@@ -1,6 +1,6 @@
 from typing import cast
 
-from desktop_agent.config import ExecutionProfile
+from desktop_agent.config import ExecutionProfile, execution_profile_for_activity
 from desktop_agent.perception import ElementCandidate
 from desktop_agent.screen import Bounds, ScreenObservation
 from desktop_agent.task_dsl import TaskStep
@@ -30,6 +30,17 @@ def test_execution_timing_samples_stay_inside_configured_bounds() -> None:
     assert all(decision.hesitation_applied for decision in action_decisions)
     assert all(1.0 <= decision.delay_seconds <= 2.0 for decision in retry_decisions)
     assert all(decision.movement_smoothness == 0.75 for decision in action_decisions)
+
+
+def test_activity_profile_metadata_flows_into_timing_decisions() -> None:
+    profile = execution_profile_for_activity("focused")
+    controller = ExecutionTimingController(profile)
+
+    decision = controller.before_action()
+
+    assert 0.08 <= decision.delay_seconds <= 0.25
+    assert decision.metadata()["activity_profile"] == "focused"
+    assert decision.metadata()["execution_persona"] == "normal"
 
 
 def test_execution_timing_is_zero_when_profile_is_disabled() -> None:

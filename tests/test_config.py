@@ -8,6 +8,7 @@ from desktop_agent.config import (
     ExecutionProfile,
     RuntimeConfig,
     YamlConfigLoader,
+    execution_profile_for_activity,
     resolve_runtime_config,
 )
 from desktop_agent.task_dsl import YamlTaskLoader
@@ -30,6 +31,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
                 "confirmed_steps:",
                 "  - submit-payment",
                 "execution_profile:",
+                "  activity_profile: careful",
                 "  persona: careful",
                 "  enabled: true",
                 "  action_delay_seconds: [0.1, 0.3]",
@@ -68,6 +70,7 @@ def test_config_precedence_cli_over_task_over_file_over_defaults(
     assert resolved.policy_preset == "strict_qa"
     assert resolved.require_operator_approval is True
     assert resolved.confirmed_steps == ("submit-payment",)
+    assert resolved.execution_profile.activity_profile == "careful"
     assert resolved.execution_profile.persona == "careful"
     assert resolved.execution_profile.enabled is True
     assert resolved.execution_profile.action_delay_seconds == (0.1, 0.3)
@@ -121,6 +124,7 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
     assert task.config_overrides.require_operator_approval is True
     assert task.config_overrides.confirmed_steps == ("submit",)
     assert task.config_overrides.execution_profile is not None
+    assert task.config_overrides.execution_profile.activity_profile is None
     assert task.config_overrides.execution_profile.persona == "fast"
     assert task.config_overrides.execution_profile.enabled is True
     assert task.config_overrides.execution_profile.action_delay_seconds == (0.05, 0.1)
@@ -181,6 +185,12 @@ def test_task_yaml_loads_config_overrides(tmp_path: Path) -> None:
         ),
         (
             ConfigOverrides(
+                execution_profile=ExecutionProfile(activity_profile="stealth"),
+            ),
+            "execution_profile.activity_profile",
+        ),
+        (
+            ConfigOverrides(
                 execution_profile=ExecutionProfile(
                     action_delay_distribution="random_walk",
                 ),
@@ -203,3 +213,33 @@ def test_yaml_config_loader_rejects_invalid_types(tmp_path: Path) -> None:
 
     with pytest.raises(ConfigError, match="max_steps"):
         YamlConfigLoader().load(config_path)
+
+
+def test_execution_activity_profiles_apply_bounded_timing_presets(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "execution_profile:",
+                "  activity_profile: background_assist",
+                "  action_delay_seconds: [0.5, 1.0]",
+                "  random_seed: 9",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    config = YamlConfigLoader().load(config_path)
+    focused = execution_profile_for_activity("focused")
+
+    assert focused.enabled is True
+    assert focused.activity_profile == "focused"
+    assert config.execution_profile.activity_profile == "background_assist"
+    assert config.execution_profile.enabled is True
+    assert config.execution_profile.persona == "careful"
+    assert config.execution_profile.action_delay_seconds == (0.5, 1.0)
+    assert config.execution_profile.retry_delay_seconds == (2.0, 6.0)
+    assert config.execution_profile.random_seed == 9

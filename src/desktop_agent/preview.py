@@ -43,6 +43,8 @@ class DryRunPreview:
 
     task_name: str
     policy_preset: str
+    activity_profile: str | None
+    execution_persona: str
     steps: tuple[StepDryRunPreview, ...]
 
 
@@ -56,6 +58,8 @@ def build_dry_run_preview(task: TaskDefinition, config: RuntimeConfig) -> DryRun
     return DryRunPreview(
         task_name=task.name,
         policy_preset=config.policy_preset,
+        activity_profile=config.execution_profile.activity_profile,
+        execution_persona=config.execution_profile.persona,
         steps=tuple(
             _step_preview(step, config, allowed_windows) for step in task.steps
         ),
@@ -68,6 +72,9 @@ def render_dry_run_preview(preview: DryRunPreview) -> str:
     lines = [
         "dry-run preview:",
         f"  policy preset: {preview.policy_preset}",
+        "  execution profile: "
+        f"{preview.activity_profile or 'custom'} "
+        f"(persona {preview.execution_persona})",
     ]
     for step in preview.steps:
         budget = step.timing_budget

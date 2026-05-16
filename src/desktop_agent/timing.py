@@ -174,6 +174,7 @@ class TimingDecision:
     hesitation_applied: bool
     movement_smoothness: float
     reason: str
+    activity_profile: str | None = None
     execution_persona: str = "normal"
     action_context: ActionTimingContext | None = None
     retry_backoff_context: RetryBackoffContext | None = None
@@ -193,6 +194,7 @@ class TimingDecision:
             "upper_bound_seconds": self.upper_bound_seconds,
             "hesitation_applied": self.hesitation_applied,
             "movement_smoothness": self.movement_smoothness,
+            "activity_profile": self.activity_profile,
             "execution_persona": self.execution_persona,
             "persona_timing_bias": _persona_timing_bias(self.execution_persona),
             "random_seed": self.random_seed,
@@ -355,6 +357,7 @@ class ExecutionTimingController:
                 hesitation_applied=False,
                 movement_smoothness=0.0,
                 reason="execution profile disabled",
+                activity_profile=self._profile.activity_profile,
                 execution_persona=self._profile.persona,
                 action_context=context,
                 retry_backoff_context=retry_backoff_context,
@@ -408,6 +411,7 @@ class ExecutionTimingController:
             reason="target-aware action timing decided"
             if phase == "action" and context is not None
             else f"{phase} timing decided",
+            activity_profile=self._profile.activity_profile,
             execution_persona=self._profile.persona,
             action_context=context,
             retry_backoff_context=retry_backoff_context,

@@ -33,6 +33,7 @@ from desktop_agent.config import (
     RuntimeConfig,
     StaticConfigLoader,
     YamlConfigLoader,
+    execution_profile_for_activity,
     resolve_runtime_config,
 )
 from desktop_agent.content_variables import load_content_variables
@@ -486,6 +487,11 @@ def _add_runtime_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--config", type=Path)
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--no-screenshots", action="store_true")
+    parser.add_argument(
+        "--activity-profile",
+        choices=("focused", "careful", "background_assist", "batch_work"),
+        help="apply a named bounded timing preset for this run",
+    )
     parser.add_argument("--max-runtime-seconds", type=float)
     parser.add_argument("--confidence-threshold", type=float)
     parser.add_argument("--allowed-window", action="append", default=[])
@@ -1041,12 +1047,16 @@ def _screen_observer_for_mode(dry_run: bool, actuator: object) -> ScreenObserver
 
 
 def _cli_overrides_from_args(args: argparse.Namespace) -> ConfigOverrides:
+    activity_profile = getattr(args, "activity_profile", None)
     return ConfigOverrides(
         save_screenshots=False if args.no_screenshots else None,
         max_runtime_seconds=args.max_runtime_seconds,
         confidence_threshold=args.confidence_threshold,
         allowed_windows=tuple(args.allowed_window) if args.allowed_window else None,
         confirmed_steps=tuple(args.confirm_step) if args.confirm_step else None,
+        execution_profile=execution_profile_for_activity(activity_profile)
+        if activity_profile
+        else None,
     )
 
 

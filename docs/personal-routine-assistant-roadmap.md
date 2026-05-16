@@ -377,7 +377,7 @@ abuse, and hidden automation are not supported.
 
 - [x] Reuse existing execution profile concepts for bounded timing, keyboard
       cadence, scroll cadence, and seeded sampling.
-- [ ] Add activity profiles: `focused`, `careful`, `background_assist`, and
+- [x] Add activity profiles: `focused`, `careful`, `background_assist`, and
       `batch_work`.
 - [ ] Add routine schedule schema with time windows, cooldowns, run limits,
       max external mutations, and stop conditions.

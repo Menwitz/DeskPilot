@@ -12,6 +12,9 @@ from desktop_agent.window_allowlist import window_allowlist_errors
 
 EXECUTION_PERSONAS: frozenset[str] = frozenset({"careful", "normal", "fast"})
 SAMPLING_DISTRIBUTIONS: frozenset[str] = frozenset({"uniform", "center_weighted"})
+ACTIVITY_PROFILE_NAMES: frozenset[str] = frozenset(
+    {"focused", "careful", "background_assist", "batch_work"},
+)
 POLICY_PRESETS: frozenset[str] = frozenset(
     {"strict_qa", "personal_automation", "exploratory_testing"},
 )
@@ -21,6 +24,7 @@ POLICY_PRESETS: frozenset[str] = frozenset(
 class ExecutionProfile:
     """Optional bounded timing profile for natural-feeling local automation."""
 
+    activity_profile: str | None = None
     persona: str = "normal"
     enabled: bool = False
     action_delay_seconds: tuple[float, float] = (0.0, 0.0)
@@ -79,6 +83,76 @@ class ConfigOverrides:
 
 class ConfigError(ValueError):
     """Raised when a configuration file cannot be loaded safely."""
+
+
+ACTIVITY_PROFILE_PRESETS: dict[str, ExecutionProfile] = {
+    "focused": ExecutionProfile(
+        activity_profile="focused",
+        persona="normal",
+        enabled=True,
+        action_delay_seconds=(0.08, 0.25),
+        retry_delay_seconds=(0.25, 0.9),
+        action_delay_distribution="center_weighted",
+        retry_delay_distribution="center_weighted",
+        action_variant_distribution="uniform",
+        hesitation_probability=0.05,
+        movement_smoothness=0.72,
+        keyboard_interval_seconds=(0.01, 0.03),
+        scroll_interval_seconds=(0.02, 0.06),
+    ),
+    "careful": ExecutionProfile(
+        activity_profile="careful",
+        persona="careful",
+        enabled=True,
+        action_delay_seconds=(0.18, 0.65),
+        retry_delay_seconds=(0.8, 2.4),
+        action_delay_distribution="center_weighted",
+        retry_delay_distribution="center_weighted",
+        action_variant_distribution="center_weighted",
+        hesitation_probability=0.2,
+        movement_smoothness=0.86,
+        keyboard_interval_seconds=(0.025, 0.07),
+        scroll_interval_seconds=(0.05, 0.12),
+    ),
+    "background_assist": ExecutionProfile(
+        activity_profile="background_assist",
+        persona="careful",
+        enabled=True,
+        action_delay_seconds=(0.45, 1.4),
+        retry_delay_seconds=(2.0, 6.0),
+        action_delay_distribution="center_weighted",
+        retry_delay_distribution="center_weighted",
+        action_variant_distribution="center_weighted",
+        hesitation_probability=0.25,
+        movement_smoothness=0.9,
+        keyboard_interval_seconds=(0.04, 0.12),
+        scroll_interval_seconds=(0.08, 0.18),
+    ),
+    "batch_work": ExecutionProfile(
+        activity_profile="batch_work",
+        persona="fast",
+        enabled=True,
+        action_delay_seconds=(0.04, 0.16),
+        retry_delay_seconds=(0.2, 0.8),
+        action_delay_distribution="uniform",
+        retry_delay_distribution="center_weighted",
+        action_variant_distribution="uniform",
+        hesitation_probability=0.02,
+        movement_smoothness=0.62,
+        keyboard_interval_seconds=(0.005, 0.02),
+        scroll_interval_seconds=(0.01, 0.04),
+    ),
+}
+
+
+def execution_profile_for_activity(activity_profile: str) -> ExecutionProfile:
+    """Return the built-in bounded timing preset for a named activity profile."""
+    if activity_profile not in ACTIVITY_PROFILE_PRESETS:
+        raise ConfigError(
+            "execution_profile.activity_profile must be focused, careful, "
+            "background_assist, or batch_work",
+        )
+    return ACTIVITY_PROFILE_PRESETS[activity_profile]
 
 
 class ConfigLoader(Protocol):
@@ -312,9 +386,15 @@ def _optional_execution_profile(
     if not isinstance(value, dict):
         raise ConfigError("execution_profile must be a mapping")
 
-    defaults = ExecutionProfile()
     profile = cast(dict[str, object], value)
+    activity_profile = _optional_activity_profile(profile, "activity_profile")
+    defaults = (
+        execution_profile_for_activity(activity_profile)
+        if activity_profile is not None
+        else ExecutionProfile()
+    )
     return ExecutionProfile(
+        activity_profile=activity_profile,
         persona=_optional_str_with_default(profile, "persona", defaults.persona),
         enabled=_optional_bool_with_default(profile, "enabled", defaults.enabled),
         action_delay_seconds=_optional_seconds_pair(
@@ -384,6 +464,21 @@ def _optional_str_with_default(
     return fallback if value is None else value
 
 
+def _optional_activity_profile(
+    data: dict[str, object],
+    key: str,
+) -> str | None:
+    value = _optional_str(data, key)
+    if value is None:
+        return None
+    if value not in ACTIVITY_PROFILE_NAMES:
+        raise ConfigError(
+            "execution_profile.activity_profile must be focused, careful, "
+            "background_assist, or batch_work",
+        )
+    return value
+
+
 def _optional_float_with_default(
     data: dict[str, object],
     key: str,
@@ -427,6 +522,14 @@ def _optional_seed(data: dict[str, object], key: str) -> int | None:
 
 def _validate_execution_profile(profile: ExecutionProfile) -> list[str]:
     errors: list[str] = []
+    if (
+        profile.activity_profile is not None
+        and profile.activity_profile not in ACTIVITY_PROFILE_NAMES
+    ):
+        errors.append(
+            "execution_profile.activity_profile must be focused, careful, "
+            "background_assist, or batch_work",
+        )
     if profile.persona not in EXECUTION_PERSONAS:
         errors.append("execution_profile.persona must be careful, normal, or fast")
     if profile.action_delay_distribution not in SAMPLING_DISTRIBUTIONS:

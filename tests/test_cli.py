@@ -120,6 +120,30 @@ def test_cli_dry_run_validates_and_reports_success(
     assert "status: passed" in output
 
 
+def test_cli_dry_run_accepts_activity_profile(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    task_path = tmp_path / "task.yaml"
+    write_task(task_path)
+
+    status = main(
+        [
+            "dry-run",
+            str(task_path),
+            "--allowed-window",
+            "DeskPilot Fixture",
+            "--activity-profile",
+            "focused",
+        ],
+    )
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "execution profile: focused (persona normal)" in output
+    assert "timing: action 0.080-0.250s" in output
+
+
 def test_cli_dry_run_preview_shows_timing_bounds_and_recovery_paths(
     tmp_path: Path,
     capsys: CaptureFixture[str],
