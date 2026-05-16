@@ -324,6 +324,12 @@ Every prompt class keeps the same boundary: return structured JSON only, do not
 execute desktop input, do not invent executable actions, and wait for
 deterministic validation before any suggestion can affect a run.
 
+For screen review, `desktop-agent inspect-screen --caption-output <path>` writes
+a local caption prompt report from the captured screenshot, OCR text, UIA tree,
+and fused candidates. The report is marked `review_only`, `authoring_only`, and
+`direct_action_allowed: false`; it is never consumed by target selection or the
+actuation pipeline.
+
 ## Sensitive Step Confirmation
 
 Tasks can mark a step with `requires_confirmation: true`. Those steps are

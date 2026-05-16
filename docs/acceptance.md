@@ -13,6 +13,9 @@ logged-in Windows desktop session.
 - `desktop-agent inspect-screen` writes `inspect-screen.json` with screenshot
   metadata, OCR blocks, UIA tree/candidates when available, fused candidates,
   and candidate rankings.
+- `desktop-agent inspect-screen --caption-output <path>` writes a review-only
+  screenshot caption prompt report with `direct_action_allowed: false` for
+  routine authoring and trace review.
 - Failed planner runs include a final status, abort reason, step message,
   events, candidate confidence values, and trace artifacts.
 - Execution-profile runs write safety-audit JSON and Markdown artifacts.

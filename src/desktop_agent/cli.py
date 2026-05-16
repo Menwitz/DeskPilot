@@ -122,6 +122,10 @@ from desktop_agent.screen import (
     ScreenUnavailableError,
     StaticScreenObserver,
 )
+from desktop_agent.screen_captioning import (
+    screen_caption_review_from_inspection,
+    write_screen_caption_review_report,
+)
 from desktop_agent.site_playbooks import (
     SitePlaybook,
     SitePlaybookValidationError,
@@ -385,6 +389,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     inspect_parser.add_argument("--output", required=True, type=Path)
     inspect_parser.add_argument("--verbose", action="store_true")
+    inspect_parser.add_argument(
+        "--caption-output",
+        type=Path,
+        help="write a review-only local model screenshot caption prompt report",
+    )
 
     calibrate_parser = subparsers.add_parser(
         "calibrate-target",
@@ -1441,6 +1450,16 @@ def _inspect_screen(args: argparse.Namespace) -> int:
     output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print("status: passed")
     print(f"inspection report: {output_path}")
+    if args.caption_output is not None:
+        caption_report = screen_caption_review_from_inspection(
+            payload,
+            inspection_report_path=output_path,
+        )
+        caption_path = write_screen_caption_review_report(
+            caption_report,
+            args.caption_output,
+        )
+        print(f"caption report: {caption_path}")
     return 0
 
 

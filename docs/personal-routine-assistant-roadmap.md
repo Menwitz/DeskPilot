@@ -560,7 +560,7 @@ abuse, and hidden automation are not supported.
 - [x] Add Ollama health check and model listing.
 - [x] Add prompt classes for routine ranking, missing-input extraction, trace
       summarization, screen summary, and YAML improvement suggestions.
-- [ ] Add local screenshot captioning path only for review and authoring, not
+- [x] Add local screenshot captioning path only for review and authoring, not
       direct action execution.
 - [ ] Add output validation for structured model responses.
 - [ ] Add trace fields for provider, model name, prompt class, input artifact

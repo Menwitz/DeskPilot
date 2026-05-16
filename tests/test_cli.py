@@ -1154,14 +1154,24 @@ def test_cli_inspect_screen_writes_success_report(
     monkeypatch: MonkeyPatch,
 ) -> None:
     output_dir = tmp_path / "trace"
+    caption_output = output_dir / "screen-caption-review.json"
     monkeypatch.setattr("desktop_agent.cli.MssScreenObserver", FixtureScreenObserver)
     monkeypatch.setattr("desktop_agent.cli.TesseractOcrProvider", FixtureOcrProvider)
     monkeypatch.setattr("desktop_agent.cli.WindowsUiaAdapter", FixtureUiaAdapter)
 
-    status = main(["inspect-screen", "--output", str(output_dir)])
+    status = main(
+        [
+            "inspect-screen",
+            "--output",
+            str(output_dir),
+            "--caption-output",
+            str(caption_output),
+        ],
+    )
 
     output = capsys.readouterr().out
     report = json.loads((output_dir / "inspect-screen.json").read_text())
+    caption = json.loads(caption_output.read_text(encoding="utf-8"))
     assert status == 0
     assert report["status"] == "passed"
     assert report["size"] == [640, 480]
@@ -1173,7 +1183,11 @@ def test_cli_inspect_screen_writes_success_report(
     assert report["candidates"][0]["id"] == "uia-submit"
     assert report["candidate_rankings"][0]["source"] == "uia"
     assert (output_dir / "uia-tree.json").exists()
+    assert caption["review_only"] is True
+    assert caption["direct_action_allowed"] is False
+    assert caption["prompt"]["prompt_class"] == "screen_summary"
     assert "status: passed" in output
+    assert "caption report:" in output
 
 
 def test_cli_calibrate_target_writes_selected_report(
