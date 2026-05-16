@@ -52,6 +52,10 @@ A proof bundle is the Windows run package containing the command, environment
 metadata, video or video policy, trace directory, screenshots, action log,
 proof manifest, replay output, and final report needed to review a real-input
 run without rerunning desktop input.
+The final four-workflow proof pack also requires `proof-suite-promotion.json`,
+`proof-promotion-verification.json`, and `proof-archive-verification.json` so
+reviewers can confirm the promoted evidence gates, artifact digests, and copied
+archive integrity before checking the roadmap acceptance boxes.
 The checklist also includes opt-in `pytest -m windows_smoke` coverage for
 unlocked owned Windows sessions; those tests stay skipped by default outside
 that environment.

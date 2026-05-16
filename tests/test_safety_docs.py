@@ -206,6 +206,10 @@ def test_windows_proof_docs_cover_manual_evidence_review() -> None:
         "video-capture.log",
         "candidate rankings",
         "reviewer signoff",
+        "proof-suite-promotion.json",
+        "proof-promotion-verification.json",
+        "proof-archive-verification.json",
+        "artifact digests",
     ):
         assert phrase in documentation
 

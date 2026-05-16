@@ -199,6 +199,8 @@ abuse, and hidden automation are not supported.
       checked against the promotion digest record.
 - [x] Add machine-readable status JSON for promotion and archive verification
       results.
+- [x] Update acceptance documentation and docs tests to require promotion,
+      verification, and artifact digest records before proof acceptance.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.
