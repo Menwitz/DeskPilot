@@ -37,7 +37,8 @@ unknown routine IDs, or execute raw actions directly.
 `search_routine_index_for_goal()` wraps the routine catalog search and returns
 `GoalPlanCandidate` records with schedule eligibility metadata. Search covers
 routine ID, name, required app, required site, tags, inputs, outputs, safety
-class, approval policy, schedule policy, and schedule constraint text.
+class, approval policy, schedule policy, schedule constraint text, and supplied
+historical success counters.
 
 When a timestamp is supplied, scheduled routines with allowed time windows are
 marked `inside_allowed_time_window` or `outside_allowed_time_window`. Callers
@@ -51,6 +52,8 @@ allowed window before routing or execution.
 - exact required app/site filters when the goal supplies those constraints.
 - tag and input compatibility bonuses.
 - max safety-class filtering.
+- historical success tie-breaking when local trace-derived counters are
+  supplied.
 - schedule eligibility filtering.
 - stable score ordering with routine ID as the tie-breaker.
 

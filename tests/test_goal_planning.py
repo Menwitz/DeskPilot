@@ -27,6 +27,7 @@ from desktop_agent.goal_planning import (
 from desktop_agent.routines import (
     RoutineCatalog,
     RoutineDefinition,
+    RoutineFailureCounters,
     routine_definition_from_mapping,
 )
 
@@ -341,6 +342,57 @@ def test_goal_router_filters_above_max_safety_class() -> None:
     assert plan.selected_routine_id is None
     assert plan.execution_status == "blocked"
     assert plan.candidate_routines == ()
+
+
+def test_goal_router_uses_historical_success_for_tie_breaking() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="browser.alpha-search",
+                name="Browser search alpha",
+                tags=["browser", "search"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+            ),
+            _routine(
+                routine_id="browser.beta-search",
+                name="Browser search beta",
+                tags=["browser", "search"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+            ),
+        ),
+    )
+
+    plan = route_goal_to_routine(
+        catalog,
+        GoalRoutingRequest(
+            user_goal="Search in the browser",
+            normalized_intent="browser search",
+            tags=("browser", "search"),
+            max_safety_class="low",
+        ),
+        failure_counters={
+            "browser.alpha-search": RoutineFailureCounters(
+                routine_id="browser.alpha-search",
+                total_runs=4,
+                passed_runs=1,
+                failed_runs=3,
+            ),
+            "browser.beta-search": RoutineFailureCounters(
+                routine_id="browser.beta-search",
+                total_runs=4,
+                passed_runs=4,
+            ),
+        },
+    )
+
+    assert plan.selected_routine_id == "browser.beta-search"
+    assert plan.candidate_routines[0].routine_id == "browser.beta-search"
+    assert "historical_success" in plan.candidate_routines[0].matched_fields
 
 
 def test_goal_router_shows_alternatives_for_ambiguous_goals() -> None:

@@ -6,6 +6,7 @@ import hashlib
 import json
 import urllib.error
 import urllib.request
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Literal, Protocol, cast
@@ -20,6 +21,7 @@ from desktop_agent.routines import (
     RoutineCatalog,
     RoutineDefinition,
     RoutineDefinitionError,
+    RoutineFailureCounters,
     require_validated_routine_for_execution,
 )
 from desktop_agent.scheduler import select_schedule_time
@@ -175,12 +177,16 @@ class GoalRoutineIndexResult:
     candidate: GoalPlanCandidate
     schedule_eligible: bool
     schedule_reason: str
+    historical_success_rate: float | None = None
+    historical_total_runs: int = 0
 
     def metadata(self) -> dict[str, object]:
         return {
             **self.candidate.metadata(),
             "schedule_eligible": self.schedule_eligible,
             "schedule_reason": self.schedule_reason,
+            "historical_success_rate": self.historical_success_rate,
+            "historical_total_runs": self.historical_total_runs,
         }
 
 
@@ -316,10 +322,12 @@ def search_routine_index_for_goal(
     *,
     now: datetime | None = None,
     require_schedule_eligible: bool = False,
+    failure_counters: Mapping[str, RoutineFailureCounters] | None = None,
     limit: int = 20,
 ) -> tuple[GoalRoutineIndexResult, ...]:
     """Search routine metadata and attach goal-planning eligibility fields."""
     results: list[GoalRoutineIndexResult] = []
+    counters = failure_counters or {}
     for result in catalog.search(query, limit=limit):
         schedule_eligible, schedule_reason = _schedule_eligibility(
             result.routine,
@@ -327,6 +335,12 @@ def search_routine_index_for_goal(
         )
         if require_schedule_eligible and not schedule_eligible:
             continue
+        historical_success_rate, historical_total_runs = _historical_success(
+            counters.get(result.routine.id),
+        )
+        matched_fields = result.matched_fields
+        if historical_success_rate is not None:
+            matched_fields = (*matched_fields, "historical_success")
         results.append(
             GoalRoutineIndexResult(
                 routine=result.routine,
@@ -334,12 +348,14 @@ def search_routine_index_for_goal(
                     routine_id=result.routine.id,
                     routine_name=result.routine.name,
                     score=float(result.score),
-                    matched_fields=result.matched_fields,
+                    matched_fields=matched_fields,
                     safety_class=result.routine.safety_class,
                     approval_policy=result.routine.approval_policy,
                 ),
                 schedule_eligible=schedule_eligible,
                 schedule_reason=schedule_reason,
+                historical_success_rate=historical_success_rate,
+                historical_total_runs=historical_total_runs,
             ),
         )
     return tuple(results)
@@ -375,6 +391,8 @@ def missing_input_prompts(
 def route_goal_to_routine(
     catalog: RoutineCatalog,
     request: GoalRoutingRequest,
+    *,
+    failure_counters: Mapping[str, RoutineFailureCounters] | None = None,
 ) -> GoalPlan:
     """Select the best known routine using deterministic router rules."""
     validate_goal_routing_request(request)
@@ -383,6 +401,7 @@ def route_goal_to_routine(
         request.normalized_intent or request.user_goal,
         now=request.now,
         require_schedule_eligible=True,
+        failure_counters=failure_counters,
         limit=100,
     )
     ranked_candidates = _rank_goal_candidates(indexed_results, request)
@@ -790,7 +809,22 @@ def _router_score(
         score += 25
     if result.schedule_eligible:
         score += 5
+    score += _historical_success_bonus(result)
     return score
+
+
+def _historical_success(
+    counters: RoutineFailureCounters | None,
+) -> tuple[float | None, int]:
+    if counters is None or counters.total_runs <= 0:
+        return None, 0
+    return counters.passed_runs / counters.total_runs, counters.total_runs
+
+
+def _historical_success_bonus(result: GoalRoutineIndexResult) -> float:
+    if result.historical_success_rate is None:
+        return 0.0
+    return result.historical_success_rate * min(result.historical_total_runs, 10)
 
 
 def _safety_allowed(safety_class: str, max_safety_class: str) -> bool:
