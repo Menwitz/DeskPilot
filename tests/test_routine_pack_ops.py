@@ -12,6 +12,11 @@ from desktop_agent.routine_pack_ops import (
     export_routine_pack,
     import_routine_pack,
 )
+from desktop_agent.routines import (
+    load_routine_catalog,
+    routine_execution_gate,
+    routine_quarantine_status,
+)
 
 
 def test_routine_pack_import_export_directory_and_zip(tmp_path: Path) -> None:
@@ -41,6 +46,15 @@ def test_routine_pack_import_rejects_existing_without_replace(tmp_path: Path) ->
 
     with pytest.raises(RoutinePackOperationError, match="already installed"):
         import_routine_pack(source, install_root)
+
+
+def test_routine_pack_import_rejects_unsafe_archive_member(tmp_path: Path) -> None:
+    archive_path = tmp_path / "unsafe-pack.zip"
+    with ZipFile(archive_path, "w") as archive:
+        archive.writestr("../routine-pack.yaml", "pack_schema_version: '1'\n")
+
+    with pytest.raises(RoutinePackOperationError, match="unsafe routine pack archive"):
+        import_routine_pack(archive_path, tmp_path / "installed")
 
 
 def test_routine_pack_import_surfaces_unverified_trust_warning(
@@ -256,6 +270,29 @@ def test_trusted_routine_pack_cli_imports_and_validates_installed_pack(
     }
 
 
+def test_installed_pack_routine_can_remain_quarantined_by_execution_gate(
+    tmp_path: Path,
+) -> None:
+    source = _write_pack(
+        tmp_path / "unsafe-pack",
+        pack_id="unsafe-pack",
+        routine_id="unsafe-pack.routine",
+        quarantine_status="quarantined",
+        quarantine_reason="unsafe imported selector requires review",
+    )
+    install_root = tmp_path / "installed"
+
+    import_routine_pack(source, install_root)
+    catalog = load_routine_catalog(install_root)
+    routine = catalog.by_id("unsafe-pack.routine")
+    gate = routine_execution_gate(catalog, "unsafe-pack.routine")
+
+    assert routine is not None
+    assert routine_quarantine_status(routine) == "quarantined"
+    assert gate.allowed is False
+    assert gate.reason == "routine_quarantined"
+
+
 def _write_pack(
     root: Path,
     *,
@@ -264,6 +301,8 @@ def _write_pack(
     input_name: str = "topic",
     target: str = "Target",
     trust_level: str = "trusted_local",
+    quarantine_status: str = "active",
+    quarantine_reason: str | None = None,
 ) -> Path:
     root.mkdir(parents=True)
     (root / "README.md").write_text("# Sample Pack\n", encoding="utf-8")
@@ -303,6 +342,12 @@ def _write_pack(
                 "schedule_policy: manual",
                 "approval_policy: none",
                 "expected_duration_seconds: 30",
+                f"quarantine_status: {quarantine_status}",
+                *(
+                    [f"quarantine_reason: {quarantine_reason}"]
+                    if quarantine_reason
+                    else []
+                ),
                 "reference:",
                 "  type: task",
                 "  path: tasks/sample.yaml",

@@ -90,6 +90,10 @@ duplicate pack/version records, duplicate routine IDs, duplicate routine input
 signatures, and duplicate task selector signatures. Duplicate pack/version and
 routine IDs block install unless `--replace` is provided; input and selector
 duplicates are surfaced as warnings for operator review.
+Unsafe archive members and manifest paths that escape the pack root are
+rejected. Installed routines that are explicitly marked `quarantined`, or that
+cross the configured failed-evidence threshold, remain visible for review but
+are blocked by the validated routine execution gate.
 
 `export-routine-pack` validates the installed manifest and writes either a
 directory or `.zip` archive depending on the `--output` path.
