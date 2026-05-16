@@ -49,6 +49,10 @@ Scheduler decisions use phase `scheduler` and include `scheduler_event`,
 selected time, wait reason, skip reason, retry-later time, or operator
 intervention. These events make queued routine decisions reviewable before the
 future scheduler starts desktop input.
+Scheduler safety checks use phase `scheduler_safety_gate` and include
+`scheduler_safety_allowed`, `scheduler_safety_reason`, active-window title,
+required app/site, and allowed context patterns so a blocked scheduled run can
+be traced back to desktop readiness or app-context mismatch.
 For sensitive site workflows, final report metadata records validated approval
 manifest fields and content-variable fingerprints, while step metadata records
 variable names with `content_variables_redacted: true`.

@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Literal
 
+from desktop_agent.routines import RoutineDefinition
+from desktop_agent.screen import ScreenObservation
 from desktop_agent.tracing import TraceEvent
+from desktop_agent.window_allowlist import window_title_matches
 
 RunQueueStatus = Literal[
     "pending",
@@ -145,6 +148,28 @@ class RunQueueEntry:
 
 
 @dataclass(frozen=True)
+class SchedulerSafetyGateDecision:
+    """Decision that allows or blocks a scheduled routine before execution."""
+
+    allowed: bool
+    reason: str
+    active_window_title: str | None
+    allowed_context_patterns: tuple[str, ...]
+    required_app: str | None = None
+    required_site: str | None = None
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "scheduler_safety_allowed": self.allowed,
+            "scheduler_safety_reason": self.reason,
+            "active_window_title": self.active_window_title,
+            "allowed_context_patterns": list(self.allowed_context_patterns),
+            "required_app": self.required_app,
+            "required_site": self.required_site,
+        }
+
+
+@dataclass(frozen=True)
 class RunQueue:
     """Immutable queue used by scheduler tests and future operator UI state."""
 
@@ -224,6 +249,68 @@ class RunQueue:
             "run_queue_status_counts": self.status_counts(),
             "run_queue_entries": [entry.metadata() for entry in self.entries],
         }
+
+
+def evaluate_scheduled_run_safety(
+    entry: RunQueueEntry,
+    routine: RoutineDefinition,
+    observation: ScreenObservation,
+    *,
+    allowed_windows: tuple[str, ...] = (),
+) -> SchedulerSafetyGateDecision:
+    """Check whether the active desktop is ready for a scheduled routine."""
+    patterns = _scheduler_allowed_context_patterns(routine, allowed_windows)
+    if entry.status != "pending":
+        return SchedulerSafetyGateDecision(
+            allowed=False,
+            reason="run_not_pending",
+            active_window_title=observation.active_window_title,
+            allowed_context_patterns=patterns,
+            required_app=routine.required_app,
+            required_site=routine.required_site,
+        )
+    if not _active_desktop_ready(observation):
+        return SchedulerSafetyGateDecision(
+            allowed=False,
+            reason="active_desktop_not_ready",
+            active_window_title=observation.active_window_title,
+            allowed_context_patterns=patterns,
+            required_app=routine.required_app,
+            required_site=routine.required_site,
+        )
+    if patterns and not window_title_matches(observation.active_window_title, patterns):
+        return SchedulerSafetyGateDecision(
+            allowed=False,
+            reason="allowed_app_context_not_ready",
+            active_window_title=observation.active_window_title,
+            allowed_context_patterns=patterns,
+            required_app=routine.required_app,
+            required_site=routine.required_site,
+        )
+    return SchedulerSafetyGateDecision(
+        allowed=True,
+        reason="scheduled_run_context_ready",
+        active_window_title=observation.active_window_title,
+        allowed_context_patterns=patterns,
+        required_app=routine.required_app,
+        required_site=routine.required_site,
+    )
+
+
+def scheduler_safety_gate_trace_event(
+    entry: RunQueueEntry,
+    decision: SchedulerSafetyGateDecision,
+) -> TraceEvent:
+    """Build the trace event emitted when the scheduler safety gate runs."""
+    status = "passed" if decision.allowed else "blocked"
+    return TraceEvent(
+        phase="scheduler_safety_gate",
+        message=f"scheduled run safety gate {status}: {decision.reason}",
+        metadata={
+            **entry.metadata(),
+            **decision.metadata(),
+        },
+    )
 
 
 def scheduler_trace_event(
@@ -307,6 +394,25 @@ def _put_optional(
 ) -> None:
     if value is not None:
         metadata[key] = value
+
+
+def _scheduler_allowed_context_patterns(
+    routine: RoutineDefinition,
+    allowed_windows: tuple[str, ...],
+) -> tuple[str, ...]:
+    patterns = [
+        *allowed_windows,
+        *(entry for entry in (routine.required_app, routine.required_site) if entry),
+    ]
+    return tuple(dict.fromkeys(patterns))
+
+
+def _active_desktop_ready(observation: ScreenObservation) -> bool:
+    return (
+        observation.size[0] > 0
+        and observation.size[1] > 0
+        and bool(observation.active_window_title)
+    )
 
 
 def _validate_transition(

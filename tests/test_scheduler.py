@@ -2,14 +2,18 @@ from typing import cast
 
 import pytest
 
+from desktop_agent.routines import RoutineDefinition, routine_definition_from_mapping
 from desktop_agent.scheduler import (
     RUN_QUEUE_STATUSES,
     RunQueue,
     RunQueueError,
     RunQueueStatus,
     SchedulerTraceKind,
+    evaluate_scheduled_run_safety,
+    scheduler_safety_gate_trace_event,
     scheduler_trace_event,
 )
+from desktop_agent.screen import ScreenObservation
 
 
 def test_run_queue_enqueues_pending_entries_by_priority() -> None:
@@ -199,3 +203,110 @@ def test_scheduler_trace_event_records_pause_and_resume(kind: str) -> None:
 
     assert event.metadata["scheduler_event"] == kind
     assert event.metadata["scheduler_reason"] == f"operator {kind}"
+
+
+def test_scheduler_safety_gate_allows_ready_desktop_context() -> None:
+    entry = RunQueue().enqueue("browser.read-page").next_pending()
+    routine = _routine(required_app="Microsoft Edge", required_site="example.com")
+    assert entry is not None
+
+    decision = evaluate_scheduled_run_safety(
+        entry,
+        routine,
+        ScreenObservation(
+            size=(1920, 1080),
+            active_window_title="Example.com - Microsoft Edge",
+        ),
+        allowed_windows=("Microsoft Edge",),
+    )
+    event = scheduler_safety_gate_trace_event(entry, decision)
+
+    assert decision.allowed is True
+    assert decision.reason == "scheduled_run_context_ready"
+    assert event.phase == "scheduler_safety_gate"
+    assert event.metadata["scheduler_safety_allowed"] is True
+    assert event.metadata["required_app"] == "Microsoft Edge"
+
+
+def test_scheduler_safety_gate_blocks_unready_desktop() -> None:
+    entry = RunQueue().enqueue("browser.read-page").next_pending()
+    routine = _routine(required_app="Microsoft Edge", required_site=None)
+    assert entry is not None
+
+    decision = evaluate_scheduled_run_safety(
+        entry,
+        routine,
+        ScreenObservation(size=(0, 0), active_window_title=None),
+    )
+
+    assert decision.allowed is False
+    assert decision.reason == "active_desktop_not_ready"
+    assert scheduler_safety_gate_trace_event(entry, decision).metadata[
+        "scheduler_safety_reason"
+    ] == "active_desktop_not_ready"
+
+
+def test_scheduler_safety_gate_blocks_wrong_allowed_app_context() -> None:
+    entry = RunQueue().enqueue("browser.read-page").next_pending()
+    routine = _routine(required_app="Microsoft Edge", required_site="example.com")
+    assert entry is not None
+
+    decision = evaluate_scheduled_run_safety(
+        entry,
+        routine,
+        ScreenObservation(size=(1920, 1080), active_window_title="Notepad"),
+        allowed_windows=("Microsoft Edge",),
+    )
+
+    assert decision.allowed is False
+    assert decision.reason == "allowed_app_context_not_ready"
+    assert decision.allowed_context_patterns == (
+        "Microsoft Edge",
+        "example.com",
+    )
+
+
+def test_scheduler_safety_gate_blocks_non_pending_runs() -> None:
+    queue = RunQueue().enqueue("browser.read-page")
+    queue = queue.transition("run-0001", "running", reason="already selected")
+    entry = queue.by_id("run-0001")
+    routine = _routine(required_app=None, required_site=None)
+    assert entry is not None
+
+    decision = evaluate_scheduled_run_safety(
+        entry,
+        routine,
+        ScreenObservation(size=(1920, 1080), active_window_title="DeskPilot"),
+    )
+
+    assert decision.allowed is False
+    assert decision.reason == "run_not_pending"
+
+
+def _routine(
+    *,
+    required_app: str | None,
+    required_site: str | None,
+) -> RoutineDefinition:
+    payload: dict[str, object] = {
+        "id": "browser.read-page",
+        "name": "Browser read page",
+        "description": "Read an owned browser page.",
+        "goal": "Review visible page content.",
+        "tags": ["browser", "reading"],
+        "inputs": ["url"],
+        "outputs": ["visible text"],
+        "safety_class": "low",
+        "schedule_policy": "scheduled",
+        "approval_policy": "none",
+        "expected_duration_seconds": 30,
+        "reference": {
+            "type": "task",
+            "path": "tasks/read-page.yaml",
+        },
+    }
+    if required_app is not None:
+        payload["required_app"] = required_app
+    if required_site is not None:
+        payload["required_site"] = required_site
+    return routine_definition_from_mapping(payload)

@@ -385,7 +385,7 @@ abuse, and hidden automation are not supported.
       failed, canceled, and handed-off states.
 - [x] Add scheduler trace events for selected time, wait reason, skip reason,
       pause, resume, retry-later, and operator intervention.
-- [ ] Add safety gate that blocks scheduled runs when the active desktop or
+- [x] Add safety gate that blocks scheduled runs when the active desktop or
       allowed app context is not ready.
 - [ ] Add manual approval before scheduled external mutation actions.
 - [ ] Add tests for deterministic seeded schedules and bounded unseeded

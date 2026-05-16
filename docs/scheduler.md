@@ -49,6 +49,19 @@ Supported scheduler event kinds:
 - `operator_intervention`: records a user action such as pause, stop, approval,
   or handoff and requires `operator_intervention`.
 
+## Safety Gate
+
+`evaluate_scheduled_run_safety()` blocks a queued routine before execution when
+the active desktop is not observable, the run is no longer pending, or the
+active window does not match the routine's required app/site or supplied
+allowed-window patterns. The decision includes `scheduler_safety_allowed`,
+`scheduler_safety_reason`, active window title, required app/site, and allowed
+context patterns.
+
+`scheduler_safety_gate_trace_event()` turns that decision into a local
+`scheduler_safety_gate` trace event so reports can explain why a scheduled
+routine ran or stayed blocked.
+
 ## Current Boundary
 
 This model is local and deterministic. It does not schedule wall-clock jobs,
