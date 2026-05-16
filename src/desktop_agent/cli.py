@@ -37,6 +37,11 @@ from desktop_agent.config import (
     resolve_runtime_config,
 )
 from desktop_agent.content_variables import load_content_variables
+from desktop_agent.goal_planning import (
+    GoalRoutingRequest,
+    missing_input_prompts,
+    route_goal_to_routine,
+)
 from desktop_agent.mouse_demo import (
     MouseDemoError,
     run_browser_fixture,
@@ -153,6 +158,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_routine(args, dry_run=False)
         if args.command == "dry-run-routine":
             return _run_routine(args, dry_run=True)
+        if args.command == "plan-goal":
+            return _plan_goal(args)
         if args.command == "inspect-screen":
             return _inspect_screen(args)
         if args.command == "calibrate-target":
@@ -300,6 +307,24 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_routine_catalog_options(dry_run_routine_parser)
     _add_site_catalog_options(dry_run_routine_parser)
     _add_runtime_options(dry_run_routine_parser)
+
+    plan_goal_parser = subparsers.add_parser(
+        "plan-goal",
+        help="dry-run goal-to-routine planning without desktop input",
+    )
+    plan_goal_parser.add_argument("user_goal")
+    plan_goal_parser.add_argument("--intent")
+    plan_goal_parser.add_argument("--required-app")
+    plan_goal_parser.add_argument("--required-site")
+    plan_goal_parser.add_argument("--tag", action="append", default=[])
+    plan_goal_parser.add_argument("--input", action="append", default=[])
+    plan_goal_parser.add_argument(
+        "--max-safety-class",
+        default="sensitive",
+        choices=("low", "medium", "high", "sensitive"),
+    )
+    plan_goal_parser.add_argument("--session-state", action="append", default=[])
+    _add_routine_catalog_options(plan_goal_parser)
 
     inspect_parser = subparsers.add_parser(
         "inspect-screen",
@@ -842,6 +867,42 @@ def _run_routine(args: argparse.Namespace, *, dry_run: bool) -> int:
         else Path(f"routine-{routine.id}.yaml")
     )
     return _run_loaded_task(args, task, task_path, dry_run=dry_run)
+
+
+def _plan_goal(args: argparse.Namespace) -> int:
+    catalog = load_routine_catalog(args.routine_pack_root)
+    request = GoalRoutingRequest(
+        user_goal=args.user_goal,
+        normalized_intent=args.intent or args.user_goal.casefold(),
+        required_app=args.required_app,
+        required_site=args.required_site,
+        tags=tuple(args.tag),
+        provided_inputs=tuple(args.input),
+        max_safety_class=args.max_safety_class,
+    )
+    plan = route_goal_to_routine(catalog, request)
+    print("goal plan:")
+    print(f"  goal: {plan.user_goal}")
+    print(f"  intent: {plan.normalized_intent}")
+    print(f"  status: {plan.execution_status}")
+    print(f"  selected: {plan.selected_routine_id or 'none'}")
+    print(f"  explanation: {plan.explanation}")
+    print("  candidates:")
+    for candidate in plan.candidate_routines:
+        print(
+            "    - "
+            f"{candidate.routine_id} score={candidate.score:g} "
+            f"safety={candidate.safety_class} approval={candidate.approval_policy}",
+        )
+    prompts = missing_input_prompts(
+        plan,
+        required_session_state=tuple(args.session_state),
+    )
+    if prompts:
+        print("  prompts:")
+        for prompt in prompts:
+            print(f"    - {prompt.kind}:{prompt.key}: {prompt.prompt}")
+    return 0
 
 
 def _load_routine(args: argparse.Namespace) -> RoutineDefinition:

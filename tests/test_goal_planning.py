@@ -3,7 +3,9 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+from pytest import CaptureFixture
 
+from desktop_agent.cli import main
 from desktop_agent.goal_planning import (
     GoalMissingInputPrompt,
     GoalPlan,
@@ -384,6 +386,34 @@ def test_missing_input_prompt_validation_rejects_blank_prompt() -> None:
         )
 
 
+def test_goal_planner_cli_dry_run_reports_plan_without_desktop_input(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    root = tmp_path / "routine_packs"
+    _write_routine_file(root / "browser" / "search.routine.yaml")
+
+    status = main(
+        [
+            "plan-goal",
+            "Search the web",
+            "--intent",
+            "browser search",
+            "--input",
+            "query",
+            "--routine-pack-root",
+            str(root),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "goal plan:" in output
+    assert "selected: browser.search-web" in output
+    assert "status: ready" in output
+    assert "dry-run preview:" not in output
+
+
 def _routine(
     *,
     routine_id: str,
@@ -418,3 +448,34 @@ def _routine(
     if allowed_time_windows is not None:
         payload["schedule"] = {"allowed_time_windows": allowed_time_windows}
     return routine_definition_from_mapping(payload)
+
+
+def _write_routine_file(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "\n".join(
+            [
+                "id: browser.search-web",
+                "name: Browser web search",
+                "description: Search from a browser input.",
+                "goal: Find web results for a query.",
+                "required_app: Microsoft Edge",
+                "tags:",
+                "  - browser",
+                "  - search",
+                "inputs:",
+                "  - query",
+                "outputs:",
+                "  - search results",
+                "safety_class: low",
+                "schedule_policy: manual",
+                "approval_policy: none",
+                "expected_duration_seconds: 30",
+                "reference:",
+                "  type: task",
+                "  path: tasks/search-web.yaml",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )

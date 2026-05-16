@@ -63,3 +63,15 @@ prompts. Routine variables use kind `routine_input`; required session
 prerequisites such as "browser signed in" use kind `session_state`. Prompt
 metadata is JSON-safe so the future CLI dry-run and operator UI can show the
 same required inputs before execution.
+
+## CLI Dry-Run
+
+`desktop-agent plan-goal` routes a goal to known routines and prints the
+`GoalPlan` without compiling a task or moving the desktop:
+
+```bash
+desktop-agent plan-goal "Search the web" --intent "browser search" --input query
+```
+
+The command reports selected routine, status, ranked candidates, and missing
+input/session-state prompts.
