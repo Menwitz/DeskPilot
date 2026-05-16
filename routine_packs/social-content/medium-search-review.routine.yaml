@@ -1,0 +1,14 @@
+id: social-content.medium-search-review
+name: Medium search review
+description: Run a reviewed Medium search and inspect visible results without engaging.
+goal: Search Medium for reviewed text and leave local trace evidence.
+required_app: Browser
+required_site: medium.com
+tags: [social, medium, search-review, read-only]
+inputs: [medium search query]
+outputs: [search results reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/search-review-surface.yaml}

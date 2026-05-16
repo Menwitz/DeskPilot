@@ -1,0 +1,14 @@
+id: social-content.youtube-saved-review
+name: YouTube saved items review
+description: Review saved or bookmarked YouTube content without opening external actions.
+goal: Inspect saved YouTube content and leave local trace evidence.
+required_app: Browser
+required_site: youtube.com
+tags: [social, youtube, saved-review, read-only]
+inputs: [youtube saved items page]
+outputs: [saved items reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/saved-review-surface.yaml}

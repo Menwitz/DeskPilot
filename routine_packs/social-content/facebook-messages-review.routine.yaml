@@ -1,0 +1,14 @@
+id: social-content.facebook-messages-review
+name: Facebook messages review
+description: Review visible Facebook messages without replying, reacting, or sending content.
+goal: Inspect Facebook messages and leave local trace evidence.
+required_app: Browser
+required_site: facebook.com
+tags: [social, facebook, messages-review, read-only]
+inputs: [facebook messages]
+outputs: [messages reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/messages-review-surface.yaml}

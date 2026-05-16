@@ -1,0 +1,25 @@
+name: Social content search review surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: focus-social-search
+    action: click_text
+    target: Search
+  - id: type-social-search
+    action: type_text
+    text: Reviewed search
+    verify:
+      type: visible_text
+      text: Reviewed search
+  - id: submit-social-search
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Results
+  - id: confirm-results-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Results

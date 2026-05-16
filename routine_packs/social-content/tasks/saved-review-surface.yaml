@@ -1,0 +1,19 @@
+name: Social content saved review surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: open-saved-items
+    action: click_text
+    target: Saved
+    verify:
+      type: visible_text
+      text: Saved
+  - id: review-saved-items
+    action: scroll
+    text: "-2"
+  - id: confirm-saved-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Saved

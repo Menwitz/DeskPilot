@@ -1,0 +1,14 @@
+id: social-content.x-twitter-search-review
+name: X/Twitter search review
+description: Run a reviewed X/Twitter search and inspect visible results without engaging.
+goal: Search X/Twitter for reviewed text and leave local trace evidence.
+required_app: Browser
+required_site: x.com
+tags: [social, x-twitter, search-review, read-only]
+inputs: [x search query]
+outputs: [search results reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/search-review-surface.yaml}

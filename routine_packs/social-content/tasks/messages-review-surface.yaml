@@ -1,0 +1,19 @@
+name: Social content messages review surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: open-messages
+    action: click_text
+    target: Messages
+    verify:
+      type: visible_text
+      text: Messages
+  - id: review-message-list
+    action: scroll
+    text: "-2"
+  - id: confirm-messages-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Messages

@@ -1,0 +1,14 @@
+id: social-content.tiktok-messages-review
+name: TikTok messages review
+description: Review visible TikTok messages without replying, reacting, or sending content.
+goal: Inspect TikTok messages and leave local trace evidence.
+required_app: Browser
+required_site: tiktok.com
+tags: [social, tiktok, messages-review, read-only]
+inputs: [tiktok messages]
+outputs: [messages reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/messages-review-surface.yaml}

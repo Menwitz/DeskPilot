@@ -1,0 +1,14 @@
+id: social-content.tiktok-search-review
+name: TikTok search review
+description: Run a reviewed TikTok search and inspect visible results without engaging.
+goal: Search TikTok for reviewed text and leave local trace evidence.
+required_app: Browser
+required_site: tiktok.com
+tags: [social, tiktok, search-review, read-only]
+inputs: [tiktok search query]
+outputs: [search results reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/search-review-surface.yaml}

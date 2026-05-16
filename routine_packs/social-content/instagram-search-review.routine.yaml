@@ -1,0 +1,14 @@
+id: social-content.instagram-search-review
+name: Instagram search review
+description: Run a reviewed Instagram search and inspect visible results without engaging.
+goal: Search Instagram for reviewed text and leave local trace evidence.
+required_app: Browser
+required_site: instagram.com
+tags: [social, instagram, search-review, read-only]
+inputs: [instagram search query]
+outputs: [search results reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/search-review-surface.yaml}
