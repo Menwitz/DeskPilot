@@ -787,6 +787,7 @@ def test_routine_docs_generation_renders_index_and_template(
         required_app="Microsoft Edge",
         required_site="example.com",
         task_path="tasks/browser-search.yaml",
+        quarantine_failure_threshold=1,
     )
     _write_final_report(
         history_root / "failed-search" / "final-report.json",
@@ -801,9 +802,20 @@ def test_routine_docs_generation_renders_index_and_template(
 
     assert "# DeskPilot Routine Catalog Index" in index
     assert "- Total routines: 1" in index
+    assert "- Windows proof required: 1" in index
+    assert "- Quarantined routines: 1" in index
     assert "- Historical failed runs: 1" in index
+    assert (
+        "| ID | Pack | Name | Surface | Safety | Approval | Schedule | "
+        "Gates | Status | Historical Failures | Reference |"
+    ) in index
     assert "| browser.search | browser | Browser search |" in index
+    assert "schema_validation,dry_run,fixture_test" in index
+    assert "trace_replay_review,documentation,windows_proof" in index
+    assert "| quarantined | 1 | task:" in index
     assert "Promotion gates" in index
+    assert "Windows proof when applicable" in index
+    assert "quarantine status" in index
     assert "# <Routine Name>" in template
     assert "- [ ] Dry-run report path:" in template
 
