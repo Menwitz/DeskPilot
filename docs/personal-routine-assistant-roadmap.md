@@ -347,7 +347,7 @@ abuse, and hidden automation are not supported.
 ### Acceptance Criteria
 
 - [ ] 300 routines validate.
-- [ ] Every routine has dry-run coverage.
+- [x] Every routine has dry-run coverage.
 - [ ] Every high-risk routine has approval metadata and checkpoint coverage.
 - [x] Every routine can be listed, inspected, and compiled from the CLI.
 - [x] Catalog quality report shows validation, proof, and quarantine status.

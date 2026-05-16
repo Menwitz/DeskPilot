@@ -106,6 +106,7 @@ class DryRunPerceptionEngine(PerceptionEngine):
         if label is None:
             return ()
         bounds = _dry_run_candidate_bounds(step)
+        focused = step.verify is not None and step.verify.type == "focused"
         return (
             ElementCandidate(
                 id=f"dry-run-{step.id}",
@@ -115,6 +116,7 @@ class DryRunPerceptionEngine(PerceptionEngine):
                 confidence=1.0,
                 metadata={
                     "dry_run": True,
+                    "focused": focused,
                     "synthetic_region_match": step.region is not None,
                 },
             ),
@@ -577,6 +579,8 @@ def _normalize_text(value: str) -> str:
 def _dry_run_label(step: TaskStep) -> str | None:
     if step.target:
         return step.target
+    if step.verify and step.verify.type == "focused":
+        return "Focused element"
     if step.verify and step.verify.text:
         return step.verify.text
     if step.image:

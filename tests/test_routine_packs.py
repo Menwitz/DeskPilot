@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from pytest import CaptureFixture
@@ -79,6 +80,60 @@ def test_builtin_routines_are_listable_inspectable_and_compilable_from_cli(
         validator.validate(task, config)
         assert task.metadata["routine_id"] == routine.id
         assert task.metadata["routine_source_path"] == str(routine.source_path)
+
+
+def test_builtin_routines_have_cli_dry_run_coverage(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    pack_root = Path("routine_packs")
+    catalog = load_routine_catalog(pack_root)
+    config_path = tmp_path / "config.yaml"
+    trace_root = tmp_path / "traces"
+    config_path.write_text(f"trace_root: {trace_root}\n", encoding="utf-8")
+
+    assert catalog.routines
+    for routine in catalog.routines:
+        compiled_path = tmp_path / f"{routine.id.replace('.', '_')}.compiled.yaml"
+        assert (
+            main(
+                [
+                    "compile-routine",
+                    routine.id,
+                    "--routine-pack-root",
+                    str(pack_root),
+                    "--output",
+                    str(compiled_path),
+                ],
+            )
+            == 0
+        )
+        capsys.readouterr()
+        task = YamlTaskLoader().load(compiled_path)
+        args = [
+            "dry-run-routine",
+            routine.id,
+            "--routine-pack-root",
+            str(pack_root),
+            "--config",
+            str(config_path),
+            "--no-screenshots",
+        ]
+        for step in task.steps:
+            args.extend(["--confirm-step", step.id])
+
+        assert main(args) == 0
+        output = capsys.readouterr().out
+        assert f"task: {routine.name}" in output
+        assert "status: passed" in output
+
+    reports = sorted(trace_root.glob("*/final-report.json"))
+    reported_routine_ids = {
+        json.loads(report.read_text(encoding="utf-8"))["metadata"]["routine_id"]
+        for report in reports
+    }
+    assert len(reports) == len(catalog.routines)
+    assert reported_routine_ids == {routine.id for routine in catalog.routines}
 
 
 def test_browser_routine_pack_contains_seed_categories() -> None:

@@ -11,4 +11,6 @@ steps:
     text: "-3"
   - id: confirm-feed-visible
     action: assert_visible
-    target: Feed
+    verify:
+      type: visible_text
+      text: Feed

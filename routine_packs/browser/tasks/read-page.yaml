@@ -11,4 +11,6 @@ steps:
     text: "-3"
   - id: confirm-content
     action: assert_visible
-    target: Article
+    verify:
+      type: visible_text
+      text: Article
