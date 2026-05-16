@@ -20,6 +20,18 @@ from desktop_agent.screen import Bounds, MonitorInfo, ScreenObservation
 from desktop_agent.task_dsl import TaskRegion, TaskStep
 
 
+class SequenceEmergencyStopMonitor:
+    def __init__(self, states: tuple[bool, ...]) -> None:
+        self._states = states
+        self.calls = 0
+
+    def is_triggered(self, config: RuntimeConfig) -> bool:
+        _ = config
+        index = min(self.calls, len(self._states) - 1)
+        self.calls += 1
+        return self._states[index]
+
+
 def test_desktop_actuator_clicks_converted_target_center() -> None:
     backend = FakeInputBackend(
         start_position=(0, 0),
@@ -422,6 +434,62 @@ def test_desktop_actuator_blocks_emergency_stop_before_input() -> None:
     assert result.metadata["actuation_guard"] == "emergency_stop"
     assert result.metadata["emergency_stop_triggered"] is True
     assert backend.events == []
+
+
+def test_desktop_actuator_checks_emergency_stop_between_pointer_events() -> None:
+    backend = FakeInputBackend(
+        start_position=(0, 0),
+        active_window_title="DeskPilot Fixture",
+    )
+    actuator = DesktopActuator(
+        backend,
+        ActuationProfile(
+            movement_duration_seconds=(0.0, 0.0),
+            timing_variation_seconds=(0.0, 0.0),
+            movement_steps=4,
+            movement_smoothness=0.0,
+        ),
+        SequenceEmergencyStopMonitor((False, False, True)),
+    )
+    target = ElementCandidate(
+        id="target-1",
+        source="uia",
+        label="Submit",
+        bounds=Bounds(x=20, y=20, width=10, height=10),
+        confidence=0.9,
+    )
+
+    result = actuator.execute(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        target,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    assert result.success is False
+    assert result.metadata["emergency_stop_boundary"] == "movement_path"
+    assert [event.kind for event in backend.events] == ["move"]
+
+
+def test_desktop_actuator_checks_emergency_stop_between_typed_characters() -> None:
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    actuator = DesktopActuator(
+        backend,
+        _instant_profile(),
+        SequenceEmergencyStopMonitor((False, False, True)),
+    )
+
+    result = actuator.execute(
+        TaskStep(id="type-query", action="type_text", text="abc"),
+        None,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    typed = [event.text for event in backend.events if event.kind == "type_text"]
+    assert result.success is False
+    assert result.metadata["emergency_stop_boundary"] == "type_character"
+    assert typed == ["a"]
 
 
 def test_pointer_path_is_not_emitted_for_disallowed_active_window() -> None:

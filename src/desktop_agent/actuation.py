@@ -530,15 +530,17 @@ class DesktopActuator(Actuator):
             if step.action in _PASSIVE_ACTIONS:
                 return ActionResult(True, f"observed {step.action}")
             if step.action in _CLICK_ACTIONS:
-                return self._execute_click(step, target, observation)
+                return self._execute_click(step, target, observation, config)
             if step.action == "type_text":
-                return self._execute_type_text(step)
+                return self._execute_type_text(step, config)
             if step.action == "press_key":
-                return self._execute_press_key(step)
+                return self._execute_press_key(step, config)
             if step.action in {"scroll", "scroll_until"}:
-                return self._execute_scroll(step, target, observation)
+                return self._execute_scroll(step, target, observation, config)
             if step.action == "drag":
-                return self._execute_drag(step, target, observation)
+                return self._execute_drag(step, target, observation, config)
+        except ActuationEmergencyStop as exc:
+            return _emergency_stop_result(exc.boundary)
         except ActuationError as exc:
             return ActionResult(False, str(exc))
 
@@ -548,14 +550,18 @@ class DesktopActuator(Actuator):
         self,
         point: tuple[int, int],
         target_size_pixels: tuple[float, float] | None = None,
+        config: RuntimeConfig | None = None,
     ) -> MovementPlan:
         start = self._backend.current_position()
         plan = self._movement_planner.plan(start, point, target_size_pixels)
         for path_point in plan.points:
+            self._raise_if_emergency_stopped(config, "movement_path")
             self._backend.move_to(path_point)
             if plan.step_delay_seconds > 0:
+                self._raise_if_emergency_stopped(config, "movement_wait")
                 self._backend.sleep(plan.step_delay_seconds)
         if plan.settle_duration_seconds > 0:
+            self._raise_if_emergency_stopped(config, "movement_settle")
             self._backend.sleep(plan.settle_duration_seconds)
         return plan
 
@@ -570,9 +576,12 @@ class DesktopActuator(Actuator):
         button: MouseButton = "left",
         *,
         target_size_pixels: tuple[float, float] | None = None,
+        config: RuntimeConfig | None = None,
     ) -> MovementPlan:
-        plan = self.move_mouse(point, target_size_pixels)
+        plan = self.move_mouse(point, target_size_pixels, config)
+        self._raise_if_emergency_stopped(config, "mouse_down")
         self._backend.mouse_down(point, button)
+        self._raise_if_emergency_stopped(config, "mouse_up")
         self._backend.mouse_up(point, button)
         return plan
 
@@ -582,10 +591,19 @@ class DesktopActuator(Actuator):
         button: MouseButton = "left",
         *,
         target_size_pixels: tuple[float, float] | None = None,
+        config: RuntimeConfig | None = None,
     ) -> MovementPlan:
-        plan = self.click(point, button, target_size_pixels=target_size_pixels)
+        plan = self.click(
+            point,
+            button,
+            target_size_pixels=target_size_pixels,
+            config=config,
+        )
+        self._raise_if_emergency_stopped(config, "double_click_wait")
         self._backend.sleep(0.05)
+        self._raise_if_emergency_stopped(config, "double_click_mouse_down")
         self._backend.mouse_down(point, button)
+        self._raise_if_emergency_stopped(config, "double_click_mouse_up")
         self._backend.mouse_up(point, button)
         return plan
 
@@ -597,10 +615,13 @@ class DesktopActuator(Actuator):
         *,
         start_target_size_pixels: tuple[float, float] | None = None,
         end_target_size_pixels: tuple[float, float] | None = None,
+        config: RuntimeConfig | None = None,
     ) -> MovementPlan:
-        plan = self.move_mouse(start, start_target_size_pixels)
+        plan = self.move_mouse(start, start_target_size_pixels, config)
+        self._raise_if_emergency_stopped(config, "drag_mouse_down")
         self._backend.mouse_down(start, button)
-        drag_plan = self.move_mouse(end, end_target_size_pixels)
+        drag_plan = self.move_mouse(end, end_target_size_pixels, config)
+        self._raise_if_emergency_stopped(config, "drag_mouse_up")
         self._backend.mouse_up(end, button)
         return MovementPlan(
             points=plan.points + drag_plan.points,
@@ -623,10 +644,12 @@ class DesktopActuator(Actuator):
         point: tuple[int, int],
         clicks: int,
         target_size_pixels: tuple[float, float] | None = None,
+        config: RuntimeConfig | None = None,
     ) -> ScrollCadencePlan:
-        self.move_mouse(point, target_size_pixels)
+        self.move_mouse(point, target_size_pixels, config)
         interval_bounds = self._profile.scroll_interval_seconds
         if clicks == 0 or abs(clicks) <= 1 or interval_bounds == (0.0, 0.0):
+            self._raise_if_emergency_stopped(config, "scroll")
             self._backend.scroll(point, clicks)
             return ScrollCadencePlan(
                 requested_clicks=clicks,
@@ -639,12 +662,14 @@ class DesktopActuator(Actuator):
         step_clicks: list[int] = []
         intervals: list[float] = []
         for index in range(abs(clicks)):
+            self._raise_if_emergency_stopped(config, "scroll")
             self._backend.scroll(point, direction)
             step_clicks.append(direction)
             if index == abs(clicks) - 1:
                 continue
             interval = self._sample_scroll_interval()
             intervals.append(interval)
+            self._raise_if_emergency_stopped(config, "scroll_wait")
             self._backend.sleep(interval)
         return ScrollCadencePlan(
             requested_clicks=clicks,
@@ -654,10 +679,21 @@ class DesktopActuator(Actuator):
             sample_records=self._scroll_sampler.records_since(sample_start),
         )
 
-    def type_text(self, text: str) -> KeyboardCadencePlan:
+    def type_text(
+        self,
+        text: str,
+        config: RuntimeConfig | None = None,
+    ) -> KeyboardCadencePlan:
         interval_bounds = self._profile.keyboard_interval_seconds
-        if len(text) <= 1 or interval_bounds == (0.0, 0.0):
+        if len(text) <= 1:
             # Preserve the legacy single-call path unless a cadence profile is active.
+            self._raise_if_emergency_stopped(config, "type_text")
+            self._backend.type_text(text)
+            return KeyboardCadencePlan(
+                text=text,
+                random_seed=self._keyboard_sampler.seed,
+            )
+        if interval_bounds == (0.0, 0.0) and self._emergency_stop_monitor is None:
             self._backend.type_text(text)
             return KeyboardCadencePlan(
                 text=text,
@@ -667,12 +703,15 @@ class DesktopActuator(Actuator):
         sample_start = self._keyboard_sampler.sample_count
         intervals: list[float] = []
         for index, character in enumerate(text):
+            self._raise_if_emergency_stopped(config, "type_character")
             self._backend.type_text(character)
             if index == len(text) - 1:
                 continue
-            interval = self._sample_keyboard_interval()
-            intervals.append(interval)
-            self._backend.sleep(interval)
+            if interval_bounds != (0.0, 0.0):
+                interval = self._sample_keyboard_interval()
+                intervals.append(interval)
+                self._raise_if_emergency_stopped(config, "type_wait")
+                self._backend.sleep(interval)
         return KeyboardCadencePlan(
             text=text,
             interval_seconds=tuple(intervals),
@@ -698,19 +737,26 @@ class DesktopActuator(Actuator):
             self._profile.scroll_interval_seconds,
         )
 
-    def press_key_or_chord(self, value: str) -> None:
+    def press_key_or_chord(
+        self,
+        value: str,
+        config: RuntimeConfig | None = None,
+    ) -> None:
         parts = tuple(part.strip() for part in value.split("+") if part.strip())
         if not parts:
             raise ActuationError("key value must not be blank")
         if len(parts) == 1:
+            self._raise_if_emergency_stopped(config, "press_key")
             self._backend.press_key(parts[0])
             return
 
         modifiers = parts[:-1]
         key = parts[-1]
         for modifier in modifiers:
+            self._raise_if_emergency_stopped(config, "key_down")
             self._backend.key_down(modifier)
         try:
+            self._raise_if_emergency_stopped(config, "press_key")
             self._backend.press_key(key)
         finally:
             for modifier in reversed(modifiers):
@@ -721,11 +767,13 @@ class DesktopActuator(Actuator):
         step: TaskStep,
         target: ElementCandidate | None,
         observation: ScreenObservation,
+        config: RuntimeConfig,
     ) -> ActionResult:
         point = _target_point(target, observation)
         plan = self.click(
             point,
             target_size_pixels=_target_size_pixels(target, observation),
+            config=config,
         )
         return ActionResult(
             True,
@@ -733,10 +781,10 @@ class DesktopActuator(Actuator):
             _input_metadata("click", point, plan, target),
         )
 
-    def _execute_type_text(self, step: TaskStep) -> ActionResult:
+    def _execute_type_text(self, step: TaskStep, config: RuntimeConfig) -> ActionResult:
         if step.text is None:
             raise ActuationError("type_text requires step.text")
-        cadence = self.type_text(step.text)
+        cadence = self.type_text(step.text, config)
         return ActionResult(
             True,
             "typed text",
@@ -747,10 +795,10 @@ class DesktopActuator(Actuator):
             },
         )
 
-    def _execute_press_key(self, step: TaskStep) -> ActionResult:
+    def _execute_press_key(self, step: TaskStep, config: RuntimeConfig) -> ActionResult:
         if step.text is None:
             raise ActuationError("press_key requires step.text")
-        self.press_key_or_chord(step.text)
+        self.press_key_or_chord(step.text, config)
         return ActionResult(
             True,
             "pressed key",
@@ -762,11 +810,12 @@ class DesktopActuator(Actuator):
         step: TaskStep,
         target: ElementCandidate | None,
         observation: ScreenObservation,
+        config: RuntimeConfig,
     ) -> ActionResult:
         point = _target_or_region_point(target, step.region, observation)
         clicks = _scroll_clicks(step)
         target_size = _target_or_region_size_pixels(target, step.region, observation)
-        cadence = self.scroll(point, clicks, target_size)
+        cadence = self.scroll(point, clicks, target_size, config)
         return ActionResult(
             True,
             "scrolled",
@@ -783,6 +832,7 @@ class DesktopActuator(Actuator):
         step: TaskStep,
         target: ElementCandidate | None,
         observation: ScreenObservation,
+        config: RuntimeConfig,
     ) -> ActionResult:
         if step.region is None:
             raise ActuationError("drag requires a destination region")
@@ -793,6 +843,7 @@ class DesktopActuator(Actuator):
             end,
             start_target_size_pixels=_target_size_pixels(target, observation),
             end_target_size_pixels=_region_size_pixels(step.region, observation),
+            config=config,
         )
         return ActionResult(
             True,
@@ -870,15 +921,19 @@ class DesktopActuator(Actuator):
             or not self._emergency_stop_monitor.is_triggered(config)
         ):
             return None
-        return ActionResult(
-            False,
-            "emergency stop requested before desktop input",
-            {
-                "input_blocked": True,
-                "actuation_guard": "emergency_stop",
-                "emergency_stop_triggered": True,
-            },
-        )
+        return _emergency_stop_result("before_action")
+
+    def _raise_if_emergency_stopped(
+        self,
+        config: RuntimeConfig | None,
+        boundary: str,
+    ) -> None:
+        if (
+            config is not None
+            and self._emergency_stop_monitor is not None
+            and self._emergency_stop_monitor.is_triggered(config)
+        ):
+            raise ActuationEmergencyStop(boundary)
 
 
 class FakeInputBackend(InputBackend):
@@ -1059,6 +1114,32 @@ class WindowsInputBackend(InputBackend):
 
 class ActuationError(RuntimeError):
     """Raised when an action cannot be represented safely as local input."""
+
+
+class ActuationEmergencyStop(ActuationError):
+    """Raised when the emergency-stop guard trips during bounded input."""
+
+    def __init__(self, boundary: str) -> None:
+        super().__init__(f"emergency stop requested during {boundary}")
+        self.boundary = boundary
+
+
+def _emergency_stop_result(boundary: str) -> ActionResult:
+    message = (
+        "emergency stop requested before desktop input"
+        if boundary == "before_action"
+        else f"emergency stop requested during {boundary}"
+    )
+    return ActionResult(
+        False,
+        message,
+        {
+            "input_blocked": True,
+            "actuation_guard": "emergency_stop",
+            "emergency_stop_triggered": True,
+            "emergency_stop_boundary": boundary,
+        },
+    )
 
 
 def create_platform_actuator(

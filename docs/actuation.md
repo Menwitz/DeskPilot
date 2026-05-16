@@ -79,14 +79,19 @@ active window does not match, no input is sent and the action returns a failed
 result. Real actuation also applies a final step-region guard for targeted click
 and scroll actions, and `create_platform_actuator` can receive the same
 emergency-stop monitor used by the planner so the input adapter blocks before
-desktop input when the stop chord is active.
+desktop input when the stop chord is active. The actuator also polls the
+emergency-stop monitor between bounded low-level input events: movement path
+points, movement waits, mouse down/up events, drag phases, scroll chunks, typed
+characters, key chord phases, and cadence waits. If the guard trips mid-action,
+the action returns `input_blocked`, `actuation_guard: emergency_stop`, and an
+`emergency_stop_boundary` naming where input stopped.
 
 ## Testing
 
 `FakeInputBackend` records input events without moving the real mouse or sending
 keys. Unit tests cover coordinate conversion, clicks, typing, key chords, drag,
 scroll, movement planning, active-window blocking, region blocking, and final
-emergency-stop blocking.
+or mid-action emergency-stop blocking.
 
 For a visible Windows-only low-level input demonstration, run:
 
