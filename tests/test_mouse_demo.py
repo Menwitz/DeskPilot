@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import cast
 
@@ -14,6 +15,7 @@ from desktop_agent.mouse_demo import (
     _demo_actuation_profile,
     _run_linkedin_sequence,
     _run_windows_smoke_sequence,
+    _write_proof_manifest,
     _write_report,
     run_input_demo,
     run_linkedin_demo,
@@ -145,6 +147,71 @@ def test_demo_report_writes_monitoring_action_log(tmp_path: Path) -> None:
     assert action_log_path.exists()
     assert "LinkedIn - Edge" in action_log_path.read_text(encoding="utf-8")
     assert "action_log_path" in report_path.read_text(encoding="utf-8")
+    assert "proof_manifest_path" in report_path.read_text(encoding="utf-8")
+
+
+def test_proof_manifest_links_command_environment_and_artifacts(
+    tmp_path: Path,
+) -> None:
+    screenshot_dir = tmp_path / "screenshots"
+    screenshot_dir.mkdir()
+    (screenshot_dir / "shot-1.png").write_bytes(b"png")
+    step = MouseDemoStep(
+        "scroll-page",
+        "scroll",
+        {
+            "post_action_evidence": {
+                "status": "passed",
+                "active_window_title": "LinkedIn - Edge",
+            },
+        },
+    )
+    report_path = _write_report(
+        tmp_path,
+        (step,),
+        "passed",
+        None,
+        report_name="linkedin-demo-report.json",
+    )
+
+    manifest_path = _write_proof_manifest(
+        tmp_path,
+        proof_name="linkedin-demo",
+        command=("desktop-agent", "demo-linkedin"),
+        status="passed",
+        reason=None,
+        started_at="2026-05-16T00:00:00+00:00",
+        completed_at="2026-05-16T00:00:01+00:00",
+        report_path=report_path,
+        steps=(step,),
+        monitor_bounds=(0, 0, 1280, 720),
+    )
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["schema_version"] == 1
+    assert manifest["command"] == ["desktop-agent", "demo-linkedin"]
+    assert manifest["executable_version"] == "0.1.0"
+    assert manifest["python_version"]
+    assert manifest["monitor_geometry"] == {
+        "left": 0,
+        "top": 0,
+        "width": 1280,
+        "height": 720,
+    }
+    assert manifest["artifacts"]["report_path"] == str(report_path)
+    assert manifest["artifacts"]["action_log_path"] == str(
+        tmp_path / "action-log.jsonl"
+    )
+    assert manifest["artifacts"]["proof_manifest_path"] == str(manifest_path)
+    assert manifest["artifacts"]["screenshots"] == [str(screenshot_dir / "shot-1.png")]
+    assert manifest["artifacts"]["video_path"] is None
+    assert manifest["steps"] == [
+        {
+            "step_id": "scroll-page",
+            "action": "scroll",
+            "has_post_action_evidence": True,
+        }
+    ]
 
 
 def test_linkedin_sequence_opens_edge_navigates_and_finds_text() -> None:

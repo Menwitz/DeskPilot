@@ -5,6 +5,7 @@ from __future__ import annotations
 import ctypes
 import json
 import math
+import platform
 import subprocess
 import sys
 import time
@@ -14,6 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from desktop_agent import __version__
 from desktop_agent.actuation import (
     ActuationProfile,
     InputBackend,
@@ -150,6 +152,7 @@ class MouseDemoReport:
     report_path: Path
     steps: tuple[MouseDemoStep, ...]
     reason: str | None = None
+    proof_manifest_path: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -566,10 +569,13 @@ def run_input_demo(
     steps: list[MouseDemoStep] = []
     status = "passed"
     reason: str | None = None
+    started_at = _timestamp()
+    screen_bounds: tuple[int, int, int, int] | None = None
 
     try:
         _countdown(countdown_seconds)
-        points = _input_demo_points(_windows_virtual_screen_bounds())
+        screen_bounds = _windows_virtual_screen_bounds()
+        points = _input_demo_points(screen_bounds)
         steps.extend(
             _run_global_input_sequence(
                 controller,
@@ -589,12 +595,31 @@ def run_input_demo(
         reason,
         report_name="input-demo-report.json",
     )
+    proof_manifest_path = _write_proof_manifest(
+        trace_dir,
+        proof_name="input-demo",
+        command=_input_demo_command(
+            trace_root,
+            random_seed,
+            movement_smoothness,
+            keyboard_text,
+            countdown_seconds,
+        ),
+        status=status,
+        reason=reason,
+        started_at=started_at,
+        completed_at=_timestamp(),
+        report_path=report_path,
+        steps=tuple(steps),
+        monitor_bounds=screen_bounds,
+    )
     return MouseDemoReport(
         status=status,
         reason=reason,
         trace_dir=trace_dir,
         report_path=report_path,
         steps=tuple(steps),
+        proof_manifest_path=proof_manifest_path,
     )
 
 
@@ -654,6 +679,8 @@ def run_linkedin_demo(
     steps: list[MouseDemoStep] = []
     status = "passed"
     reason: str | None = None
+    started_at = _timestamp()
+    screen_bounds: tuple[int, int, int, int] | None = None
 
     try:
         _countdown(countdown_seconds)
@@ -679,12 +706,33 @@ def run_linkedin_demo(
         reason,
         report_name="linkedin-demo-report.json",
     )
+    proof_manifest_path = _write_proof_manifest(
+        trace_dir,
+        proof_name="linkedin-demo",
+        command=_linkedin_demo_command(
+            trace_root,
+            random_seed,
+            movement_smoothness,
+            countdown_seconds,
+            url,
+            find_text,
+            page_load_seconds,
+        ),
+        status=status,
+        reason=reason,
+        started_at=started_at,
+        completed_at=_timestamp(),
+        report_path=report_path,
+        steps=tuple(steps),
+        monitor_bounds=screen_bounds,
+    )
     return MouseDemoReport(
         status=status,
         reason=reason,
         trace_dir=trace_dir,
         report_path=report_path,
         steps=tuple(steps),
+        proof_manifest_path=proof_manifest_path,
     )
 
 
@@ -722,9 +770,12 @@ def run_windows_smoke_checklist(
     steps: list[MouseDemoStep] = []
     status = "passed"
     reason: str | None = None
+    started_at = _timestamp()
+    screen_bounds: tuple[int, int, int, int] | None = None
 
     try:
         _countdown(countdown_seconds)
+        screen_bounds = _windows_virtual_screen_bounds()
         steps.extend(
             _run_windows_smoke_sequence(
                 controller,
@@ -750,12 +801,32 @@ def run_windows_smoke_checklist(
         status,
         report_path,
     )
+    proof_manifest_path = _write_proof_manifest(
+        trace_dir,
+        proof_name="windows-smoke-checklist",
+        command=_windows_smoke_command(
+            trace_root,
+            random_seed,
+            movement_smoothness,
+            countdown_seconds,
+            keyboard_text,
+            edge_url,
+        ),
+        status=status,
+        reason=reason,
+        started_at=started_at,
+        completed_at=_timestamp(),
+        report_path=report_path,
+        steps=tuple(steps),
+        monitor_bounds=screen_bounds,
+    )
     return MouseDemoReport(
         status=status,
         reason=reason,
         trace_dir=trace_dir,
         report_path=report_path,
         steps=tuple(steps),
+        proof_manifest_path=proof_manifest_path,
     )
 
 
@@ -1087,6 +1158,7 @@ def _write_report(
         "generated_at": datetime.now(UTC).isoformat(),
         "trace_dir": str(trace_dir),
         "action_log_path": str(action_log_path),
+        "proof_manifest_path": str(trace_dir / "proof-manifest.json"),
         "steps": [
             {
                 "step_id": step.step_id,
@@ -1098,6 +1170,58 @@ def _write_report(
     }
     report_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return report_path
+
+
+def _write_proof_manifest(
+    trace_dir: Path,
+    *,
+    proof_name: str,
+    command: tuple[str, ...],
+    status: str,
+    reason: str | None,
+    started_at: str,
+    completed_at: str,
+    report_path: Path,
+    steps: tuple[MouseDemoStep, ...],
+    monitor_bounds: tuple[int, int, int, int] | None,
+) -> Path:
+    manifest_path = trace_dir / "proof-manifest.json"
+    # The manifest is the stable index for human review: it ties the visible
+    # proof command to local evidence without requiring a rerun of desktop input.
+    payload: dict[str, object] = {
+        "schema_version": 1,
+        "proof_name": proof_name,
+        "command": list(command),
+        "status": status,
+        "reason": reason,
+        "started_at": started_at,
+        "completed_at": completed_at,
+        "executable_version": __version__,
+        "python_version": platform.python_version(),
+        "windows_version": platform.platform() if sys.platform == "win32" else None,
+        "platform": sys.platform,
+        "monitor_geometry": _monitor_geometry_metadata(monitor_bounds),
+        "dpi_scale": list(_safe_windows_dpi_scale()),
+        "artifacts": {
+            "trace_dir": str(trace_dir),
+            "report_path": str(report_path),
+            "action_log_path": str(trace_dir / "action-log.jsonl"),
+            "proof_manifest_path": str(manifest_path),
+            "screenshots": _screenshot_artifacts(trace_dir),
+            "video_path": None,
+        },
+        "step_count": len(steps),
+        "steps": [
+            {
+                "step_id": step.step_id,
+                "action": step.action,
+                "has_post_action_evidence": "post_action_evidence" in step.metadata,
+            }
+            for step in steps
+        ],
+    }
+    manifest_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return manifest_path
 
 
 def _write_demo_action_log(
@@ -1157,6 +1281,125 @@ def _prepare_trace_dir(trace_root: Path, suffix: str) -> Path:
     trace_dir = trace_root / f"{timestamp}-{suffix}"
     trace_dir.mkdir(parents=True, exist_ok=False)
     return trace_dir
+
+
+def _timestamp() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def _monitor_geometry_metadata(
+    bounds: tuple[int, int, int, int] | None,
+) -> dict[str, int] | None:
+    if bounds is None:
+        return None
+    left, top, width, height = bounds
+    return {
+        "left": left,
+        "top": top,
+        "width": width,
+        "height": height,
+    }
+
+
+def _safe_windows_dpi_scale() -> tuple[float, float]:
+    if sys.platform != "win32":
+        return (1.0, 1.0)
+    try:
+        ctypes_module: Any = ctypes
+        dpi = int(ctypes_module.windll.user32.GetDpiForSystem())
+    except (AttributeError, OSError):
+        return (1.0, 1.0)
+    scale = dpi / 96
+    return (scale, scale)
+
+
+def _screenshot_artifacts(trace_dir: Path) -> list[str]:
+    screenshot_dir = trace_dir / "screenshots"
+    if not screenshot_dir.exists():
+        return []
+    return [
+        str(path)
+        for path in sorted(screenshot_dir.glob("*.png"))
+        if path.is_file()
+    ]
+
+
+def _input_demo_command(
+    trace_root: Path,
+    random_seed: int,
+    movement_smoothness: float,
+    keyboard_text: str,
+    countdown_seconds: float,
+) -> tuple[str, ...]:
+    return (
+        "desktop-agent",
+        "demo-input",
+        "--trace-root",
+        str(trace_root),
+        "--random-seed",
+        str(random_seed),
+        "--movement-smoothness",
+        str(movement_smoothness),
+        "--keyboard-text",
+        keyboard_text,
+        "--countdown-seconds",
+        str(countdown_seconds),
+    )
+
+
+def _linkedin_demo_command(
+    trace_root: Path,
+    random_seed: int,
+    movement_smoothness: float,
+    countdown_seconds: float,
+    url: str,
+    find_text: str,
+    page_load_seconds: float,
+) -> tuple[str, ...]:
+    return (
+        "desktop-agent",
+        "demo-linkedin",
+        "--trace-root",
+        str(trace_root),
+        "--random-seed",
+        str(random_seed),
+        "--movement-smoothness",
+        str(movement_smoothness),
+        "--countdown-seconds",
+        str(countdown_seconds),
+        "--url",
+        url,
+        "--find-text",
+        find_text,
+        "--page-load-seconds",
+        str(page_load_seconds),
+    )
+
+
+def _windows_smoke_command(
+    trace_root: Path,
+    random_seed: int,
+    movement_smoothness: float,
+    countdown_seconds: float,
+    keyboard_text: str,
+    edge_url: str,
+) -> tuple[str, ...]:
+    return (
+        "desktop-agent",
+        "windows-smoke-checklist",
+        "--trace-root",
+        str(trace_root),
+        "--random-seed",
+        str(random_seed),
+        "--movement-smoothness",
+        str(movement_smoothness),
+        "--countdown-seconds",
+        str(countdown_seconds),
+        "--keyboard-text",
+        keyboard_text,
+        "--edge-url",
+        edge_url,
+    )
 
 
 def _countdown(seconds: float) -> None:

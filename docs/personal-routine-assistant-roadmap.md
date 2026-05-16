@@ -142,7 +142,7 @@ abuse, and hidden automation are not supported.
       disabled, occluded, or moving target proof.
 - [ ] Add local Windows video capture support and store recordings in the trace
       directory.
-- [ ] Add `proof-manifest.json` with command, executable version, Python version,
+- [x] Add `proof-manifest.json` with command, executable version, Python version,
       Windows version, monitor geometry, DPI, started-at time, completed-at time,
       and artifact paths.
 - [ ] Add a proof replay command that prints proof status and opens artifact
