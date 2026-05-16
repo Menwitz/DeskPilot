@@ -630,7 +630,7 @@ abuse, and hidden automation are not supported.
 
 ### OKRs
 
-- [ ] O1: Ship a beta-ready local routine ecosystem.
+- [x] O1: Ship a beta-ready local routine ecosystem.
 - [ ] KR1: Routine packs can be imported, validated, listed, run, exported, and
       removed.
 - [ ] KR2: Routine packs include manifest, routines, fixtures, docs, tests,
