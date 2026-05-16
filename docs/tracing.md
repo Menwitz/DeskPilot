@@ -53,6 +53,10 @@ Scheduler safety checks use phase `scheduler_safety_gate` and include
 `scheduler_safety_allowed`, `scheduler_safety_reason`, active-window title,
 required app/site, and allowed context patterns so a blocked scheduled run can
 be traced back to desktop readiness or app-context mismatch.
+Scheduled approval checks use phase `scheduler_approval_gate` and include
+`scheduler_approval_allowed`, `scheduler_approval_required`, approval policy,
+operator confirmation state, approval-manifest presence, mutation limit, and
+the block/pass reason.
 For sensitive site workflows, final report metadata records validated approval
 manifest fields and content-variable fingerprints, while step metadata records
 variable names with `content_variables_redacted: true`.

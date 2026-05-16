@@ -170,6 +170,30 @@ class SchedulerSafetyGateDecision:
 
 
 @dataclass(frozen=True)
+class SchedulerApprovalGateDecision:
+    """Decision that allows or blocks scheduled external mutation work."""
+
+    allowed: bool
+    approval_required: bool
+    reason: str
+    approval_policy: str
+    operator_confirmed: bool
+    approval_manifest_present: bool
+    max_external_mutations: int | None
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "scheduler_approval_allowed": self.allowed,
+            "scheduler_approval_required": self.approval_required,
+            "scheduler_approval_reason": self.reason,
+            "approval_policy": self.approval_policy,
+            "operator_confirmed": self.operator_confirmed,
+            "approval_manifest_present": self.approval_manifest_present,
+            "max_external_mutations": self.max_external_mutations,
+        }
+
+
+@dataclass(frozen=True)
 class RunQueue:
     """Immutable queue used by scheduler tests and future operator UI state."""
 
@@ -251,6 +275,81 @@ class RunQueue:
         }
 
 
+def evaluate_scheduled_approval_gate(
+    entry: RunQueueEntry,
+    routine: RoutineDefinition,
+    *,
+    operator_confirmed: bool = False,
+    approval_manifest_present: bool = False,
+) -> SchedulerApprovalGateDecision:
+    """Require explicit approval before scheduled external mutation work."""
+    approval_required = _scheduled_external_mutation_requires_approval(routine)
+    if not approval_required:
+        return SchedulerApprovalGateDecision(
+            allowed=True,
+            approval_required=False,
+            reason="scheduled_external_mutation_not_declared",
+            approval_policy=routine.approval_policy,
+            operator_confirmed=operator_confirmed,
+            approval_manifest_present=approval_manifest_present,
+            max_external_mutations=routine.schedule.max_external_mutations,
+        )
+    if entry.status != "pending":
+        return _scheduled_approval_decision(
+            routine,
+            allowed=False,
+            approval_required=True,
+            reason="run_not_pending",
+            operator_confirmed=operator_confirmed,
+            approval_manifest_present=approval_manifest_present,
+        )
+    if not operator_confirmed:
+        return _scheduled_approval_decision(
+            routine,
+            allowed=False,
+            approval_required=True,
+            reason="manual_approval_required",
+            operator_confirmed=operator_confirmed,
+            approval_manifest_present=approval_manifest_present,
+        )
+    if (
+        routine.approval_policy == "manifest_required"
+        and not approval_manifest_present
+    ):
+        return _scheduled_approval_decision(
+            routine,
+            allowed=False,
+            approval_required=True,
+            reason="approval_manifest_required",
+            operator_confirmed=operator_confirmed,
+            approval_manifest_present=approval_manifest_present,
+        )
+    return _scheduled_approval_decision(
+        routine,
+        allowed=True,
+        approval_required=True,
+        reason="scheduled_external_mutation_approved",
+        operator_confirmed=operator_confirmed,
+        approval_manifest_present=approval_manifest_present,
+    )
+
+
+def scheduler_approval_gate_trace_event(
+    entry: RunQueueEntry,
+    decision: SchedulerApprovalGateDecision,
+) -> TraceEvent:
+    """Build the trace event emitted when scheduled approval gating runs."""
+    status = "passed" if decision.allowed else "blocked"
+    return TraceEvent(
+        phase="scheduler_approval_gate",
+        message=f"scheduled approval gate {status}: {decision.reason}",
+        metadata={
+            **entry.metadata(),
+            **decision.metadata(),
+        },
+    )
+
+
 def evaluate_scheduled_run_safety(
     entry: RunQueueEntry,
     routine: RoutineDefinition,
@@ -310,6 +409,40 @@ def scheduler_safety_gate_trace_event(
             **entry.metadata(),
             **decision.metadata(),
         },
+    )
+
+
+def _scheduled_external_mutation_requires_approval(
+    routine: RoutineDefinition,
+) -> bool:
+    mutation_cap = routine.schedule.max_external_mutations
+    return (
+        routine.schedule_policy == "scheduled"
+        and (
+            routine.approval_policy != "none"
+            or routine.safety_class in {"high", "sensitive"}
+            or (mutation_cap is not None and mutation_cap > 0)
+        )
+    )
+
+
+def _scheduled_approval_decision(
+    routine: RoutineDefinition,
+    *,
+    allowed: bool,
+    approval_required: bool,
+    reason: str,
+    operator_confirmed: bool,
+    approval_manifest_present: bool,
+) -> SchedulerApprovalGateDecision:
+    return SchedulerApprovalGateDecision(
+        allowed=allowed,
+        approval_required=approval_required,
+        reason=reason,
+        approval_policy=routine.approval_policy,
+        operator_confirmed=operator_confirmed,
+        approval_manifest_present=approval_manifest_present,
+        max_external_mutations=routine.schedule.max_external_mutations,
     )
 
 

@@ -62,6 +62,20 @@ context patterns.
 `scheduler_safety_gate` trace event so reports can explain why a scheduled
 routine ran or stayed blocked.
 
+## Approval Gate
+
+`evaluate_scheduled_approval_gate()` requires operator approval before a
+scheduled routine that can perform external mutations is allowed to run. The
+gate treats scheduled routines as approval-required when they have a non-`none`
+approval policy, a `high` or `sensitive` safety class, or a positive
+`max_external_mutations` schedule limit.
+
+The gate blocks when manual approval is missing, when a manifest-required
+routine has no manifest, or when the queued run is no longer pending.
+`scheduler_approval_gate_trace_event()` emits phase `scheduler_approval_gate`
+with approval policy, operator confirmation state, manifest presence, mutation
+limit, and allow/block reason.
+
 ## Current Boundary
 
 This model is local and deterministic. It does not schedule wall-clock jobs,

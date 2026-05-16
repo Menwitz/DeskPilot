@@ -9,7 +9,9 @@ from desktop_agent.scheduler import (
     RunQueueError,
     RunQueueStatus,
     SchedulerTraceKind,
+    evaluate_scheduled_approval_gate,
     evaluate_scheduled_run_safety,
+    scheduler_approval_gate_trace_event,
     scheduler_safety_gate_trace_event,
     scheduler_trace_event,
 )
@@ -283,10 +285,104 @@ def test_scheduler_safety_gate_blocks_non_pending_runs() -> None:
     assert decision.reason == "run_not_pending"
 
 
+def test_scheduler_approval_gate_allows_read_only_scheduled_routine() -> None:
+    entry = RunQueue().enqueue("browser.read-page").next_pending()
+    routine = _routine(required_app=None, required_site=None)
+    assert entry is not None
+
+    decision = evaluate_scheduled_approval_gate(entry, routine)
+
+    assert decision.allowed is True
+    assert decision.approval_required is False
+    assert decision.reason == "scheduled_external_mutation_not_declared"
+
+
+def test_scheduler_approval_gate_blocks_unapproved_external_mutation() -> None:
+    entry = (
+        RunQueue()
+        .enqueue("social-content.linkedin-approved-publish")
+        .next_pending()
+    )
+    routine = _routine(
+        required_app="Microsoft Edge",
+        required_site="linkedin.com",
+        approval_policy="confirm",
+        max_external_mutations=1,
+    )
+    assert entry is not None
+
+    decision = evaluate_scheduled_approval_gate(entry, routine)
+    event = scheduler_approval_gate_trace_event(entry, decision)
+
+    assert decision.allowed is False
+    assert decision.approval_required is True
+    assert decision.reason == "manual_approval_required"
+    assert event.phase == "scheduler_approval_gate"
+    assert event.metadata["scheduler_approval_allowed"] is False
+
+
+def test_scheduler_approval_gate_requires_manifest_when_policy_requires_it() -> None:
+    entry = (
+        RunQueue()
+        .enqueue("social-content.linkedin-approved-publish")
+        .next_pending()
+    )
+    routine = _routine(
+        required_app="Microsoft Edge",
+        required_site="linkedin.com",
+        approval_policy="manifest_required",
+        safety_class="high",
+        max_external_mutations=1,
+    )
+    assert entry is not None
+
+    missing_manifest = evaluate_scheduled_approval_gate(
+        entry,
+        routine,
+        operator_confirmed=True,
+    )
+    approved = evaluate_scheduled_approval_gate(
+        entry,
+        routine,
+        operator_confirmed=True,
+        approval_manifest_present=True,
+    )
+
+    assert missing_manifest.allowed is False
+    assert missing_manifest.reason == "approval_manifest_required"
+    assert approved.allowed is True
+    assert approved.reason == "scheduled_external_mutation_approved"
+
+
+def test_scheduler_approval_gate_blocks_non_pending_external_mutation() -> None:
+    queue = RunQueue().enqueue("social-content.linkedin-approved-publish")
+    queue = queue.transition("run-0001", "running", reason="already selected")
+    entry = queue.by_id("run-0001")
+    routine = _routine(
+        required_app="Microsoft Edge",
+        required_site="linkedin.com",
+        approval_policy="confirm",
+        max_external_mutations=1,
+    )
+    assert entry is not None
+
+    decision = evaluate_scheduled_approval_gate(
+        entry,
+        routine,
+        operator_confirmed=True,
+    )
+
+    assert decision.allowed is False
+    assert decision.reason == "run_not_pending"
+
+
 def _routine(
     *,
     required_app: str | None,
     required_site: str | None,
+    approval_policy: str = "none",
+    safety_class: str = "low",
+    max_external_mutations: int | None = None,
 ) -> RoutineDefinition:
     payload: dict[str, object] = {
         "id": "browser.read-page",
@@ -296,9 +392,9 @@ def _routine(
         "tags": ["browser", "reading"],
         "inputs": ["url"],
         "outputs": ["visible text"],
-        "safety_class": "low",
+        "safety_class": safety_class,
         "schedule_policy": "scheduled",
-        "approval_policy": "none",
+        "approval_policy": approval_policy,
         "expected_duration_seconds": 30,
         "reference": {
             "type": "task",
@@ -309,4 +405,6 @@ def _routine(
         payload["required_app"] = required_app
     if required_site is not None:
         payload["required_site"] = required_site
+    if max_external_mutations is not None:
+        payload["schedule"] = {"max_external_mutations": max_external_mutations}
     return routine_definition_from_mapping(payload)

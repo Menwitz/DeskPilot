@@ -387,7 +387,7 @@ abuse, and hidden automation are not supported.
       pause, resume, retry-later, and operator intervention.
 - [x] Add safety gate that blocks scheduled runs when the active desktop or
       allowed app context is not ready.
-- [ ] Add manual approval before scheduled external mutation actions.
+- [x] Add manual approval before scheduled external mutation actions.
 - [ ] Add tests for deterministic seeded schedules and bounded unseeded
       schedules.
 
