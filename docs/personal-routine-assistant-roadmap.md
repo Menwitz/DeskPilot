@@ -594,7 +594,7 @@ abuse, and hidden automation are not supported.
       redaction rules.
 - [x] KR3: Windows installer includes CLI, PySide6 app, default config, examples,
       and docs.
-- [ ] KR4: Trace and routine schema migrations are versioned and tested.
+- [x] KR4: Trace and routine schema migrations are versioned and tested.
 
 ### Tasks
 
