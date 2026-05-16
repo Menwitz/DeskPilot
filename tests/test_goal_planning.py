@@ -343,6 +343,49 @@ def test_goal_router_filters_above_max_safety_class() -> None:
     assert plan.candidate_routines == ()
 
 
+def test_goal_router_shows_alternatives_for_ambiguous_goals() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="browser.read-article",
+                name="Browser read article",
+                tags=["browser", "reading"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+            ),
+            _routine(
+                routine_id="browser.read-page",
+                name="Browser read page",
+                tags=["browser", "reading"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+            ),
+        ),
+    )
+
+    plan = route_goal_to_routine(
+        catalog,
+        GoalRoutingRequest(
+            user_goal="Read browser content",
+            normalized_intent="browser reading",
+            max_safety_class="low",
+        ),
+    )
+
+    assert plan.selected_routine_id is None
+    assert plan.execution_status == "blocked"
+    assert plan.explanation == (
+        "Ambiguous goal matched multiple routines; review alternatives."
+    )
+    assert [candidate.routine_id for candidate in plan.candidate_routines] == [
+        "browser.read-article",
+        "browser.read-page",
+    ]
+
+
 def test_goal_router_marks_missing_inputs_before_execution_ready() -> None:
     catalog = RoutineCatalog(
         root=Path("routine_packs"),

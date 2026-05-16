@@ -440,7 +440,7 @@ abuse, and hidden automation are not supported.
 ### Acceptance Criteria
 
 - [x] A user goal can select a routine from the catalog.
-- [ ] Ambiguous goals show alternatives instead of guessing.
+- [x] Ambiguous goals show alternatives instead of guessing.
 - [ ] Missing inputs block execution until provided.
 - [ ] Local model suggestions never execute raw actions directly.
 - [ ] Goal plans are traceable and replayable.

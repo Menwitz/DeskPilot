@@ -386,7 +386,10 @@ def route_goal_to_routine(
         limit=100,
     )
     ranked_candidates = _rank_goal_candidates(indexed_results, request)
-    selected = ranked_candidates[0] if ranked_candidates else None
+    ambiguous_selection = _has_ambiguous_top_candidate(ranked_candidates)
+    selected = (
+        ranked_candidates[0] if ranked_candidates and not ambiguous_selection else None
+    )
     missing_inputs = (
         _missing_inputs(catalog, selected.routine_id, request.provided_inputs)
         if selected is not None
@@ -396,7 +399,10 @@ def route_goal_to_routine(
     execution_status: GoalExecutionStatus = "ready"
     explanation = "Selected routine by deterministic ranking."
     selected_routine_id = selected.routine_id if selected else None
-    if selected is None:
+    if ambiguous_selection:
+        execution_status = "blocked"
+        explanation = "Ambiguous goal matched multiple routines; review alternatives."
+    elif selected is None:
         execution_status = "blocked"
         explanation = "No eligible routine matched the goal and constraints."
     elif missing_inputs:
@@ -746,6 +752,15 @@ def _rank_goal_candidates(
             ),
         )
     return tuple(sorted(candidates, key=lambda item: (-item.score, item.routine_id)))
+
+
+def _has_ambiguous_top_candidate(
+    ranked_candidates: tuple[GoalPlanCandidate, ...],
+) -> bool:
+    return (
+        len(ranked_candidates) > 1
+        and ranked_candidates[0].score == ranked_candidates[1].score
+    )
 
 
 def _router_score(
