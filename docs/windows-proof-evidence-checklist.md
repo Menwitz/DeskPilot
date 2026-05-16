@@ -83,7 +83,7 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       commands.
 - [ ] `proof-suite-artifacts.zip` contains the generated suite report, status
       JSON, next-actions runbook, proof manifests, action logs, command reports,
-      screenshots, and video artifacts when present.
+      screenshots, video artifacts, and preflight report when present.
 - [ ] `proof-preflight.json` records Windows platform, trace-root, and
       video-capture readiness checks before the desktop run begins.
 - [ ] If the command uses target selection or deep search, the trace includes

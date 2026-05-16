@@ -218,6 +218,7 @@ def test_write_proof_suite_status_records_monitoring_payload(
     assert status_path == tmp_path / "proof-suite-status.json"
     assert saved_payload == payload
     assert payload["status"] == "failed"
+    assert payload["preflight_report_path"] is None
     assert payload["missing_proofs"] == [
         "native-fixture",
         "mixed-fixture",
@@ -266,6 +267,13 @@ def test_write_proof_suite_archive_packages_review_artifacts(
         trace_dir_name="browser-fixture",
         include_video=False,
     )
+    write_proof_preflight_report(
+        run_proof_preflight(
+            tmp_path,
+            require_windows=False,
+            require_video=False,
+        ),
+    )
     result = validate_proof_suite(tmp_path, require_video=False)
 
     archive_path = write_proof_suite_archive(result, require_video=False)
@@ -276,6 +284,7 @@ def test_write_proof_suite_archive_packages_review_artifacts(
     assert "proof-suite-report.md" in names
     assert "proof-suite-status.json" in names
     assert "proof-suite-next-actions.md" in names
+    assert "proof-preflight.json" in names
     assert "browser-fixture/proof-manifest.json" in names
     assert "browser-fixture/browser-fixture-report.json" in names
     assert "browser-fixture/action-log.jsonl" in names

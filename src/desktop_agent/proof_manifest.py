@@ -535,6 +535,7 @@ def proof_suite_status_metadata(validation: ProofSuiteValidation) -> dict[str, o
         "schema_version": 1,
         "trace_root": str(validation.trace_root),
         "status": "passed" if validation.passed else "failed",
+        "preflight_report_path": _optional_preflight_report_path(validation),
         "expected_proofs": list(validation.expected_proofs),
         "missing_proofs": list(validation.missing_proofs),
         "duplicate_proofs": list(validation.duplicate_proofs),
@@ -719,10 +720,22 @@ def _proof_suite_archive_files(
     validation: ProofSuiteValidation,
 ) -> tuple[Path, ...]:
     paths: list[Path] = []
+    preflight_report_path = validation.trace_root / PROOF_PREFLIGHT_REPORT_NAME
+    if preflight_report_path.exists():
+        paths.append(preflight_report_path)
     for bundle in validation.bundle_results:
         paths.append(bundle.manifest_path)
         paths.extend(path for _, path in bundle.artifact_paths)
     return tuple(path for path in paths if path.exists() and path.is_file())
+
+
+def _optional_preflight_report_path(
+    validation: ProofSuiteValidation,
+) -> str | None:
+    preflight_report_path = validation.trace_root / PROOF_PREFLIGHT_REPORT_NAME
+    if preflight_report_path.exists() and preflight_report_path.is_file():
+        return str(preflight_report_path)
+    return None
 
 
 def _archive_name(trace_root: Path, artifact_path: Path) -> str:
