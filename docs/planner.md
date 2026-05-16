@@ -12,7 +12,9 @@ self-referential, or forward `depends_on` references and checks authored
 compiled desktop I/O metadata for monitoring and reports. Existing task YAML
 remains the authoring surface; the compiler adds a `desktop_io_v1` model that
 maps each semantic action into lower-level operations such as `observe`,
-`move`, `click`, `type`, `wheel`, `wait`, and `verify`.
+`move`, `click`, `type`, `wheel`, `wait`, and `verify`. Each low-level
+operation is represented as a `DesktopIoAction` with a stable ID, source step,
+source semantic action, operation kind, order, and metadata block.
 
 After target selection and before timing, the engine chooses an execution path.
 Stable first-attempt actions with exactly one visible, enabled, high-confidence

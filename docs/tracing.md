@@ -83,7 +83,9 @@ input. Task JSON also stores each step's `depends_on` and `expected_state`
 contracts for report review.
 It also records `compiled_execution_model: desktop_io_v1` and
 `desktop_io_steps`, preserving existing YAML actions while exposing the
-lower-level operation sequence each step will use.
+lower-level operation sequence each step will use. Each compiled operation is
+reported as a schema action with stable ID, order, kind, source step, source
+semantic action, and metadata fields.
 
 The `execution_path` event records whether an action attempt uses the standard,
 fast, or careful path. Fast-path timing events include the original sampled

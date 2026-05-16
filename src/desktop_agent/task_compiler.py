@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from desktop_agent.desktop_io import (
+    DESKTOP_IO_MODEL_VERSION,
+    DesktopIoAction,
+    compile_desktop_io_plan,
+)
 from desktop_agent.task_dsl import (
     ExpectedStateTransition,
     TaskDefinition,
@@ -14,22 +19,6 @@ from desktop_agent.task_dsl import (
 
 class TaskCompilationError(TaskValidationError):
     """Raised when a structurally valid task cannot form an execution plan."""
-
-
-DESKTOP_IO_OPERATIONS_BY_ACTION: dict[str, tuple[str, ...]] = {
-    "click_text": ("observe", "move", "click", "verify"),
-    "click_image": ("observe", "move", "click", "verify"),
-    "click_uia": ("observe", "move", "click", "verify"),
-    "double_click": ("observe", "move", "double_click", "verify"),
-    "drag": ("observe", "move", "drag", "verify"),
-    "type_text": ("observe", "type", "verify"),
-    "press_key": ("observe", "hotkey", "verify"),
-    "scroll": ("observe", "wheel", "verify"),
-    "scroll_until": ("observe", "wheel", "observe", "verify"),
-    "wait_for": ("observe", "wait", "verify"),
-    "assert_visible": ("observe", "verify"),
-    "branch_if_visible": ("observe", "verify"),
-}
 
 
 @dataclass(frozen=True)
@@ -55,7 +44,11 @@ class CompiledDesktopIoStep:
 
     step_id: str
     source_action: str
-    operations: tuple[str, ...]
+    actions: tuple[DesktopIoAction, ...]
+
+    @property
+    def operations(self) -> tuple[str, ...]:
+        return tuple(action.kind for action in self.actions)
 
 
 @dataclass(frozen=True)
@@ -71,7 +64,7 @@ class CompiledTask:
         """Return compact trace metadata for monitoring compiled task shape."""
 
         return {
-            "compiled_execution_model": "desktop_io_v1",
+            "compiled_execution_model": DESKTOP_IO_MODEL_VERSION,
             "step_order": list(self.step_order),
             "dependency_count": sum(
                 len(dependency.depends_on) for dependency in self.dependencies
@@ -98,6 +91,7 @@ class CompiledTask:
                     "step_id": step.step_id,
                     "source_action": step.source_action,
                     "operations": list(step.operations),
+                    "actions": [action.to_metadata() for action in step.actions],
                 }
                 for step in self.desktop_io_steps
             ],
@@ -125,26 +119,20 @@ class TaskCompiler:
         )
 
 
-def desktop_io_operations_for_action(action: str) -> tuple[str, ...]:
-    """Return the stable low-level operation sequence for a semantic action."""
-
-    return DESKTOP_IO_OPERATIONS_BY_ACTION.get(
-        action,
-        ("observe", action, "verify"),
-    )
-
-
 def _compile_desktop_io_steps(
     steps: tuple[TaskStep, ...],
 ) -> tuple[CompiledDesktopIoStep, ...]:
-    return tuple(
-        CompiledDesktopIoStep(
-            step_id=step.id,
-            source_action=step.action,
-            operations=desktop_io_operations_for_action(step.action),
+    compiled: list[CompiledDesktopIoStep] = []
+    for step in steps:
+        plan = compile_desktop_io_plan(step)
+        compiled.append(
+            CompiledDesktopIoStep(
+                step_id=plan.step_id,
+                source_action=plan.source_action,
+                actions=plan.actions,
+            )
         )
-        for step in steps
-    )
+    return tuple(compiled)
 
 
 def _step_positions(

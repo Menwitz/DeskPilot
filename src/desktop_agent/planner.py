@@ -10,6 +10,7 @@ from typing import Literal, Protocol
 from desktop_agent.action_safety import action_safety_metadata
 from desktop_agent.actuation import ActionResult, Actuator
 from desktop_agent.config import ConfigLoader, RuntimeConfig
+from desktop_agent.desktop_io import desktop_io_operations_for_action
 from desktop_agent.entropy import (
     entropy_capacity_metadata,
     validate_entropy_budget_constraints,
@@ -43,7 +44,7 @@ from desktop_agent.screen import (
     screenshot_bounds_to_physical,
     screenshot_point_to_physical,
 )
-from desktop_agent.task_compiler import TaskCompiler, desktop_io_operations_for_action
+from desktop_agent.task_compiler import TaskCompiler
 from desktop_agent.task_dsl import (
     TaskDefinition,
     TaskLoader,

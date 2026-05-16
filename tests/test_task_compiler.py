@@ -48,18 +48,23 @@ def test_task_compiler_records_dependency_and_state_metadata() -> None:
     assert compiled.metadata()["dependency_count"] == 1
     assert compiled.metadata()["state_transition_count"] == 2
     assert compiled.metadata()["compiled_execution_model"] == "desktop_io_v1"
-    assert compiled.metadata()["desktop_io_steps"] == [
-        {
-            "step_id": "open-editor",
-            "source_action": "click_text",
-            "operations": ["observe", "move", "click", "verify"],
-        },
-        {
-            "step_id": "type-title",
-            "source_action": "type_text",
-            "operations": ["observe", "type", "verify"],
-        },
+    desktop_io_steps = compiled.metadata()["desktop_io_steps"]
+    assert isinstance(desktop_io_steps, list)
+    assert desktop_io_steps[0]["operations"] == [
+        "observe",
+        "move",
+        "click",
+        "verify",
     ]
+    assert desktop_io_steps[0]["actions"][1] == {
+        "id": "open-editor:2:move",
+        "step_id": "open-editor",
+        "kind": "move",
+        "order": 2,
+        "source_action": "click_text",
+        "metadata": {},
+    }
+    assert desktop_io_steps[1]["operations"] == ["observe", "type", "verify"]
 
 
 def test_task_compiler_preserves_yaml_actions_with_desktop_io_model(
