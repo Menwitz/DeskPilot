@@ -1,0 +1,14 @@
+id: social-content.medium-notifications-review
+name: Medium notifications review
+description: Review Medium notifications without replying, clapping, or publishing.
+goal: Inspect Medium notifications and leave local trace evidence.
+required_app: Browser
+required_site: medium.com
+tags: [social, medium, notifications, read-only]
+inputs: [medium notifications]
+outputs: [notifications reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/notifications-review-surface.yaml}

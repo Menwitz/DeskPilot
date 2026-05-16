@@ -1,0 +1,14 @@
+id: social-content.instagram-profile-review
+name: Instagram profile review
+description: Review visible Instagram profile content without posting or reacting.
+goal: Inspect an Instagram profile page and leave local trace evidence.
+required_app: Browser
+required_site: instagram.com
+tags: [social, instagram, profile, read-only]
+inputs: [instagram profile]
+outputs: [profile reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/profile-review-surface.yaml}

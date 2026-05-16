@@ -1,0 +1,14 @@
+id: social-content.youtube-profile-review
+name: YouTube channel review
+description: Review visible YouTube channel content without posting or reacting.
+goal: Inspect a YouTube channel page and leave local trace evidence.
+required_app: Browser
+required_site: youtube.com
+tags: [social, youtube, profile, read-only]
+inputs: [youtube channel]
+outputs: [channel reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/profile-review-surface.yaml}

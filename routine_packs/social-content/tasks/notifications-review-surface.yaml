@@ -1,0 +1,19 @@
+name: Social notifications review surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: open-notifications
+    action: click_text
+    target: Notifications
+    verify:
+      type: visible_text
+      text: Notifications
+  - id: review-notifications
+    action: scroll
+    text: "-2"
+  - id: confirm-notifications-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Notifications

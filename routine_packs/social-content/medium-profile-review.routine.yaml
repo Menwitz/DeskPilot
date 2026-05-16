@@ -1,0 +1,14 @@
+id: social-content.medium-profile-review
+name: Medium profile review
+description: Review visible Medium profile content without editing or publishing.
+goal: Inspect a Medium profile page and leave local trace evidence.
+required_app: Browser
+required_site: medium.com
+tags: [social, medium, profile, read-only]
+inputs: [medium profile]
+outputs: [profile reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/profile-review-surface.yaml}

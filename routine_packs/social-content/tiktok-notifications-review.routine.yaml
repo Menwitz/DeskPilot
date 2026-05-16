@@ -1,0 +1,14 @@
+id: social-content.tiktok-notifications-review
+name: TikTok notifications review
+description: Review TikTok notifications without replying, liking, or posting.
+goal: Inspect TikTok notifications and leave local trace evidence.
+required_app: Browser
+required_site: tiktok.com
+tags: [social, tiktok, notifications, read-only]
+inputs: [tiktok notifications]
+outputs: [notifications reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/notifications-review-surface.yaml}

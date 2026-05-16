@@ -1,0 +1,14 @@
+id: social-content.linkedin-notifications-review
+name: LinkedIn notifications review
+description: Review LinkedIn notifications without replying, reacting, or posting.
+goal: Inspect LinkedIn notifications and leave local trace evidence.
+required_app: Browser
+required_site: linkedin.com
+tags: [social, linkedin, notifications, read-only]
+inputs: [linkedin notifications]
+outputs: [notifications reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/notifications-review-surface.yaml}

@@ -1,0 +1,19 @@
+name: Social profile review surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: open-profile-surface
+    action: click_text
+    target: Profile
+    verify:
+      type: visible_text
+      text: Profile
+  - id: review-profile-content
+    action: scroll
+    text: "-2"
+  - id: confirm-profile-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Profile

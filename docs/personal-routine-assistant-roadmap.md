@@ -348,6 +348,9 @@ abuse, and hidden automation are not supported.
 - [x] Add social/content routines for LinkedIn, Medium, X/Twitter, Instagram,
       Facebook, YouTube, and TikTok read-only, draft, and approved publish
       surfaces.
+- [x] Add first social/content scale-out batch for profile and notification
+      review routines across LinkedIn, Medium, X/Twitter, Instagram, Facebook,
+      YouTube, and TikTok.
 - [x] Add routine documentation templates and generated catalog index docs.
 
 ### Acceptance Criteria
