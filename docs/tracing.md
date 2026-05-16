@@ -241,10 +241,12 @@ changes. The summary also includes step-level `success_evidence` and
 access.
 
 `desktop-agent analyze-failed-run <trace-dir>` reads `final-report.json` and
-writes `failed-run-analysis.json` plus `failed-run-analysis.md`. The analyzer
-can propose YAML selector, region, checkpoint, recovery, or allowed-window
-updates, but every proposal is marked `review_required: true` and
-`applies_automatically: false`.
+writes `failed-run-analysis.json` plus `failed-run-analysis.md`. The analysis
+indexes the local final report, action log, task/config snapshots, schema,
+safety audit, replay summary, and screenshots when present, and records
+`desktop_input_rerun_required: false`. The analyzer can propose YAML selector,
+region, checkpoint, recovery, or allowed-window updates, but every proposal is
+marked `review_required: true` and `applies_automatically: false`.
 
 `desktop-agent proof replay <trace-dir>` reads `proof-manifest.json` and prints
 the proof name, original command, status, environment metadata, and artifact

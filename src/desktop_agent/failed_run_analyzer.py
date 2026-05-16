@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 
@@ -31,6 +31,24 @@ class FailedRunYamlProposal:
 
 
 @dataclass(frozen=True)
+class FailedRunArtifact:
+    """One local artifact that can support failed-run diagnosis."""
+
+    name: str
+    path: str
+    present: bool
+    required: bool
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "name": self.name,
+            "path": self.path,
+            "present": self.present,
+            "required": self.required,
+        }
+
+
+@dataclass(frozen=True)
 class FailedRunAnalysis:
     """Summary of review-only proposals for one failed run report."""
 
@@ -38,6 +56,8 @@ class FailedRunAnalysis:
     status: str
     routine_id: str | None
     proposals: tuple[FailedRunYamlProposal, ...]
+    diagnostic_ready: bool = False
+    artifacts: tuple[FailedRunArtifact, ...] = ()
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -45,6 +65,9 @@ class FailedRunAnalysis:
             "status": self.status,
             "routine_id": self.routine_id,
             "proposal_count": len(self.proposals),
+            "diagnostic_ready": self.diagnostic_ready,
+            "desktop_input_rerun_required": False,
+            "artifacts": [artifact.metadata() for artifact in self.artifacts],
             "proposals": [proposal.metadata() for proposal in self.proposals],
         }
 
@@ -75,7 +98,15 @@ def analyze_failed_run_trace(trace_dir: Path) -> FailedRunAnalysis:
     loaded = json.loads(report_path.read_text(encoding="utf-8"))
     if not isinstance(loaded, dict):
         raise ValueError("final-report.json must contain a JSON object")
-    return analyze_failed_run_report(loaded)
+    analysis = analyze_failed_run_report(loaded)
+    artifacts = _local_diagnostic_artifacts(trace_dir)
+    return replace(
+        analysis,
+        diagnostic_ready=all(
+            artifact.present for artifact in artifacts if artifact.required
+        ),
+        artifacts=artifacts,
+    )
 
 
 def write_failed_run_analysis(trace_dir: Path, analysis: FailedRunAnalysis) -> None:
@@ -98,10 +129,26 @@ def render_failed_run_analysis_markdown(analysis: FailedRunAnalysis) -> str:
         f"- Status: `{analysis.status}`",
         f"- Routine: `{analysis.routine_id or 'none'}`",
         f"- Proposal count: `{len(analysis.proposals)}`",
+        f"- Diagnostic ready: `{str(analysis.diagnostic_ready).lower()}`",
+        "- Desktop input rerun required: `false`",
         "- Applies automatically: `false`",
         "",
-        "## Proposals",
+        "## Local Artifacts",
     ]
+    if not analysis.artifacts:
+        lines.append("- No trace artifact index available.")
+    for artifact in analysis.artifacts:
+        marker = "present" if artifact.present else "missing"
+        required = "required" if artifact.required else "optional"
+        lines.append(
+            f"- `{artifact.name}`: `{marker}` `{required}` `{artifact.path}`",
+        )
+    lines.extend(
+        [
+            "",
+            "## Proposals",
+        ],
+    )
     if not analysis.proposals:
         lines.append("- No YAML proposals generated.")
         return "\n".join(lines) + "\n"
@@ -212,3 +259,32 @@ def _routine_id(report: Mapping[str, object]) -> str | None:
 
 def _string_value(value: object, fallback: str) -> str:
     return value if isinstance(value, str) else fallback
+
+
+def _local_diagnostic_artifacts(trace_dir: Path) -> tuple[FailedRunArtifact, ...]:
+    return (
+        _artifact(trace_dir, "final_report", "final-report.json", required=True),
+        _artifact(trace_dir, "action_log", "action-log.jsonl", required=True),
+        _artifact(trace_dir, "task_snapshot", "task.json", required=False),
+        _artifact(trace_dir, "config_snapshot", "config.json", required=False),
+        _artifact(trace_dir, "trace_schema", "trace-schema.json", required=False),
+        _artifact(trace_dir, "safety_audit", "safety-audit.md", required=False),
+        _artifact(trace_dir, "replay_summary", "replay-summary.md", required=False),
+        _artifact(trace_dir, "screenshots", "screenshots", required=False),
+    )
+
+
+def _artifact(
+    trace_dir: Path,
+    name: str,
+    relative_path: str,
+    *,
+    required: bool,
+) -> FailedRunArtifact:
+    path = trace_dir / relative_path
+    return FailedRunArtifact(
+        name=name,
+        path=str(path),
+        present=path.exists(),
+        required=required,
+    )

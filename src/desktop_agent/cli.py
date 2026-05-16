@@ -2165,6 +2165,7 @@ def _analyze_failed_run(args: argparse.Namespace) -> int:
     write_failed_run_analysis(args.trace_dir, analysis)
     print(f"status: {analysis.status}")
     print(f"proposals: {len(analysis.proposals)}")
+    print(f"diagnostic ready: {str(analysis.diagnostic_ready).lower()}")
     print(f"analysis: {args.trace_dir / 'failed-run-analysis.json'}")
     print(f"review: {args.trace_dir / 'failed-run-analysis.md'}")
     return 0

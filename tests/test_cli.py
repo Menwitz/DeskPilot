@@ -1381,6 +1381,7 @@ def test_cli_analyze_failed_run_writes_review_artifacts(
     analysis = json.loads((trace_dir / "failed-run-analysis.json").read_text())
     assert status == 0
     assert "proposals: 1" in output
+    assert "diagnostic ready: false" in output
     assert analysis["proposals"][0]["review_required"] is True
     assert analysis["proposals"][0]["applies_automatically"] is False
     assert (trace_dir / "failed-run-analysis.md").exists()

@@ -66,6 +66,49 @@ def test_failed_run_analyzer_writes_json_and_markdown(tmp_path: Path) -> None:
     payload = json.loads((trace_dir / "failed-run-analysis.json").read_text())
     markdown = (trace_dir / "failed-run-analysis.md").read_text(encoding="utf-8")
     assert payload["proposal_count"] == 1
+    assert payload["diagnostic_ready"] is False
+    assert payload["desktop_input_rerun_required"] is False
     assert payload["proposals"][0]["applies_automatically"] is False
     assert "checkpoint:" in payload["proposals"][0]["yaml_snippet"]
+    assert "Desktop input rerun required" in markdown
     assert "Review required" in markdown
+
+
+def test_failed_run_analyzer_indexes_local_artifacts_without_rerun(
+    tmp_path: Path,
+) -> None:
+    trace_dir = tmp_path / "trace"
+    trace_dir.mkdir()
+    (trace_dir / "final-report.json").write_text(
+        json.dumps(
+            {
+                "task_name": "Browser search",
+                "status": "failed",
+                "steps": [
+                    {
+                        "step_id": "click-submit",
+                        "status": "failed",
+                        "metadata": {"failure_category": "safety_stop"},
+                    },
+                ],
+            },
+        ),
+        encoding="utf-8",
+    )
+    (trace_dir / "action-log.jsonl").write_text("", encoding="utf-8")
+    (trace_dir / "task.json").write_text("{}", encoding="utf-8")
+    (trace_dir / "screenshots").mkdir()
+
+    analysis = analyze_failed_run_trace(trace_dir)
+    write_failed_run_analysis(trace_dir, analysis)
+
+    payload = json.loads((trace_dir / "failed-run-analysis.json").read_text())
+    markdown = (trace_dir / "failed-run-analysis.md").read_text(encoding="utf-8")
+    artifacts = {artifact["name"]: artifact for artifact in payload["artifacts"]}
+    assert payload["diagnostic_ready"] is True
+    assert payload["desktop_input_rerun_required"] is False
+    assert artifacts["final_report"]["present"] is True
+    assert artifacts["action_log"]["present"] is True
+    assert artifacts["task_snapshot"]["present"] is True
+    assert artifacts["screenshots"]["present"] is True
+    assert "Desktop input rerun required: `false`" in markdown
