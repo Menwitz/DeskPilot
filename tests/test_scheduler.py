@@ -209,6 +209,35 @@ def test_scheduler_trace_event_records_pause_and_resume(kind: str) -> None:
     assert event.metadata["scheduler_reason"] == f"operator {kind}"
 
 
+def test_scheduler_acceptance_pause_resume_cancel_and_retry_later() -> None:
+    queue = RunQueue().enqueue("browser.read-page")
+    queue = queue.transition("run-0001", "running", reason="window ready")
+    queue = queue.transition("run-0001", "paused", reason="operator pause")
+    queue = queue.transition("run-0001", "pending", reason="operator resume")
+    retry_entry = queue.by_id("run-0001")
+    assert retry_entry is not None
+
+    retry_event = scheduler_trace_event(
+        retry_entry,
+        "retry_later",
+        reason="cooldown active",
+        retry_later_until="2026-05-16T10:00:00-04:00",
+    )
+    queue = queue.transition("run-0001", "canceled", reason="operator cancel")
+    canceled_entry = queue.by_id("run-0001")
+    assert canceled_entry is not None
+
+    assert retry_event.metadata["scheduler_event"] == "retry_later"
+    assert retry_event.metadata["retry_later_until"] == "2026-05-16T10:00:00-04:00"
+    assert canceled_entry.status == "canceled"
+    assert [transition.to_status for transition in canceled_entry.history] == [
+        "running",
+        "paused",
+        "pending",
+        "canceled",
+    ]
+
+
 def test_scheduler_safety_gate_allows_ready_desktop_context() -> None:
     entry = RunQueue().enqueue("browser.read-page").next_pending()
     routine = _routine(required_app="Microsoft Edge", required_site="example.com")
