@@ -635,7 +635,7 @@ abuse, and hidden automation are not supported.
       removed.
 - [x] KR2: Routine packs include manifest, routines, fixtures, docs, tests,
       safety metadata, and proof expectations.
-- [ ] KR3: Conflicts and trust warnings are surfaced before installation.
+- [x] KR3: Conflicts and trust warnings are surfaced before installation.
 - [ ] KR4: Optional team/report server remains separate from local execution.
 
 ### Tasks
