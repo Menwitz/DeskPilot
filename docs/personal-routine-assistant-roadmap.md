@@ -605,7 +605,7 @@ abuse, and hidden automation are not supported.
 - [x] Add video redaction or video-disable options.
 - [x] Add trace schema migration tests.
 - [x] Add routine catalog migration tests.
-- [ ] Add Windows installer build script for the CLI and PySide6 app.
+- [x] Add Windows installer build script for the CLI and PySide6 app.
 - [ ] Add packaged-app smoke tests for help, dry-run, routine listing, and trace
       replay.
 - [ ] Add troubleshooting docs for missing Windows permissions, locked screen,

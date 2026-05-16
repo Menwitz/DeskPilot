@@ -10,6 +10,8 @@ DeskPilot packages the Windows executable with PyInstaller.
 - `packaging/deskpilot-app.spec` is the optional PySide6 app build config.
 - `packaging/default-config.yaml` is bundled with the executable.
 - `scripts/build-windows-exe.ps1` builds `dist/deskpilot.exe` on Windows.
+- `scripts/build-windows-installer.ps1` builds both executables and writes a
+  local installer bundle plus `dist/DeskPilot-Windows.zip`.
 - `scripts/verify-windows-package.ps1` runs packaged `--help` and `dry-run`
   checks.
 
@@ -30,8 +32,24 @@ Run from the repository root in PowerShell:
 
 ```powershell
 scripts/build-windows-exe.ps1
+scripts/build-windows-installer.ps1
 scripts/verify-windows-package.ps1
 ```
+
+The installer bundle contains:
+
+- `bin/deskpilot.exe`
+- `bin/deskpilot-app.exe`
+- `config/default-config.yaml`
+- `docs/`
+- `examples/`
+- `routine_packs/`, when present
+- `playbooks/`, when present
+- `install.ps1`, `uninstall.ps1`, `README.txt`, and `manifest.json`
+
+Run `dist\deskpilot-windows-installer\install.ps1` to copy the bundle to the
+current user's local app-data directory. Pass `-AddUserPath` only when the user
+wants `bin\` added to their user PATH.
 
 Real `run` verification still requires an unlocked Windows desktop with the
 browser or native fixture visible.
