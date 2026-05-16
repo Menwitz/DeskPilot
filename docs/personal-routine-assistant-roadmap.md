@@ -169,7 +169,7 @@ abuse, and hidden automation are not supported.
 - [x] Make each real input action auditable from intent to observed result.
 - [x] Explain target choice, competing candidates, input sent, and verification
       outcome.
-- [ ] Make trace replay useful for debugging without rerunning the task.
+- [x] Make trace replay useful for debugging without rerunning the task.
 
 ### OKRs
 
