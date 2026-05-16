@@ -11,6 +11,10 @@ from datetime import datetime
 from typing import Literal, Protocol, cast
 
 from desktop_agent.config import LocalModelConfig
+from desktop_agent.local_model_prompts import (
+    PROMPT_CLASS_ROUTINE_RANKING,
+    build_routine_ranking_prompt,
+)
 from desktop_agent.routines import (
     RoutineCatalog,
     RoutineDefinition,
@@ -116,7 +120,7 @@ class GoalModelRanking:
 
     provider: str = "ollama"
     model: str = ""
-    prompt_class: str = "goal_routine_ranking"
+    prompt_class: str = PROMPT_CLASS_ROUTINE_RANKING
     enabled: bool = False
     attempted: bool = False
     status: GoalModelRankingStatus = "disabled"
@@ -1023,32 +1027,11 @@ def _ollama_goal_ranking_prompt(plan: GoalPlan) -> str:
         }
         for candidate in plan.candidate_routines
     ]
-    # The prompt asks for routine IDs only so the model cannot author actions.
-    return json.dumps(
-        {
-            "task": (
-                "Rank these existing DeskPilot routine candidates for the user "
-                "goal. Return JSON only."
-            ),
-            "response_schema": {
-                "selected_routine_id": "one candidate routine_id or null",
-                "candidate_order": "array of candidate routine_id values",
-                "explanation": "short operator-facing reason",
-            },
-            "user_goal": plan.user_goal,
-            "normalized_intent": plan.normalized_intent,
-            "candidates": candidates,
-            "constraints": [
-                "Use only routine_id values present in candidates.",
-                "Do not create desktop actions, scripts, URLs, or commands.",
-                (
-                    "Safety, inputs, approvals, and execution eligibility are "
-                    "enforced outside the model."
-                ),
-            ],
-        },
-        sort_keys=True,
-    )
+    return build_routine_ranking_prompt(
+        user_goal=plan.user_goal,
+        normalized_intent=plan.normalized_intent,
+        candidates=candidates,
+    ).text
 
 
 def _hash_model_output(raw_output: str) -> str | None:

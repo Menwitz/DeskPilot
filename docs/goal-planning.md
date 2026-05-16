@@ -89,6 +89,9 @@ Every `plan-goal` run writes a local goal trace under `trace_root`, or under
 
 `rank_goal_plan_with_optional_model()` applies local model assistance after the
 deterministic catalog search has produced valid candidates. The Ollama prompt
+uses the `goal_routine_ranking` prompt class. That class is shared with the
+local model prompt registry so traces and reports can disclose the model use
+consistently. The prompt
 contains the user goal and candidate routine metadata, then asks for JSON with:
 
 - `selected_routine_id`

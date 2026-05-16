@@ -311,6 +311,19 @@ desktop-agent local-model list --config config.yaml
 probes the configured local endpoint and prints the model names advertised by
 Ollama. `--output` writes the same status as JSON for local monitoring reports.
 
+Local model prompts are explicit classes so traces can disclose what assistance
+was requested:
+
+- `goal_routine_ranking`: rank already-known routine candidates.
+- `missing_input_extraction`: draft values for known missing routine inputs.
+- `trace_summarization`: summarize local trace artifacts for review.
+- `screen_summary`: explain supplied screenshots/OCR for review and authoring.
+- `yaml_improvement_suggestions`: draft review-only YAML improvement snippets.
+
+Every prompt class keeps the same boundary: return structured JSON only, do not
+execute desktop input, do not invent executable actions, and wait for
+deterministic validation before any suggestion can affect a run.
+
 ## Sensitive Step Confirmation
 
 Tasks can mark a step with `requires_confirmation: true`. Those steps are
