@@ -1,0 +1,20 @@
+id: browser.profile-settings-open
+name: Browser profile settings open
+description: Open browser profile settings for read-only review.
+goal: Inspect profile settings without changing sync, identity, or account state.
+required_app: Browser
+tags:
+  - browser
+  - settings
+  - profile
+inputs:
+  - browser profile
+outputs:
+  - profile settings visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/profile-settings-open.yaml

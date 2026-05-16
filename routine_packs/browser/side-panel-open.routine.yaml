@@ -1,0 +1,20 @@
+id: browser.side-panel-open
+name: Browser side panel open
+description: Open the browser side panel and close it after review.
+goal: Inspect the side panel surface without selecting external actions.
+required_app: Browser
+tags:
+  - browser
+  - panel
+  - review
+inputs:
+  - browser window
+outputs:
+  - side panel reviewed
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/side-panel-open.yaml

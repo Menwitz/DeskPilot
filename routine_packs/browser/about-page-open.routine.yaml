@@ -1,0 +1,20 @@
+id: browser.about-page-open
+name: Browser about page open
+description: Open the browser About page for read-only version review.
+goal: Inspect browser version and update surface without applying changes.
+required_app: Browser
+tags:
+  - browser
+  - settings
+  - about
+inputs:
+  - browser profile
+outputs:
+  - about page visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/about-page-open.yaml

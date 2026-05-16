@@ -1,0 +1,13 @@
+name: Browser reading list open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-reading-list
+    action: click_text
+    target: Reading list
+  - id: confirm-reading-list
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Reading list

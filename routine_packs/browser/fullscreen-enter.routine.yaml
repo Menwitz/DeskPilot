@@ -1,0 +1,20 @@
+id: browser.fullscreen-enter
+name: Browser enter full screen
+description: Enter browser full-screen mode and verify the browser remains active.
+goal: Switch the browser into full-screen mode for a review workflow.
+required_app: Browser
+tags:
+  - browser
+  - viewing
+  - fullscreen
+inputs:
+  - browser window
+outputs:
+  - full screen active
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/fullscreen-enter.yaml

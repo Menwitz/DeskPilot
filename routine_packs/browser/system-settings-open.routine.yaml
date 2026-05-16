@@ -1,0 +1,20 @@
+id: browser.system-settings-open
+name: Browser system settings open
+description: Open browser system settings for read-only review.
+goal: Inspect browser system settings without changing startup or hardware options.
+required_app: Browser
+tags:
+  - browser
+  - settings
+  - system
+inputs:
+  - browser profile
+outputs:
+  - system settings visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/system-settings-open.yaml

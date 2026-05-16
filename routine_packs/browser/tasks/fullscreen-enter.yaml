@@ -1,0 +1,16 @@
+name: Browser enter full screen task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: enter-fullscreen
+    action: press_key
+    text: f11
+    verify:
+      type: visible_text
+      text: Full screen
+  - id: confirm-fullscreen
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Full screen

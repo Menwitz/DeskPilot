@@ -1,0 +1,16 @@
+name: Browser collections open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-collections
+    action: press_key
+    text: ctrl+shift+y
+    verify:
+      type: visible_text
+      text: Collections
+  - id: confirm-collections
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Collections

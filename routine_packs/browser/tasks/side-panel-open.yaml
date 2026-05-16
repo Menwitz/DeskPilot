@@ -1,0 +1,22 @@
+name: Browser side panel open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-side-panel
+    action: press_key
+    text: ctrl+shift+period
+    verify:
+      type: visible_text
+      text: Side panel
+  - id: confirm-side-panel
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Side panel
+  - id: close-side-panel
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: Browser

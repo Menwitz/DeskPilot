@@ -1,0 +1,16 @@
+name: Browser exit full screen task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: exit-fullscreen
+    action: press_key
+    text: f11
+    verify:
+      type: visible_text
+      text: Browser
+  - id: confirm-normal-browser
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Browser

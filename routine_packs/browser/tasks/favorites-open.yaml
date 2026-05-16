@@ -1,0 +1,16 @@
+name: Browser favorites open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-favorites
+    action: press_key
+    text: ctrl+shift+o
+    verify:
+      type: visible_text
+      text: Favorites
+  - id: confirm-favorites
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Favorites

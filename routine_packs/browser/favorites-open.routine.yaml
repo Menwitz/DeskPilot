@@ -1,0 +1,20 @@
+id: browser.favorites-open
+name: Browser favorites open
+description: Open browser favorites for read-only review.
+goal: Inspect saved favorites without opening or editing them.
+required_app: Browser
+tags:
+  - browser
+  - favorites
+  - review
+inputs:
+  - browser profile
+outputs:
+  - favorites visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/favorites-open.yaml

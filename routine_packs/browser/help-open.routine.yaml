@@ -1,0 +1,20 @@
+id: browser.help-open
+name: Browser help open
+description: Open the browser help surface for local review.
+goal: Inspect browser help without changing settings.
+required_app: Browser
+tags:
+  - browser
+  - help
+  - review
+inputs:
+  - browser window
+outputs:
+  - help page visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/help-open.yaml

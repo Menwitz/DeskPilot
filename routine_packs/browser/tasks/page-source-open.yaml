@@ -1,0 +1,19 @@
+name: Browser page source open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: confirm-page
+    action: wait_for
+    target: Page
+  - id: open-source-view
+    action: press_key
+    text: ctrl+u
+    verify:
+      type: visible_text
+      text: Source
+  - id: confirm-source-view
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Source

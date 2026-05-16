@@ -1,0 +1,23 @@
+name: Browser profile settings open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: focus-address-bar
+    action: press_key
+    text: ctrl+l
+    verify:
+      type: visible_text
+      text: Address
+  - id: type-profile-url
+    action: type_text
+    text: browser://settings/profiles
+    verify:
+      type: visible_text
+      text: browser://settings/profiles
+  - id: load-profile-settings
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Profile

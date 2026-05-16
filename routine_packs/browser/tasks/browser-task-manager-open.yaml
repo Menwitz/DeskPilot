@@ -1,0 +1,16 @@
+name: Browser task manager open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-browser-task-manager
+    action: press_key
+    text: shift+esc
+    verify:
+      type: visible_text
+      text: Task Manager
+  - id: confirm-task-manager
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Task Manager

@@ -1,0 +1,20 @@
+id: browser.bookmarks-manager-open
+name: Browser bookmarks manager open
+description: Open the bookmarks manager for read-only review.
+goal: Inspect bookmark organization without editing saved entries.
+required_app: Browser
+tags:
+  - browser
+  - bookmarks
+  - organization
+inputs:
+  - browser profile
+outputs:
+  - bookmarks manager visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/bookmarks-manager-open.yaml

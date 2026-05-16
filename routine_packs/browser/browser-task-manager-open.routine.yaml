@@ -1,0 +1,20 @@
+id: browser.browser-task-manager-open
+name: Browser task manager open
+description: Open the browser task manager for read-only process review.
+goal: Inspect browser process/resource state without ending tasks.
+required_app: Browser
+tags:
+  - browser
+  - monitoring
+  - review
+inputs:
+  - browser window
+outputs:
+  - browser task manager visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/browser-task-manager-open.yaml
