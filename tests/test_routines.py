@@ -96,6 +96,111 @@ def test_routine_definition_schema_loads_playbook_reference() -> None:
     assert routine.report_metadata()["routine_safety_class"] == "medium"
 
 
+def test_routine_definition_schema_loads_schedule_constraints(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    routine_path = tmp_path / "scheduled" / "morning.routine.yaml"
+    export_path = tmp_path / "scheduled-export.yaml"
+    routine_path.parent.mkdir()
+    routine_path.write_text(
+        "\n".join(
+            [
+                "id: browser.morning-review",
+                "name: Browser morning review",
+                "description: Review an owned browser page during work hours.",
+                "goal: Check the page only inside reviewed windows.",
+                "required_app: Microsoft Edge",
+                "required_site: example.com",
+                "tags:",
+                "  - browser",
+                "  - morning",
+                "inputs:",
+                "  - review url",
+                "outputs:",
+                "  - review notes",
+                "safety_class: medium",
+                "schedule_policy: scheduled",
+                "approval_policy: confirm",
+                "expected_duration_seconds: 120",
+                "schedule:",
+                "  allowed_time_windows:",
+                "    - days: [mon, tue, wed, thu, fri]",
+                "      start: '09:00'",
+                "      end: '11:30'",
+                "      timezone: local",
+                "  cooldown_seconds: 1800",
+                "  max_runs_per_day: 2",
+                "  max_runs_per_week: 8",
+                "  max_external_mutations: 1",
+                "  stop_conditions:",
+                "    - active_window_not_allowed",
+                "    - operator_check_in_required",
+                "reference:",
+                "  type: task",
+                "  path: tasks/morning-review.yaml",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    routine = load_routine_definition(routine_path)
+    catalog = load_routine_catalog(tmp_path)
+    search_results = catalog.search("operator check morning")
+
+    assert routine.schedule.cooldown_seconds == 1800
+    assert routine.schedule.max_runs_per_day == 2
+    assert routine.schedule.max_external_mutations == 1
+    assert routine.schedule.stop_conditions == (
+        "active_window_not_allowed",
+        "operator_check_in_required",
+    )
+    assert routine.schedule.allowed_time_windows[0].days == (
+        "mon",
+        "tue",
+        "wed",
+        "thu",
+        "fri",
+    )
+    metadata = routine.report_metadata()["routine_schedule"]
+    assert isinstance(metadata, dict)
+    assert metadata["max_runs_per_week"] == 8
+    assert search_results[0].routine.id == "browser.morning-review"
+
+    assert (
+        main(
+            [
+                "show-routine",
+                "browser.morning-review",
+                "--routine-pack-root",
+                str(tmp_path),
+            ],
+        )
+        == 0
+    )
+    show_output = capsys.readouterr().out
+    assert "max_external_mutations: 1" in show_output
+    assert "operator_check_in_required" in show_output
+
+    assert (
+        main(
+            [
+                "export-routine",
+                "browser.morning-review",
+                "--routine-pack-root",
+                str(tmp_path),
+                "--output",
+                str(export_path),
+            ],
+        )
+        == 0
+    )
+    exported = yaml.safe_load(export_path.read_text(encoding="utf-8"))
+    assert exported["schedule"]["max_runs_per_day"] == 2
+    assert exported["schedule"]["allowed_time_windows"][0]["start"] == "09:00"
+
+
 def test_routine_definition_schema_rejects_invalid_policies() -> None:
     with pytest.raises(RoutineDefinitionError, match="unsupported safety_class"):
         routine_definition_from_mapping(
@@ -137,6 +242,39 @@ def test_routine_definition_schema_requires_task_or_playbook_reference() -> None
                 "reference": {
                     "type": "script",
                     "path": "scripts/bad.py",
+                },
+            },
+        )
+
+
+def test_routine_definition_schema_rejects_invalid_schedule() -> None:
+    with pytest.raises(RoutineDefinitionError, match="start must be HH:MM"):
+        routine_definition_from_mapping(
+            {
+                "id": "bad.schedule",
+                "name": "Bad schedule",
+                "description": "Invalid time window.",
+                "goal": "Show schedule validation failure.",
+                "tags": [],
+                "inputs": [],
+                "outputs": [],
+                "safety_class": "low",
+                "schedule_policy": "scheduled",
+                "approval_policy": "none",
+                "expected_duration_seconds": 10,
+                "schedule": {
+                    "allowed_time_windows": [
+                        {
+                            "days": ["mon", "funday"],
+                            "start": "9am",
+                            "end": "09:00",
+                        },
+                    ],
+                    "cooldown_seconds": 1,
+                },
+                "reference": {
+                    "type": "task",
+                    "path": "tasks/bad.yaml",
                 },
             },
         )

@@ -776,6 +776,9 @@ def _show_routine(args: argparse.Namespace) -> int:
     print(f"schedule_policy: {routine.schedule_policy}")
     print(f"approval_policy: {routine.approval_policy}")
     print(f"expected_duration_seconds: {routine.expected_duration_seconds:g}")
+    print("schedule:")
+    for line in _routine_schedule_summary(routine).splitlines():
+        print(f"  {line}")
     print(f"failed_evidence_count: {routine.failed_evidence_count}")
     print(f"quarantine_status: {routine_quarantine_status(routine)}")
     if routine.quarantine_reason:
@@ -905,7 +908,60 @@ def _routine_to_yaml_dict(routine: RoutineDefinition) -> dict[str, object]:
     }
     _put_optional(payload, "required_app", routine.required_app)
     _put_optional(payload, "required_site", routine.required_site)
+    if routine.schedule != type(routine.schedule)():
+        payload["schedule"] = _routine_schedule_to_yaml_dict(routine)
     _put_optional(payload, "quarantine_reason", routine.quarantine_reason)
+    return payload
+
+
+def _routine_schedule_summary(routine: RoutineDefinition) -> str:
+    schedule = routine.schedule
+    if schedule == type(schedule)():
+        return "none"
+    lines: list[str] = []
+    if schedule.allowed_time_windows:
+        lines.append("allowed_time_windows:")
+        for window in schedule.allowed_time_windows:
+            days = ",".join(window.days) if window.days else "everyday"
+            lines.append(
+                f"  - {days} {window.start}-{window.end} {window.timezone}",
+            )
+    if schedule.cooldown_seconds:
+        lines.append(f"cooldown_seconds: {schedule.cooldown_seconds:g}")
+    if schedule.max_runs_per_day is not None:
+        lines.append(f"max_runs_per_day: {schedule.max_runs_per_day}")
+    if schedule.max_runs_per_week is not None:
+        lines.append(f"max_runs_per_week: {schedule.max_runs_per_week}")
+    if schedule.max_external_mutations is not None:
+        lines.append(f"max_external_mutations: {schedule.max_external_mutations}")
+    if schedule.stop_conditions:
+        lines.append(f"stop_conditions: {', '.join(schedule.stop_conditions)}")
+    return "\n".join(lines)
+
+
+def _routine_schedule_to_yaml_dict(routine: RoutineDefinition) -> dict[str, object]:
+    schedule = routine.schedule
+    payload: dict[str, object] = {}
+    if schedule.allowed_time_windows:
+        payload["allowed_time_windows"] = [
+            {
+                "days": list(window.days),
+                "start": window.start,
+                "end": window.end,
+                "timezone": window.timezone,
+            }
+            for window in schedule.allowed_time_windows
+        ]
+    if schedule.cooldown_seconds:
+        payload["cooldown_seconds"] = schedule.cooldown_seconds
+    if schedule.max_runs_per_day is not None:
+        payload["max_runs_per_day"] = schedule.max_runs_per_day
+    if schedule.max_runs_per_week is not None:
+        payload["max_runs_per_week"] = schedule.max_runs_per_week
+    if schedule.max_external_mutations is not None:
+        payload["max_external_mutations"] = schedule.max_external_mutations
+    if schedule.stop_conditions:
+        payload["stop_conditions"] = list(schedule.stop_conditions)
     return payload
 
 

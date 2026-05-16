@@ -26,6 +26,10 @@ SUPPORTED_QUARANTINE_STATUSES: frozenset[str] = frozenset(
 )
 ROUTINE_QUARANTINE_FAILURE_THRESHOLD = 3
 RoutineReferenceKind = Literal["task", "playbook"]
+TIME_OF_DAY_PATTERN = re.compile(r"^(?:[01][0-9]|2[0-3]):[0-5][0-9]$")
+SUPPORTED_SCHEDULE_DAYS: frozenset[str] = frozenset(
+    {"mon", "tue", "wed", "thu", "fri", "sat", "sun"},
+)
 ROUTINE_DOCUMENTATION_TEMPLATE = """# <Routine Name>
 
 ## Routine Contract
@@ -89,6 +93,48 @@ class RoutineReference:
 
 
 @dataclass(frozen=True)
+class RoutineTimeWindow:
+    """Allowed local time window for scheduled routine eligibility."""
+
+    start: str
+    end: str
+    days: tuple[str, ...] = ()
+    timezone: str = "local"
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "start": self.start,
+            "end": self.end,
+            "days": list(self.days),
+            "timezone": self.timezone,
+        }
+
+
+@dataclass(frozen=True)
+class RoutineSchedule:
+    """Scheduling constraints attached to a reviewed routine definition."""
+
+    allowed_time_windows: tuple[RoutineTimeWindow, ...] = ()
+    cooldown_seconds: float = 0.0
+    max_runs_per_day: int | None = None
+    max_runs_per_week: int | None = None
+    max_external_mutations: int | None = None
+    stop_conditions: tuple[str, ...] = ()
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "allowed_time_windows": [
+                window.metadata() for window in self.allowed_time_windows
+            ],
+            "cooldown_seconds": self.cooldown_seconds,
+            "max_runs_per_day": self.max_runs_per_day,
+            "max_runs_per_week": self.max_runs_per_week,
+            "max_external_mutations": self.max_external_mutations,
+            "stop_conditions": list(self.stop_conditions),
+        }
+
+
+@dataclass(frozen=True)
 class RoutineDefinition:
     """Reviewed routine metadata stored in routine packs."""
 
@@ -106,6 +152,7 @@ class RoutineDefinition:
     approval_policy: str
     expected_duration_seconds: float
     reference: RoutineReference
+    schedule: RoutineSchedule = RoutineSchedule()
     failed_evidence_count: int = 0
     quarantine_status: str = "active"
     quarantine_reason: str | None = None
@@ -123,6 +170,7 @@ class RoutineDefinition:
             "routine_approval_policy": self.approval_policy,
             "routine_expected_duration_seconds": self.expected_duration_seconds,
             "routine_reference_kind": self.reference.kind,
+            "routine_schedule": self.schedule.metadata(),
             "routine_failed_evidence_count": self.failed_evidence_count,
             "routine_quarantine_status": quarantine,
             "routine_quarantine_reason": self.quarantine_reason,
@@ -228,6 +276,7 @@ def routine_definition_from_mapping(
             "expected_duration_seconds",
         ),
         reference=_reference_from_value(data.get("reference"), base_dir),
+        schedule=_schedule_from_value(data.get("schedule")),
         failed_evidence_count=_optional_non_negative_int(
             data.get("failed_evidence_count"),
             "failed_evidence_count",
@@ -285,6 +334,7 @@ def validate_routine_definition(routine: RoutineDefinition) -> None:
     if routine.quarantine_status == "quarantined" and not routine.quarantine_reason:
         errors.append("quarantine_reason is required when routine is quarantined")
     errors.extend(_reference_errors(routine.reference))
+    errors.extend(_schedule_errors(routine.schedule))
     if errors:
         raise RoutineDefinitionError("; ".join(errors))
 
@@ -393,6 +443,7 @@ def render_routine_catalog_index(catalog: RoutineCatalog) -> str:
         f"{_format_counter(_field_counts(routines, 'approval_policy'))}",
         "- Schedule policies: "
         f"{_format_counter(_field_counts(routines, 'schedule_policy'))}",
+        f"- Schedule-constrained routines: {_schedule_constrained_count(routines)}",
         f"- Windows proof required: {_windows_proof_required_count(routines)}",
         f"- Quarantined routines: {_quarantined_count(routines)}",
         f"- Approval gaps: {_approval_gap_summary(routines)}",
@@ -411,8 +462,9 @@ def render_routine_catalog_index(catalog: RoutineCatalog) -> str:
             "## Search Coverage",
             "",
             "The local catalog search indexes routine IDs, names, tags, required app,",
-            "required site, descriptions, goals, inputs, and outputs. Use these",
-            "query seeds when checking deep catalog search behavior:",
+            "required site, descriptions, goals, inputs, outputs, and schedule",
+            "constraints. Use these query seeds when checking deep catalog search",
+            "behavior:",
             "",
             *_search_seed_lines(catalog, routines),
             "",
@@ -421,8 +473,9 @@ def render_routine_catalog_index(catalog: RoutineCatalog) -> str:
             "- Promotion gates: schema validation, dry-run, fixture test, trace",
             "  replay review, documentation, and Windows proof when applicable.",
             "- Report metadata: routine ID, name, tags, safety class, schedule",
-            "  policy, approval policy, expected duration, reference kind, failed",
-            "  evidence count, quarantine status, and promotion gates.",
+            "  policy, schedule constraints, approval policy, expected duration,",
+            "  reference kind, failed evidence count, quarantine status, and",
+            "  promotion gates.",
             "- Quarantine rule: routines are quarantined when explicitly marked or",
             "  when failed evidence count reaches three.",
             "",
@@ -467,6 +520,10 @@ def _quarantined_count(routines: Iterable[RoutineDefinition]) -> int:
     return sum(
         1 for routine in routines if routine_quarantine_status(routine) == "quarantined"
     )
+
+
+def _schedule_constrained_count(routines: Iterable[RoutineDefinition]) -> int:
+    return sum(1 for routine in routines if routine.schedule != RoutineSchedule())
 
 
 def _approval_gap_summary(routines: Iterable[RoutineDefinition]) -> str:
@@ -558,6 +615,96 @@ def _markdown_cell(value: str) -> str:
     return value.replace("|", "\\|").replace("\n", " ")
 
 
+def _schedule_from_value(value: object) -> RoutineSchedule:
+    if value is None:
+        return RoutineSchedule()
+    data = _mapping(value, "schedule must be a mapping")
+    schedule = RoutineSchedule(
+        allowed_time_windows=_time_windows_from_value(
+            data.get("allowed_time_windows"),
+        ),
+        cooldown_seconds=_optional_non_negative_float(
+            data.get("cooldown_seconds"),
+            "schedule.cooldown_seconds",
+        ),
+        max_runs_per_day=_optional_positive_int(
+            data.get("max_runs_per_day"),
+            "schedule.max_runs_per_day",
+        ),
+        max_runs_per_week=_optional_positive_int(
+            data.get("max_runs_per_week"),
+            "schedule.max_runs_per_week",
+        ),
+        max_external_mutations=_optional_non_negative_int_or_none(
+            data.get("max_external_mutations"),
+            "schedule.max_external_mutations",
+        ),
+        stop_conditions=_string_tuple(
+            data.get("stop_conditions"),
+            "schedule.stop_conditions",
+        ),
+    )
+    errors = _schedule_errors(schedule)
+    if errors:
+        raise RoutineDefinitionError("; ".join(errors))
+    return schedule
+
+
+def _time_windows_from_value(value: object) -> tuple[RoutineTimeWindow, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list | tuple):
+        raise RoutineDefinitionError("schedule.allowed_time_windows must be a list")
+    return tuple(_time_window_from_value(item) for item in value)
+
+
+def _time_window_from_value(value: object) -> RoutineTimeWindow:
+    data = _mapping(
+        value,
+        "schedule.allowed_time_windows entries must be mappings",
+    )
+    return RoutineTimeWindow(
+        start=_required_string(data, "start"),
+        end=_required_string(data, "end"),
+        days=_string_tuple(data.get("days"), "days"),
+        timezone=_optional_string(data, "timezone") or "local",
+    )
+
+
+def _schedule_errors(schedule: RoutineSchedule) -> list[str]:
+    errors: list[str] = []
+    for index, window in enumerate(schedule.allowed_time_windows, start=1):
+        prefix = f"schedule.allowed_time_windows[{index}]"
+        if not TIME_OF_DAY_PATTERN.fullmatch(window.start):
+            errors.append(f"{prefix}.start must be HH:MM")
+        if not TIME_OF_DAY_PATTERN.fullmatch(window.end):
+            errors.append(f"{prefix}.end must be HH:MM")
+        if window.start == window.end:
+            errors.append(f"{prefix}.start must differ from end")
+        unsupported_days = sorted(set(window.days) - SUPPORTED_SCHEDULE_DAYS)
+        if unsupported_days:
+            errors.append(
+                f"{prefix}.days contains unsupported values: "
+                f"{', '.join(unsupported_days)}",
+            )
+        if not window.timezone.strip():
+            errors.append(f"{prefix}.timezone is required")
+    if schedule.cooldown_seconds < 0:
+        errors.append("schedule.cooldown_seconds must not be negative")
+    for field_name in ("max_runs_per_day", "max_runs_per_week"):
+        value = getattr(schedule, field_name)
+        if value is not None and value <= 0:
+            errors.append(f"schedule.{field_name} must be greater than zero")
+    if (
+        schedule.max_external_mutations is not None
+        and schedule.max_external_mutations < 0
+    ):
+        errors.append("schedule.max_external_mutations must not be negative")
+    if any(not condition.strip() for condition in schedule.stop_conditions):
+        errors.append("schedule.stop_conditions entries must not be blank")
+    return errors
+
+
 def _reference_from_value(value: object, base_dir: Path) -> RoutineReference:
     data = _mapping(value, "reference must be a mapping")
     kind_value = _required_string(data, "type")
@@ -589,7 +736,28 @@ def _routine_search_fields(
         ("goal", 1, routine.goal),
         ("inputs", 1, " ".join(routine.inputs)),
         ("outputs", 1, " ".join(routine.outputs)),
+        ("schedule", 1, _schedule_search_text(routine.schedule)),
     )
+
+
+def _schedule_search_text(schedule: RoutineSchedule) -> str:
+    windows = [
+        " ".join((*window.days, window.start, window.end, window.timezone))
+        for window in schedule.allowed_time_windows
+    ]
+    limits = [
+        f"cooldown {schedule.cooldown_seconds:g}",
+        f"max runs day {schedule.max_runs_per_day}"
+        if schedule.max_runs_per_day is not None
+        else "",
+        f"max runs week {schedule.max_runs_per_week}"
+        if schedule.max_runs_per_week is not None
+        else "",
+        f"max external mutations {schedule.max_external_mutations}"
+        if schedule.max_external_mutations is not None
+        else "",
+    ]
+    return " ".join((*windows, *limits, *schedule.stop_conditions))
 
 
 def _query_tokens(value: str) -> set[str]:
@@ -659,9 +827,40 @@ def _positive_float(value: object, key: str) -> float:
     return result
 
 
+def _optional_non_negative_float(value: object, key: str) -> float:
+    if value is None:
+        return 0.0
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise RoutineDefinitionError(f"{key} must be numeric")
+    result = float(value)
+    if result < 0:
+        raise RoutineDefinitionError(f"{key} must not be negative")
+    return result
+
+
+def _optional_positive_int(value: object, key: str) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise RoutineDefinitionError(f"{key} must be an integer")
+    if value <= 0:
+        raise RoutineDefinitionError(f"{key} must be greater than zero")
+    return value
+
+
 def _optional_non_negative_int(value: object, key: str) -> int:
     if value is None:
         return 0
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise RoutineDefinitionError(f"{key} must be an integer")
+    if value < 0:
+        raise RoutineDefinitionError(f"{key} must not be negative")
+    return value
+
+
+def _optional_non_negative_int_or_none(value: object, key: str) -> int | None:
+    if value is None:
+        return None
     if isinstance(value, bool) or not isinstance(value, int):
         raise RoutineDefinitionError(f"{key} must be an integer")
     if value < 0:

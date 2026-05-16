@@ -11,6 +11,7 @@ changes.
 - Safety classes: high 7, low 20, medium 10
 - Approval policies: confirm 10, manifest_required 7, none 20
 - Schedule policies: manual 37
+- Schedule-constrained routines: 0
 - Windows proof required: 37
 - Quarantined routines: 0
 - Approval gaps: none
@@ -60,8 +61,9 @@ changes.
 ## Search Coverage
 
 The local catalog search indexes routine IDs, names, tags, required app,
-required site, descriptions, goals, inputs, and outputs. Use these
-query seeds when checking deep catalog search behavior:
+required site, descriptions, goals, inputs, outputs, and schedule
+constraints. Use these query seeds when checking deep catalog search
+behavior:
 
 - `browser`
 - `native`
@@ -96,7 +98,8 @@ query seeds when checking deep catalog search behavior:
 - Promotion gates: schema validation, dry-run, fixture test, trace
   replay review, documentation, and Windows proof when applicable.
 - Report metadata: routine ID, name, tags, safety class, schedule
-  policy, approval policy, expected duration, reference kind, failed
-  evidence count, quarantine status, and promotion gates.
+  policy, schedule constraints, approval policy, expected duration,
+  reference kind, failed evidence count, quarantine status, and
+  promotion gates.
 - Quarantine rule: routines are quarantined when explicitly marked or
   when failed evidence count reaches three.

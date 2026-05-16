@@ -25,6 +25,19 @@ safety_class: low
 schedule_policy: manual
 approval_policy: none
 expected_duration_seconds: 30
+schedule:
+  allowed_time_windows:
+    - days: [mon, tue, wed, thu, fri]
+      start: "09:00"
+      end: "17:00"
+      timezone: local
+  cooldown_seconds: 1800
+  max_runs_per_day: 3
+  max_runs_per_week: 10
+  max_external_mutations: 1
+  stop_conditions:
+    - active_window_not_allowed
+    - operator_check_in_required
 failed_evidence_count: 0
 quarantine_status: active
 reference:
@@ -57,6 +70,22 @@ Supported approval policies are `none`, `confirm`, `manifest_required`, and
 
 `RoutineDefinition.report_metadata()` returns JSON-safe fields for future trace,
 monitoring, search, and catalog quality reports.
+
+## Schedule Constraints
+
+The optional `schedule` block describes when a future scheduler may consider a
+routine eligible. It is metadata only until the scheduler is enabled, but it is
+validated, searchable, exported, shown by `show-routine`, and copied into trace
+report metadata when a routine is compiled.
+
+- `allowed_time_windows` entries use `HH:MM` `start` and `end` values, optional
+  `days` from `mon` through `sun`, and a `timezone` label. Omit `days` for every
+  day.
+- `cooldown_seconds` must be non-negative.
+- `max_runs_per_day` and `max_runs_per_week` must be positive when present.
+- `max_external_mutations` must be non-negative when present.
+- `stop_conditions` are reviewed strings such as `active_window_not_allowed`,
+  `operator_check_in_required`, or `approval_missing`.
 
 ## Quarantine
 

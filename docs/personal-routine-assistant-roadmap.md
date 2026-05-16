@@ -379,7 +379,7 @@ abuse, and hidden automation are not supported.
       cadence, scroll cadence, and seeded sampling.
 - [x] Add activity profiles: `focused`, `careful`, `background_assist`, and
       `batch_work`.
-- [ ] Add routine schedule schema with time windows, cooldowns, run limits,
+- [x] Add routine schedule schema with time windows, cooldowns, run limits,
       max external mutations, and stop conditions.
 - [ ] Add run queue model with pending, running, paused, blocked, completed,
       failed, canceled, and handed-off states.
