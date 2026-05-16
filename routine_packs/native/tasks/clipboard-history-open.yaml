@@ -1,0 +1,16 @@
+name: Clipboard history open task
+allowed_windows:
+  - Windows
+timeout_seconds: 25
+steps:
+  - id: open-clipboard-history
+    action: press_key
+    text: win+v
+    verify:
+      type: visible_text
+      text: Clipboard
+  - id: confirm-clipboard-history
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Clipboard

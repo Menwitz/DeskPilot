@@ -1,0 +1,23 @@
+name: File Explorer search task
+allowed_windows:
+  - File Explorer
+timeout_seconds: 35
+steps:
+  - id: focus-search
+    action: press_key
+    text: ctrl+f
+    verify:
+      type: visible_text
+      text: Search
+  - id: type-file-query
+    action: type_text
+    text: Reviewed file query
+    verify:
+      type: visible_text
+      text: Reviewed file query
+  - id: submit-file-query
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Results

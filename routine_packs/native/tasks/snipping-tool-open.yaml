@@ -1,0 +1,16 @@
+name: Snipping tool open task
+allowed_windows:
+  - Windows
+timeout_seconds: 25
+steps:
+  - id: open-snipping-tool
+    action: press_key
+    text: win+shift+s
+    verify:
+      type: visible_text
+      text: Snipping
+  - id: confirm-snipping-surface
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Snipping

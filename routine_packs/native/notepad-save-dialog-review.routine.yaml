@@ -1,0 +1,20 @@
+id: native.notepad-save-dialog-review
+name: Notepad save dialog review
+description: Open the Notepad save dialog for review and close it without writing.
+goal: Inspect save options for the active note without committing a file write.
+required_app: Notepad
+tags:
+  - native
+  - notepad
+  - files
+inputs:
+  - unsaved note
+outputs:
+  - save dialog reviewed
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/notepad-save-dialog-review.yaml

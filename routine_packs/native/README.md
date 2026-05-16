@@ -1,9 +1,9 @@
 # Native Routine Pack
 
 Native routines cover Windows desktop applications, File Explorer, clipboard
-workflows, app switching, window management, and simple Office-like surfaces.
-Routines in this pack should document required applications and Windows proof
-expectations.
+workflows, app switching, window management, settings, Calculator, Notepad,
+system utilities, and simple Office-like surfaces. Routines in this pack should
+document required applications and Windows proof expectations.
 
 ## Seed Routines
 
@@ -15,3 +15,15 @@ expectations.
 - `native.app-switch`
 - `native.window-manage`
 - `native.office-like-draft`
+- `native.notepad-find`
+- `native.notepad-save-dialog-review`
+- `native.file-explorer-search`
+- `native.file-explorer-new-folder-review`
+- `native.settings-search`
+- `native.calculator-scientific-mode`
+- `native.calculator-copy-result`
+- `native.task-manager-open`
+- `native.run-dialog-open`
+- `native.snipping-tool-open`
+- `native.clipboard-history-open`
+- `native.window-snap-left`

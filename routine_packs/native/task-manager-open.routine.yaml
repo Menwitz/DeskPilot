@@ -1,0 +1,20 @@
+id: native.task-manager-open
+name: Task Manager open
+description: Open Task Manager and confirm the process surface is visible.
+goal: Bring up Task Manager for a local review workflow.
+required_app: Windows
+tags:
+  - native
+  - system
+  - monitoring
+inputs:
+  - desktop session
+outputs:
+  - task manager visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/task-manager-open.yaml

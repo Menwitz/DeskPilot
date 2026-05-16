@@ -1,0 +1,20 @@
+id: native.calculator-scientific-mode
+name: Calculator scientific mode
+description: Open the Calculator mode menu and select the scientific calculator surface.
+goal: Switch Calculator into a reviewed scientific mode.
+required_app: Calculator
+tags:
+  - native
+  - calculator
+  - math
+inputs:
+  - calculator window
+outputs:
+  - scientific calculator visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/calculator-scientific-mode.yaml

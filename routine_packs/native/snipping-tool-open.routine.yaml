@@ -1,0 +1,20 @@
+id: native.snipping-tool-open
+name: Snipping tool open
+description: Open the Windows snipping overlay and verify the capture surface appears.
+goal: Prepare a local screenshot capture surface for operator review.
+required_app: Windows
+tags:
+  - native
+  - screenshot
+  - utility
+inputs:
+  - desktop session
+outputs:
+  - snipping surface visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/snipping-tool-open.yaml

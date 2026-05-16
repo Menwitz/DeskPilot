@@ -1,0 +1,16 @@
+name: Task Manager open task
+allowed_windows:
+  - Windows
+timeout_seconds: 25
+steps:
+  - id: open-task-manager
+    action: press_key
+    text: ctrl+shift+esc
+    verify:
+      type: visible_text
+      text: Task Manager
+  - id: confirm-task-manager
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Task Manager

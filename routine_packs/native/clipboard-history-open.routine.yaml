@@ -1,0 +1,20 @@
+id: native.clipboard-history-open
+name: Clipboard history open
+description: Open Windows clipboard history for local review.
+goal: Inspect available clipboard history entries without selecting one.
+required_app: Windows
+tags:
+  - native
+  - clipboard
+  - history
+inputs:
+  - desktop session
+outputs:
+  - clipboard history visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/clipboard-history-open.yaml

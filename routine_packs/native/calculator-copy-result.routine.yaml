@@ -1,0 +1,20 @@
+id: native.calculator-copy-result
+name: Calculator copy result
+description: Copy the current Calculator result to the clipboard for local reuse.
+goal: Capture the visible Calculator result without changing the calculation.
+required_app: Calculator
+tags:
+  - native
+  - calculator
+  - clipboard
+inputs:
+  - visible calculator result
+outputs:
+  - result copied
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/calculator-copy-result.yaml

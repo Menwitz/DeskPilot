@@ -1,0 +1,19 @@
+name: Windows Settings search task
+allowed_windows:
+  - Settings
+timeout_seconds: 30
+steps:
+  - id: focus-settings-search
+    action: click_text
+    target: Search
+  - id: type-setting-query
+    action: type_text
+    text: Display
+    verify:
+      type: visible_text
+      text: Display
+  - id: confirm-settings-results
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Display

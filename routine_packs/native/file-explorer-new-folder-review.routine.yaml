@@ -1,0 +1,20 @@
+id: native.file-explorer-new-folder-review
+name: File Explorer new folder review
+description: Start the new-folder flow only after confirmation and keep checkpoint evidence.
+goal: Prepare a reviewed local folder creation step.
+required_app: File Explorer
+tags:
+  - native
+  - file-explorer
+  - files
+inputs:
+  - destination folder
+outputs:
+  - new folder prompt visible
+safety_class: medium
+schedule_policy: manual
+approval_policy: confirm
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/file-explorer-new-folder-review.yaml

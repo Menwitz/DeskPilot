@@ -1,0 +1,23 @@
+name: Notepad find text task
+allowed_windows:
+  - Notepad
+timeout_seconds: 30
+steps:
+  - id: open-find
+    action: press_key
+    text: ctrl+f
+    verify:
+      type: visible_text
+      text: Find
+  - id: type-search-phrase
+    action: type_text
+    text: Reviewed phrase
+    verify:
+      type: visible_text
+      text: Reviewed phrase
+  - id: submit-find
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Reviewed phrase

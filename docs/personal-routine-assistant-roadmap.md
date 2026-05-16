@@ -342,6 +342,9 @@ abuse, and hidden automation are not supported.
 - [x] Add native routines for Notepad, Calculator, Settings, File Explorer,
       clipboard, app switching, window management, and simple Office-like
       surfaces.
+- [x] Add first native scale-out batch for Notepad find/save review, File
+      Explorer search/new-folder review, Settings search, Calculator mode/copy,
+      Task Manager, Run, Snipping Tool, clipboard history, and window snap.
 - [x] Add social/content routines for LinkedIn, Medium, X/Twitter, Instagram,
       Facebook, YouTube, and TikTok read-only, draft, and approved publish
       surfaces.

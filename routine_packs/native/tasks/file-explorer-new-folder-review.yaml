@@ -1,0 +1,24 @@
+name: File Explorer new folder review task
+allowed_windows:
+  - File Explorer
+timeout_seconds: 30
+steps:
+  - id: confirm-destination
+    action: wait_for
+    target: File Explorer
+  - id: start-new-folder
+    action: press_key
+    text: ctrl+shift+n
+    requires_confirmation: true
+    checkpoint:
+      type: visible_text
+      text: File Explorer
+    verify:
+      type: visible_text
+      text: New folder
+  - id: cancel-folder-name
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: File Explorer

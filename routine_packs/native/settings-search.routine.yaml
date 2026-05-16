@@ -1,0 +1,20 @@
+id: native.settings-search
+name: Windows Settings search
+description: Open Settings search, enter reviewed text, and confirm search results appear.
+goal: Locate a Windows setting from the Settings app.
+required_app: Settings
+tags:
+  - native
+  - settings
+  - search
+inputs:
+  - setting query
+outputs:
+  - settings search results visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/settings-search.yaml

@@ -1,0 +1,20 @@
+id: native.window-snap-left
+name: Window snap left
+description: Snap the active allowed window left and verify the desktop remains responsive.
+goal: Arrange the active window into a left-side workspace position.
+required_app: Windows
+tags:
+  - native
+  - windows
+  - layout
+inputs:
+  - active window
+outputs:
+  - window snapped left
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/window-snap-left.yaml

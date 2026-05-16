@@ -1,0 +1,16 @@
+name: Calculator copy result task
+allowed_windows:
+  - Calculator
+timeout_seconds: 20
+steps:
+  - id: confirm-calculator
+    action: wait_for
+    target: Calculator
+  - id: copy-result
+    action: press_key
+    text: ctrl+c
+  - id: confirm-calculator-after-copy
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Calculator
