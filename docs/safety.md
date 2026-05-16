@@ -18,6 +18,22 @@ applications.
 DeskPilot does not support stealth automation, CAPTCHA bypass, bot-detection
 evasion, credential abuse, or abusive third-party automation.
 
+## Human-Paced Routine Boundary
+
+DeskPilot may add human-paced behavior for personal local routines, including
+bounded pauses, keyboard cadence, pointer timing, routine scheduling, and
+operator check-ins over time. These features are allowed only when they improve
+local reliability, reduce operator burden, or make routine execution easier to
+review.
+
+Human-paced behavior must stay visible to the local operator. It must not hide
+that automation is running, disguise the operator's authorization boundary,
+mask browser or device identity, bypass site or application rules, evade rate
+limits, solve challenges, or continue through an action that requires approval.
+Every paced or scheduled run must still obey allowed windows, confidence gates,
+timeouts, retry limits, emergency stop checks, approval gates, checkpoints, and
+local trace reporting.
+
 ## Public Website Automation Scope
 
 Public-site playbooks are limited to operator-authorized navigation on websites

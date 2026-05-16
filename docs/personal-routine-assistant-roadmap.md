@@ -79,7 +79,7 @@ abuse, and hidden automation are not supported.
 - [ ] KR2: Update top-level docs to point to this roadmap.
 - [ ] KR3: Move recorder, planner, UI, catalog, proof, and redaction work into
       active planning milestones.
-- [ ] KR4: Document allowed and unsupported automation behavior in product
+- [x] KR4: Document allowed and unsupported automation behavior in product
       language.
 
 ### Tasks
@@ -103,7 +103,7 @@ abuse, and hidden automation are not supported.
       chat.
 - [x] The roadmap distinguishes implemented foundation from future product work.
 - [ ] Top-level docs link to this roadmap.
-- [ ] Safety docs explicitly separate human-paced local automation from stealth
+- [x] Safety docs explicitly separate human-paced local automation from stealth
       or evasion.
 
 ## Phase 1: Real Windows I/O Proof Pack
