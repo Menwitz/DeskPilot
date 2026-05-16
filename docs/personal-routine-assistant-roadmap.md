@@ -466,7 +466,7 @@ abuse, and hidden automation are not supported.
 
 ### Tasks
 
-- [ ] Add PySide6 optional dependency group and packaging path.
+- [x] Add PySide6 optional dependency group and packaging path.
 - [ ] Add `deskpilot-app` entry point.
 - [ ] Add app shell with Dashboard, Routine Library, Record, Run Queue,
       Approvals, Trace Viewer, Settings, and Help pages.
