@@ -625,7 +625,7 @@ abuse, and hidden automation are not supported.
 
 - [x] Make DeskPilot extensible beyond the first built-in routine catalog.
 - [x] Support trusted local routine packs.
-- [ ] Prepare for optional team/reporting features after local product
+- [x] Prepare for optional team/reporting features after local product
       stability.
 
 ### OKRs
