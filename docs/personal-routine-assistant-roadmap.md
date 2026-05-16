@@ -23,7 +23,7 @@ abuse, and hidden automation are not supported.
 - [x] DeskPilot has seed playbooks for LinkedIn, Medium, X/Twitter, Instagram,
       Facebook, YouTube, and TikTok.
 - [ ] DeskPilot becomes a personal local routine assistant.
-- [ ] DeskPilot ships a native PySide6 operator app.
+- [x] DeskPilot ships a native PySide6 operator app.
 - [ ] DeskPilot supports a 300-routine catalog.
 - [ ] DeskPilot supports recorder-generated editable YAML and playbooks.
 - [x] DeskPilot supports goal-to-routine planning.
