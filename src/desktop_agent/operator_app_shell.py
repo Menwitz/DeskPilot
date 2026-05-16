@@ -1,0 +1,163 @@
+"""Native operator app shell structure and optional PySide6 launcher."""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from dataclasses import dataclass
+from importlib import import_module
+from typing import Any
+
+
+class OperatorAppUnavailableError(RuntimeError):
+    """Raised when the optional native UI dependency is not installed."""
+
+
+@dataclass(frozen=True)
+class OperatorAppPage:
+    """One top-level page in the local operator app shell."""
+
+    page_id: str
+    title: str
+    purpose: str
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "page_id": self.page_id,
+            "title": self.title,
+            "purpose": self.purpose,
+        }
+
+
+@dataclass(frozen=True)
+class OperatorAppShell:
+    """Static shell contract shared by the app UI and tests."""
+
+    title: str
+    pages: tuple[OperatorAppPage, ...]
+    default_page_id: str
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "title": self.title,
+            "default_page_id": self.default_page_id,
+            "pages": [page.metadata() for page in self.pages],
+        }
+
+
+def operator_app_shell_spec() -> OperatorAppShell:
+    """Return the Phase 8 native app shell page contract."""
+    pages = (
+        OperatorAppPage(
+            page_id="dashboard",
+            title="Dashboard",
+            purpose="Daily status, recent runs, and next safe action.",
+        ),
+        OperatorAppPage(
+            page_id="routine_library",
+            title="Routine Library",
+            purpose="List, search, inspect, dry-run, and run routines.",
+        ),
+        OperatorAppPage(
+            page_id="record",
+            title="Record",
+            purpose="Capture a demonstrated routine and review generated YAML.",
+        ),
+        OperatorAppPage(
+            page_id="run_queue",
+            title="Run Queue",
+            purpose="Monitor scheduled, running, paused, and blocked routines.",
+        ),
+        OperatorAppPage(
+            page_id="approvals",
+            title="Approvals",
+            purpose="Review high-risk steps before local execution continues.",
+        ),
+        OperatorAppPage(
+            page_id="trace_viewer",
+            title="Trace Viewer",
+            purpose="Inspect screenshots, action logs, evidence, and reports.",
+        ),
+        OperatorAppPage(
+            page_id="settings",
+            title="Settings",
+            purpose="Configure local trace, safety, model, and proof options.",
+        ),
+        OperatorAppPage(
+            page_id="help",
+            title="Help",
+            purpose="Show local guidance, safety boundaries, and diagnostics.",
+        ),
+    )
+    return OperatorAppShell(
+        title="DeskPilot Operator",
+        pages=pages,
+        default_page_id="dashboard",
+    )
+
+
+def render_operator_app_shell_text(shell: OperatorAppShell | None = None) -> str:
+    """Render the shell contract for CLI diagnostics and tests."""
+    active_shell = shell or operator_app_shell_spec()
+    lines = [active_shell.title, ""]
+    for page in active_shell.pages:
+        default_marker = (
+            " (default)" if page.page_id == active_shell.default_page_id else ""
+        )
+        lines.append(f"- {page.title}{default_marker}: {page.purpose}")
+    return "\n".join(lines) + "\n"
+
+
+def launch_operator_app(
+    argv: Sequence[str] | None = None,
+    *,
+    shell: OperatorAppShell | None = None,
+) -> int:
+    """Launch the native PySide6 shell when the optional dependency exists."""
+    active_shell = shell or operator_app_shell_spec()
+    qt_widgets = _qt_widgets_module()
+    app = qt_widgets.QApplication(list(argv or []))
+    window = _build_main_window(qt_widgets, active_shell)
+    window.show()
+    return int(app.exec())
+
+
+def _qt_widgets_module() -> Any:
+    try:
+        return import_module("PySide6.QtWidgets")
+    except ModuleNotFoundError as exc:
+        raise OperatorAppUnavailableError(
+            'PySide6 is not installed. Install DeskPilot with "deskpilot[app]".',
+        ) from exc
+
+
+def _build_main_window(qt_widgets: Any, shell: OperatorAppShell) -> Any:
+    window = qt_widgets.QMainWindow()
+    window.setWindowTitle(shell.title)
+    window.resize(1180, 760)
+
+    central = qt_widgets.QWidget()
+    layout = qt_widgets.QHBoxLayout(central)
+    nav = qt_widgets.QListWidget()
+    stack = qt_widgets.QStackedWidget()
+    for page in shell.pages:
+        nav.addItem(page.title)
+        stack.addWidget(_page_widget(qt_widgets, page))
+    nav.setCurrentRow(0)
+    nav.currentRowChanged.connect(stack.setCurrentIndex)
+    layout.addWidget(nav, 1)
+    layout.addWidget(stack, 4)
+    window.setCentralWidget(central)
+    return window
+
+
+def _page_widget(qt_widgets: Any, page: OperatorAppPage) -> Any:
+    widget = qt_widgets.QWidget()
+    layout = qt_widgets.QVBoxLayout(widget)
+    heading = qt_widgets.QLabel(page.title)
+    heading.setObjectName(f"{page.page_id}_heading")
+    body = qt_widgets.QLabel(page.purpose)
+    body.setWordWrap(True)
+    layout.addWidget(heading)
+    layout.addWidget(body)
+    layout.addStretch(1)
+    return widget

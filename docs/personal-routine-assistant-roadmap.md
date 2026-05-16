@@ -468,7 +468,7 @@ abuse, and hidden automation are not supported.
 
 - [x] Add PySide6 optional dependency group and packaging path.
 - [x] Add `deskpilot-app` entry point.
-- [ ] Add app shell with Dashboard, Routine Library, Record, Run Queue,
+- [x] Add app shell with Dashboard, Routine Library, Record, Run Queue,
       Approvals, Trace Viewer, Settings, and Help pages.
 - [ ] Add local service boundary for catalog, recorder, runner, scheduler,
       approvals, and trace APIs.

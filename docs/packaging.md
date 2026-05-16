@@ -22,6 +22,7 @@ pip install ".[app]"
 The optional app entry point is `deskpilot-app`. Use `deskpilot-app --check` to
 verify that the script is installed and to see whether PySide6 is available in
 the current environment.
+The shell contract is documented in `docs/operator-app.md`.
 
 ## Windows Build
 
