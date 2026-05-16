@@ -17,6 +17,7 @@ from desktop_agent.task_dsl import (
     StaticTaskLoader,
     TaskDefinition,
     TaskStep,
+    YamlTaskLoader,
 )
 from desktop_agent.tracing import MemoryTraceSink
 
@@ -201,6 +202,58 @@ def test_execution_engine_runs_pipeline_and_reports_success() -> None:
     assert isinstance(first_ranking, dict)
     assert first_ranking["id"] == "candidate-1"
     assert first_ranking["rank"] == 1
+
+
+def test_existing_yaml_task_runs_through_current_planner_contract(
+    tmp_path: Path,
+) -> None:
+    task_path = tmp_path / "legacy-task.yaml"
+    task_path.write_text(
+        """name: legacy yaml fixture
+allowed_windows:
+  - DeskPilot Fixture
+timeout_seconds: 30
+steps:
+  - id: click-submit
+    action: click_text
+    target: Submit
+""",
+        encoding="utf-8",
+    )
+    engine = ExecutionEngine(
+        config_loader=StaticConfigLoader(RuntimeConfig(confidence_threshold=0.8)),
+        task_loader=YamlTaskLoader(),
+        task_validator=BasicTaskValidator(),
+        trace_sink=MemoryTraceSink(),
+        safety_policy=LocalSafetyPolicy(),
+        screen_observer=StaticScreenObserver(
+            ScreenObservation(active_window_title="DeskPilot Fixture"),
+        ),
+        perception_engine=CompositePerceptionEngine((FixturePerceptionEngine(),)),
+        target_selector=ConfidenceTargetSelector(),
+        actuator=DryRunActuator(),
+    )
+
+    report = engine.run(task_path)
+
+    phases = {event.phase for event in report.events}
+    compile_event = next(
+        event for event in report.events if event.phase == "compile_task"
+    )
+    assert report.status == "passed"
+    assert report.task_name == "legacy yaml fixture"
+    assert report.steps[0].action == "click_text"
+    assert {
+        "load_task",
+        "compile_task",
+        "observe_screen",
+        "detect_candidates",
+        "action_safety",
+        "desktop_io_plan",
+        "execute_action",
+    } <= phases
+    assert compile_event.metadata["compiled_execution_model"] == "desktop_io_v1"
+    assert compile_event.metadata["desktop_io_step_count"] == 1
 
 
 def test_execution_engine_repeated_runs_preserve_deterministic_completion() -> None:

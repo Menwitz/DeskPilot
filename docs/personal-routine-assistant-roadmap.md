@@ -227,7 +227,7 @@ abuse, and hidden automation are not supported.
       `type`, `hotkey`, `wait`, `verify`, and `handoff`.
 - [x] KR2: Every low-level action carries safety metadata.
 - [x] KR3: Emergency stop checks run between bounded low-level input events.
-- [ ] KR4: Existing task YAML still runs through the current planner contract.
+- [x] KR4: Existing task YAML still runs through the current planner contract.
 
 ### Tasks
 

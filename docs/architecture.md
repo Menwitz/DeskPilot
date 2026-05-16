@@ -29,21 +29,27 @@ roadmap phases without changing the planner contract.
 3. Load task YAML and task-level overrides.
 4. Apply CLI overrides.
 5. Validate configuration and task schema.
-6. Prepare a per-run trace directory.
-7. Check safety preconditions.
-8. Observe the screen and active window.
-9. Search for candidates through UIA, OCR, and computer vision.
-10. Rank and select the target candidate.
-11. Verify the active window is still allowed.
-12. Execute the action.
-13. Verify the result when requested.
-14. Retry, recover, or abort.
-15. Write final machine-readable and human-readable reports.
+6. Compile the validated YAML task into dependency, state, and desktop I/O
+   metadata without changing the authored semantic actions.
+7. Prepare a per-run trace directory.
+8. Check safety preconditions.
+9. Observe the screen and active window.
+10. Search for candidates through UIA, OCR, and computer vision.
+11. Rank and select the target candidate.
+12. Verify the active window is still allowed.
+13. Execute the action.
+14. Verify the result when requested.
+15. Retry, recover, or abort.
+16. Write final machine-readable and human-readable reports.
 
 The `ExecutionEngine` coordinates the pipeline through explicit interfaces for
 configuration, task loading, task validation, screen observation, deep candidate
 search, target selection, actuation, safety, verification, tracing, and final
 reporting.
+Existing task YAML remains the planner contract. The desktop I/O compiler adds
+traceable lower-level metadata for monitoring and reports, but the runner still
+loads `YamlTaskLoader` tasks and executes their original action names through
+the same planner pipeline.
 
 ## Website Playbook Layer
 
