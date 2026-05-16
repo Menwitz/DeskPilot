@@ -113,7 +113,7 @@ abuse, and hidden automation are not supported.
 - [ ] Prove DeskPilot controls a real unlocked Windows desktop end to end.
 - [ ] Capture video plus trace evidence for browser, native, mixed, and recovery
       workflows.
-- [ ] Package proof artifacts so failures can be reviewed without rerunning the
+- [x] Package proof artifacts so failures can be reviewed without rerunning the
       desktop action.
 
 ### OKRs
