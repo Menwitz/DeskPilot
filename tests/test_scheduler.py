@@ -7,6 +7,8 @@ from desktop_agent.scheduler import (
     RunQueue,
     RunQueueError,
     RunQueueStatus,
+    SchedulerTraceKind,
+    scheduler_trace_event,
 )
 
 
@@ -108,3 +110,92 @@ def test_run_queue_metadata_summarizes_monitoring_state() -> None:
     assert metadata["run_queue_size"] == 2
     assert counts["running"] == 1
     assert counts["blocked"] == 1
+
+
+def test_scheduler_trace_event_records_selected_time_and_queue_metadata() -> None:
+    queue = RunQueue().enqueue("browser.read-page")
+    entry = queue.next_pending()
+    assert entry is not None
+
+    event = scheduler_trace_event(
+        entry,
+        "selected_time",
+        reason="inside allowed window",
+        selected_time="2026-05-16T09:30:00-04:00",
+    )
+
+    assert event.phase == "scheduler"
+    assert "scheduler selected-time" in event.message
+    assert event.metadata["scheduler_event"] == "selected_time"
+    assert event.metadata["selected_time"] == "2026-05-16T09:30:00-04:00"
+    assert event.metadata["run_id"] == "run-0001"
+    assert event.metadata["routine_id"] == "browser.read-page"
+
+
+@pytest.mark.parametrize(
+    ("kind", "field", "value"),
+    [
+        ("wait", "wait_reason", "cooldown_active"),
+        ("skip", "skip_reason", "outside_allowed_window"),
+        ("retry_later", "retry_later_until", "2026-05-16T10:00:00-04:00"),
+        ("operator_intervention", "operator_intervention", "pause_button"),
+    ],
+)
+def test_scheduler_trace_event_records_required_reason_fields(
+    kind: str,
+    field: str,
+    value: str,
+) -> None:
+    entry = RunQueue().enqueue("browser.read-page").next_pending()
+    assert entry is not None
+    kwargs: dict[str, str | None] = {
+        "wait_reason": None,
+        "skip_reason": None,
+        "retry_later_until": None,
+        "operator_intervention": None,
+    }
+    kwargs[field] = value
+
+    event = scheduler_trace_event(
+        entry,
+        cast(SchedulerTraceKind, kind),
+        reason="scheduler decision",
+        wait_reason=kwargs["wait_reason"],
+        skip_reason=kwargs["skip_reason"],
+        retry_later_until=kwargs["retry_later_until"],
+        operator_intervention=kwargs["operator_intervention"],
+    )
+
+    assert event.metadata["scheduler_event"] == kind
+    assert event.metadata[field] == value
+
+
+@pytest.mark.parametrize(
+    "kind",
+    ["selected_time", "wait", "skip", "retry_later", "operator_intervention"],
+)
+def test_scheduler_trace_event_requires_kind_specific_fields(kind: str) -> None:
+    entry = RunQueue().enqueue("browser.read-page").next_pending()
+    assert entry is not None
+
+    with pytest.raises(RunQueueError, match="is required"):
+        scheduler_trace_event(
+            entry,
+            cast(SchedulerTraceKind, kind),
+            reason="missing detail",
+        )
+
+
+@pytest.mark.parametrize("kind", ["pause", "resume"])
+def test_scheduler_trace_event_records_pause_and_resume(kind: str) -> None:
+    entry = RunQueue().enqueue("browser.read-page").next_pending()
+    assert entry is not None
+
+    event = scheduler_trace_event(
+        entry,
+        cast(SchedulerTraceKind, kind),
+        reason=f"operator {kind}",
+    )
+
+    assert event.metadata["scheduler_event"] == kind
+    assert event.metadata["scheduler_reason"] == f"operator {kind}"

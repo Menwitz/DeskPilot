@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Literal
 
+from desktop_agent.tracing import TraceEvent
+
 RunQueueStatus = Literal[
     "pending",
     "running",
@@ -14,6 +16,15 @@ RunQueueStatus = Literal[
     "failed",
     "canceled",
     "handed_off",
+]
+SchedulerTraceKind = Literal[
+    "selected_time",
+    "wait",
+    "skip",
+    "pause",
+    "resume",
+    "retry_later",
+    "operator_intervention",
 ]
 
 RUN_QUEUE_STATUSES: frozenset[str] = frozenset(
@@ -43,6 +54,17 @@ RUN_QUEUE_TRANSITIONS: dict[RunQueueStatus, frozenset[RunQueueStatus]] = {
     "canceled": frozenset(),
     "handed_off": frozenset(),
 }
+SCHEDULER_TRACE_KINDS: frozenset[str] = frozenset(
+    {
+        "selected_time",
+        "wait",
+        "skip",
+        "pause",
+        "resume",
+        "retry_later",
+        "operator_intervention",
+    },
+)
 
 
 class RunQueueError(ValueError):
@@ -202,6 +224,89 @@ class RunQueue:
             "run_queue_status_counts": self.status_counts(),
             "run_queue_entries": [entry.metadata() for entry in self.entries],
         }
+
+
+def scheduler_trace_event(
+    entry: RunQueueEntry,
+    kind: SchedulerTraceKind,
+    *,
+    reason: str,
+    selected_time: str | None = None,
+    wait_reason: str | None = None,
+    skip_reason: str | None = None,
+    retry_later_until: str | None = None,
+    operator_intervention: str | None = None,
+) -> TraceEvent:
+    """Build a scheduler TraceEvent with stable queue/report metadata."""
+    if not reason.strip():
+        raise RunQueueError("scheduler trace reason is required")
+    _validate_scheduler_trace_fields(
+        kind,
+        selected_time=selected_time,
+        wait_reason=wait_reason,
+        skip_reason=skip_reason,
+        retry_later_until=retry_later_until,
+        operator_intervention=operator_intervention,
+    )
+    metadata = {
+        **entry.metadata(),
+        "scheduler_event": kind,
+        "scheduler_reason": reason,
+    }
+    _put_optional(metadata, "selected_time", selected_time)
+    _put_optional(metadata, "wait_reason", wait_reason)
+    _put_optional(metadata, "skip_reason", skip_reason)
+    _put_optional(metadata, "retry_later_until", retry_later_until)
+    _put_optional(metadata, "operator_intervention", operator_intervention)
+    return TraceEvent(
+        phase="scheduler",
+        message=_scheduler_trace_message(entry, kind, reason),
+        metadata=metadata,
+    )
+
+
+def _validate_scheduler_trace_fields(
+    kind: SchedulerTraceKind,
+    *,
+    selected_time: str | None,
+    wait_reason: str | None,
+    skip_reason: str | None,
+    retry_later_until: str | None,
+    operator_intervention: str | None,
+) -> None:
+    if kind not in SCHEDULER_TRACE_KINDS:
+        raise RunQueueError(f"unsupported scheduler trace event: {kind}")
+    required_by_kind = {
+        "selected_time": ("selected_time", selected_time),
+        "wait": ("wait_reason", wait_reason),
+        "skip": ("skip_reason", skip_reason),
+        "retry_later": ("retry_later_until", retry_later_until),
+        "operator_intervention": ("operator_intervention", operator_intervention),
+    }
+    required = required_by_kind.get(kind)
+    if required is None:
+        return
+    field_name, value = required
+    if value is None or not value.strip():
+        raise RunQueueError(f"{field_name} is required for scheduler {kind} events")
+
+
+def _scheduler_trace_message(
+    entry: RunQueueEntry,
+    kind: SchedulerTraceKind,
+    reason: str,
+) -> str:
+    label = kind.replace("_", "-")
+    return f"scheduler {label} for {entry.id} ({entry.routine_id}): {reason}"
+
+
+def _put_optional(
+    metadata: dict[str, object],
+    key: str,
+    value: str | None,
+) -> None:
+    if value is not None:
+        metadata[key] = value
 
 
 def _validate_transition(

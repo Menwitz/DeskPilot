@@ -44,6 +44,11 @@ event so report review can tell whether the run used strict QA, personal
 automation, or exploratory-testing safety behavior.
 `config.json` also records `require_operator_approval`, which is enabled by CLI
 real runs after operator prompts are processed.
+Scheduler decisions use phase `scheduler` and include `scheduler_event`,
+`scheduler_reason`, run queue entry metadata, and the event-specific fields for
+selected time, wait reason, skip reason, retry-later time, or operator
+intervention. These events make queued routine decisions reviewable before the
+future scheduler starts desktop input.
 For sensitive site workflows, final report metadata records validated approval
 manifest fields and content-variable fingerprints, while step metadata records
 variable names with `content_variables_redacted: true`.

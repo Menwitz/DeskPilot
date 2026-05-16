@@ -383,7 +383,7 @@ abuse, and hidden automation are not supported.
       max external mutations, and stop conditions.
 - [x] Add run queue model with pending, running, paused, blocked, completed,
       failed, canceled, and handed-off states.
-- [ ] Add scheduler trace events for selected time, wait reason, skip reason,
+- [x] Add scheduler trace events for selected time, wait reason, skip reason,
       pause, resume, retry-later, and operator intervention.
 - [ ] Add safety gate that blocks scheduled runs when the active desktop or
       allowed app context is not ready.
