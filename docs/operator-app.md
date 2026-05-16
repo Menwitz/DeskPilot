@@ -84,7 +84,9 @@ project modules:
   routine for rerun.
 - Runner service: apply the validated routine execution gate, start approved
   app run requests, and publish the first `observe_screen` action for the live
-  run panel. It also handles pause, resume, cancel, and stop requests so the
+  run panel. Its `dry_run_routine` preflight compiles the selected routine,
+  renders the shared dry-run preview, and returns compiled task metadata without
+  desktop input. It also handles pause, resume, cancel, and stop requests so the
   app state and run queue monitoring stay synchronized.
 - Scheduler service: expose shared run queue metadata so app-started runs are
   visible in monitoring without using CLI commands.

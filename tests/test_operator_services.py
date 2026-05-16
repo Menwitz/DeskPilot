@@ -63,6 +63,7 @@ def test_local_operator_services_expose_catalog_runner_approvals_and_queue(
     )
     gate = services.runner.execution_gate("browser.search")
     unknown_gate = services.runner.execution_gate("browser.unknown")
+    dry_run = services.runner.dry_run_routine("browser.search")
     run = services.runner.start_routine("browser.search")
     assert run.run_id is not None
     pause = services.runner.pause_run(run.run_id)
@@ -94,6 +95,12 @@ def test_local_operator_services_expose_catalog_runner_approvals_and_queue(
     assert gate.allowed is True
     assert gate.reason == "validated_catalog_routine"
     assert unknown_gate.allowed is False
+    assert dry_run.status == "passed"
+    assert dry_run.reason == "dry_run_validated"
+    assert dry_run.desktop_input_required is False
+    assert dry_run.step_count == 1
+    assert "dry-run preview:" in dry_run.preview
+    assert dry_run.compiled_task["step_order"] == ["observe"]
     assert run.run_id == "run-0001"
     assert run.status == "running"
     assert run.next_action == "observe_screen"
@@ -344,6 +351,27 @@ def test_routine_pack_service_installs_lists_and_removes_packs(tmp_path: Path) -
 
 def _write_routine(path: Path, *, routine_id: str, approval_policy: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    task_path = path.parent / "tasks" / "test.yaml"
+    task_path.parent.mkdir(parents=True, exist_ok=True)
+    task_path.write_text(
+        "\n".join(
+            [
+                f"name: {routine_id} task",
+                "allowed_windows:",
+                "  - DeskPilot Fixture",
+                "timeout_seconds: 30",
+                "steps:",
+                "  - id: observe",
+                "    action: wait_for",
+                "    verify:",
+                "      type: visible_text",
+                "      text: Ready",
+                "    timeout_seconds: 1",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
     path.write_text(
         "\n".join(
             [

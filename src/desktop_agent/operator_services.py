@@ -4,17 +4,20 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol, cast
 
 import yaml
 
+from desktop_agent.config import RuntimeConfig
+from desktop_agent.content_variables import load_content_variables
 from desktop_agent.failed_run_analyzer import (
     analyze_failed_run_trace,
     write_failed_run_analysis,
 )
+from desktop_agent.preview import build_dry_run_preview, render_dry_run_preview
 from desktop_agent.recorder import (
     RecorderController,
     RecorderEvent,
@@ -41,7 +44,22 @@ from desktop_agent.routines import (
     routine_quarantine_status,
 )
 from desktop_agent.scheduler import RunQueue, RunQueueStatus
-from desktop_agent.task_dsl import TaskDefinition, TaskStep, VerificationDefinition
+from desktop_agent.site_playbooks import (
+    SitePlaybook,
+    SitePlaybookValidationError,
+    SiteTaskCompiler,
+    load_site_playbook,
+    load_site_playbooks,
+    resolve_site_flow,
+)
+from desktop_agent.task_compiler import TaskCompiler
+from desktop_agent.task_dsl import (
+    BasicTaskValidator,
+    TaskDefinition,
+    TaskStep,
+    VerificationDefinition,
+    YamlTaskLoader,
+)
 
 
 class OperatorServiceError(ValueError):
@@ -104,6 +122,34 @@ class OperatorRunStartResult:
             "status": self.status,
             "reason": self.reason,
             "next_action": self.next_action,
+            "execution_gate": self.execution_gate.metadata(),
+        }
+
+
+@dataclass(frozen=True)
+class OperatorDryRunResult:
+    """App-facing dry-run preflight that never sends desktop input."""
+
+    routine_id: str
+    status: str
+    reason: str
+    task_name: str | None
+    step_count: int
+    desktop_input_required: bool
+    preview: str
+    compiled_task: dict[str, object]
+    execution_gate: RoutineExecutionGate
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "routine_id": self.routine_id,
+            "status": self.status,
+            "reason": self.reason,
+            "task_name": self.task_name,
+            "step_count": self.step_count,
+            "desktop_input_required": self.desktop_input_required,
+            "preview": self.preview,
+            "compiled_task": self.compiled_task,
             "execution_gate": self.execution_gate.metadata(),
         }
 
@@ -302,6 +348,10 @@ class RunnerService(Protocol):
 
     def execution_gate(self, routine_id: str) -> RoutineExecutionGate:
         """Return whether a routine can enter the execution pipeline."""
+        ...
+
+    def dry_run_routine(self, routine_id: str) -> OperatorDryRunResult:
+        """Compile and preview a routine without desktop input."""
         ...
 
     def start_routine(self, routine_id: str) -> OperatorRunStartResult:
@@ -574,15 +624,62 @@ class LocalRunnerService:
         self,
         catalog_service: LocalCatalogService,
         *,
+        playbook_dir: Path = Path("site_playbooks"),
         queue_store: LocalRunQueueStore | None = None,
     ) -> None:
         self._catalog_service = catalog_service
+        self._playbook_dir = playbook_dir
         self._queue_store = queue_store or LocalRunQueueStore()
 
     def execution_gate(self, routine_id: str) -> RoutineExecutionGate:
         return routine_execution_gate(
             self._catalog_service._load_catalog(),
             routine_id,
+        )
+
+    def dry_run_routine(self, routine_id: str) -> OperatorDryRunResult:
+        gate = self.execution_gate(routine_id)
+        if not gate.allowed:
+            return OperatorDryRunResult(
+                routine_id=routine_id,
+                status="blocked",
+                reason=gate.reason,
+                task_name=None,
+                step_count=0,
+                desktop_input_required=False,
+                preview="",
+                compiled_task={},
+                execution_gate=gate,
+            )
+        try:
+            routine = self._catalog_service.routine(routine_id)
+            task = _compile_routine_task_for_app(routine, self._playbook_dir)
+            config = RuntimeConfig()
+            BasicTaskValidator().validate(task, config)
+            compiled = TaskCompiler().compile(task)
+            preview = render_dry_run_preview(build_dry_run_preview(task, config))
+        except (OSError, ValueError) as exc:
+            return OperatorDryRunResult(
+                routine_id=routine_id,
+                status="failed",
+                reason=str(exc),
+                task_name=None,
+                step_count=0,
+                desktop_input_required=False,
+                preview="",
+                compiled_task={},
+                execution_gate=gate,
+            )
+        return OperatorDryRunResult(
+            routine_id=routine_id,
+            status="passed",
+            reason="dry_run_validated",
+            task_name=task.name,
+            step_count=len(task.steps),
+            desktop_input_required=False,
+            preview=preview,
+            compiled_task=compiled.metadata(),
+            execution_gate=gate,
         )
 
     def start_routine(self, routine_id: str) -> OperatorRunStartResult:
@@ -675,6 +772,51 @@ class LocalRunnerService:
             reason=reason,
             next_action=next_action,
         )
+
+
+def _compile_routine_task_for_app(
+    routine: RoutineDefinition,
+    playbook_dir: Path,
+) -> TaskDefinition:
+    if routine.reference.kind == "task":
+        if routine.reference.task_path is None:
+            raise OperatorServiceError("routine task reference path is required")
+        task = YamlTaskLoader().load(routine.reference.task_path)
+    else:
+        if not routine.reference.playbook_site or not routine.reference.playbook_flow:
+            raise OperatorServiceError("routine playbook reference is incomplete")
+        playbook = _load_named_site_for_app(
+            playbook_dir,
+            routine.reference.playbook_site,
+        )
+        resolve_site_flow(playbook, routine.reference.playbook_flow)
+        task = SiteTaskCompiler(
+            load_content_variables(None),
+            routine.redaction_policy,
+        ).compile(playbook, routine.reference.playbook_flow)
+    return replace(
+        task,
+        name=routine.name,
+        metadata={
+            **task.metadata,
+            **routine.report_metadata(),
+            "routine_source_path": str(routine.source_path)
+            if routine.source_path
+            else None,
+        },
+    )
+
+
+def _load_named_site_for_app(playbook_dir: Path, site_id: str) -> SitePlaybook:
+    site_path = playbook_dir / f"{site_id}.yaml"
+    if site_path.exists():
+        return load_site_playbook(site_path)
+    available = {
+        playbook.site_id: playbook for playbook in load_site_playbooks(playbook_dir)
+    }
+    if site_id not in available:
+        raise SitePlaybookValidationError(f"unknown site: {site_id}")
+    return available[site_id]
 
 
 class LocalSchedulerService:
@@ -825,6 +967,7 @@ def default_local_operator_services(
     *,
     routine_pack_root: Path = Path("routine_packs"),
     trace_root: Path = Path("traces"),
+    playbook_dir: Path = Path("site_playbooks"),
 ) -> LocalOperatorServices:
     """Build the default local service bundle for the native app."""
     catalog = LocalCatalogService(routine_pack_root)
@@ -835,7 +978,11 @@ def default_local_operator_services(
             trace_root / "operator-recorder-session.json",
             routine_pack_root=routine_pack_root,
         ),
-        runner=LocalRunnerService(catalog, queue_store=queue_store),
+        runner=LocalRunnerService(
+            catalog,
+            playbook_dir=playbook_dir,
+            queue_store=queue_store,
+        ),
         scheduler=LocalSchedulerService(queue_store),
         approvals=LocalApprovalService(catalog),
         traces=LocalTraceService(trace_root),

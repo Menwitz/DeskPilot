@@ -13,6 +13,7 @@ from desktop_agent.operator_app_state import (
 )
 from desktop_agent.operator_services import (
     OperatorApprovalDecision,
+    OperatorDryRunResult,
     OperatorRunControlResult,
     OperatorRunStartResult,
     RoutineListItem,
@@ -47,6 +48,28 @@ def test_operator_app_controller_transitions_run_state_with_fake_runner() -> Non
     assert canceled.live_run.status == "canceled"
     assert canceled.live_run.next_action is None
     assert runner.run_statuses["run-0001"] == "canceled"
+
+
+def test_operator_app_controller_tracks_dry_run_state() -> None:
+    controller = OperatorAppController(
+        _FakeRunnerService(
+            {
+                "browser.search": RoutineExecutionGate(
+                    routine_id="browser.search",
+                    allowed=True,
+                    reason="validated_catalog_routine",
+                ),
+            },
+        ),
+    )
+
+    state = controller.dry_run_routine("browser.search")
+
+    assert state.current_page_id == "routine_library"
+    assert state.live_run.current_routine_id == "browser.search"
+    assert state.live_run.current_step_id == "compiled_task"
+    assert state.live_run.status == "dry_run_passed"
+    assert state.live_run.next_action == "dry_run_validated"
 
 
 def test_operator_app_controller_stops_run_with_fake_runner() -> None:
@@ -182,6 +205,20 @@ class _FakeRunnerService:
                 allowed=False,
                 reason="unknown_routine_id",
             ),
+        )
+
+    def dry_run_routine(self, routine_id: str) -> OperatorDryRunResult:
+        gate = self.execution_gate(routine_id)
+        return OperatorDryRunResult(
+            routine_id=routine_id,
+            status="passed" if gate.allowed else "blocked",
+            reason="dry_run_validated" if gate.allowed else gate.reason,
+            task_name=routine_id if gate.allowed else None,
+            step_count=1 if gate.allowed else 0,
+            desktop_input_required=False,
+            preview="dry-run preview:",
+            compiled_task={"step_order": ["observe"]} if gate.allowed else {},
+            execution_gate=gate,
         )
 
     def start_routine(self, routine_id: str) -> OperatorRunStartResult:

@@ -102,6 +102,22 @@ class OperatorAppController:
         )
         return self.state
 
+    def dry_run_routine(self, routine_id: str) -> OperatorAppState:
+        dry_run = self._runner.dry_run_routine(routine_id)
+        self.state = replace(
+            self.state,
+            current_page_id="routine_library",
+            live_run=LiveRunPanelState(
+                current_routine_id=routine_id,
+                current_step_id=(
+                    "compiled_task" if dry_run.compiled_task else None
+                ),
+                status=f"dry_run_{dry_run.status}",
+                next_action=dry_run.reason,
+            ),
+        )
+        return self.state
+
     def pause_run(self) -> OperatorAppState:
         run_id = self._active_run_id()
         run = self._runner.pause_run(run_id)
