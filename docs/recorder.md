@@ -30,5 +30,11 @@ low-level input payload, candidate context, and metadata. Candidate context can
 carry source, label, UIA control type, bounds, confidence, and source-specific
 metadata.
 
+For clicked points, the recorder has a UIA capture helper that hit-tests the
+point with the Windows UIA adapter and stores element name, control type,
+bounds, enabled/visible state, and confidence as `uia` candidate context. This
+is the first stable-selector capture source; OCR and image fallback capture are
+tracked separately.
+
 Live Windows event capture and editable YAML/playbook generation are tracked in
 the remaining recorder roadmap tasks.

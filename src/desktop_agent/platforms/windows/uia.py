@@ -70,6 +70,15 @@ class WindowsUiaAdapter:
         children = _children(window)
         return tuple(_snapshot_from_element(child) for child in children)
 
+    def element_at_point(self, point: tuple[int, int]) -> UiaElementSnapshot:
+        try:
+            pywinauto = import_module("pywinauto")
+            desktop = pywinauto.Desktop(backend="uia")
+            element = desktop.from_point(int(point[0]), int(point[1]))
+            return _snapshot_from_element(element)
+        except Exception as exc:
+            raise WindowsUiaUnavailableError("Windows UIA is unavailable") from exc
+
     def candidates(self) -> tuple[ElementCandidate, ...]:
         candidates: list[ElementCandidate] = []
         for index, snapshot in enumerate(_flatten(self.visible_elements())):

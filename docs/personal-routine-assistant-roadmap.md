@@ -280,7 +280,7 @@ abuse, and hidden automation are not supported.
       controls.
 - [x] Add a recorder event model for observation, input event, selected point,
       active window, screenshot path, candidate context, and timestamp.
-- [ ] Capture UIA element name/control type/bounds around clicked points.
+- [x] Capture UIA element name/control type/bounds around clicked points.
 - [ ] Capture OCR text blocks around clicked points.
 - [ ] Capture image-template snippets only when UIA/OCR cannot identify a
       stable target.

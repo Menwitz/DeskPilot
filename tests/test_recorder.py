@@ -4,11 +4,24 @@ from pathlib import Path
 from pytest import CaptureFixture
 
 from desktop_agent.cli import main
+from desktop_agent.platforms.windows.uia import UiaElementSnapshot
 from desktop_agent.recorder import (
     RecorderCandidateContext,
     RecorderController,
     RecorderEvent,
+    capture_uia_context_for_point,
 )
+from desktop_agent.screen import Bounds
+
+
+class FakeUiaPointAdapter:
+    def __init__(self, snapshot: UiaElementSnapshot) -> None:
+        self.snapshot = snapshot
+        self.point: tuple[int, int] | None = None
+
+    def element_at_point(self, point: tuple[int, int]) -> UiaElementSnapshot:
+        self.point = point
+        return self.snapshot
 
 
 def test_recorder_controller_runs_control_state_machine(tmp_path: Path) -> None:
@@ -69,6 +82,32 @@ def test_recorder_event_model_round_trips_desktop_context(tmp_path: Path) -> Non
     assert payload["events"][0]["selected_point"] == [120, 240]
     assert payload["events"][0]["candidate_context"][0]["control_type"] == "Button"
     assert payload["events"][0]["input_event"]["kind"] == "mouse_down"
+
+
+def test_recorder_captures_uia_context_around_clicked_point() -> None:
+    adapter = FakeUiaPointAdapter(
+        UiaElementSnapshot(
+            name="Submit",
+            control_type="Button",
+            bounds=Bounds(x=100, y=220, width=80, height=30),
+            enabled=True,
+            visible=True,
+        ),
+    )
+
+    context = capture_uia_context_for_point((120, 240), adapter)
+
+    assert adapter.point == (120, 240)
+    assert context == (
+        RecorderCandidateContext(
+            source="uia",
+            label="Submit",
+            control_type="Button",
+            bounds={"x": 100, "y": 220, "width": 80, "height": 30},
+            confidence=0.95,
+            metadata={"enabled": True, "visible": True},
+        ),
+    )
 
 
 def test_cli_record_exposes_start_pause_stop_save_discard_controls(

@@ -1,11 +1,14 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+from pytest import MonkeyPatch
+
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.perception import (
     ConfidenceTargetSelector,
     ElementCandidate,
 )
+from desktop_agent.platforms.windows import uia as uia_module
 from desktop_agent.platforms.windows.uia import (
     UiaElementSnapshot,
     WindowsUiaPerceptionEngine,
@@ -64,6 +67,24 @@ class UnavailableAdapter:
         raise WindowsUiaUnavailableError("unavailable")
 
 
+class FakeDesktop:
+    def __init__(self) -> None:
+        self.point: tuple[int, int] | None = None
+
+    def from_point(self, x: int, y: int) -> FakeElement:
+        self.point = (x, y)
+        return FakeElement()
+
+
+class FakePywinauto:
+    def __init__(self, desktop: FakeDesktop) -> None:
+        self._desktop = desktop
+
+    def Desktop(self, *, backend: str) -> FakeDesktop:
+        assert backend == "uia"
+        return self._desktop
+
+
 def test_snapshot_extracts_uia_element_fields() -> None:
     snapshot = _snapshot_from_element(FakeElement())
 
@@ -100,6 +121,22 @@ def test_uia_perception_engine_falls_back_when_unavailable() -> None:
     )
 
     assert candidates == ()
+
+
+def test_uia_adapter_captures_element_at_point(monkeypatch: MonkeyPatch) -> None:
+    desktop = FakeDesktop()
+    monkeypatch.setattr(
+        uia_module,
+        "import_module",
+        lambda _name: FakePywinauto(desktop),
+    )
+
+    snapshot = uia_module.WindowsUiaAdapter().element_at_point((120, 240))
+
+    assert desktop.point == (120, 240)
+    assert snapshot.name == "Submit"
+    assert snapshot.control_type == "Button"
+    assert snapshot.bounds == Bounds(x=10, y=20, width=100, height=40)
 
 
 def test_selector_prefers_uia_when_confidence_is_similar() -> None:

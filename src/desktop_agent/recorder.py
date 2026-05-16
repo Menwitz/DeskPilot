@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal, cast
+from typing import Literal, Protocol, cast
 from uuid import uuid4
 
 RECORDER_SESSION_FORMAT = "deskpilot_recorder_session_v1"
@@ -16,6 +16,12 @@ RecorderEventType = Literal["observation", "input_event", "selected_point"]
 
 class RecorderError(RuntimeError):
     """Raised when recorder session controls are used out of order."""
+
+
+class UiaPointCaptureAdapter(Protocol):
+    """UIA hit-test seam used by the recorder without hard-coding pywinauto."""
+
+    def element_at_point(self, point: tuple[int, int]) -> object: ...
 
 
 @dataclass(frozen=True)
@@ -286,6 +292,34 @@ class RecorderController:
         _write_payload(self.state_path, session.to_payload())
 
 
+def capture_uia_context_for_point(
+    point: tuple[int, int],
+    adapter: UiaPointCaptureAdapter | None = None,
+) -> tuple[RecorderCandidateContext, ...]:
+    if adapter is None:
+        from desktop_agent.platforms.windows.uia import WindowsUiaAdapter
+
+        adapter = WindowsUiaAdapter()
+    try:
+        snapshot = adapter.element_at_point(point)
+    except Exception:
+        return ()
+    name = str(getattr(snapshot, "name", ""))
+    control_type = str(getattr(snapshot, "control_type", "unknown"))
+    enabled = bool(getattr(snapshot, "enabled", True))
+    visible = bool(getattr(snapshot, "visible", True))
+    return (
+        RecorderCandidateContext(
+            source="uia",
+            label=name or control_type,
+            control_type=control_type,
+            bounds=_bounds_payload(getattr(snapshot, "bounds", None)),
+            confidence=0.95 if enabled and visible else 0.5,
+            metadata={"enabled": enabled, "visible": visible},
+        ),
+    )
+
+
 def _write_payload(path: Path, payload: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -345,3 +379,17 @@ def _int_dict(value: dict[object, object]) -> dict[str, int]:
             raise RecorderError("recorder bounds must contain integer fields")
         result[key] = item
     return result
+
+
+def _bounds_payload(bounds: object) -> dict[str, int] | None:
+    if bounds is None:
+        return None
+    values = {
+        "x": getattr(bounds, "x", None),
+        "y": getattr(bounds, "y", None),
+        "width": getattr(bounds, "width", None),
+        "height": getattr(bounds, "height", None),
+    }
+    if not all(isinstance(value, int) for value in values.values()):
+        return None
+    return cast(dict[str, int], values)
