@@ -509,7 +509,7 @@ abuse, and hidden automation are not supported.
       allowed-window bounds.
 - [x] KR3: Failed-run analysis can propose YAML selector, region, checkpoint, or
       recovery improvements.
-- [ ] KR4: Brittle routines are flagged or quarantined after repeated failures.
+- [x] KR4: Brittle routines are flagged or quarantined after repeated failures.
 
 ### Tasks
 
