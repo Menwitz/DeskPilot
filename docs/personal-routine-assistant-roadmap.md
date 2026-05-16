@@ -542,7 +542,7 @@ abuse, and hidden automation are not supported.
 
 - [x] Add optional local AI for routine selection, trace summarization, screen
       explanation, and routine authoring assistance.
-- [ ] Keep deterministic validation and safety gates authoritative.
+- [x] Keep deterministic validation and safety gates authoritative.
 - [ ] Keep all model use local by default through Ollama.
 
 ### OKRs
