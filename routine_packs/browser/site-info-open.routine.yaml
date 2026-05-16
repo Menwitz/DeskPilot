@@ -1,0 +1,20 @@
+id: browser.site-info-open
+name: Browser open site info
+description: Open the current page site information surface for review.
+goal: Inspect current site permissions and connection metadata.
+required_app: Browser
+tags:
+  - browser
+  - permissions
+  - review
+inputs:
+  - current page
+outputs:
+  - site information visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/site-info-open.yaml

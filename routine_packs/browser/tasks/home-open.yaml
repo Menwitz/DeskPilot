@@ -1,0 +1,19 @@
+name: Browser open home task
+allowed_windows:
+  - Browser
+timeout_seconds: 25
+steps:
+  - id: confirm-browser
+    action: wait_for
+    target: Browser
+  - id: open-home
+    action: press_key
+    text: alt+home
+    verify:
+      type: visible_text
+      text: Home
+  - id: confirm-home-page
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Home

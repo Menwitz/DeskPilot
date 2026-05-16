@@ -1,0 +1,23 @@
+name: Browser tab search task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-tab-search
+    action: press_key
+    text: ctrl+shift+a
+    verify:
+      type: visible_text
+      text: Search tabs
+  - id: type-tab-query
+    action: type_text
+    text: Reviewed tab
+    verify:
+      type: visible_text
+      text: Reviewed tab
+  - id: close-tab-search
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: Browser

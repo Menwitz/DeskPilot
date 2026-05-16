@@ -1,0 +1,20 @@
+name: Browser translate dialog open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-translate
+    action: press_key
+    text: ctrl+shift+l
+    verify:
+      type: visible_text
+      text: Translate
+  - id: review-translate-options
+    action: wait_for
+    target: Translate
+  - id: close-translate
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: Browser

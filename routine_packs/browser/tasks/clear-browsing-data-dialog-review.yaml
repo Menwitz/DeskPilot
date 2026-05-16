@@ -1,0 +1,24 @@
+name: Browser clear browsing data dialog review task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-clear-data-dialog
+    action: press_key
+    text: ctrl+shift+delete
+    requires_confirmation: true
+    checkpoint:
+      type: visible_text
+      text: Browser
+    verify:
+      type: visible_text
+      text: Clear
+  - id: review-clear-data-dialog
+    action: wait_for
+    target: Clear
+  - id: close-clear-data-dialog
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: Browser

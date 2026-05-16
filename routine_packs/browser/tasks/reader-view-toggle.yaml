@@ -1,0 +1,19 @@
+name: Browser reader view toggle task
+allowed_windows:
+  - Browser
+timeout_seconds: 25
+steps:
+  - id: confirm-article
+    action: wait_for
+    target: Article
+  - id: toggle-reader-view
+    action: press_key
+    text: f9
+    verify:
+      type: visible_text
+      text: Reader
+  - id: confirm-reader-view
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Reader

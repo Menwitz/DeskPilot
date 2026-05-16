@@ -1,0 +1,22 @@
+name: Browser open site info task
+allowed_windows:
+  - Browser
+timeout_seconds: 25
+steps:
+  - id: focus-address-bar
+    action: press_key
+    text: ctrl+l
+    verify:
+      type: visible_text
+      text: Address
+  - id: open-site-info
+    action: press_key
+    text: shift+tab
+    verify:
+      type: visible_text
+      text: Site
+  - id: confirm-site-info
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Site

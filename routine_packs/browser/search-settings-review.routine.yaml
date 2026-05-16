@@ -1,0 +1,20 @@
+id: browser.search-settings-review
+name: Browser search settings review
+description: Open browser search engine settings for read-only review.
+goal: Inspect default search settings without changing the browser profile.
+required_app: Browser
+tags:
+  - browser
+  - settings
+  - search
+inputs:
+  - browser profile
+outputs:
+  - search settings visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/search-settings-review.yaml

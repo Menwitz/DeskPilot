@@ -1,0 +1,19 @@
+name: Browser open new window task
+allowed_windows:
+  - Browser
+timeout_seconds: 25
+steps:
+  - id: confirm-browser
+    action: wait_for
+    target: Browser
+  - id: open-new-window
+    action: press_key
+    text: ctrl+n
+    verify:
+      type: visible_text
+      text: Search
+  - id: confirm-new-window-ready
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Search

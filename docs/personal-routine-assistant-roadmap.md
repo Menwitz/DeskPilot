@@ -339,6 +339,9 @@ abuse, and hidden automation are not supported.
 - [x] Add first browser scale-out batch for tabs, find, page-link capture,
       bookmarks, print/save review, zoom, history, extensions, and private
       windows.
+- [x] Add second browser scale-out batch for reload, back/forward, home,
+      windows, tab/download search, site info, reader/translate surfaces,
+      privacy/cookie/autofill/search settings, and clear-data dialog review.
 - [x] Add native routines for Notepad, Calculator, Settings, File Explorer,
       clipboard, app switching, window management, and simple Office-like
       surfaces.

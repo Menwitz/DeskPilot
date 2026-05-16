@@ -1,0 +1,20 @@
+id: browser.navigate-forward
+name: Browser navigate forward
+description: Move to the next browser history entry from the active tab.
+goal: Advance to the next page in the active browser tab.
+required_app: Browser
+tags:
+  - browser
+  - navigation
+  - history
+inputs:
+  - active tab
+outputs:
+  - next page visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/navigate-forward.yaml

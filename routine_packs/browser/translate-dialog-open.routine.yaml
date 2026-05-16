@@ -1,0 +1,20 @@
+id: browser.translate-dialog-open
+name: Browser translate dialog open
+description: Open the browser translation surface for the current page and close it.
+goal: Review translation options for the active page without changing language.
+required_app: Browser
+tags:
+  - browser
+  - translation
+  - review
+inputs:
+  - current page
+outputs:
+  - translation options reviewed
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/translate-dialog-open.yaml

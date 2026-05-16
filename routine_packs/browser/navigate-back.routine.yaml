@@ -1,0 +1,20 @@
+id: browser.navigate-back
+name: Browser navigate back
+description: Move to the previous browser history entry from the active tab.
+goal: Return to the previous page in the active browser tab.
+required_app: Browser
+tags:
+  - browser
+  - navigation
+  - history
+inputs:
+  - active tab
+outputs:
+  - previous page visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/navigate-back.yaml

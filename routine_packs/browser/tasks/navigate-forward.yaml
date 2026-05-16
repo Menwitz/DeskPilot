@@ -1,0 +1,19 @@
+name: Browser navigate forward task
+allowed_windows:
+  - Browser
+timeout_seconds: 25
+steps:
+  - id: confirm-browser
+    action: wait_for
+    target: Browser
+  - id: navigate-forward
+    action: press_key
+    text: alt+right
+    verify:
+      type: visible_text
+      text: Browser
+  - id: confirm-forward-navigation
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Browser

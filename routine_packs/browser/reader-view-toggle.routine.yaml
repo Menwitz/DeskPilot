@@ -1,0 +1,20 @@
+id: browser.reader-view-toggle
+name: Browser reader view toggle
+description: Toggle the browser reader or immersive reading surface when available.
+goal: Switch the current readable page into a simplified reading surface.
+required_app: Browser
+tags:
+  - browser
+  - reading
+  - viewing
+inputs:
+  - readable page
+outputs:
+  - reader view visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/reader-view-toggle.yaml

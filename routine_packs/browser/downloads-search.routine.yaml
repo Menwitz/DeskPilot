@@ -1,0 +1,20 @@
+id: browser.downloads-search
+name: Browser downloads search
+description: Open browser downloads and search downloaded items by reviewed text.
+goal: Find a downloaded item in the browser downloads surface.
+required_app: Browser
+tags:
+  - browser
+  - downloads
+  - search
+inputs:
+  - download search text
+outputs:
+  - downloads search results visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/downloads-search.yaml

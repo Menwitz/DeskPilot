@@ -1,0 +1,20 @@
+id: browser.new-window-open
+name: Browser open new window
+description: Open a fresh browser window and verify the browser surface appears.
+goal: Prepare a separate browser window for a reviewed routine.
+required_app: Browser
+tags:
+  - browser
+  - windows
+  - navigation
+inputs:
+  - browser window
+outputs:
+  - new browser window visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/new-window-open.yaml

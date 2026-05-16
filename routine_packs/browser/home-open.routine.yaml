@@ -1,0 +1,20 @@
+id: browser.home-open
+name: Browser open home
+description: Open the configured browser home page from the active window.
+goal: Return the browser to its configured home page.
+required_app: Browser
+tags:
+  - browser
+  - navigation
+  - home
+inputs:
+  - browser window
+outputs:
+  - home page visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/home-open.yaml
