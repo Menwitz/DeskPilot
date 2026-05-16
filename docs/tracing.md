@@ -69,6 +69,9 @@ Post-action `observe_after_action` events and failed-attempt
 `reobserve_after_failure` events include `post_action_evidence` with the same
 desktop evidence fields plus observer warnings, so verification and recovery
 reports can show what changed after input.
+After verification, the planner emits `state_delta` with before/after screenshot
+paths, focus changes, visible text additions/removals, target
+appearance/disappearance, and scroll movement metadata from the emitted input.
 
 The `compile_task` event records static step order, dependency edges, and
 expected UI state transitions before the planner observes the screen or attempts

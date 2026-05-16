@@ -168,6 +168,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert any("step_timeout_budget" in line for line in action_log)
     assert any("observe_after_action" in line for line in action_log)
     assert any("post_action_evidence" in line for line in action_log)
+    assert any("state_delta" in line for line in action_log)
 
 
 def test_file_trace_sink_includes_recovery_decision_metadata_in_reports(

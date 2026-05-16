@@ -840,6 +840,21 @@ class ExecutionEngine:
                 verification.message,
                 _step_metadata(step, passed=verification.passed),
             )
+            self._record(
+                "state_delta",
+                "visual state delta summarized",
+                _step_metadata(
+                    step,
+                    **_state_delta_metadata(
+                        step,
+                        observation,
+                        verification_observation,
+                        candidates,
+                        verification_candidates,
+                        action_result,
+                    ),
+                ),
+            )
 
             if action_result.success and verification.passed:
                 return StepExecutionOutcome(
@@ -1851,6 +1866,124 @@ def _target_reasoning_metadata(
         if selected_snapshot is not None
         else None,
     }
+
+
+def _state_delta_metadata(
+    step: TaskStep,
+    before_observation: ScreenObservation,
+    after_observation: ScreenObservation,
+    before_candidates: tuple[ElementCandidate, ...],
+    after_candidates: tuple[ElementCandidate, ...],
+    action_result: ActionResult,
+) -> dict[str, object]:
+    before_text = _visible_candidate_labels(before_candidates)
+    after_text = _visible_candidate_labels(after_candidates)
+    target_text = _state_delta_target_text(step)
+    target_visible_before = _label_visible(target_text, before_candidates)
+    target_visible_after = _label_visible(target_text, after_candidates)
+    return {
+        "trace_schema_section": "state_delta",
+        "before_screenshot_path": str(before_observation.screenshot_path)
+        if before_observation.screenshot_path
+        else None,
+        "after_screenshot_path": str(after_observation.screenshot_path)
+        if after_observation.screenshot_path
+        else None,
+        "before_active_window_title": before_observation.active_window_title,
+        "after_active_window_title": after_observation.active_window_title,
+        "active_window_changed": before_observation.active_window_title
+        != after_observation.active_window_title,
+        "before_focused_element": _metadata_dict(
+            before_observation,
+            "focused_element",
+        ),
+        "after_focused_element": _metadata_dict(
+            after_observation,
+            "focused_element",
+        ),
+        "focused_element_changed": _metadata_dict(
+            before_observation,
+            "focused_element",
+        )
+        != _metadata_dict(after_observation, "focused_element"),
+        "focus_changed": _focus_signature(before_observation)
+        != _focus_signature(after_observation),
+        "visible_text_before": before_text,
+        "visible_text_after": after_text,
+        "visible_text_added": sorted(set(after_text) - set(before_text)),
+        "visible_text_removed": sorted(set(before_text) - set(after_text)),
+        "visible_text_changed": set(before_text) != set(after_text),
+        "target_text": target_text,
+        "target_visible_before": target_visible_before,
+        "target_visible_after": target_visible_after,
+        "target_appeared": target_visible_before is False
+        and target_visible_after is True,
+        "target_disappeared": target_visible_before is True
+        and target_visible_after is False,
+        **_scroll_delta_metadata(step, action_result),
+    }
+
+
+def _visible_candidate_labels(
+    candidates: tuple[ElementCandidate, ...],
+) -> list[str]:
+    return sorted(
+        {
+            candidate.label
+            for candidate in candidates
+            if candidate.visible and candidate.label
+        }
+    )
+
+
+def _label_visible(
+    label: str | None,
+    candidates: tuple[ElementCandidate, ...],
+) -> bool | None:
+    if label is None:
+        return None
+    normalized_label = _normalize_text(label)
+    return any(
+        candidate.visible and normalized_label in _normalize_text(candidate.label)
+        for candidate in candidates
+    )
+
+
+def _state_delta_target_text(step: TaskStep) -> str | None:
+    if step.verify is not None and step.verify.text:
+        return step.verify.text
+    return step.target
+
+
+def _focus_signature(observation: ScreenObservation) -> tuple[object, object]:
+    return (
+        observation.active_window_title,
+        _metadata_dict(observation, "focused_element"),
+    )
+
+
+def _scroll_delta_metadata(
+    step: TaskStep,
+    action_result: ActionResult,
+) -> dict[str, object]:
+    scroll_moved = (
+        action_result.success
+        and action_result.metadata.get("input_action") == "scroll"
+    )
+    scroll_action = step.action if step.action in {"scroll", "scroll_until"} else None
+    metadata: dict[str, object] = {
+        "scroll_moved": scroll_moved,
+        "scroll_action": scroll_action,
+    }
+    for key in (
+        "scroll_clicks",
+        "scroll_requested_clicks",
+        "scroll_step_count",
+        "scroll_step_clicks",
+    ):
+        if key in action_result.metadata:
+            metadata[key] = action_result.metadata[key]
+    return metadata
 
 
 def _reasoning_snapshot_for_id(

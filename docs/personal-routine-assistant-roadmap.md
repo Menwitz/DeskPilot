@@ -193,7 +193,7 @@ abuse, and hidden automation are not supported.
       focused element, cursor position, and warnings.
 - [x] Record selected candidate, rejected candidates, rejection reasons,
       confidence values, and coordinate conversion.
-- [ ] Add visual state delta summaries for focus changes, visible text changes,
+- [x] Add visual state delta summaries for focus changes, visible text changes,
       target appearance/disappearance, and scroll movement.
 - [ ] Add verification outcome `inconclusive` and route it to retry or manual
       handoff.

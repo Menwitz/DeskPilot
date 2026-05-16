@@ -642,6 +642,99 @@ def test_execution_engine_records_target_reasoning_and_coordinate_conversion() -
     assert conversion["conversion_status"] == "converted"
 
 
+def test_execution_engine_records_state_delta_summary() -> None:
+    task = TaskDefinition(
+        name="state-delta",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="click-submit",
+                action="click_text",
+                target="Submit",
+                verify=VerificationDefinition(type="visible_text", text="Success"),
+            ),
+        ),
+    )
+    before = ScreenObservation(
+        active_window_title="DeskPilot Fixture",
+        metadata={"focused_element": {"name": "Submit", "class_name": "Button"}},
+    )
+    after = ScreenObservation(
+        active_window_title="DeskPilot Fixture - Done",
+        metadata={"focused_element": {"name": "Success", "class_name": "Text"}},
+    )
+    engine = _engine(
+        task,
+        screen_observer=SequenceScreenObserver((before, after)),
+        perception=SequencePerceptionEngine(
+            (_candidate_tuple("Submit"), _candidate_tuple("Success")),
+        ),
+        actuator=SequenceActuator((ActionResult(True, "clicked"),)),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    delta = next(event for event in report.events if event.phase == "state_delta")
+    assert report.status == "passed"
+    assert delta.metadata["trace_schema_section"] == "state_delta"
+    assert delta.metadata["focus_changed"] is True
+    assert delta.metadata["active_window_changed"] is True
+    assert delta.metadata["focused_element_changed"] is True
+    assert delta.metadata["visible_text_before"] == ["Submit"]
+    assert delta.metadata["visible_text_after"] == ["Success"]
+    assert delta.metadata["visible_text_added"] == ["Success"]
+    assert delta.metadata["visible_text_removed"] == ["Submit"]
+    assert delta.metadata["visible_text_changed"] is True
+    assert delta.metadata["target_text"] == "Success"
+    assert delta.metadata["target_appeared"] is True
+    assert delta.metadata["target_disappeared"] is False
+
+
+def test_execution_engine_records_scroll_state_delta() -> None:
+    task = TaskDefinition(
+        name="scroll-delta",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="scroll-list",
+                action="scroll",
+                text="-3",
+                region=TaskRegion(x=0, y=0, width=100, height=100),
+            ),
+        ),
+    )
+    engine = _engine(
+        task,
+        perception=SequencePerceptionEngine(((),)),
+        actuator=SequenceActuator(
+            (
+                ActionResult(
+                    True,
+                    "scrolled",
+                    metadata={
+                        "input_action": "scroll",
+                        "scroll_clicks": -3,
+                        "scroll_step_count": 3,
+                        "scroll_step_clicks": [-1, -1, -1],
+                    },
+                ),
+            ),
+        ),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    delta = next(event for event in report.events if event.phase == "state_delta")
+    assert report.status == "passed"
+    assert delta.metadata["scroll_moved"] is True
+    assert delta.metadata["scroll_action"] == "scroll"
+    assert delta.metadata["scroll_clicks"] == -3
+    assert delta.metadata["scroll_step_count"] == 3
+    assert delta.metadata["scroll_step_clicks"] == [-1, -1, -1]
+
+
 def test_execution_engine_runs_checkpoint_before_irreversible_action() -> None:
     task = TaskDefinition(
         name="checkpoint-pass",
