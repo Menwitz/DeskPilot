@@ -93,6 +93,10 @@ The `desktop_io_plan` event records how each semantic YAML action maps to
 low-level desktop operations such as `observe`, `move`, `click`, `type`,
 `hotkey`, `wheel`, `verify`, and `wait`. The same operation list is copied onto
 `execute_action` metadata.
+The `action_safety` event records the resolved safety class, mutation risk,
+approval requirement and reason, reversibility, idempotence, allowed window
+scope, and allowed region before a step can emit input. The same core safety
+fields are also included on step-related monitoring events and step reports.
 
 For steps with `checkpoint`, traces include `observe_checkpoint`,
 `checkpoint_candidates`, and `verification_checkpoint` before any action timing

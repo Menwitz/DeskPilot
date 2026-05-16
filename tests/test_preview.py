@@ -37,6 +37,9 @@ def test_dry_run_preview_renders_timing_bounds_and_recovery_paths() -> None:
 
     assert "policy preset: strict_qa" in rendered
     assert "step click-submit (click_text, navigation)" in rendered
+    assert "safety: local_mutation; mutation local" in rendered
+    assert "approval not required; reversibility usually_reversible" in rendered
+    assert "window scope 1" in rendered
     assert "action 0.050-0.250s x3" in rendered
     assert "retry 0.100-0.300s x2" in rendered
     assert "worst-case wait 1.350s" in rendered

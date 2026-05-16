@@ -165,6 +165,11 @@ site and flow, records approver/reason/timestamp/content fingerprint metadata,
 and is included in local traces and final reports.
 Sensitive or irreversible steps can also declare `checkpoint`; the planner must
 pass that read-only verification before timing or action execution.
+Each resolved step also carries action-safety metadata in traces and reports:
+the safety class, mutation risk, approval requirement, reversibility,
+idempotence, effective allowed-window scope, and allowed region. Dry-run
+previews print the same summary so task authors can see likely mutation and
+approval behavior before a routine runs.
 
 ## Policy Presets
 

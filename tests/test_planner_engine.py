@@ -474,6 +474,39 @@ def test_execution_engine_records_desktop_io_plan_for_semantic_action() -> None:
     assert phases.index("desktop_io_plan") < phases.index("execute_action")
 
 
+def test_execution_engine_records_action_safety_for_submission_scope() -> None:
+    task = TaskDefinition(
+        name="action-safety",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="publish",
+                action="click_text",
+                target="Submit",
+                category="submission",
+                requires_confirmation=True,
+                metadata={"site_sensitive_category": "publish"},
+            ),
+        ),
+    )
+    engine = _engine(task, config=RuntimeConfig(confirmed_steps=("publish",)))
+
+    report = engine.run(Path("task.yaml"))
+
+    safety = next(event for event in report.events if event.phase == "action_safety")
+    execute = next(event for event in report.events if event.phase == "execute_action")
+    assert report.status == "passed"
+    assert safety.metadata["action_safety_class"] == "message_or_publish"
+    assert safety.metadata["mutation_risk"] == "sensitive_external"
+    assert safety.metadata["approval_required"] is True
+    assert safety.metadata["approval_reason"] == "requires_confirmation"
+    assert safety.metadata["reversibility"] == "operator_dependent"
+    assert safety.metadata["window_scope"] == ["DeskPilot Fixture"]
+    assert execute.metadata["action_safety_class"] == "message_or_publish"
+    assert report.steps[0].metadata["action_safety_class"] == "message_or_publish"
+
+
 def test_execution_engine_records_pre_action_observation_evidence(
     tmp_path: Path,
 ) -> None:

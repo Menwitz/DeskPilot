@@ -7,6 +7,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Literal, Protocol
 
+from desktop_agent.action_safety import action_safety_metadata
 from desktop_agent.actuation import ActionResult, Actuator
 from desktop_agent.config import ConfigLoader, RuntimeConfig
 from desktop_agent.entropy import (
@@ -442,6 +443,15 @@ class ExecutionEngine:
             )
         if variant_decision.selected_action != step.action:
             step = replace(step, action=variant_decision.selected_action)
+
+        self._record(
+            "action_safety",
+            "action safety metadata resolved",
+            _step_metadata(
+                step,
+                **action_safety_metadata(step, allowed_windows=config.allowed_windows),
+            ),
+        )
 
         if config.require_operator_approval:
             early_safety = self.safety_policy.check_before_action(task, step, config)
@@ -1740,6 +1750,7 @@ def _step_metadata(step: TaskStep, **metadata: object) -> dict[str, object]:
         "step_id": step.id,
         "step_category": step_category(step),
         **step.metadata,
+        **action_safety_metadata(step),
         **metadata,
     }
     if step.entropy_budget is not None:
@@ -1887,6 +1898,7 @@ def _step_report_metadata(step: TaskStep) -> dict[str, object]:
     metadata: dict[str, object] = {
         "step_category": step_category(step),
         **step.metadata,
+        **action_safety_metadata(step),
     }
     if step.entropy_budget is not None:
         metadata["step_entropy_budget"] = step.entropy_budget

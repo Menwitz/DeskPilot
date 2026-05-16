@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from desktop_agent.action_safety import action_safety_metadata
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.recovery import RECOVERY_POLICIES, constrain_recovery_policy
 from desktop_agent.task_dsl import TaskDefinition, TaskStep, step_category
 from desktop_agent.timing import StepTimingBudget, estimate_step_timing_budget
+from desktop_agent.window_allowlist import effective_allowed_windows
 
 
 @dataclass(frozen=True)
@@ -32,6 +34,7 @@ class StepDryRunPreview:
     action_delay_seconds: tuple[float, float]
     retry_delay_seconds: tuple[float, float]
     recovery_paths: tuple[RecoveryPathPreview, ...]
+    safety_metadata: dict[str, object]
 
 
 @dataclass(frozen=True)
@@ -46,10 +49,16 @@ class DryRunPreview:
 def build_dry_run_preview(task: TaskDefinition, config: RuntimeConfig) -> DryRunPreview:
     """Build a deterministic preview from task and runtime configuration."""
 
+    allowed_windows = effective_allowed_windows(
+        task.allowed_windows,
+        config.allowed_windows,
+    )
     return DryRunPreview(
         task_name=task.name,
         policy_preset=config.policy_preset,
-        steps=tuple(_step_preview(step, config) for step in task.steps),
+        steps=tuple(
+            _step_preview(step, config, allowed_windows) for step in task.steps
+        ),
     )
 
 
@@ -64,6 +73,19 @@ def render_dry_run_preview(preview: DryRunPreview) -> str:
         budget = step.timing_budget
         fit_label = "yes" if budget.fits_timeout else "no"
         lines.append(f"  step {step.step_id} ({step.action}, {step.category})")
+        safety_class = step.safety_metadata["action_safety_class"]
+        mutation_risk = step.safety_metadata["mutation_risk"]
+        approval_required = step.safety_metadata["approval_required"]
+        reversibility = step.safety_metadata["reversibility"]
+        window_scope = step.safety_metadata["window_scope"]
+        scope_count = len(window_scope) if isinstance(window_scope, list) else 0
+        approval_label = "required" if approval_required is True else "not required"
+        lines.append(
+            "    safety: "
+            f"{safety_class}; mutation {mutation_risk}; approval "
+            f"{approval_label}; reversibility {reversibility}; "
+            f"window scope {scope_count}",
+        )
         lines.append(
             "    timing: "
             f"action {_seconds_range(step.action_delay_seconds)} "
@@ -84,7 +106,11 @@ def render_dry_run_preview(preview: DryRunPreview) -> str:
     return "\n".join(lines)
 
 
-def _step_preview(step: TaskStep, config: RuntimeConfig) -> StepDryRunPreview:
+def _step_preview(
+    step: TaskStep,
+    config: RuntimeConfig,
+    allowed_windows: tuple[str, ...],
+) -> StepDryRunPreview:
     return StepDryRunPreview(
         step_id=step.id,
         action=step.action,
@@ -98,6 +124,10 @@ def _step_preview(step: TaskStep, config: RuntimeConfig) -> StepDryRunPreview:
         action_delay_seconds=config.execution_profile.action_delay_seconds,
         retry_delay_seconds=config.execution_profile.retry_delay_seconds,
         recovery_paths=_recovery_previews(step),
+        safety_metadata=action_safety_metadata(
+            step,
+            allowed_windows=allowed_windows,
+        ),
     )
 
 

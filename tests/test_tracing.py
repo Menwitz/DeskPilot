@@ -298,6 +298,17 @@ def test_file_trace_sink_renders_decision_details_in_markdown(
     )
     trace_sink.record_event(
         TraceEvent(
+            phase="action_safety",
+            message="action safety metadata resolved",
+            metadata={
+                "action_safety_class": "local_mutation",
+                "approval_required": False,
+                "window_scope": ["DeskPilot Fixture"],
+            },
+        )
+    )
+    trace_sink.record_event(
+        TraceEvent(
             phase="execute_action",
             message="typed text",
             metadata={
@@ -338,3 +349,6 @@ def test_file_trace_sink_renders_decision_details_in_markdown(
     assert "input blocked by emergency_stop" in final_report
     assert "confidence_or_ambiguity_gate" in final_report
     assert "classify missed_target -> retry" in final_report
+    assert "safety local_mutation; approval not required; scope 1 window(s)" in (
+        final_report
+    )

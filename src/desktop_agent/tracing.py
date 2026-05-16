@@ -488,6 +488,17 @@ def _event_markdown_suffix(event: TraceEvent) -> str:
         str,
     ):
         details.append(f"input blocked by {actuation_guard}")
+    if event.phase == "action_safety":
+        safety_class = event.metadata.get("action_safety_class")
+        approval_required = event.metadata.get("approval_required")
+        window_scope = event.metadata.get("window_scope")
+        if isinstance(safety_class, str):
+            details.append(f"safety {safety_class}")
+        if isinstance(approval_required, bool):
+            approval_label = "required" if approval_required else "not required"
+            details.append(f"approval {approval_label}")
+        if isinstance(window_scope, list):
+            details.append(f"scope {len(window_scope)} window(s)")
     blocked_state = event.metadata.get("site_blocked_state_id")
     blocked_reason = event.metadata.get("site_blocked_state_reason")
     if isinstance(blocked_state, str):
