@@ -480,7 +480,7 @@ abuse, and hidden automation are not supported.
       and verification suggestions.
 - [x] Add trace viewer timeline with video, screenshots, action log, candidate
       reasoning, state delta, and final report.
-- [ ] Add settings for trace root, screenshots, video capture, Ollama enablement,
+- [x] Add settings for trace root, screenshots, video capture, Ollama enablement,
       emergency hotkey, default activity profile, and proof mode.
 - [ ] Add UI integration tests around app state transitions with fake services.
 

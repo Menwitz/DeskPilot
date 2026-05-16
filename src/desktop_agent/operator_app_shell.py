@@ -8,6 +8,8 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any
 
+from desktop_agent.config import RuntimeConfig
+
 
 class OperatorAppUnavailableError(RuntimeError):
     """Raised when the optional native UI dependency is not installed."""
@@ -152,6 +154,30 @@ class TraceViewerTimelineState:
         }
 
 
+@dataclass(frozen=True)
+class SettingsPanelState:
+    """Settings panel fields exposed by the operator app."""
+
+    trace_root: Path = Path("traces")
+    screenshots_enabled: bool = True
+    video_capture_enabled: bool = False
+    ollama_enabled: bool = False
+    emergency_hotkey: str = "ctrl+alt+esc"
+    default_activity_profile: str | None = None
+    proof_mode: bool = False
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "trace_root": str(self.trace_root),
+            "screenshots_enabled": self.screenshots_enabled,
+            "video_capture_enabled": self.video_capture_enabled,
+            "ollama_enabled": self.ollama_enabled,
+            "emergency_hotkey": self.emergency_hotkey,
+            "default_activity_profile": self.default_activity_profile,
+            "proof_mode": self.proof_mode,
+        }
+
+
 def operator_app_shell_spec() -> OperatorAppShell:
     """Return the Phase 8 native app shell page contract."""
     pages = (
@@ -193,6 +219,7 @@ def operator_app_shell_spec() -> OperatorAppShell:
             page_id="settings",
             title="Settings",
             purpose="Configure local trace, safety, model, and proof options.",
+            panel_ids=("settings",),
         ),
         OperatorAppPage(
             page_id="help",
@@ -296,6 +323,40 @@ def render_trace_viewer_timeline_text(state: TraceViewerTimelineState) -> str:
     ) + "\n"
 
 
+def settings_panel_from_runtime_config(
+    config: RuntimeConfig,
+    *,
+    video_capture_enabled: bool = False,
+    proof_mode: bool = False,
+) -> SettingsPanelState:
+    """Build app settings state from the shared runtime configuration."""
+    return SettingsPanelState(
+        trace_root=config.trace_root,
+        screenshots_enabled=config.save_screenshots,
+        video_capture_enabled=video_capture_enabled,
+        ollama_enabled=config.local_model.enabled,
+        emergency_hotkey=config.emergency_stop_hotkey,
+        default_activity_profile=config.execution_profile.activity_profile,
+        proof_mode=proof_mode,
+    )
+
+
+def render_settings_panel_text(state: SettingsPanelState) -> str:
+    """Render app settings fields for diagnostics and tests."""
+    return "\n".join(
+        [
+            "Settings",
+            f"- Trace root: {state.trace_root}",
+            f"- Screenshots: {state.screenshots_enabled}",
+            f"- Video capture: {state.video_capture_enabled}",
+            f"- Ollama: {state.ollama_enabled}",
+            f"- Emergency hotkey: {state.emergency_hotkey}",
+            f"- Default activity profile: {state.default_activity_profile or 'none'}",
+            f"- Proof mode: {state.proof_mode}",
+        ],
+    ) + "\n"
+
+
 def render_operator_app_shell_text(shell: OperatorAppShell | None = None) -> str:
     """Render the shell contract for CLI diagnostics and tests."""
     active_shell = shell or operator_app_shell_spec()
@@ -387,5 +448,14 @@ def _page_widget(qt_widgets: Any, page: OperatorAppPage) -> Any:
         layout.addWidget(qt_widgets.QLabel("Candidate reasoning: pending"))
         layout.addWidget(qt_widgets.QLabel("State delta: pending"))
         layout.addWidget(qt_widgets.QLabel("Final report: pending"))
+    if "settings" in page.panel_ids:
+        layout.addWidget(qt_widgets.QLabel("Settings"))
+        layout.addWidget(qt_widgets.QLabel("Trace root: traces"))
+        layout.addWidget(qt_widgets.QLabel("Screenshots: true"))
+        layout.addWidget(qt_widgets.QLabel("Video capture: false"))
+        layout.addWidget(qt_widgets.QLabel("Ollama: false"))
+        layout.addWidget(qt_widgets.QLabel("Emergency hotkey: ctrl+alt+esc"))
+        layout.addWidget(qt_widgets.QLabel("Default activity profile: none"))
+        layout.addWidget(qt_widgets.QLabel("Proof mode: false"))
     layout.addStretch(1)
     return widget

@@ -3,11 +3,13 @@ from pathlib import Path
 
 from pytest import CaptureFixture
 
+from desktop_agent.config import ExecutionProfile, LocalModelConfig, RuntimeConfig
 from desktop_agent.operator_app import main
 from desktop_agent.operator_app_shell import (
     ApprovalDialogState,
     LiveRunPanelState,
     RecorderReviewPanelState,
+    SettingsPanelState,
     TraceViewerTimelineState,
     default_live_run_panel_state,
     operator_app_shell_spec,
@@ -15,7 +17,9 @@ from desktop_agent.operator_app_shell import (
     render_live_run_panel_text,
     render_operator_app_shell_text,
     render_recorder_review_text,
+    render_settings_panel_text,
     render_trace_viewer_timeline_text,
+    settings_panel_from_runtime_config,
 )
 
 
@@ -59,6 +63,8 @@ def test_operator_app_shell_exposes_required_pages() -> None:
     assert approvals_page.panel_ids == ("approval_dialog",)
     trace_page = next(page for page in shell.pages if page.page_id == "trace_viewer")
     assert trace_page.panel_ids == ("trace_timeline",)
+    settings_page = next(page for page in shell.pages if page.page_id == "settings")
+    assert settings_page.panel_ids == ("settings",)
     assert shell.metadata()["pages"]
 
 
@@ -195,3 +201,40 @@ def test_trace_viewer_timeline_tracks_evidence_paths_and_reasoning(
     assert "Trace Timeline" in text
     assert "proof-video.mp4" in text
     assert "selected candidate-1" in text
+
+
+def test_settings_panel_tracks_runtime_config_and_app_toggles(tmp_path: Path) -> None:
+    state = settings_panel_from_runtime_config(
+        RuntimeConfig(
+            trace_root=tmp_path / "traces",
+            save_screenshots=False,
+            emergency_stop_hotkey="ctrl+shift+esc",
+            execution_profile=ExecutionProfile(activity_profile="careful"),
+            local_model=LocalModelConfig(enabled=True),
+        ),
+        video_capture_enabled=True,
+        proof_mode=True,
+    )
+
+    metadata = state.metadata()
+    text = render_settings_panel_text(state)
+
+    assert metadata["trace_root"] == str(tmp_path / "traces")
+    assert metadata["screenshots_enabled"] is False
+    assert metadata["video_capture_enabled"] is True
+    assert metadata["ollama_enabled"] is True
+    assert metadata["emergency_hotkey"] == "ctrl+shift+esc"
+    assert metadata["default_activity_profile"] == "careful"
+    assert metadata["proof_mode"] is True
+    assert "Trace root" in text
+    assert "Ollama: True" in text
+
+
+def test_settings_panel_defaults_are_local_and_safe() -> None:
+    state = SettingsPanelState()
+
+    assert state.trace_root == Path("traces")
+    assert state.screenshots_enabled is True
+    assert state.video_capture_enabled is False
+    assert state.ollama_enabled is False
+    assert state.proof_mode is False

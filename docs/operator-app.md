@@ -34,6 +34,11 @@ The Trace Viewer page includes the trace timeline contract. It shows video,
 screenshots, action log, candidate reasoning, state delta, final report, and
 load status so failed runs can be inspected without rerunning desktop input.
 
+The Settings page includes trace root, screenshot saving, video capture, Ollama
+enablement, emergency hotkey, default activity profile, and proof-mode fields.
+The initial state can be built from `RuntimeConfig` so the app and CLI share
+the same local defaults.
+
 `deskpilot-app --describe-shell` prints this shell contract without importing
 PySide6. `deskpilot-app --check` verifies that the entry point is installed and
 reports whether PySide6 is available.
