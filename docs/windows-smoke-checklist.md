@@ -66,3 +66,6 @@ archiving `proof-suite-review-status.json` plus `proof-suite-promotion.json`.
 - [ ] Opt-in proof-suite smoke validation writes `proof-suite-review-status.json`
       and runs `proof promote-suite`, `proof verify-promotion`, and
       `proof verify-archive` before archiving promotion artifacts.
+- [ ] Opt-in proof-suite smoke validation writes
+      `proof-promotion-verification.json` and
+      `proof-archive-verification.json`.

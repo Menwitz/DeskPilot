@@ -100,7 +100,9 @@ from desktop_agent.proof_manifest import (
     validate_proof_suite,
     verify_proof_suite_archive,
     verify_proof_suite_promotion,
+    write_proof_archive_verification,
     write_proof_preflight_report,
+    write_proof_promotion_verification,
     write_proof_review_status,
     write_proof_suite_archive,
     write_proof_suite_promotion,
@@ -698,11 +700,31 @@ def _build_parser() -> argparse.ArgumentParser:
         help="verify proof-suite promotion JSON digests against local artifacts",
     )
     proof_verify_promotion_parser.add_argument("promotion_path", type=Path)
+    proof_verify_promotion_parser.add_argument(
+        "--write-status-json",
+        action="store_true",
+        help="write proof-promotion-verification.json after verification",
+    )
+    proof_verify_promotion_parser.add_argument(
+        "--status-json-path",
+        type=Path,
+        help="write promotion verification status JSON to an explicit path",
+    )
     proof_verify_archive_parser = proof_subparsers.add_parser(
         "verify-archive",
         help="verify a zipped proof-suite archive against its promotion record",
     )
     proof_verify_archive_parser.add_argument("archive_path", type=Path)
+    proof_verify_archive_parser.add_argument(
+        "--write-status-json",
+        action="store_true",
+        help="write proof-archive-verification.json after verification",
+    )
+    proof_verify_archive_parser.add_argument(
+        "--status-json-path",
+        type=Path,
+        help="write archive verification status JSON to an explicit path",
+    )
     proof_browser_parser = proof_subparsers.add_parser(
         "browser-fixture",
         help="run a real-input local browser form/navigation proof",
@@ -3012,6 +3034,12 @@ def _proof_verify_promotion(args: argparse.Namespace) -> int:
         print(f"warning: {warning}")
     for error in result.errors:
         print(f"error: {error}")
+    if args.write_status_json or args.status_json_path:
+        status_path = write_proof_promotion_verification(
+            result,
+            args.status_json_path,
+        )
+        print(f"status_json: {status_path}")
     return 0 if result.passed else 1
 
 
@@ -3026,6 +3054,12 @@ def _proof_verify_archive(args: argparse.Namespace) -> int:
         print(f"warning: {warning}")
     for error in result.errors:
         print(f"error: {error}")
+    if args.write_status_json or args.status_json_path:
+        status_path = write_proof_archive_verification(
+            result,
+            args.status_json_path,
+        )
+        print(f"status_json: {status_path}")
     return 0 if result.passed else 1
 
 

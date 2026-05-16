@@ -16,7 +16,9 @@ from desktop_agent.proof_manifest import (
     validate_proof_suite,
     verify_proof_suite_archive,
     verify_proof_suite_promotion,
+    write_proof_archive_verification,
     write_proof_preflight_report,
+    write_proof_promotion_verification,
     write_proof_review_status,
     write_proof_suite_archive,
     write_proof_suite_promotion,
@@ -512,8 +514,11 @@ def test_verify_proof_suite_promotion_accepts_matching_digests(
     promotion_path = write_proof_suite_promotion(result, require_video=False)
 
     verification = verify_proof_suite_promotion(promotion_path)
+    status_path = write_proof_promotion_verification(verification)
+    payload = json.loads(status_path.read_text(encoding="utf-8"))
 
     assert verification.passed
+    assert payload["status"] == "passed"
     assert "proof-preflight.json" in verification.checked_artifacts
     assert "browser-fixture/proof-manifest.json" in verification.checked_artifacts
 
@@ -545,8 +550,11 @@ def test_verify_proof_suite_archive_accepts_matching_digests(
     archive_path = write_proof_suite_archive(result, require_video=False)
 
     verification = verify_proof_suite_archive(archive_path)
+    status_path = write_proof_archive_verification(verification)
+    payload = json.loads(status_path.read_text(encoding="utf-8"))
 
     assert verification.passed
+    assert payload["status"] == "passed"
     assert "proof-preflight.json" in verification.checked_artifacts
     assert "browser-fixture/proof-manifest.json" in verification.checked_artifacts
 

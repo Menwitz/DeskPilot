@@ -1982,11 +1982,25 @@ def test_cli_proof_verify_promotion_reports_failed_record(
     )
     capsys.readouterr()
 
-    status = main(["proof", "verify-promotion", str(promotion_path)])
+    status_path = tmp_path / "promotion-verification.json"
+
+    status = main(
+        [
+            "proof",
+            "verify-promotion",
+            str(promotion_path),
+            "--write-status-json",
+            "--status-json-path",
+            str(status_path),
+        ],
+    )
 
     output = capsys.readouterr().out
+    payload = json.loads(status_path.read_text(encoding="utf-8"))
     assert status == 1
     assert "promotion_verification: failed" in output
+    assert f"status_json: {status_path}" in output
+    assert payload["status"] == "failed"
     assert "error: proof suite promotion status is not passed: failed" in output
 
 
@@ -1998,11 +2012,25 @@ def test_cli_proof_verify_archive_reports_missing_promotion(
     with zipfile.ZipFile(archive_path, "w") as archive:
         archive.writestr("placeholder.txt", "empty")
 
-    status = main(["proof", "verify-archive", str(archive_path)])
+    status_path = tmp_path / "archive-verification.json"
+
+    status = main(
+        [
+            "proof",
+            "verify-archive",
+            str(archive_path),
+            "--write-status-json",
+            "--status-json-path",
+            str(status_path),
+        ],
+    )
 
     output = capsys.readouterr().out
+    payload = json.loads(status_path.read_text(encoding="utf-8"))
     assert status == 1
     assert "archive_verification: failed" in output
+    assert f"status_json: {status_path}" in output
+    assert payload["status"] == "failed"
     assert "error: proof suite archive missing proof-suite-promotion.json" in output
 
 

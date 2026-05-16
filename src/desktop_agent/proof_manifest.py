@@ -26,6 +26,8 @@ PROOF_SUITE_ARCHIVE_NAME = "proof-suite-artifacts.zip"
 PROOF_SUITE_REVIEW_NAME = "proof-suite-review.md"
 PROOF_SUITE_REVIEW_STATUS_NAME = "proof-suite-review-status.json"
 PROOF_SUITE_PROMOTION_NAME = "proof-suite-promotion.json"
+PROOF_PROMOTION_VERIFICATION_NAME = "proof-promotion-verification.json"
+PROOF_ARCHIVE_VERIFICATION_NAME = "proof-archive-verification.json"
 PROOF_PREFLIGHT_REPORT_NAME = "proof-preflight.json"
 
 
@@ -236,6 +238,15 @@ class ProofPromotionVerification:
     def passed(self) -> bool:
         return not self.errors
 
+    def metadata(self) -> dict[str, object]:
+        return {
+            "promotion_path": str(self.promotion_path),
+            "status": "passed" if self.passed else "failed",
+            "checked_artifacts": list(self.checked_artifacts),
+            "errors": list(self.errors),
+            "warnings": list(self.warnings),
+        }
+
 
 @dataclass(frozen=True)
 class ProofArchiveVerification:
@@ -249,6 +260,15 @@ class ProofArchiveVerification:
     @property
     def passed(self) -> bool:
         return not self.errors
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "archive_path": str(self.archive_path),
+            "status": "passed" if self.passed else "failed",
+            "checked_artifacts": list(self.checked_artifacts),
+            "errors": list(self.errors),
+            "warnings": list(self.warnings),
+        }
 
 
 def run_proof_preflight(
@@ -821,6 +841,23 @@ def verify_proof_suite_promotion(promotion_path: Path) -> ProofPromotionVerifica
     )
 
 
+def write_proof_promotion_verification(
+    verification: ProofPromotionVerification,
+    output_path: Path | None = None,
+) -> Path:
+    """Write machine-readable promotion digest verification status."""
+
+    status_path = output_path or verification.promotion_path.with_name(
+        PROOF_PROMOTION_VERIFICATION_NAME,
+    )
+    status_path.parent.mkdir(parents=True, exist_ok=True)
+    status_path.write_text(
+        json.dumps(verification.metadata(), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    return status_path
+
+
 def verify_proof_suite_archive(archive_path: Path) -> ProofArchiveVerification:
     """Verify a zipped proof-suite archive against its promotion digest record."""
 
@@ -885,6 +922,23 @@ def verify_proof_suite_archive(archive_path: Path) -> ProofArchiveVerification:
         errors=tuple(errors),
         warnings=tuple(warnings),
     )
+
+
+def write_proof_archive_verification(
+    verification: ProofArchiveVerification,
+    output_path: Path | None = None,
+) -> Path:
+    """Write machine-readable proof archive verification status."""
+
+    status_path = output_path or verification.archive_path.with_name(
+        PROOF_ARCHIVE_VERIFICATION_NAME,
+    )
+    status_path.parent.mkdir(parents=True, exist_ok=True)
+    status_path.write_text(
+        json.dumps(verification.metadata(), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    return status_path
 
 
 def write_proof_suite_status(

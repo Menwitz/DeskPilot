@@ -197,6 +197,8 @@ abuse, and hidden automation are not supported.
 - [x] Add promotion digest verification to the opt-in Windows smoke pipeline.
 - [x] Add proof archive verification so copied proof-suite zip files can be
       checked against the promotion digest record.
+- [x] Add machine-readable status JSON for promotion and archive verification
+      results.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

@@ -78,6 +78,7 @@ Run `proof verify-promotion <trace-root>\proof-suite-promotion.json` before
 trusting copied proof evidence.
 Run `proof verify-archive <trace-root>\proof-suite-artifacts.zip` to check the
 self-contained archive members against the promotion digest record.
+Both verifier commands support `--write-status-json` for monitoring artifacts.
 
 Real `run` verification still requires an unlocked Windows desktop with the
 browser or native fixture visible.
