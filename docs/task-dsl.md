@@ -81,6 +81,19 @@ Supported actions:
 - `branch_if_visible`
 - `drag`
 
+The task compiler preserves these semantic action names and also emits a
+`desktop_io_v1` plan for monitoring and reports. Current mappings are:
+
+- `click_text`, `click_image`, and `click_uia`: `observe`, `move`, `click`,
+  `verify`
+- `type_text`: `observe`, `type`, `verify`
+- `press_key`: `observe`, `hotkey`, `verify`
+- `scroll`: `observe`, `wheel`, `verify`
+- `scroll_until`: `observe`, `wheel`, `observe`, `verify`
+- `wait_for`: `observe`, `wait`, `verify`
+- `assert_visible` and `branch_if_visible`: `observe`, `verify`
+- `drag`: `observe`, `move`, `drag`, `verify`
+
 ## Verification Types
 
 Supported verification types:

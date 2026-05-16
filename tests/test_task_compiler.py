@@ -8,9 +8,95 @@ from desktop_agent.task_dsl import (
     BasicTaskValidator,
     ExpectedStateTransition,
     TaskDefinition,
+    TaskRegion,
     TaskStep,
     YamlTaskLoader,
 )
+
+
+@pytest.mark.parametrize(
+    ("step", "expected_operations"),
+    [
+        (
+            TaskStep(id="click-text", action="click_text", target="Submit"),
+            ("observe", "move", "click", "verify"),
+        ),
+        (
+            TaskStep(id="click-image", action="click_image", image=Path("button.png")),
+            ("observe", "move", "click", "verify"),
+        ),
+        (
+            TaskStep(id="click-uia", action="click_uia", target="Submit"),
+            ("observe", "move", "click", "verify"),
+        ),
+        (
+            TaskStep(id="type-text", action="type_text", text="hello"),
+            ("observe", "type", "verify"),
+        ),
+        (
+            TaskStep(id="press-key", action="press_key", text="ctrl+s"),
+            ("observe", "hotkey", "verify"),
+        ),
+        (
+            TaskStep(id="scroll", action="scroll", text="-3"),
+            ("observe", "wheel", "verify"),
+        ),
+        (
+            TaskStep(
+                id="scroll-until",
+                action="scroll_until",
+                target="Result",
+                region=TaskRegion(x=0, y=0, width=100, height=100),
+            ),
+            ("observe", "wheel", "observe", "verify"),
+        ),
+        (
+            TaskStep(id="wait-for", action="wait_for", target="Ready"),
+            ("observe", "wait", "verify"),
+        ),
+        (
+            TaskStep(id="assert-visible", action="assert_visible", target="Ready"),
+            ("observe", "verify"),
+        ),
+        (
+            TaskStep(
+                id="branch-if-visible",
+                action="branch_if_visible",
+                target="Ready",
+                on_failure="fallback",
+            ),
+            ("observe", "verify"),
+        ),
+        (
+            TaskStep(
+                id="drag",
+                action="drag",
+                target="Tile",
+                region=TaskRegion(x=10, y=10, width=100, height=100),
+            ),
+            ("observe", "move", "drag", "verify"),
+        ),
+    ],
+)
+def test_task_compiler_compiles_existing_actions_to_desktop_io(
+    step: TaskStep,
+    expected_operations: tuple[str, ...],
+) -> None:
+    steps: tuple[TaskStep, ...] = (step,)
+    if step.on_failure is not None:
+        steps += (TaskStep(id="fallback", action="assert_visible", target="Fallback"),)
+    task = TaskDefinition(
+        name=f"{step.action} fixture",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=steps,
+    )
+    BasicTaskValidator().validate(task, RuntimeConfig())
+
+    compiled = TaskCompiler().compile(task)
+
+    assert compiled.desktop_io_steps[0].source_action == step.action
+    assert compiled.desktop_io_steps[0].operations == expected_operations
 
 
 def test_task_compiler_records_dependency_and_state_metadata() -> None:
