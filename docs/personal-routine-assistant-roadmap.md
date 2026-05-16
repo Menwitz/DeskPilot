@@ -356,7 +356,7 @@ abuse, and hidden automation are not supported.
 
 ### Goals
 
-- [ ] Execute routines over time with visible, bounded, traceable timing.
+- [x] Execute routines over time with visible, bounded, traceable timing.
 - [ ] Support daily routine batches, cooldowns, allowed time windows, and
       operator check-ins.
 - [ ] Keep human-paced behavior inside safety, approval, and allowed-window
