@@ -107,7 +107,7 @@ class TaskCompiler:
         positions = _step_positions(task.steps, errors)
         dependencies = _compile_dependencies(task.steps, positions, errors)
         state_transitions = _compile_state_transitions(task.steps, errors)
-        desktop_io_steps = _compile_desktop_io_steps(task.steps)
+        desktop_io_steps = _compile_desktop_io_steps(task)
 
         if errors:
             raise TaskCompilationError("; ".join(errors))
@@ -120,11 +120,11 @@ class TaskCompiler:
 
 
 def _compile_desktop_io_steps(
-    steps: tuple[TaskStep, ...],
+    task: TaskDefinition,
 ) -> tuple[CompiledDesktopIoStep, ...]:
     compiled: list[CompiledDesktopIoStep] = []
-    for step in steps:
-        plan = compile_desktop_io_plan(step)
+    for step in task.steps:
+        plan = compile_desktop_io_plan(step, allowed_windows=task.allowed_windows)
         compiled.append(
             CompiledDesktopIoStep(
                 step_id=plan.step_id,

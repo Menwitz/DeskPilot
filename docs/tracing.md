@@ -87,7 +87,8 @@ lower-level operation sequence each step will use. Each compiled operation is
 reported as a schema action with stable ID, order, kind, source step, source
 semantic action, kind contract, and metadata fields. Kind contracts identify
 the input channel, supported status, target requirement, boundedness, and
-whether the operation emits desktop input.
+whether the operation emits desktop input. Operation metadata includes the same
+resolved action-safety fields used by planner events and step reports.
 
 The `execution_path` event records whether an action attempt uses the standard,
 fast, or careful path. Fast-path timing events include the original sampled

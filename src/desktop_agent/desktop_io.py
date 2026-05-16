@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from desktop_agent.action_safety import action_safety_metadata
 from desktop_agent.task_dsl import TaskStep
 
 DESKTOP_IO_MODEL_VERSION = "desktop_io_v1"
@@ -186,10 +187,15 @@ class DesktopIoPlan:
         }
 
 
-def compile_desktop_io_plan(step: TaskStep) -> DesktopIoPlan:
+def compile_desktop_io_plan(
+    step: TaskStep,
+    *,
+    allowed_windows: tuple[str, ...] = (),
+) -> DesktopIoPlan:
     """Compile one YAML task step into ordered desktop I/O schema actions."""
 
     operations = desktop_io_operations_for_action(step.action)
+    safety_metadata = action_safety_metadata(step, allowed_windows=allowed_windows)
     actions = tuple(
         DesktopIoAction(
             id=f"{step.id}:{index}:{operation}",
@@ -197,6 +203,7 @@ def compile_desktop_io_plan(step: TaskStep) -> DesktopIoPlan:
             kind=operation,
             order=index,
             source_action=step.action,
+            metadata={"safety": safety_metadata},
         )
         for index, operation in enumerate(operations, start=1)
     )

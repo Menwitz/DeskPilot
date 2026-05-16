@@ -56,22 +56,17 @@ def test_task_compiler_records_dependency_and_state_metadata() -> None:
         "click",
         "verify",
     ]
-    assert desktop_io_steps[0]["actions"][1] == {
-        "id": "open-editor:2:move",
-        "step_id": "open-editor",
+    move_action = desktop_io_steps[0]["actions"][1]
+    assert move_action["id"] == "open-editor:2:move"
+    assert move_action["kind_contract"] == {
         "kind": "move",
-        "order": 2,
-        "source_action": "click_text",
-        "kind_contract": {
-            "kind": "move",
-            "input_channel": "pointer",
-            "emits_desktop_input": True,
-            "requires_target": True,
-            "bounded": True,
-            "supported": True,
-        },
-        "metadata": {},
+        "input_channel": "pointer",
+        "emits_desktop_input": True,
+        "requires_target": True,
+        "bounded": True,
+        "supported": True,
     }
+    assert move_action["metadata"]["safety"]["window_scope"] == ["DeskPilot Fixture"]
     assert desktop_io_steps[1]["operations"] == ["observe", "type", "verify"]
 
 

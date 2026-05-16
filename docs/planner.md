@@ -17,7 +17,10 @@ operation is represented as a `DesktopIoAction` with a stable ID, source step,
 source semantic action, operation kind, order, and metadata block. The schema
 defines operation contracts for `observe`, `move`, `click`, `double_click`,
 `drag`, `wheel`, `type`, `hotkey`, `wait`, `verify`, and `handoff`, including
-the input channel and whether the operation emits desktop input.
+the input channel and whether the operation emits desktop input. Every compiled
+low-level action also carries the resolved step safety metadata so monitoring
+can review mutation risk, approval state, reversibility, idempotence, and
+window or region scope at the operation level.
 
 After target selection and before timing, the engine chooses an execution path.
 Stable first-attempt actions with exactly one visible, enabled, high-confidence

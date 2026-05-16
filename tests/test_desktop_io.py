@@ -30,7 +30,21 @@ def test_desktop_io_plan_uses_first_class_action_schema() -> None:
             "bounded": True,
             "supported": True,
         },
-        "metadata": {},
+        "metadata": {
+            "safety": {
+                "action_safety_class": "local_mutation",
+                "mutation_risk": "local",
+                "mutates_state": True,
+                "approval_required": False,
+                "approval_reason": None,
+                "reversibility": "usually_reversible",
+                "reversible": True,
+                "idempotent": False,
+                "app_scope": "task_scope",
+                "window_scope": [],
+                "allowed_region": None,
+            }
+        },
     }
     assert plan.to_metadata()["schema_version"] == DESKTOP_IO_MODEL_VERSION
     assert "handoff" in SUPPORTED_DESKTOP_IO_KINDS
@@ -58,3 +72,24 @@ def test_desktop_io_schema_supports_required_operation_kinds() -> None:
         assert spec.kind == kind
         assert spec.to_metadata()["supported"] is True
     assert desktop_io_kind_spec("unsupported") is None
+
+
+def test_desktop_io_actions_carry_safety_metadata() -> None:
+    plan = compile_desktop_io_plan(
+        TaskStep(
+            id="publish",
+            action="click_text",
+            target="Publish",
+            category="submission",
+            requires_confirmation=True,
+            metadata={"site_sensitive_category": "publish"},
+        ),
+        allowed_windows=("DeskPilot Fixture",),
+    )
+
+    for action in plan.actions:
+        safety = action.metadata["safety"]
+        assert isinstance(safety, dict)
+        assert safety["action_safety_class"] == "message_or_publish"
+        assert safety["approval_required"] is True
+        assert safety["window_scope"] == ["DeskPilot Fixture"]
