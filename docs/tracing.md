@@ -141,6 +141,8 @@ events. Current categories distinguish `perception_failure`,
 `selection_ambiguity`, `safety_stop`, `verification_failure`, and
 `actuation_failure`; timeout and execution-limit failures keep their own
 category values. The Markdown report prints the category beside failed steps.
+Failed click steps also include `failure_evidence` with visible-before
+candidates and the state delta observed after the click attempt.
 Markdown event rows include compact decision details for recovery paths,
 ambiguity gates, and timing delays so timing, ambiguity, recovery, and safety
 stops can be reviewed without opening the JSON report. Final actuator guard

@@ -1190,6 +1190,49 @@ def test_execution_engine_reports_failure_category_metadata() -> None:
     )
 
 
+def test_execution_engine_failed_click_includes_before_and_delta_evidence() -> None:
+    task = TaskDefinition(
+        name="failed-click-evidence",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="click-submit",
+                action="click_text",
+                target="Submit",
+                retry=0,
+                verify=VerificationDefinition(type="visible_text", text="Success"),
+            ),
+        ),
+    )
+    before = ScreenObservation(active_window_title="DeskPilot Fixture")
+    after = ScreenObservation(active_window_title="DeskPilot Fixture")
+    engine = _engine(
+        task,
+        screen_observer=SequenceScreenObserver((before, after)),
+        perception=SequencePerceptionEngine((_candidate_tuple("Submit"), ())),
+        actuator=SequenceActuator((ActionResult(False, "click failed"),)),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    evidence = report.steps[0].metadata["failure_evidence"]
+    assert isinstance(evidence, dict)
+    visible_before = evidence["visible_before"]
+    state_delta = evidence["state_delta"]
+    assert isinstance(visible_before, list)
+    assert isinstance(state_delta, dict)
+    assert report.status == "failed"
+    assert report.steps[0].metadata["failure_category"] == "actuation_failure"
+    assert evidence["failure_evidence_type"] == "failed_click"
+    assert evidence["action_message"] == "click failed"
+    assert visible_before[0]["label"] == "Submit"
+    assert visible_before[0]["confidence"] == 0.95
+    assert state_delta["visible_text_before"] == ["Submit"]
+    assert state_delta["visible_text_removed"] == ["Submit"]
+    assert state_delta["visible_text_changed"] is True
+
+
 def test_execution_engine_missed_target_includes_diagnostic_bundle(
     tmp_path: Path,
 ) -> None:

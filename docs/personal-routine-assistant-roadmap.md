@@ -203,7 +203,7 @@ abuse, and hidden automation are not supported.
 
 ### Acceptance Criteria
 
-- [ ] A failed click shows what was visible before the click and what changed
+- [x] A failed click shows what was visible before the click and what changed
       after it.
 - [ ] A failed type shows the focused window and focused element before typing.
 - [ ] A failed scroll shows whether the viewport moved.

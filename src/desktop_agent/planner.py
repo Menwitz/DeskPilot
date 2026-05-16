@@ -489,6 +489,7 @@ class ExecutionEngine:
         total_attempts = retry_budget + 1
         last_message = "step was not attempted"
         last_failure_category = "execution_failure"
+        last_failure_evidence: dict[str, object] | None = None
         last_candidate_id: str | None = None
         step_deadline = self._step_deadline(step, config, task_deadline)
 
@@ -844,6 +845,14 @@ class ExecutionEngine:
                 config,
                 verification_candidates,
             )
+            state_delta_metadata = _state_delta_metadata(
+                step,
+                observation,
+                verification_observation,
+                candidates,
+                verification_candidates,
+                action_result,
+            )
             self._record(
                 "verify_result",
                 verification.message,
@@ -858,16 +867,18 @@ class ExecutionEngine:
                 "visual state delta summarized",
                 _step_metadata(
                     step,
-                    **_state_delta_metadata(
-                        step,
-                        observation,
-                        verification_observation,
-                        candidates,
-                        verification_candidates,
-                        action_result,
-                    ),
+                    **state_delta_metadata,
                 ),
             )
+            if step.action in {"click_text", "click_image", "click_uia"}:
+                last_failure_evidence = _click_failure_evidence_metadata(
+                    step,
+                    observation,
+                    candidates,
+                    config,
+                    action_result,
+                    state_delta_metadata,
+                )
 
             if verification.resolved_outcome == "inconclusive":
                 last_message = verification.message
@@ -994,6 +1005,7 @@ class ExecutionEngine:
                 last_message,
                 last_candidate_id,
                 failure_category=last_failure_category,
+                failure_evidence=last_failure_evidence,
             ),
         )
 
@@ -1572,6 +1584,7 @@ class ExecutionEngine:
         *,
         failure_category: str = "execution_failure",
         diagnostic_bundle: dict[str, object] | None = None,
+        failure_evidence: dict[str, object] | None = None,
     ) -> StepReport:
         failure_metadata = _step_metadata(
             step,
@@ -1580,6 +1593,8 @@ class ExecutionEngine:
         )
         if diagnostic_bundle is not None:
             failure_metadata["diagnostic_bundle"] = diagnostic_bundle
+        if failure_evidence is not None:
+            failure_metadata["failure_evidence"] = failure_evidence
         self._record(
             "failure",
             message,
@@ -1589,6 +1604,8 @@ class ExecutionEngine:
         report_metadata["failure_category"] = failure_category
         if diagnostic_bundle is not None:
             report_metadata["diagnostic_bundle"] = diagnostic_bundle
+        if failure_evidence is not None:
+            report_metadata["failure_evidence"] = failure_evidence
         return StepReport(
             step_id=step.id,
             action=step.action,
@@ -2001,6 +2018,31 @@ def _state_delta_metadata(
         "target_disappeared": target_visible_before is True
         and target_visible_after is False,
         **_scroll_delta_metadata(step, action_result),
+    }
+
+
+def _click_failure_evidence_metadata(
+    step: TaskStep,
+    observation: ScreenObservation,
+    candidates: tuple[ElementCandidate, ...],
+    config: RuntimeConfig,
+    action_result: ActionResult,
+    state_delta: dict[str, object],
+) -> dict[str, object]:
+    return {
+        "failure_evidence_type": "failed_click",
+        "action_message": action_result.message,
+        "action_success": action_result.success,
+        "before_screenshot_path": str(observation.screenshot_path)
+        if observation.screenshot_path
+        else None,
+        "before_active_window_title": observation.active_window_title,
+        "visible_before": [
+            _candidate_reasoning_snapshot(ranked_candidate, observation)
+            for ranked_candidate in rank_candidates(step, candidates, config)
+            if ranked_candidate.candidate.visible
+        ],
+        "state_delta": state_delta,
     }
 
 
