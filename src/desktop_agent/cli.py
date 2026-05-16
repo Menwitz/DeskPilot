@@ -37,6 +37,10 @@ from desktop_agent.config import (
     resolve_runtime_config,
 )
 from desktop_agent.content_variables import load_content_variables
+from desktop_agent.failed_run_analyzer import (
+    analyze_failed_run_trace,
+    write_failed_run_analysis,
+)
 from desktop_agent.focus_recovery import (
     NoopFocusRecoveryController,
     create_platform_focus_recovery_controller,
@@ -184,6 +188,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _windows_smoke_checklist(args)
         if args.command == "replay":
             return _replay(args)
+        if args.command == "analyze-failed-run":
+            return _analyze_failed_run(args)
         if args.command == "proof":
             return _proof(args)
         parser.print_help()
@@ -369,6 +375,12 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="write replay-summary.md with timeline, screenshots, and state deltas",
     )
+
+    analyze_failed_run_parser = subparsers.add_parser(
+        "analyze-failed-run",
+        help="write review-only YAML improvement proposals for a failed trace",
+    )
+    analyze_failed_run_parser.add_argument("trace_dir", type=Path)
 
     proof_parser = subparsers.add_parser("proof", help="proof artifact tools")
     proof_subparsers = proof_parser.add_subparsers(dest="proof_command")
@@ -1800,6 +1812,16 @@ def _replay(args: argparse.Namespace) -> int:
         print(f"summary: {summary_path}")
     if args.verbose:
         print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
+def _analyze_failed_run(args: argparse.Namespace) -> int:
+    analysis = analyze_failed_run_trace(args.trace_dir)
+    write_failed_run_analysis(args.trace_dir, analysis)
+    print(f"status: {analysis.status}")
+    print(f"proposals: {len(analysis.proposals)}")
+    print(f"analysis: {args.trace_dir / 'failed-run-analysis.json'}")
+    print(f"review: {args.trace_dir / 'failed-run-analysis.md'}")
     return 0
 
 

@@ -524,7 +524,7 @@ abuse, and hidden automation are not supported.
 - [x] Add layout-change recovery with alternate selector families.
 - [x] Add historical failure counters per routine.
 - [x] Add routine quarantine status after configured failure thresholds.
-- [ ] Add failed-run analyzer that proposes YAML updates but does not apply them
+- [x] Add failed-run analyzer that proposes YAML updates but does not apply them
       without review.
 - [ ] Add app UI for reviewing failure analysis suggestions.
 

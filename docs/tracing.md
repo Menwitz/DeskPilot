@@ -231,6 +231,12 @@ changes. The summary also includes step-level `success_evidence` and
 `failure_evidence`, so each executed step can be reviewed without live desktop
 access.
 
+`desktop-agent analyze-failed-run <trace-dir>` reads `final-report.json` and
+writes `failed-run-analysis.json` plus `failed-run-analysis.md`. The analyzer
+can propose YAML selector, region, checkpoint, recovery, or allowed-window
+updates, but every proposal is marked `review_required: true` and
+`applies_automatically: false`.
+
 `desktop-agent proof replay <trace-dir>` reads `proof-manifest.json` and prints
 the proof name, original command, status, environment metadata, and artifact
 paths without rerunning desktop input. Add `--open-artifacts` to open existing

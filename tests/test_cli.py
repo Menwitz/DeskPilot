@@ -1225,6 +1225,40 @@ def test_cli_replay_summarizes_final_report(
     assert "reason: fixture" in output
 
 
+def test_cli_analyze_failed_run_writes_review_artifacts(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    trace_dir.mkdir()
+    (trace_dir / "final-report.json").write_text(
+        json.dumps(
+            {
+                "task_name": "Browser search",
+                "status": "failed",
+                "steps": [
+                    {
+                        "step_id": "click-submit",
+                        "status": "failed",
+                        "metadata": {"failure_category": "selection_ambiguity"},
+                    },
+                ],
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    status = main(["analyze-failed-run", str(trace_dir)])
+
+    output = capsys.readouterr().out
+    analysis = json.loads((trace_dir / "failed-run-analysis.json").read_text())
+    assert status == 0
+    assert "proposals: 1" in output
+    assert analysis["proposals"][0]["review_required"] is True
+    assert analysis["proposals"][0]["applies_automatically"] is False
+    assert (trace_dir / "failed-run-analysis.md").exists()
+
+
 def test_cli_replay_prints_step_timeline(
     tmp_path: Path,
     capsys: CaptureFixture[str],
