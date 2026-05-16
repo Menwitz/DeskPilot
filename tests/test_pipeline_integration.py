@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from pytest import MonkeyPatch
+
 from desktop_agent.actuation import (
     ActuationProfile,
     DesktopActuator,
@@ -96,6 +98,34 @@ def test_planner_pipeline_uses_fake_screen_and_fake_input_without_real_mouse() -
     assert backend.events[-1].point == (150, 250)
     phases = {event.phase for event in report.events}
     assert {"observe_screen", "execute_action", "verify_candidates"} <= phases
+
+
+def test_local_execution_works_without_report_server(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DESKPILOT_REPORT_SERVER_URL", "http://127.0.0.1:9")
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    task = TaskDefinition(
+        name="local-only-pipeline",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+    )
+    trace_sink = MemoryTraceSink()
+    engine = _engine(
+        task,
+        screen_observer=SequenceScreenObserver((_observation("local.png"),)),
+        actuator=DesktopActuator(backend, _instant_profile()),
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    phases = {event.phase for event in report.events}
+    assert report.status == "passed"
+    assert "report_server" not in phases
+    assert {"observe_screen", "execute_action"} <= phases
+    assert backend.events
 
 
 def test_invalid_task_failure_is_reported_before_fake_input_is_used() -> None:

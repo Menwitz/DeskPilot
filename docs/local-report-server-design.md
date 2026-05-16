@@ -16,6 +16,11 @@ should only index and display local artifacts that already exist on disk.
 - Redaction-aware: it must respect metadata-only traces, screenshot policies,
   OCR suppression, typed-text masking, and video disable policy.
 
+Regression coverage must keep local fake-input execution, dry-run validation,
+trace writing, routine-pack testing, and proof replay independent from any
+report-server process or endpoint. A configured report-server URL must not
+become part of the local execution path.
+
 ## Candidate Inputs
 
 - `traces/*/final-report.json`
