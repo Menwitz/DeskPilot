@@ -41,6 +41,7 @@ from desktop_agent.mouse_demo import (
     run_browser_fixture,
     run_input_demo,
     run_linkedin_demo,
+    run_native_fixture,
     run_windows_smoke_checklist,
 )
 from desktop_agent.ocr import (
@@ -238,6 +239,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="run a real-input local browser form/navigation proof",
     )
     _add_browser_fixture_options(proof_browser_parser)
+    proof_native_parser = proof_subparsers.add_parser(
+        "native-fixture",
+        help="run a real-input native Windows app proof",
+    )
+    _add_native_fixture_options(proof_native_parser)
 
     benchmark_parser = subparsers.add_parser(
         "benchmark-run",
@@ -334,6 +340,23 @@ def _add_browser_fixture_options(parser: argparse.ArgumentParser) -> None:
         help="result text searched after submitting the generated form",
     )
     parser.add_argument("--page-load-seconds", default=1.5, type=float)
+
+
+def _add_native_fixture_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--trace-root", default=Path("traces"), type=Path)
+    parser.add_argument("--random-seed", default=20260515, type=int)
+    parser.add_argument("--movement-smoothness", default=0.85, type=float)
+    parser.add_argument("--countdown-seconds", default=3.0, type=float)
+    parser.add_argument(
+        "--initial-text",
+        default="DeskPilot native fixture",
+        help="first text typed into the native Notepad fixture",
+    )
+    parser.add_argument(
+        "--replacement-text",
+        default="DeskPilot native fixture updated",
+        help="replacement text typed after selecting the Notepad buffer",
+    )
 
 
 def _add_windows_smoke_checklist_options(parser: argparse.ArgumentParser) -> None:
@@ -1021,6 +1044,8 @@ def _proof(args: argparse.Namespace) -> int:
         return _proof_replay(args)
     if args.proof_command == "browser-fixture":
         return _proof_browser_fixture(args)
+    if args.proof_command == "native-fixture":
+        return _proof_native_fixture(args)
     print("error: proof subcommand required")
     return 2
 
@@ -1052,6 +1077,27 @@ def _proof_browser_fixture(args: argparse.Namespace) -> int:
             )
         else:
             print(f"step {step.step_id}: {step.action}")
+    return 0 if report.status == "passed" else 1
+
+
+def _proof_native_fixture(args: argparse.Namespace) -> int:
+    report = run_native_fixture(
+        trace_root=args.trace_root,
+        random_seed=args.random_seed,
+        movement_smoothness=args.movement_smoothness,
+        countdown_seconds=args.countdown_seconds,
+        initial_text=args.initial_text,
+        replacement_text=args.replacement_text,
+    )
+    print(f"status: {report.status}")
+    if report.reason:
+        print(f"reason: {report.reason}")
+    print(f"trace: {report.trace_dir}")
+    print(f"report: {report.report_path}")
+    if report.proof_manifest_path:
+        print(f"manifest: {report.proof_manifest_path}")
+    for step in report.steps:
+        print(f"step {step.step_id}: {step.action}")
     return 0 if report.status == "passed" else 1
 
 

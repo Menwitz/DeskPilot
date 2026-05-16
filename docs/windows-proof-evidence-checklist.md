@@ -91,6 +91,23 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Reviewer confirms the proof uses no Playwright, DevTools, browser API, DOM
       automation, or fixture-only fake cursor.
 
+## `desktop-agent proof native-fixture`
+
+- [ ] Command recorded:
+      `desktop-agent proof native-fixture --trace-root traces
+      --countdown-seconds 5`.
+- [ ] Video shows a fresh Notepad window opening.
+- [ ] Video shows the configured initial text typed into Notepad.
+- [ ] Video shows `Ctrl+A` selecting the Notepad buffer.
+- [ ] Video shows the configured replacement text typed into Notepad.
+- [ ] `native-fixture-report.json` exists and has `status: passed`.
+- [ ] `action-log.jsonl` contains Notepad launch, initial typing, selection,
+      replacement typing, and cursor-readback monitoring records.
+- [ ] Post-action screenshots show native app focus, initial text, selection,
+      and replacement text evidence where visible.
+- [ ] Reviewer confirms the proof uses no app API, accessibility write API,
+      clipboard injection, or fake text surface.
+
 ## `desktop-agent windows-smoke-checklist`
 
 - [ ] Command recorded:
@@ -110,8 +127,6 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 
 Use the same global and bundle checks for each fixture command as it lands.
 
-- [ ] `desktop-agent proof native-fixture` evidence shows real interaction with
-      a native Windows app.
 - [ ] `desktop-agent proof mixed-fixture` evidence shows a browser-to-native
       handoff and real window switching.
 - [ ] `desktop-agent proof recovery-fixture` evidence shows delayed, stale,

@@ -121,6 +121,16 @@ with the real cursor, types and submits text with the real keyboard, and writes
 proof artifacts. See [Browser Fixture Proof](browser-fixture-proof.md) for the
 runbook.
 
+For a native Windows fixture proof, run:
+
+```powershell
+uv run desktop-agent proof native-fixture
+```
+
+The command opens Notepad, types text, selects the buffer with `Ctrl+A`, replaces
+the text, and writes proof artifacts. See
+[Native Fixture Proof](native-fixture-proof.md) for the runbook.
+
 For a compact Windows smoke checklist, run:
 
 ```powershell

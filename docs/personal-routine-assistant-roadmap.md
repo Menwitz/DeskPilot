@@ -135,7 +135,7 @@ abuse, and hidden automation are not supported.
       `windows-smoke-checklist` commands as low-level proof entry points.
 - [x] Add `desktop-agent proof browser-fixture` for real browser form/navigation
       proof.
-- [ ] Add `desktop-agent proof native-fixture` for real native Windows app proof.
+- [x] Add `desktop-agent proof native-fixture` for real native Windows app proof.
 - [ ] Add `desktop-agent proof mixed-fixture` for browser-to-native handoff
       proof.
 - [ ] Add `desktop-agent proof recovery-fixture` for delayed, duplicated,

@@ -532,6 +532,73 @@ def test_cli_proof_browser_fixture_prints_trace_report(
     assert "step focus-browser-fixture-input: click (8 points, 0.250s)" in output
 
 
+def test_cli_proof_native_fixture_prints_trace_report(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    from desktop_agent.mouse_demo import MouseDemoReport, MouseDemoStep
+
+    def fake_run_native_fixture(
+        *,
+        trace_root: Path,
+        random_seed: int,
+        movement_smoothness: float,
+        countdown_seconds: float,
+        initial_text: str,
+        replacement_text: str,
+    ) -> MouseDemoReport:
+        assert trace_root == tmp_path
+        assert random_seed == 55
+        assert movement_smoothness == 0.8
+        assert countdown_seconds == 0
+        assert initial_text == "first"
+        assert replacement_text == "second"
+        return MouseDemoReport(
+            status="passed",
+            trace_dir=tmp_path / "trace",
+            report_path=tmp_path / "trace" / "native-fixture-report.json",
+            proof_manifest_path=tmp_path / "trace" / "proof-manifest.json",
+            steps=(
+                MouseDemoStep(
+                    "replace-native-fixture-text",
+                    "type_text",
+                    {},
+                ),
+            ),
+        )
+
+    monkeypatch.setattr(
+        "desktop_agent.cli.run_native_fixture",
+        fake_run_native_fixture,
+    )
+
+    status = main(
+        [
+            "proof",
+            "native-fixture",
+            "--trace-root",
+            str(tmp_path),
+            "--random-seed",
+            "55",
+            "--movement-smoothness",
+            "0.8",
+            "--countdown-seconds",
+            "0",
+            "--initial-text",
+            "first",
+            "--replacement-text",
+            "second",
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "status: passed" in output
+    assert f"manifest: {tmp_path / 'trace' / 'proof-manifest.json'}" in output
+    assert "step replace-native-fixture-text: type_text" in output
+
+
 def test_cli_windows_smoke_checklist_prints_checks(
     tmp_path: Path,
     capsys: CaptureFixture[str],

@@ -15,6 +15,7 @@ from desktop_agent.mouse_demo import (
     _demo_actuation_profile,
     _run_browser_fixture_sequence,
     _run_linkedin_sequence,
+    _run_native_fixture_sequence,
     _run_windows_smoke_sequence,
     _write_browser_fixture_html,
     _write_proof_manifest,
@@ -23,6 +24,7 @@ from desktop_agent.mouse_demo import (
     run_input_demo,
     run_linkedin_demo,
     run_mouse_demo,
+    run_native_fixture,
     run_windows_smoke_checklist,
 )
 from desktop_agent.screen import ScreenObservation
@@ -324,6 +326,50 @@ def test_browser_fixture_html_submits_to_result_page(tmp_path: Path) -> None:
     assert "result with &#x27; quote" in result_html
 
 
+def test_native_fixture_sequence_edits_notepad_text() -> None:
+    backend = FakeInputBackend(start_position=(0, 0))
+    controller = RealInputController(backend, _instant_demo_profile())
+    observer = FakeScreenObserver(active_window_title="Untitled - Notepad")
+    recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=Path("trace"),
+        observer=observer,
+    )
+
+    steps = _run_native_fixture_sequence(
+        controller,
+        initial_text="native first",
+        replacement_text="native replacement",
+        evidence_recorder=recorder,
+        launch_notepad=lambda: MouseDemoStep(
+            "open-notepad",
+            "launch_application",
+            {"application": "notepad.exe"},
+        ),
+    )
+
+    typed_text = "".join(
+        event.text or "" for event in backend.events if event.kind == "type_text"
+    )
+    assert [step.step_id for step in steps] == [
+        "open-notepad",
+        "type-native-fixture-initial-text",
+        "select-native-fixture-text",
+        "replace-native-fixture-text",
+        "final-cursor-readback",
+    ]
+    assert typed_text == "native firstnative replacement"
+    assert any(
+        event.kind == "key_down" and event.key == "ctrl"
+        for event in backend.events
+    )
+    assert any(
+        event.kind == "press_key" and event.key == "a" for event in backend.events
+    )
+    assert all("post_action_evidence" in step.metadata for step in steps)
+    assert observer.observe_count == len(steps)
+
+
 def test_windows_smoke_sequence_checks_cursor_notepad_edge_and_trace() -> None:
     backend = FakeInputBackend(start_position=(0, 0))
     controller = RealInputController(backend, _instant_demo_profile())
@@ -398,6 +444,16 @@ def test_run_browser_fixture_requires_windows(
 
     with pytest.raises(MouseDemoError, match="proof browser-fixture requires Windows"):
         run_browser_fixture(trace_root=tmp_path)
+
+
+def test_run_native_fixture_requires_windows(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("desktop_agent.mouse_demo.sys.platform", "darwin")
+
+    with pytest.raises(MouseDemoError, match="proof native-fixture requires Windows"):
+        run_native_fixture(trace_root=tmp_path)
 
 
 def test_run_windows_smoke_checklist_requires_windows(

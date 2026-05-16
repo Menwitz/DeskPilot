@@ -835,6 +835,94 @@ def run_browser_fixture(
     )
 
 
+def run_native_fixture(
+    *,
+    trace_root: Path = Path("traces"),
+    random_seed: int = 20260515,
+    movement_smoothness: float = 0.85,
+    countdown_seconds: float = 3.0,
+    initial_text: str = "DeskPilot native fixture",
+    replacement_text: str = "DeskPilot native fixture updated",
+) -> MouseDemoReport:
+    """Open Notepad and perform a bounded native-app text editing proof."""
+
+    if sys.platform != "win32":
+        raise MouseDemoError("proof native-fixture requires Windows desktop input")
+    if not 0 <= movement_smoothness <= 1:
+        raise MouseDemoError("movement_smoothness must be between 0 and 1")
+    if countdown_seconds < 0:
+        raise MouseDemoError("countdown_seconds must not be negative")
+    if not initial_text:
+        raise MouseDemoError("initial_text must not be empty")
+    if not replacement_text:
+        raise MouseDemoError("replacement_text must not be empty")
+
+    _set_process_dpi_aware()
+    trace_dir = _prepare_trace_dir(trace_root, "native-fixture")
+    profile = _demo_actuation_profile(random_seed, movement_smoothness)
+    backend = WindowsInputBackend(move_mode="absolute")
+    controller = RealInputController(backend, profile)
+    evidence_recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=trace_dir,
+    )
+    steps: list[MouseDemoStep] = []
+    status = "passed"
+    reason: str | None = None
+    started_at = _timestamp()
+    screen_bounds: tuple[int, int, int, int] | None = None
+
+    try:
+        _countdown(countdown_seconds)
+        screen_bounds = _windows_virtual_screen_bounds()
+        steps.extend(
+            _run_native_fixture_sequence(
+                controller,
+                initial_text=initial_text,
+                replacement_text=replacement_text,
+                evidence_recorder=evidence_recorder,
+            )
+        )
+    except Exception as exc:  # pragma: no cover - exercised manually on Windows.
+        status = "failed"
+        reason = str(exc)
+
+    report_path = _write_report(
+        trace_dir,
+        tuple(steps),
+        status,
+        reason,
+        report_name="native-fixture-report.json",
+    )
+    proof_manifest_path = _write_proof_manifest(
+        trace_dir,
+        proof_name="native-fixture",
+        command=_native_fixture_command(
+            trace_root,
+            random_seed,
+            movement_smoothness,
+            countdown_seconds,
+            initial_text,
+            replacement_text,
+        ),
+        status=status,
+        reason=reason,
+        started_at=started_at,
+        completed_at=_timestamp(),
+        report_path=report_path,
+        steps=tuple(steps),
+        monitor_bounds=screen_bounds,
+    )
+    return MouseDemoReport(
+        status=status,
+        reason=reason,
+        trace_dir=trace_dir,
+        report_path=report_path,
+        steps=tuple(steps),
+        proof_manifest_path=proof_manifest_path,
+    )
+
+
 def run_windows_smoke_checklist(
     *,
     trace_root: Path = Path("traces"),
@@ -1133,6 +1221,42 @@ def _run_browser_fixture_sequence(
     _record_step(
         steps,
         controller.press_chord("close-browser-find", "esc"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.current_position_step("final-cursor-readback"),
+        evidence_recorder,
+    )
+    return tuple(steps)
+
+
+def _run_native_fixture_sequence(
+    controller: RealInputController,
+    *,
+    initial_text: str,
+    replacement_text: str,
+    evidence_recorder: PostActionEvidenceRecorder | None = None,
+    launch_notepad: Callable[[], MouseDemoStep] | None = None,
+) -> tuple[MouseDemoStep, ...]:
+    steps: list[MouseDemoStep] = []
+    notepad_launcher = launch_notepad or _launch_notepad
+
+    _record_step(steps, notepad_launcher(), evidence_recorder)
+    controller.pause(1.0)
+    _record_step(
+        steps,
+        controller.type_text("type-native-fixture-initial-text", initial_text),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.press_chord("select-native-fixture-text", "ctrl+a"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.type_text("replace-native-fixture-text", replacement_text),
         evidence_recorder,
     )
     _record_step(
@@ -1699,6 +1823,33 @@ def _browser_fixture_command(
         result_text,
         "--page-load-seconds",
         str(page_load_seconds),
+    )
+
+
+def _native_fixture_command(
+    trace_root: Path,
+    random_seed: int,
+    movement_smoothness: float,
+    countdown_seconds: float,
+    initial_text: str,
+    replacement_text: str,
+) -> tuple[str, ...]:
+    return (
+        "desktop-agent",
+        "proof",
+        "native-fixture",
+        "--trace-root",
+        str(trace_root),
+        "--random-seed",
+        str(random_seed),
+        "--movement-smoothness",
+        str(movement_smoothness),
+        "--countdown-seconds",
+        str(countdown_seconds),
+        "--initial-text",
+        initial_text,
+        "--replacement-text",
+        replacement_text,
     )
 
 
