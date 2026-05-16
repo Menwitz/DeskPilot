@@ -286,7 +286,7 @@ abuse, and hidden automation are not supported.
       stable target.
 - [x] Generate `click_uia`, `click_text`, `click_image`, `type_text`,
       `press_key`, `scroll`, `wait_for`, and `assert_visible` steps.
-- [ ] Infer allowed windows from observed active windows and require operator
+- [x] Infer allowed windows from observed active windows and require operator
       confirmation before save.
 - [ ] Infer verification suggestions from post-action state deltas.
 - [ ] Add review metadata for routine name, description, inputs, outputs, tags,

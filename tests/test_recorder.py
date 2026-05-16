@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from pytest import CaptureFixture
+from pytest import CaptureFixture, MonkeyPatch
 
 from desktop_agent.cli import main
 from desktop_agent.config import RuntimeConfig
@@ -301,6 +301,7 @@ def test_cli_record_exposes_start_pause_stop_save_discard_controls(
             str(state_path),
             "--output",
             str(output_path),
+            "--confirm-save",
         ],
     ) == 0
     assert main(["record", "discard", "--state", str(state_path)]) == 0
@@ -315,6 +316,33 @@ def test_cli_record_exposes_start_pause_stop_save_discard_controls(
     assert saved_payload["name"] == "Browser fixture"
     assert saved_payload["status"] == "saved"
     assert not state_path.exists()
+
+
+def test_cli_record_save_requires_operator_confirmation(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    state_path = tmp_path / "recorder-state.json"
+    output_path = tmp_path / "recording.json"
+    assert main(["record", "start", "--state", str(state_path)]) == 0
+    monkeypatch.setattr("builtins.input", lambda _prompt: "no")
+
+    status = main(
+        [
+            "record",
+            "save",
+            "--state",
+            str(state_path),
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    assert status == 1
+    assert "recording save not confirmed" in output
+    assert not output_path.exists()
 
 
 def _session_with_events(events: tuple[RecorderEvent, ...]) -> RecorderSession:

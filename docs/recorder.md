@@ -18,9 +18,12 @@ Pause, stop, save, or discard the same session:
 ```bash
 desktop-agent record pause --state traces/recorder-session.json
 desktop-agent record stop --state traces/recorder-session.json
-desktop-agent record save --state traces/recorder-session.json --output traces/morning-inbox-recording.json
+desktop-agent record save --state traces/recorder-session.json --output traces/morning-inbox-recording.json --confirm-save
 desktop-agent record discard --state traces/recorder-session.json
 ```
+
+`record save` requires operator confirmation. Use `--confirm-save` for an
+explicit non-interactive confirmation, or type `SAVE` at the prompt.
 
 The saved JSON uses `deskpilot_recorder_session_v1` and contains the session
 ID, name, status, timestamps, event count, and recorder events. Recorder events
@@ -47,4 +50,5 @@ the remaining recorder roadmap tasks.
 The recorder generator can already convert reviewed session events into a
 `TaskDefinition` with `click_uia`, `click_text`, `click_image`, `type_text`,
 `press_key`, `scroll`, `wait_for`, and `assert_visible` steps. It prefers UIA
-context, then OCR context, then image snippets for clicked points.
+context, then OCR context, then image snippets for clicked points. Generated
+tasks infer `allowed_windows` from the active-window titles recorded on events.

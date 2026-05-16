@@ -325,6 +325,11 @@ def _add_record_options(parser: argparse.ArgumentParser) -> None:
     save_parser = record_subparsers.add_parser("save", help="save recording")
     _add_record_state_option(save_parser)
     save_parser.add_argument("--output", required=True, type=Path)
+    save_parser.add_argument(
+        "--confirm-save",
+        action="store_true",
+        help="confirm that the operator reviewed and wants to save this recording",
+    )
 
     discard_parser = record_subparsers.add_parser(
         "discard",
@@ -1031,6 +1036,9 @@ def _record(args: argparse.Namespace) -> int:
         print(f"recording stopped: {session.session_id}")
         return 0
     if args.record_command == "save":
+        if not _confirm_record_save(args):
+            print("recording save not confirmed")
+            return 1
         session = controller.save(args.output)
         print(f"recording saved: {session.session_id}")
         print(f"output: {args.output}")
@@ -1041,6 +1049,15 @@ def _record(args: argparse.Namespace) -> int:
         return 0
     print("error: record subcommand required")
     return 2
+
+
+def _confirm_record_save(args: argparse.Namespace) -> bool:
+    if args.confirm_save:
+        return True
+    try:
+        return input("type SAVE to save recording: ").strip() == "SAVE"
+    except EOFError:
+        return False
 
 
 def _demo_input(args: argparse.Namespace) -> int:
