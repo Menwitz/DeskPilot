@@ -297,7 +297,7 @@ abuse, and hidden automation are not supported.
 
 - [x] Recorder generates valid YAML from a browser fixture recording.
 - [x] Recorder generates valid YAML from a native fixture recording.
-- [ ] Recorder avoids raw coordinates when UIA, OCR, or image candidates are
+- [x] Recorder avoids raw coordinates when UIA, OCR, or image candidates are
       available.
 - [ ] Generated routines can be edited and rerun through dry-run and Windows
       proof flows.

@@ -412,6 +412,61 @@ def test_fake_recorder_event_streams_generate_valid_tasks() -> None:
         assert task.metadata["routine_risk_class"] == "low"
 
 
+def test_recorder_uses_candidate_selectors_instead_of_raw_points() -> None:
+    session = _session_with_events(
+        (
+            RecorderEvent.create(
+                "selected_point",
+                selected_point=(999, 999),
+                candidate_context=(
+                    RecorderCandidateContext(
+                        source="uia",
+                        label="Submit",
+                        control_type="Button",
+                        bounds={"x": 20, "y": 40, "width": 120, "height": 24},
+                    ),
+                ),
+            ),
+            RecorderEvent.create(
+                "selected_point",
+                selected_point=(888, 888),
+                candidate_context=(
+                    RecorderCandidateContext(
+                        source="ocr",
+                        label="Search",
+                        bounds={"x": 30, "y": 50, "width": 140, "height": 24},
+                    ),
+                ),
+            ),
+            RecorderEvent.create(
+                "selected_point",
+                selected_point=(777, 777),
+                candidate_context=(
+                    RecorderCandidateContext(
+                        source="image",
+                        label="fallback.pgm",
+                        bounds={"x": 40, "y": 80, "width": 32, "height": 32},
+                        metadata={"snippet_path": "snippets/fallback.pgm"},
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    task = generate_task_from_recorder_session(session)
+
+    assert [step.action for step in task.steps] == [
+        "click_uia",
+        "click_text",
+        "click_image",
+    ]
+    assert task.steps[0].target == "Submit"
+    assert task.steps[1].target == "Search"
+    assert task.steps[2].image == Path("snippets/fallback.pgm")
+    assert all(step.region is None for step in task.steps)
+    assert all("point" not in step.metadata for step in task.steps)
+
+
 def test_fake_recorder_event_stream_report_includes_review_metadata(
     tmp_path: Path,
 ) -> None:

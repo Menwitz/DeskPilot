@@ -105,4 +105,5 @@ tasks without real desktop input. Browser and native streams both export through
 `record export-task` and reload through `YamlTaskLoader`; the browser stream
 also runs through the dry-run execution pipeline and checks `task.json` plus
 `final-report.json` for the reviewed routine metadata and inferred
-verification.
+verification. Selector coverage verifies that selected-point coordinates are
+not emitted when UIA, OCR, or image candidates are available.
