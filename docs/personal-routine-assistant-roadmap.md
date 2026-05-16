@@ -162,6 +162,9 @@ abuse, and hidden automation are not supported.
 - [x] Harden proof bundle validation so command, timestamps, runtime metadata,
       Windows version, monitor geometry, and DPI scale are required before
       promotion.
+- [x] Add a proof suite next-actions runbook that lists missing proof commands,
+      invalid bundle revalidation commands, duplicate review items, and final
+      promotion commands.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

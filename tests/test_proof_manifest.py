@@ -5,9 +5,11 @@ from typing import cast
 from desktop_agent.proof_manifest import (
     proof_suite_status_metadata,
     render_proof_suite_report,
+    render_proof_suite_runbook,
     validate_proof_bundle,
     validate_proof_suite,
     write_proof_suite_report,
+    write_proof_suite_runbook,
     write_proof_suite_status,
 )
 
@@ -165,6 +167,34 @@ def test_write_proof_suite_status_records_monitoring_payload(
     assert proofs[0]["proof_name"] == "browser-fixture"
     assert proofs[0]["status"] == "passed"
     assert proofs[1]["status"] == "missing"
+
+
+def test_write_proof_suite_runbook_lists_next_operator_commands(
+    tmp_path: Path,
+) -> None:
+    _write_proof_bundle(
+        tmp_path,
+        proof_name="browser-fixture",
+        trace_dir_name="browser-fixture",
+        include_video=False,
+    )
+    result = validate_proof_suite(tmp_path, require_video=False)
+
+    runbook = render_proof_suite_runbook(result, require_video=False)
+    runbook_path = write_proof_suite_runbook(result, require_video=False)
+
+    assert runbook_path == tmp_path / "proof-suite-next-actions.md"
+    assert runbook_path.read_text(encoding="utf-8") == runbook
+    assert "# DeskPilot Windows Proof Suite Next Actions" in runbook
+    assert (
+        "desktop-agent proof native-fixture --trace-root "
+        f"{tmp_path} --countdown-seconds 5 --video-policy disabled"
+    ) in runbook
+    assert (
+        "desktop-agent proof validate-suite "
+        f"{tmp_path} --allow-missing-video --write-report "
+        "--write-status-json --write-runbook"
+    ) in runbook
 
 
 def _write_proof_bundle(

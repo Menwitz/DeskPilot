@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shlex
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +16,7 @@ REQUIRED_WINDOWS_PROOF_NAMES: tuple[str, ...] = (
 )
 PROOF_SUITE_REPORT_NAME = "proof-suite-report.md"
 PROOF_SUITE_STATUS_NAME = "proof-suite-status.json"
+PROOF_SUITE_RUNBOOK_NAME = "proof-suite-next-actions.md"
 
 
 @dataclass(frozen=True)
@@ -482,6 +484,91 @@ def write_proof_suite_status(
     return status_path
 
 
+def render_proof_suite_runbook(
+    validation: ProofSuiteValidation,
+    *,
+    require_video: bool = True,
+) -> str:
+    """Render the next operator commands for collecting a proof suite."""
+
+    invalid_bundles = tuple(
+        bundle for bundle in validation.bundle_results if not bundle.passed
+    )
+    lines = [
+        "# DeskPilot Windows Proof Suite Next Actions",
+        "",
+        f"- Trace root: `{validation.trace_root}`",
+        f"- Suite status: `{'passed' if validation.passed else 'failed'}`",
+        f"- Video required: `{'yes' if require_video else 'no'}`",
+        "",
+        "## Missing Proof Commands",
+        "",
+    ]
+    if validation.missing_proofs:
+        lines.extend(
+            _proof_collection_command(validation.trace_root, proof_name, require_video)
+            for proof_name in validation.missing_proofs
+        )
+    else:
+        lines.append("- No missing proof bundles.")
+
+    lines.extend(["", "## Invalid Bundle Review", ""])
+    if invalid_bundles:
+        lines.extend(
+            _proof_bundle_validation_command(bundle.trace_dir, require_video)
+            for bundle in invalid_bundles
+        )
+    else:
+        lines.append("- No invalid proof bundles found.")
+
+    lines.extend(["", "## Duplicate Bundle Review", ""])
+    if validation.duplicate_proofs:
+        lines.extend(
+            f"- Review duplicate `{name}` bundles and keep one."
+            for name in validation.duplicate_proofs
+        )
+    else:
+        lines.append("- No duplicate proof bundles found.")
+
+    lines.extend(
+        [
+            "",
+            "## Promotion Commands",
+            "",
+            _proof_suite_validation_command(validation.trace_root, require_video),
+            "",
+            "## Blocking Findings",
+            "",
+        ],
+    )
+    if validation.errors:
+        lines.extend(f"- {error}" for error in validation.errors)
+    else:
+        lines.append("- No blocking findings.")
+    if validation.warnings:
+        lines.extend(["", "## Warnings", ""])
+        lines.extend(f"- {warning}" for warning in validation.warnings)
+    lines.append("")
+    return "\n".join(lines)
+
+
+def write_proof_suite_runbook(
+    validation: ProofSuiteValidation,
+    output_path: Path | None = None,
+    *,
+    require_video: bool = True,
+) -> Path:
+    """Write operator next actions for collecting or promoting a proof suite."""
+
+    runbook_path = output_path or validation.trace_root / PROOF_SUITE_RUNBOOK_NAME
+    runbook_path.parent.mkdir(parents=True, exist_ok=True)
+    runbook_path.write_text(
+        render_proof_suite_runbook(validation, require_video=require_video),
+        encoding="utf-8",
+    )
+    return runbook_path
+
+
 def _proof_errors_for_bundle(
     validation: ProofSuiteValidation,
     proof_name: str,
@@ -492,6 +579,43 @@ def _proof_errors_for_bundle(
         for error in validation.errors
         if error.startswith(prefix)
     ]
+
+
+def _proof_collection_command(
+    trace_root: Path,
+    proof_name: str,
+    require_video: bool,
+) -> str:
+    video_args = (
+        "--record-video --video-fps 15"
+        if require_video
+        else "--video-policy disabled"
+    )
+    return (
+        f"- `desktop-agent proof {proof_name} --trace-root "
+        f"{_shell_arg(trace_root)} --countdown-seconds 5 {video_args}`"
+    )
+
+
+def _proof_bundle_validation_command(trace_dir: Path, require_video: bool) -> str:
+    allow_missing_video = "" if require_video else " --allow-missing-video"
+    return (
+        f"- `desktop-agent proof validate {_shell_arg(trace_dir)}"
+        f"{allow_missing_video}`"
+    )
+
+
+def _proof_suite_validation_command(trace_root: Path, require_video: bool) -> str:
+    allow_missing_video = "" if require_video else " --allow-missing-video"
+    return (
+        f"- `desktop-agent proof validate-suite {_shell_arg(trace_root)}"
+        f"{allow_missing_video} --write-report --write-status-json "
+        "--write-runbook`"
+    )
+
+
+def _shell_arg(path: Path) -> str:
+    return shlex.quote(str(path))
 
 
 def _load_json_object(

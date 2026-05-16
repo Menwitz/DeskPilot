@@ -1760,6 +1760,35 @@ def test_cli_proof_validate_suite_writes_status_json(
     assert "browser-fixture" in payload["missing_proofs"]
 
 
+def test_cli_proof_validate_suite_writes_runbook(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    runbook_path = tmp_path / "review" / "next-actions.md"
+    write_proof_manifest(trace_dir)
+
+    status = main(
+        [
+            "proof",
+            "validate-suite",
+            str(tmp_path),
+            "--allow-missing-video",
+            "--write-runbook",
+            "--runbook-path",
+            str(runbook_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    runbook = runbook_path.read_text(encoding="utf-8")
+    assert status == 1
+    assert f"runbook: {runbook_path}" in output
+    assert "# DeskPilot Windows Proof Suite Next Actions" in runbook
+    assert "desktop-agent proof browser-fixture" in runbook
+    assert "--allow-missing-video --write-report" in runbook
+
+
 def test_cli_benchmark_run_writes_metrics_and_report(
     tmp_path: Path,
     capsys: CaptureFixture[str],

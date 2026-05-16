@@ -32,6 +32,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Run `desktop-agent proof validate-suite <trace-root>
       --write-status-json` and archive `proof-suite-status.json` with monitoring
       or CI evidence.
+- [ ] Run `desktop-agent proof validate-suite <trace-root> --write-runbook`
+      and follow `proof-suite-next-actions.md` until no missing or invalid proof
+      bundle remains.
 
 ## Required Proof Bundle
 
@@ -67,6 +70,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] `proof-suite-status.json` records the suite status, expected proofs,
       missing proofs, duplicate proofs, warnings, errors, and per-proof artifact
       paths for monitoring.
+- [ ] `proof-suite-next-actions.md` lists missing proof commands, invalid bundle
+      revalidation commands, duplicate review items, and final promotion
+      commands.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 

@@ -97,6 +97,7 @@ from desktop_agent.proof_manifest import (
     validate_proof_bundle,
     validate_proof_suite,
     write_proof_suite_report,
+    write_proof_suite_runbook,
     write_proof_suite_status,
 )
 from desktop_agent.recorder import (
@@ -561,6 +562,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--status-json-path",
         type=Path,
         help="write the suite status JSON to an explicit path",
+    )
+    proof_validate_suite_parser.add_argument(
+        "--write-runbook",
+        action="store_true",
+        help="write proof-suite-next-actions.md after validation",
+    )
+    proof_validate_suite_parser.add_argument(
+        "--runbook-path",
+        type=Path,
+        help="write the next-actions runbook to an explicit Markdown path",
     )
     proof_browser_parser = proof_subparsers.add_parser(
         "browser-fixture",
@@ -2740,6 +2751,13 @@ def _proof_validate_suite(args: argparse.Namespace) -> int:
     if args.write_status_json or args.status_json_path:
         status_path = write_proof_suite_status(result, args.status_json_path)
         print(f"status_json: {status_path}")
+    if args.write_runbook or args.runbook_path:
+        runbook_path = write_proof_suite_runbook(
+            result,
+            args.runbook_path,
+            require_video=not args.allow_missing_video,
+        )
+        print(f"runbook: {runbook_path}")
     return 0 if result.passed else 1
 
 
