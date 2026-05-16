@@ -393,7 +393,7 @@ abuse, and hidden automation are not supported.
 
 ### Acceptance Criteria
 
-- [ ] A routine can be scheduled for an allowed time window.
+- [x] A routine can be scheduled for an allowed time window.
 - [ ] A routine can pause, resume, cancel, and retry later.
 - [ ] Scheduler stops before unapproved high-risk actions.
 - [ ] Reports explain all timing and scheduling decisions.
