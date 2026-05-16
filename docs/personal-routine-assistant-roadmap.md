@@ -693,7 +693,7 @@ abuse, and hidden automation are not supported.
       output.
 - [x] Redaction tests for screenshots, OCR text, typed text, variables, reports,
       and video metadata.
-- [ ] App service tests for catalog, run queue, approvals, recorder review, and
+- [x] App service tests for catalog, run queue, approvals, recorder review, and
       trace viewer state transitions.
 - [ ] Windows smoke tests for proof commands behind `DESKPILOT_WINDOWS_SMOKE=1`.
 - [ ] Live public-site smoke tests remain opt-in and never perform final

@@ -1,6 +1,12 @@
+from pathlib import Path
+
 import pytest
 
-from desktop_agent.operator_app_shell import ApprovalDialogState
+from desktop_agent.operator_app_shell import (
+    ApprovalDialogState,
+    RecorderReviewPanelState,
+    TraceViewerTimelineState,
+)
 from desktop_agent.operator_app_state import (
     OperatorAppController,
     OperatorAppStateError,
@@ -86,6 +92,43 @@ def test_operator_app_controller_resolves_approval_dialog() -> None:
     assert approved.approval_dialog.status == "approve"
     with pytest.raises(OperatorAppStateError, match="unsupported approval action"):
         controller.resolve_approval("maybe")
+
+
+def test_operator_app_controller_tracks_recorder_review_state() -> None:
+    controller = OperatorAppController(_FakeRunnerService({}))
+    review = RecorderReviewPanelState(
+        generated_yaml="name: Recorded routine\nsteps: []\n",
+        selected_targets=("Submit", "Done"),
+        verification_suggestions=("visible_text: Done",),
+        status="ready_for_save",
+    )
+
+    state = controller.review_recording(review)
+    metadata = state.metadata()
+
+    assert state.current_page_id == "record"
+    assert state.recorder_review == review
+    assert metadata["recorder_review"] == review.metadata()
+
+
+def test_operator_app_controller_tracks_trace_viewer_state(tmp_path: Path) -> None:
+    controller = OperatorAppController(_FakeRunnerService({}))
+    timeline = TraceViewerTimelineState(
+        video_path=tmp_path / "proof-video.mp4",
+        screenshot_paths=(tmp_path / "screenshots" / "after.png",),
+        action_log_path=tmp_path / "action-log.jsonl",
+        candidate_reasoning=("selected candidate-1",),
+        state_delta=("visible text added Success",),
+        final_report_path=tmp_path / "final-report.json",
+        status="loaded",
+    )
+
+    state = controller.view_trace(timeline)
+    metadata = state.metadata()
+
+    assert state.current_page_id == "trace_viewer"
+    assert state.trace_viewer == timeline
+    assert metadata["trace_viewer"] == timeline.metadata()
 
 
 class _FakeRunnerService:

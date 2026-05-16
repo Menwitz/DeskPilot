@@ -8,6 +8,8 @@ from desktop_agent.operator_app_shell import (
     ApprovalDialogState,
     LiveRunPanelState,
     OperatorAppShell,
+    RecorderReviewPanelState,
+    TraceViewerTimelineState,
     operator_app_shell_spec,
 )
 from desktop_agent.operator_services import RunnerService
@@ -25,6 +27,8 @@ class OperatorAppState:
     current_page_id: str
     live_run: LiveRunPanelState
     approval_dialog: ApprovalDialogState | None = None
+    recorder_review: RecorderReviewPanelState | None = None
+    trace_viewer: TraceViewerTimelineState | None = None
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -34,6 +38,14 @@ class OperatorAppState:
                 None
                 if self.approval_dialog is None
                 else self.approval_dialog.metadata()
+            ),
+            "recorder_review": (
+                None
+                if self.recorder_review is None
+                else self.recorder_review.metadata()
+            ),
+            "trace_viewer": (
+                None if self.trace_viewer is None else self.trace_viewer.metadata()
             ),
         }
 
@@ -133,6 +145,25 @@ class OperatorAppController:
                 self.state.approval_dialog,
                 status=action,
             ),
+        )
+        return self.state
+
+    def review_recording(
+        self,
+        review: RecorderReviewPanelState,
+    ) -> OperatorAppState:
+        self.state = replace(
+            self.state,
+            current_page_id="record",
+            recorder_review=review,
+        )
+        return self.state
+
+    def view_trace(self, timeline: TraceViewerTimelineState) -> OperatorAppState:
+        self.state = replace(
+            self.state,
+            current_page_id="trace_viewer",
+            trace_viewer=timeline,
         )
         return self.state
 
