@@ -62,7 +62,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       `proof-suite-promotion.json` as the final promotion decision.
 - [ ] Prefer `desktop-agent proof finalize-suite <trace-root>` after
       `validate-review`; it writes promotion, archive, verification reports,
-      report, status JSON, and runbook in one ordered flow.
+      report, status JSON, runbook, and `proof-finalization-status.json` in one
+      ordered flow.
 - [ ] Run `desktop-agent proof verify-promotion
       <trace-root>/proof-suite-promotion.json --write-status-json` before
       copying or trusting an archived proof pack.

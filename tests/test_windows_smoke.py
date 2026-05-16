@@ -188,13 +188,18 @@ def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> No
     assert finalization_exit_code == 0, "proof suite finalization failed"
     assert (trace_root / "proof-promotion-verification.json").exists()
     assert (trace_root / "proof-archive-verification.json").exists()
+    assert (trace_root / "proof-finalization-status.json").exists()
     promotion_payload = json.loads(
         (trace_root / "proof-suite-promotion.json").read_text(encoding="utf-8"),
+    )
+    finalization_payload = json.loads(
+        (trace_root / "proof-finalization-status.json").read_text(encoding="utf-8"),
     )
     status_payload = json.loads(
         (trace_root / "proof-suite-status.json").read_text(encoding="utf-8"),
     )
     assert promotion_payload["promotion_ready"] is True
+    assert finalization_payload["status"] == "passed"
     assert status_payload["status"] == "passed"
     assert status_payload["review_status_path"] == str(
         trace_root / "proof-suite-review-status.json",

@@ -5,6 +5,7 @@ from typing import cast
 
 from desktop_agent.proof_manifest import (
     ProofSuiteValidation,
+    proof_finalization_status_metadata,
     proof_suite_promotion_metadata,
     proof_suite_status_metadata,
     render_proof_suite_report,
@@ -17,6 +18,7 @@ from desktop_agent.proof_manifest import (
     verify_proof_suite_archive,
     verify_proof_suite_promotion,
     write_proof_archive_verification,
+    write_proof_finalization_status,
     write_proof_preflight_report,
     write_proof_promotion_verification,
     write_proof_review_status,
@@ -583,6 +585,62 @@ def test_verify_proof_suite_archive_rejects_tampered_member(
         "browser-fixture/action-log.jsonl sha256 mismatch" in error
         for error in verification.errors
     )
+
+
+def test_write_proof_finalization_status_records_monitoring_rollup(
+    tmp_path: Path,
+) -> None:
+    result = _write_review_ready_suite(tmp_path)
+    report_path = write_proof_suite_report(result)
+    suite_status_path = write_proof_suite_status(result)
+    runbook_path = write_proof_suite_runbook(result, require_video=False)
+    promotion_path = write_proof_suite_promotion(result, require_video=False)
+    promotion_verification = verify_proof_suite_promotion(promotion_path)
+    promotion_verification_path = write_proof_promotion_verification(
+        promotion_verification,
+    )
+    archive_path = write_proof_suite_archive(result, require_video=False)
+    archive_verification = verify_proof_suite_archive(archive_path)
+    archive_verification_path = write_proof_archive_verification(
+        archive_verification,
+    )
+    artifact_paths = {
+        "archive": archive_path,
+        "archive_verification": archive_verification_path,
+        "promotion": promotion_path,
+        "promotion_verification": promotion_verification_path,
+        "suite_report": report_path,
+        "suite_runbook": runbook_path,
+        "suite_status": suite_status_path,
+    }
+
+    payload = proof_finalization_status_metadata(
+        result,
+        promotion_verification,
+        archive_verification,
+        artifact_paths=artifact_paths,
+    )
+    status_path = write_proof_finalization_status(
+        result,
+        promotion_verification,
+        archive_verification,
+        artifact_paths=artifact_paths,
+    )
+    saved_payload = json.loads(status_path.read_text(encoding="utf-8"))
+
+    assert status_path == tmp_path / "proof-finalization-status.json"
+    assert saved_payload == payload
+    assert payload["status"] == "passed"
+    assert payload["gates"] == {
+        "suite_validation": "passed",
+        "promotion_verification": "passed",
+        "archive_verification": "passed",
+    }
+    artifacts = cast(dict[str, str], payload["artifacts"])
+    assert artifacts["archive"] == str(archive_path)
+    checked_artifacts = cast(dict[str, list[str]], payload["checked_artifacts"])
+    assert "browser-fixture/proof-manifest.json" in checked_artifacts["promotion"]
+    assert "browser-fixture/proof-manifest.json" in checked_artifacts["archive"]
 
 
 def test_write_proof_suite_runbook_lists_next_operator_commands(

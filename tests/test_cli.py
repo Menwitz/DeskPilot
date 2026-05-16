@@ -1986,6 +1986,10 @@ def test_cli_proof_finalize_suite_writes_complete_evidence_pack(
     assert f"promotion_json: {tmp_path / 'proof-suite-promotion.json'}" in output
     assert "promotion_verification: failed" in output
     assert "archive_verification: failed" in output
+    assert (
+        f"finalization_status_json: {tmp_path / 'proof-finalization-status.json'}"
+        in output
+    )
     for artifact_name in (
         "proof-suite-report.md",
         "proof-suite-status.json",
@@ -1994,6 +1998,7 @@ def test_cli_proof_finalize_suite_writes_complete_evidence_pack(
         "proof-promotion-verification.json",
         "proof-suite-artifacts.zip",
         "proof-archive-verification.json",
+        "proof-finalization-status.json",
     ):
         assert (tmp_path / artifact_name).exists()
 

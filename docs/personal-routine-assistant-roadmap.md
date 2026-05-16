@@ -204,6 +204,8 @@ abuse, and hidden automation are not supported.
 - [x] Add a single `proof finalize-suite` command that writes promotion,
       archive, verification reports, suite report, status JSON, and runbook in
       one ordered post-review flow.
+- [x] Add `proof-finalization-status.json` as a unified post-review monitoring
+      rollup for suite, promotion, and archive verification gates.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

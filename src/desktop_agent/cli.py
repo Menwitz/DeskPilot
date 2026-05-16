@@ -101,6 +101,7 @@ from desktop_agent.proof_manifest import (
     verify_proof_suite_archive,
     verify_proof_suite_promotion,
     write_proof_archive_verification,
+    write_proof_finalization_status,
     write_proof_preflight_report,
     write_proof_promotion_verification,
     write_proof_review_status,
@@ -3073,6 +3074,20 @@ def _proof_finalize_suite(args: argparse.Namespace) -> int:
     archive_verification_path = write_proof_archive_verification(
         archive_verification,
     )
+    finalization_status_path = write_proof_finalization_status(
+        result,
+        promotion_verification,
+        archive_verification,
+        artifact_paths={
+            "suite_report": report_path,
+            "suite_status": status_path,
+            "suite_runbook": runbook_path,
+            "promotion": promotion_path,
+            "promotion_verification": promotion_verification_path,
+            "archive": archive_path,
+            "archive_verification": archive_verification_path,
+        },
+    )
 
     print(f"report: {report_path}")
     print(f"status_json: {status_path}")
@@ -3089,6 +3104,7 @@ def _proof_finalize_suite(args: argparse.Namespace) -> int:
         f"{'passed' if archive_verification.passed else 'failed'}",
     )
     print(f"archive_verification_json: {archive_verification_path}")
+    print(f"finalization_status_json: {finalization_status_path}")
     for error in promotion_verification.errors:
         print(f"error: promotion verification: {error}")
     for error in archive_verification.errors:

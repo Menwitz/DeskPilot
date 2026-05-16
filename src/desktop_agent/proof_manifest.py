@@ -28,6 +28,7 @@ PROOF_SUITE_REVIEW_STATUS_NAME = "proof-suite-review-status.json"
 PROOF_SUITE_PROMOTION_NAME = "proof-suite-promotion.json"
 PROOF_PROMOTION_VERIFICATION_NAME = "proof-promotion-verification.json"
 PROOF_ARCHIVE_VERIFICATION_NAME = "proof-archive-verification.json"
+PROOF_FINALIZATION_STATUS_NAME = "proof-finalization-status.json"
 PROOF_PREFLIGHT_REPORT_NAME = "proof-preflight.json"
 
 
@@ -936,6 +937,93 @@ def write_proof_archive_verification(
     status_path.parent.mkdir(parents=True, exist_ok=True)
     status_path.write_text(
         json.dumps(verification.metadata(), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    return status_path
+
+
+def proof_finalization_status_metadata(
+    validation: ProofSuiteValidation,
+    promotion_verification: ProofPromotionVerification,
+    archive_verification: ProofArchiveVerification,
+    *,
+    artifact_paths: Mapping[str, Path],
+) -> dict[str, object]:
+    """Build one post-review proof status payload for monitors and UI views."""
+
+    promotion_errors = [
+        f"promotion verification: {error}"
+        for error in promotion_verification.errors
+    ]
+    archive_errors = [
+        f"archive verification: {error}" for error in archive_verification.errors
+    ]
+    promotion_warnings = [
+        f"promotion verification: {warning}"
+        for warning in promotion_verification.warnings
+    ]
+    archive_warnings = [
+        f"archive verification: {warning}"
+        for warning in archive_verification.warnings
+    ]
+    errors = [
+        *validation.errors,
+        *promotion_errors,
+        *archive_errors,
+    ]
+    warnings = [
+        *validation.warnings,
+        *promotion_warnings,
+        *archive_warnings,
+    ]
+    return {
+        "schema_version": 1,
+        "trace_root": str(validation.trace_root),
+        "status": "passed" if not errors else "failed",
+        "gates": {
+            "suite_validation": "passed" if validation.passed else "failed",
+            "promotion_verification": "passed"
+            if promotion_verification.passed
+            else "failed",
+            "archive_verification": "passed"
+            if archive_verification.passed
+            else "failed",
+        },
+        "artifacts": {
+            name: str(path) for name, path in sorted(artifact_paths.items())
+        },
+        "checked_artifacts": {
+            "promotion": list(promotion_verification.checked_artifacts),
+            "archive": list(archive_verification.checked_artifacts),
+        },
+        "errors": errors,
+        "warnings": warnings,
+    }
+
+
+def write_proof_finalization_status(
+    validation: ProofSuiteValidation,
+    promotion_verification: ProofPromotionVerification,
+    archive_verification: ProofArchiveVerification,
+    *,
+    artifact_paths: Mapping[str, Path],
+    output_path: Path | None = None,
+) -> Path:
+    """Write the post-review proof finalization rollup for monitoring."""
+
+    status_path = output_path or validation.trace_root / PROOF_FINALIZATION_STATUS_NAME
+    status_path.parent.mkdir(parents=True, exist_ok=True)
+    status_path.write_text(
+        json.dumps(
+            proof_finalization_status_metadata(
+                validation,
+                promotion_verification,
+                archive_verification,
+                artifact_paths=artifact_paths,
+            ),
+            indent=2,
+            sort_keys=True,
+        ),
         encoding="utf-8",
     )
     return status_path
