@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Literal, cast
+
+from desktop_agent.routines import RoutineCatalog, RoutineDefinition
+from desktop_agent.scheduler import select_schedule_time
 
 GoalExecutionStatus = Literal[
     "draft",
@@ -61,6 +65,22 @@ class GoalPlanApproval:
             "required": self.required,
             "satisfied": self.satisfied,
             "reason": self.reason,
+        }
+
+
+@dataclass(frozen=True)
+class GoalRoutineIndexResult:
+    """Routine index hit prepared for goal-plan candidate ranking."""
+
+    candidate: GoalPlanCandidate
+    schedule_eligible: bool
+    schedule_reason: str
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            **self.candidate.metadata(),
+            "schedule_eligible": self.schedule_eligible,
+            "schedule_reason": self.schedule_reason,
         }
 
 
@@ -131,6 +151,40 @@ def goal_plan_from_mapping(data: dict[str, object]) -> GoalPlan:
     )
     validate_goal_plan(plan)
     return plan
+
+
+def search_routine_index_for_goal(
+    catalog: RoutineCatalog,
+    query: str,
+    *,
+    now: datetime | None = None,
+    require_schedule_eligible: bool = False,
+    limit: int = 20,
+) -> tuple[GoalRoutineIndexResult, ...]:
+    """Search routine metadata and attach goal-planning eligibility fields."""
+    results: list[GoalRoutineIndexResult] = []
+    for result in catalog.search(query, limit=limit):
+        schedule_eligible, schedule_reason = _schedule_eligibility(
+            result.routine,
+            now,
+        )
+        if require_schedule_eligible and not schedule_eligible:
+            continue
+        results.append(
+            GoalRoutineIndexResult(
+                candidate=GoalPlanCandidate(
+                    routine_id=result.routine.id,
+                    routine_name=result.routine.name,
+                    score=float(result.score),
+                    matched_fields=result.matched_fields,
+                    safety_class=result.routine.safety_class,
+                    approval_policy=result.routine.approval_policy,
+                ),
+                schedule_eligible=schedule_eligible,
+                schedule_reason=schedule_reason,
+            ),
+        )
+    return tuple(results)
 
 
 def validate_goal_plan(plan: GoalPlan) -> None:
@@ -276,3 +330,19 @@ def _string_tuple(value: object, key: str) -> tuple[str, ...]:
             raise GoalPlanError(f"{key} entries must be strings")
         result.append(item)
     return tuple(result)
+
+
+def _schedule_eligibility(
+    routine: RoutineDefinition,
+    now: datetime | None,
+) -> tuple[bool, str]:
+    if routine.schedule_policy != "scheduled":
+        return True, "not_scheduled"
+    if now is None:
+        return True, "schedule_time_not_checked"
+    if not routine.schedule.allowed_time_windows:
+        return True, "no_schedule_window_declared"
+    decision = select_schedule_time(routine, now=now, random_seed=0)
+    if decision.lower_bound == now:
+        return True, "inside_allowed_time_window"
+    return False, "outside_allowed_time_window"

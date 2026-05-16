@@ -29,3 +29,15 @@ present, required inputs are complete, and all required approvals are satisfied.
 The schema is intentionally deterministic and local. Optional model output may
 later help rank or explain candidates, but it cannot bypass validation, select
 unknown routine IDs, or execute raw actions directly.
+
+## Routine Index Search
+
+`search_routine_index_for_goal()` wraps the routine catalog search and returns
+`GoalPlanCandidate` records with schedule eligibility metadata. Search covers
+routine ID, name, required app, required site, tags, inputs, outputs, safety
+class, approval policy, schedule policy, and schedule constraint text.
+
+When a timestamp is supplied, scheduled routines with allowed time windows are
+marked `inside_allowed_time_window` or `outside_allowed_time_window`. Callers
+can set `require_schedule_eligible` to remove routines that are outside their
+allowed window before routing or execution.

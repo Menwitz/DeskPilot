@@ -423,7 +423,7 @@ abuse, and hidden automation are not supported.
 - [x] Add `GoalPlan` schema with user goal, normalized intent, candidate
       routines, selected routine, missing inputs, approvals, explanation, and
       execution status.
-- [ ] Add routine index search by ID, name, app, site, tags, inputs, outputs,
+- [x] Add routine index search by ID, name, app, site, tags, inputs, outputs,
       risk class, and schedule eligibility.
 - [ ] Add deterministic router with exact app/site matching, tag matching,
       input compatibility, risk filtering, and confidence ranking.

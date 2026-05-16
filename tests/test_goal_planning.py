@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import cast
 
 import pytest
@@ -8,7 +10,13 @@ from desktop_agent.goal_planning import (
     GoalPlanCandidate,
     GoalPlanError,
     goal_plan_from_mapping,
+    search_routine_index_for_goal,
     validate_goal_plan,
+)
+from desktop_agent.routines import (
+    RoutineCatalog,
+    RoutineDefinition,
+    routine_definition_from_mapping,
 )
 
 
@@ -145,3 +153,124 @@ def test_goal_plan_schema_rejects_duplicate_candidates_and_bad_scores() -> None:
                 ),
             ),
         )
+
+
+def test_goal_routine_index_search_covers_risk_and_schedule_fields() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="browser.read-page",
+                name="Browser read page",
+                tags=["browser", "reading"],
+                safety_class="low",
+                approval_policy="none",
+                schedule_policy="manual",
+            ),
+            _routine(
+                routine_id="social-content.linkedin-approved-publish",
+                name="LinkedIn approved publish",
+                tags=["social", "linkedin", "publish"],
+                required_site="linkedin.com",
+                safety_class="high",
+                approval_policy="manifest_required",
+                schedule_policy="scheduled",
+                allowed_time_windows=[
+                    {
+                        "days": ["mon"],
+                        "start": "09:00",
+                        "end": "10:00",
+                        "timezone": "local",
+                    },
+                ],
+            ),
+        ),
+    )
+    now = datetime(2026, 5, 18, 9, 30, tzinfo=UTC)
+
+    results = search_routine_index_for_goal(
+        catalog,
+        "linkedin high manifest scheduled",
+        now=now,
+        require_schedule_eligible=True,
+    )
+
+    assert len(results) == 1
+    result = results[0]
+    assert result.candidate.routine_id == "social-content.linkedin-approved-publish"
+    assert result.candidate.safety_class == "high"
+    assert result.candidate.approval_policy == "manifest_required"
+    assert result.schedule_eligible is True
+    assert result.schedule_reason == "inside_allowed_time_window"
+    assert "safety_class" in result.candidate.matched_fields
+    assert "schedule_policy" in result.candidate.matched_fields
+
+
+def test_goal_routine_index_search_can_filter_ineligible_schedules() -> None:
+    catalog = RoutineCatalog(
+        root=Path("routine_packs"),
+        routines=(
+            _routine(
+                routine_id="social-content.linkedin-approved-publish",
+                name="LinkedIn approved publish",
+                tags=["social", "linkedin", "publish"],
+                required_site="linkedin.com",
+                safety_class="high",
+                approval_policy="manifest_required",
+                schedule_policy="scheduled",
+                allowed_time_windows=[
+                    {
+                        "days": ["mon"],
+                        "start": "09:00",
+                        "end": "10:00",
+                        "timezone": "local",
+                    },
+                ],
+            ),
+        ),
+    )
+    now = datetime(2026, 5, 18, 12, 0, tzinfo=UTC)
+
+    results = search_routine_index_for_goal(
+        catalog,
+        "linkedin high scheduled",
+        now=now,
+        require_schedule_eligible=True,
+    )
+
+    assert results == ()
+
+
+def _routine(
+    *,
+    routine_id: str,
+    name: str,
+    tags: list[str],
+    safety_class: str,
+    approval_policy: str,
+    schedule_policy: str,
+    required_site: str | None = None,
+    allowed_time_windows: list[dict[str, object]] | None = None,
+) -> RoutineDefinition:
+    payload: dict[str, object] = {
+        "id": routine_id,
+        "name": name,
+        "description": "Routine for goal-planning search tests.",
+        "goal": "Match a user goal to a routine.",
+        "tags": tags,
+        "inputs": ["input"],
+        "outputs": ["output"],
+        "safety_class": safety_class,
+        "schedule_policy": schedule_policy,
+        "approval_policy": approval_policy,
+        "expected_duration_seconds": 30,
+        "reference": {
+            "type": "task",
+            "path": "tasks/test.yaml",
+        },
+    }
+    if required_site is not None:
+        payload["required_site"] = required_site
+    if allowed_time_windows is not None:
+        payload["schedule"] = {"allowed_time_windows": allowed_time_windows}
+    return routine_definition_from_mapping(payload)
