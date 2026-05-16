@@ -54,3 +54,23 @@ mutation posture explicit before import or installation work begins.
 `proof.expected_artifacts` lists the trace/report files reviewers expect before
 promoting routines from the pack. Windows proof may still be opt-in for tests,
 but the manifest makes that requirement visible in reports and UI.
+
+## CLI
+
+Routine pack commands use `routine_packs/` by default and accept
+`--routine-pack-root` for alternate local catalogs.
+
+```bash
+desktop-agent list-routine-packs
+desktop-agent show-routine-pack browser
+desktop-agent import-routine-pack ./local-pack --routine-pack-root routine_packs
+desktop-agent export-routine-pack browser --output traces/browser-pack.zip
+```
+
+`import-routine-pack` accepts a local directory or zip archive containing exactly
+one `routine-pack.yaml`. It validates the manifest before copying the pack into
+the target root and refuses to overwrite an installed pack unless `--replace` is
+provided.
+
+`export-routine-pack` validates the installed manifest and writes either a
+directory or `.zip` archive depending on the `--output` path.

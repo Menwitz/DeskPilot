@@ -641,7 +641,7 @@ abuse, and hidden automation are not supported.
 ### Tasks
 
 - [x] Add routine-pack manifest schema.
-- [ ] Add routine-pack import/export commands.
+- [x] Add routine-pack import/export commands.
 - [ ] Add app UI for installing and removing routine packs.
 - [ ] Add trust warnings for unverified local packs.
 - [ ] Add conflict detection for duplicate routine IDs, selectors, inputs, and

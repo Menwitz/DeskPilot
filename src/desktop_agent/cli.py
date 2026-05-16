@@ -99,6 +99,15 @@ from desktop_agent.recorder import (
     generate_task_from_recorder_session,
 )
 from desktop_agent.redaction import RedactionPolicy
+from desktop_agent.routine_pack_manifest import (
+    RoutinePackManifestError,
+    load_routine_pack_manifests,
+)
+from desktop_agent.routine_pack_ops import (
+    RoutinePackOperationError,
+    export_routine_pack,
+    import_routine_pack,
+)
 from desktop_agent.routines import (
     RoutineDefinition,
     RoutineDefinitionError,
@@ -180,6 +189,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run_routine(args, dry_run=False)
         if args.command == "dry-run-routine":
             return _run_routine(args, dry_run=True)
+        if args.command == "list-routine-packs":
+            return _list_routine_packs(args)
+        if args.command == "show-routine-pack":
+            return _show_routine_pack(args)
+        if args.command == "import-routine-pack":
+            return _import_routine_pack(args)
+        if args.command == "export-routine-pack":
+            return _export_routine_pack(args)
         if args.command == "plan-goal":
             return _plan_goal(args)
         if args.command == "local-model":
@@ -212,6 +229,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         SitePlaybookValidationError,
         RecorderError,
         RoutineDefinitionError,
+        RoutinePackManifestError,
+        RoutinePackOperationError,
         TaskValidationError,
         MouseDemoError,
         OSError,
@@ -340,6 +359,36 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_site_catalog_options(dry_run_routine_parser)
     _add_routine_failure_history_options(dry_run_routine_parser)
     _add_runtime_options(dry_run_routine_parser)
+
+    list_routine_packs_parser = subparsers.add_parser(
+        "list-routine-packs",
+        help="list installed routine pack manifests",
+    )
+    _add_routine_catalog_options(list_routine_packs_parser)
+
+    show_routine_pack_parser = subparsers.add_parser(
+        "show-routine-pack",
+        help="show one installed routine pack manifest",
+    )
+    show_routine_pack_parser.add_argument("pack_id")
+    _add_routine_catalog_options(show_routine_pack_parser)
+
+    import_routine_pack_parser = subparsers.add_parser(
+        "import-routine-pack",
+        help="validate and install a local routine pack directory or zip",
+    )
+    import_routine_pack_parser.add_argument("source", type=Path)
+    import_routine_pack_parser.add_argument("--replace", action="store_true")
+    _add_routine_catalog_options(import_routine_pack_parser)
+
+    export_routine_pack_parser = subparsers.add_parser(
+        "export-routine-pack",
+        help="export an installed routine pack as a directory or zip",
+    )
+    export_routine_pack_parser.add_argument("pack_id")
+    export_routine_pack_parser.add_argument("--output", required=True, type=Path)
+    export_routine_pack_parser.add_argument("--replace", action="store_true")
+    _add_routine_catalog_options(export_routine_pack_parser)
 
     plan_goal_parser = subparsers.add_parser(
         "plan-goal",
@@ -962,6 +1011,75 @@ def _generate_routine_docs(args: argparse.Namespace) -> int:
     )
     print(f"routine catalog index: {args.index_output}")
     print(f"routine documentation template: {args.template_output}")
+    return 0
+
+
+def _list_routine_packs(args: argparse.Namespace) -> int:
+    manifests = load_routine_pack_manifests(args.routine_pack_root)
+    for manifest in manifests:
+        print(
+            f"{manifest.id}\t{manifest.version}\t"
+            f"{manifest.trust_level}\t{manifest.name}",
+        )
+    return 0
+
+
+def _show_routine_pack(args: argparse.Namespace) -> int:
+    manifests = load_routine_pack_manifests(args.routine_pack_root)
+    manifest = next(
+        (item for item in manifests if item.id == args.pack_id),
+        None,
+    )
+    if manifest is None:
+        raise RoutinePackOperationError(f"unknown routine pack: {args.pack_id}")
+    print(f"id: {manifest.id}")
+    print(f"name: {manifest.name}")
+    print(f"description: {manifest.description}")
+    print(f"version: {manifest.version}")
+    print(f"publisher: {manifest.publisher}")
+    print(f"trust_level: {manifest.trust_level}")
+    print(f"routine_globs: {', '.join(manifest.routine_globs)}")
+    print(f"docs: {', '.join(manifest.docs) or 'none'}")
+    print(f"fixtures: {', '.join(manifest.fixtures) or 'none'}")
+    print(f"tests: {', '.join(manifest.tests) or 'none'}")
+    print(f"safety.max_safety_class: {manifest.safety.max_safety_class}")
+    print(f"safety.requires_review: {manifest.safety.requires_review}")
+    print(
+        "safety.external_mutation_allowed: "
+        f"{manifest.safety.external_mutation_allowed}",
+    )
+    print(f"safety.approval_required: {manifest.safety.approval_required}")
+    print(f"proof.windows_proof_required: {manifest.proof.windows_proof_required}")
+    print(
+        "proof.expected_artifacts: "
+        f"{', '.join(manifest.proof.expected_artifacts)}",
+    )
+    return 0
+
+
+def _import_routine_pack(args: argparse.Namespace) -> int:
+    result = import_routine_pack(
+        args.source,
+        args.routine_pack_root,
+        replace=args.replace,
+    )
+    action = "replaced" if result.replaced_existing else "imported"
+    print(f"{action} routine pack: {result.manifest.id}")
+    print(f"source: {result.source_path}")
+    print(f"installed: {result.installed_path}")
+    return 0
+
+
+def _export_routine_pack(args: argparse.Namespace) -> int:
+    result = export_routine_pack(
+        args.routine_pack_root,
+        args.pack_id,
+        args.output,
+        replace=args.replace,
+    )
+    kind = "archive" if result.archive else "directory"
+    print(f"exported routine pack: {result.manifest.id}")
+    print(f"output_{kind}: {result.output_path}")
     return 0
 
 
