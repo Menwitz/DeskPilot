@@ -498,7 +498,7 @@ abuse, and hidden automation are not supported.
 
 - [x] Improve routine resilience against ordinary UI variance.
 - [x] Keep recovery explicit, bounded, safe, and auditable.
-- [ ] Use failed traces to improve routines without silently changing outcomes.
+- [x] Use failed traces to improve routines without silently changing outcomes.
 
 ### OKRs
 
