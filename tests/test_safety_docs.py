@@ -138,3 +138,25 @@ def test_documentation_set_covers_behavior_boundary_and_safe_configuration() -> 
         "safety-audit.md",
     ):
         assert phrase in documentation
+
+
+def test_local_ai_docs_preserve_advisory_only_boundary() -> None:
+    documentation = "\n".join(
+        [
+            Path("docs/local-ai.md").read_text(encoding="utf-8"),
+            Path("docs/configuration.md").read_text(encoding="utf-8"),
+            Path("docs/goal-planning.md").read_text(encoding="utf-8"),
+        ]
+    )
+
+    for phrase in (
+        "disabled by default",
+        "advisory selection and review workflows",
+        "cannot execute raw desktop actions",
+        "bypass approvals",
+        "bypass safety gates",
+        "deterministic result remains in force",
+        "provider, model name, prompt class",
+        "FakeLocalModelProvider",
+    ):
+        assert phrase in documentation

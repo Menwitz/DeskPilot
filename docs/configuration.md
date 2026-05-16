@@ -275,6 +275,8 @@ The active preset is written to `config.json` and the `load_config` trace event.
 local Ollama only as an advisory planner helper. For Phase 7, the supported use
 is `use_for_goal_ranking`, which lets the `plan-goal` dry-run ask Ollama to
 rank already-discovered routine candidates and explain the choice.
+See [Local AI Assistance](local-ai.md) for the product boundary across planning,
+screen review, trace review, and YAML suggestion workflows.
 
 The local model cannot create actions, URLs, commands, or new routine IDs. Its
 output is accepted only when every suggested ID already exists in the

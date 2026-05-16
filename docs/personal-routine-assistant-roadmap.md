@@ -566,7 +566,7 @@ abuse, and hidden automation are not supported.
 - [x] Add trace fields for provider, model name, prompt class, input artifact
       references, output hash, and accepted/rejected status.
 - [x] Add fake model provider for tests.
-- [ ] Add docs explaining that local AI assists selection and review but never
+- [x] Add docs explaining that local AI assists selection and review but never
       bypasses routine validation or safety gates.
 
 ### Acceptance Criteria

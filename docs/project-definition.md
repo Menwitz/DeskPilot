@@ -23,6 +23,7 @@ The personal assistant roadmap is tracked in
 That roadmap is the source of truth for recorder, routine catalog, goal
 planning, native operator UI, Windows proof bundles, local model assistance,
 redaction, and routine-pack work.
+The local AI boundary is documented in [Local AI Assistance](local-ai.md).
 
 ## Safety Boundary
 
