@@ -89,7 +89,7 @@ abuse, and hidden automation are not supported.
 - [x] Add release ladder for proof demo, alpha assistant, beta catalog, planner
       release, UI release, and hardened product.
 - [ ] Update `README.md` to link this roadmap.
-- [ ] Update `docs/roadmap.md` to distinguish the completed v1 roadmap from this
+- [x] Update `docs/roadmap.md` to distinguish the completed v1 roadmap from this
       product roadmap.
 - [x] Keep `docs/desktop-io-control-roadmap.md` as the lower-level desktop I/O
       proof roadmap.
