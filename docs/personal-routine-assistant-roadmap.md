@@ -291,7 +291,7 @@ abuse, and hidden automation are not supported.
 - [x] Infer verification suggestions from post-action state deltas.
 - [x] Add review metadata for routine name, description, inputs, outputs, tags,
       risk class, and expected duration.
-- [ ] Add tests using fake recorder event streams.
+- [x] Add tests using fake recorder event streams.
 
 ### Acceptance Criteria
 

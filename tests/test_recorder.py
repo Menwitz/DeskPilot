@@ -3,9 +3,17 @@ from pathlib import Path
 
 from pytest import CaptureFixture, MonkeyPatch
 
+from desktop_agent.actuation import DryRunActuator
 from desktop_agent.cli import main
-from desktop_agent.config import RuntimeConfig
+from desktop_agent.config import RuntimeConfig, StaticConfigLoader
 from desktop_agent.ocr import OcrTextBlock
+from desktop_agent.perception import (
+    CompositePerceptionEngine,
+    ConfidenceTargetSelector,
+    ElementCandidate,
+    PerceptionEngine,
+)
+from desktop_agent.planner import ExecutionEngine
 from desktop_agent.platforms.windows.uia import UiaElementSnapshot
 from desktop_agent.recorder import (
     RecorderCandidateContext,
@@ -18,8 +26,10 @@ from desktop_agent.recorder import (
     capture_uia_context_for_point,
     generate_task_from_recorder_session,
 )
-from desktop_agent.screen import Bounds
-from desktop_agent.task_dsl import BasicTaskValidator
+from desktop_agent.safety import LocalSafetyPolicy
+from desktop_agent.screen import Bounds, ScreenObservation, StaticScreenObserver
+from desktop_agent.task_dsl import BasicTaskValidator, StaticTaskLoader, TaskStep
+from desktop_agent.tracing import FileTraceSink
 
 
 class FakeUiaPointAdapter:
@@ -30,6 +40,26 @@ class FakeUiaPointAdapter:
     def element_at_point(self, point: tuple[int, int]) -> UiaElementSnapshot:
         self.point = point
         return self.snapshot
+
+
+class RecorderStreamPerceptionEngine(PerceptionEngine):
+    def detect(
+        self,
+        step: TaskStep,
+        observation: ScreenObservation,
+        config: RuntimeConfig,
+    ) -> tuple[ElementCandidate, ...]:
+        _ = observation, config
+        label = step.target or step.text or "recorded target"
+        return (
+            ElementCandidate(
+                id=f"recorded-{label.lower().replace(' ', '-')}",
+                source="uia",
+                label=label,
+                bounds=Bounds(x=20, y=40, width=120, height=24),
+                confidence=0.96,
+            ),
+        )
 
 
 def test_recorder_controller_runs_control_state_machine(tmp_path: Path) -> None:
@@ -355,6 +385,86 @@ def test_recorder_infers_verification_from_post_action_state_delta() -> None:
     assert task.steps[0].verify.text == "Success"
 
 
+def test_fake_recorder_event_streams_generate_valid_tasks() -> None:
+    cases = (
+        (_fake_browser_event_stream(), ["click_text", "type_text", "press_key"]),
+        (_fake_native_event_stream(), ["click_uia", "scroll", "click_image"]),
+    )
+
+    for events, expected_actions in cases:
+        task = generate_task_from_recorder_session(
+            _session_with_events(
+                events,
+                review=RecorderReviewMetadata(
+                    routine_name="Generated fake stream routine",
+                    risk_class="low",
+                ),
+            ),
+        )
+
+        BasicTaskValidator().validate(task, RuntimeConfig())
+        assert [step.action for step in task.steps] == expected_actions
+        assert task.metadata["routine_risk_class"] == "low"
+
+
+def test_fake_recorder_event_stream_report_includes_review_metadata(
+    tmp_path: Path,
+) -> None:
+    task = generate_task_from_recorder_session(
+        _session_with_events(
+            _fake_browser_event_stream(),
+            review=RecorderReviewMetadata(
+                routine_name="Browser search routine",
+                description="Search the browser fixture and confirm results",
+                inputs=("search query",),
+                outputs=("results page",),
+                tags=("browser", "search"),
+                risk_class="low",
+                expected_duration_seconds=30.0,
+            ),
+        ),
+    )
+    trace_sink = FileTraceSink()
+    engine = ExecutionEngine(
+        config_loader=StaticConfigLoader(
+            RuntimeConfig(
+                trace_root=tmp_path / "traces",
+                confidence_threshold=0.8,
+            ),
+        ),
+        task_loader=StaticTaskLoader(task),
+        task_validator=BasicTaskValidator(),
+        trace_sink=trace_sink,
+        safety_policy=LocalSafetyPolicy(),
+        screen_observer=StaticScreenObserver(
+            ScreenObservation(
+                size=(800, 600),
+                active_window_title="Browser Fixture",
+            ),
+        ),
+        perception_engine=CompositePerceptionEngine(
+            (RecorderStreamPerceptionEngine(),),
+        ),
+        target_selector=ConfidenceTargetSelector(),
+        actuator=DryRunActuator(),
+    )
+
+    report = engine.run(Path("recorded-browser.yaml"))
+
+    assert report.status == "passed"
+    assert report.trace_dir is not None
+    final_report = json.loads((report.trace_dir / "final-report.json").read_text())
+    task_payload = json.loads((report.trace_dir / "task.json").read_text())
+    assert final_report["metadata"]["routine_name"] == "Browser search routine"
+    assert final_report["metadata"]["routine_tags"] == ["browser", "search"]
+    assert task_payload["metadata"]["routine_outputs"] == ["results page"]
+    assert task_payload["steps"][2]["verify"] == {
+        "type": "visible_text",
+        "text": "Results ready",
+        "image": None,
+    }
+
+
 def test_cli_record_exposes_start_pause_stop_save_discard_controls(
     tmp_path: Path,
     capsys: CaptureFixture[str],
@@ -480,12 +590,87 @@ def test_cli_record_save_requires_operator_confirmation(
     assert not output_path.exists()
 
 
-def _session_with_events(events: tuple[RecorderEvent, ...]) -> RecorderSession:
+def _fake_browser_event_stream() -> tuple[RecorderEvent, ...]:
+    return (
+        RecorderEvent.create(
+            "selected_point",
+            active_window="Browser Fixture",
+            candidate_context=(
+                RecorderCandidateContext(
+                    source="ocr",
+                    label="Search",
+                    bounds={"x": 20, "y": 40, "width": 120, "height": 24},
+                ),
+            ),
+        ),
+        RecorderEvent.create(
+            "input_event",
+            active_window="Browser Fixture",
+            input_event={"kind": "type_text", "text": "DeskPilot"},
+        ),
+        RecorderEvent.create(
+            "input_event",
+            active_window="Browser Fixture",
+            input_event={"kind": "press_key", "key": "enter"},
+        ),
+        RecorderEvent.create(
+            "observation",
+            active_window="Browser Fixture",
+            metadata={
+                "state_delta": {
+                    "visible_text_added": ["Results ready"],
+                    "target_appeared": True,
+                },
+            },
+        ),
+    )
+
+
+def _fake_native_event_stream() -> tuple[RecorderEvent, ...]:
+    return (
+        RecorderEvent.create(
+            "selected_point",
+            active_window="Native Fixture",
+            candidate_context=(
+                RecorderCandidateContext(
+                    source="uia",
+                    label="Open",
+                    control_type="Button",
+                    bounds={"x": 10, "y": 10, "width": 80, "height": 24},
+                ),
+            ),
+        ),
+        RecorderEvent.create(
+            "input_event",
+            active_window="Native Fixture",
+            input_event={"kind": "scroll", "clicks": -3},
+        ),
+        RecorderEvent.create(
+            "selected_point",
+            active_window="Native Fixture",
+            candidate_context=(
+                RecorderCandidateContext(
+                    source="image",
+                    label="native-action.pgm",
+                    bounds={"x": 40, "y": 80, "width": 32, "height": 32},
+                    metadata={"snippet_path": "snippets/native-action.pgm"},
+                ),
+            ),
+        ),
+    )
+
+
+def _session_with_events(
+    events: tuple[RecorderEvent, ...],
+    *,
+    review: RecorderReviewMetadata | None = None,
+) -> RecorderSession:
     return RecorderSession(
         session_id="session-1",
         name="Generated routine",
         status="stopped",
         created_at="2026-05-16T00:00:00+00:00",
         updated_at="2026-05-16T00:00:00+00:00",
+        review=review or RecorderReviewMetadata(routine_name="Generated routine"),
         events=events,
     )

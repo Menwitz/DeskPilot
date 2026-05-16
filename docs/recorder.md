@@ -87,3 +87,10 @@ from newly appeared text such as `visible_text_added`.
 Generated task metadata includes the reviewed routine name, description, inputs,
 outputs, tags, risk class, and expected duration so trace artifacts and final
 reports can surface the operator-reviewed routine contract.
+
+## Test Coverage
+
+Recorder tests include fake browser and native event streams that generate valid
+tasks without real desktop input. The browser stream also runs through the
+dry-run execution pipeline and checks `task.json` plus `final-report.json` for
+the reviewed routine metadata and inferred verification.
