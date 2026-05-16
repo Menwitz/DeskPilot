@@ -10,6 +10,7 @@ from desktop_agent.recorder import (
     RecorderCandidateContext,
     RecorderController,
     RecorderEvent,
+    capture_image_snippet_for_point,
     capture_ocr_context_for_point,
     capture_uia_context_for_point,
 )
@@ -141,6 +142,49 @@ def test_recorder_captures_ocr_text_blocks_around_clicked_point() -> None:
             confidence=0.92,
             metadata={"contains_point": True, "distance_pixels": 20.616},
         ),
+    )
+
+
+def test_recorder_captures_image_snippet_only_without_stable_text_context(
+    tmp_path: Path,
+) -> None:
+    screenshot_path = Path("tests/fixtures/cv-screen.pgm")
+    output_path = tmp_path / "snippet.pgm"
+    stable_context = (
+        RecorderCandidateContext(
+            source="ocr",
+            label="Submit",
+            bounds={"x": 100, "y": 220, "width": 80, "height": 30},
+        ),
+    )
+
+    skipped = capture_image_snippet_for_point(
+        (20, 20),
+        screenshot_path,
+        tmp_path / "stable-skipped.pgm",
+        stable_context,
+    )
+    captured = capture_image_snippet_for_point(
+        (20, 20),
+        screenshot_path,
+        output_path,
+        (),
+        size=(12, 12),
+    )
+
+    assert skipped is None
+    assert not (tmp_path / "stable-skipped.pgm").exists()
+    assert output_path.exists()
+    assert captured == RecorderCandidateContext(
+        source="image",
+        label="snippet.pgm",
+        bounds={"x": 0, "y": 0, "width": 6, "height": 6},
+        confidence=0.5,
+        metadata={
+            "snippet_path": str(output_path),
+            "source_screenshot_path": str(screenshot_path),
+            "fallback_reason": "no_stable_uia_or_ocr_target",
+        },
     )
 
 

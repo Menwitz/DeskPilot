@@ -36,7 +36,10 @@ bounds, enabled/visible state, and confidence as `uia` candidate context. This
 is the first stable-selector capture source. The recorder also has an OCR
 context helper that filters nearby OCR text blocks around a clicked point,
 preserving text, bounds, confidence, whether the point was inside the block, and
-distance from the click. Image fallback capture is tracked separately.
+distance from the click. Image fallback capture only runs when no stable UIA or
+OCR context exists; it writes a bounded snippet around the clicked point and
+stores the snippet path, source screenshot, crop bounds, and fallback reason as
+`image` candidate context.
 
 Live Windows event capture and editable YAML/playbook generation are tracked in
 the remaining recorder roadmap tasks.

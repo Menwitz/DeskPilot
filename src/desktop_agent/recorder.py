@@ -6,6 +6,7 @@ import json
 import math
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from importlib import import_module
 from pathlib import Path
 from typing import Literal, Protocol, cast
 from uuid import uuid4
@@ -371,6 +372,42 @@ def capture_ocr_context_for_point(
     return tuple(contexts)
 
 
+def capture_image_snippet_for_point(
+    point: tuple[int, int],
+    screenshot_path: Path,
+    output_path: Path,
+    existing_context: tuple[RecorderCandidateContext, ...],
+    *,
+    size: tuple[int, int] = (96, 96),
+) -> RecorderCandidateContext | None:
+    if _has_stable_uia_or_ocr_context(existing_context):
+        return None
+    cv2 = import_module("cv2")
+    image = cv2.imread(str(screenshot_path), cv2.IMREAD_UNCHANGED)
+    if image is None:
+        raise RecorderError(f"screenshot could not be read: {screenshot_path}")
+    height, width = int(image.shape[0]), int(image.shape[1])
+    bounds = _snippet_bounds(point, size, width=width, height=height)
+    crop = image[
+        bounds["y"] : bounds["y"] + bounds["height"],
+        bounds["x"] : bounds["x"] + bounds["width"],
+    ]
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if not bool(cv2.imwrite(str(output_path), crop)):
+        raise RecorderError(f"image snippet could not be written: {output_path}")
+    return RecorderCandidateContext(
+        source="image",
+        label=output_path.name,
+        bounds=bounds,
+        confidence=0.5,
+        metadata={
+            "snippet_path": str(output_path),
+            "source_screenshot_path": str(screenshot_path),
+            "fallback_reason": "no_stable_uia_or_ocr_target",
+        },
+    )
+
+
 def _write_payload(path: Path, payload: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -463,3 +500,31 @@ def _distance_to_bounds_center(
     center_x = bounds["x"] + (bounds["width"] / 2)
     center_y = bounds["y"] + (bounds["height"] / 2)
     return math.hypot(point[0] - center_x, point[1] - center_y)
+
+
+def _has_stable_uia_or_ocr_context(
+    contexts: tuple[RecorderCandidateContext, ...],
+) -> bool:
+    return any(
+        context.source in {"uia", "ocr"} and bool(context.label) and context.bounds
+        for context in contexts
+    )
+
+
+def _snippet_bounds(
+    point: tuple[int, int],
+    size: tuple[int, int],
+    *,
+    width: int,
+    height: int,
+) -> dict[str, int]:
+    snippet_width = max(1, min(size[0], width))
+    snippet_height = max(1, min(size[1], height))
+    left = min(max(point[0] - (snippet_width // 2), 0), width - snippet_width)
+    top = min(max(point[1] - (snippet_height // 2), 0), height - snippet_height)
+    return {
+        "x": left,
+        "y": top,
+        "width": snippet_width,
+        "height": snippet_height,
+    }
