@@ -9,7 +9,7 @@ from desktop_agent.desktop_io import (
     validate_desktop_io_action,
     validate_desktop_io_plan,
 )
-from desktop_agent.task_dsl import TaskStep
+from desktop_agent.task_dsl import TaskRegion, TaskStep
 
 
 def test_desktop_io_plan_uses_first_class_action_schema() -> None:
@@ -20,6 +20,19 @@ def test_desktop_io_plan_uses_first_class_action_schema() -> None:
     assert plan.step_id == "type-query"
     assert plan.source_action == "type_text"
     assert plan.operations == ("observe", "type", "verify")
+    expected_safety = {
+        "action_safety_class": "local_mutation",
+        "mutation_risk": "local",
+        "mutates_state": True,
+        "approval_required": False,
+        "approval_reason": None,
+        "reversibility": "usually_reversible",
+        "reversible": True,
+        "idempotent": False,
+        "app_scope": "task_scope",
+        "window_scope": [],
+        "allowed_region": None,
+    }
     action_metadata = plan.actions[1].to_metadata()
     assert action_metadata == {
         "id": "type-query:2:type",
@@ -35,21 +48,8 @@ def test_desktop_io_plan_uses_first_class_action_schema() -> None:
             "bounded": True,
             "supported": True,
         },
-        "metadata": {
-            "safety": {
-                "action_safety_class": "local_mutation",
-                "mutation_risk": "local",
-                "mutates_state": True,
-                "approval_required": False,
-                "approval_reason": None,
-                "reversibility": "usually_reversible",
-                "reversible": True,
-                "idempotent": False,
-                "app_scope": "task_scope",
-                "window_scope": [],
-                "allowed_region": None,
-            }
-        },
+        "metadata": {"safety": expected_safety},
+        "safety": expected_safety,
     }
     assert plan.to_metadata()["schema_version"] == DESKTOP_IO_MODEL_VERSION
     assert "handoff" in SUPPORTED_DESKTOP_IO_KINDS
@@ -98,6 +98,27 @@ def test_desktop_io_actions_carry_safety_metadata() -> None:
         assert safety["action_safety_class"] == "message_or_publish"
         assert safety["approval_required"] is True
         assert safety["window_scope"] == ["DeskPilot Fixture"]
+
+
+def test_desktop_io_action_metadata_surfaces_scope_and_reversibility() -> None:
+    plan = compile_desktop_io_plan(
+        TaskStep(
+            id="scroll-region",
+            action="scroll",
+            text="-3",
+            region=TaskRegion(x=1, y=2, width=30, height=40),
+        ),
+        allowed_windows=("DeskPilot Fixture",),
+    )
+
+    action_metadata = plan.actions[0].to_metadata()
+    safety = action_metadata["safety"]
+    assert isinstance(safety, dict)
+    assert safety["approval_required"] is False
+    assert safety["reversibility"] == "usually_reversible"
+    assert safety["idempotent"] is False
+    assert safety["window_scope"] == ["DeskPilot Fixture"]
+    assert safety["allowed_region"] == {"x": 1, "y": 2, "width": 30, "height": 40}
 
 
 def test_desktop_io_validation_rejects_unsupported_action_kind() -> None:

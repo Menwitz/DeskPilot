@@ -90,6 +90,9 @@ the input channel, supported status, target requirement, boundedness, and
 whether the operation emits desktop input. Operation metadata includes the same
 resolved action-safety fields used by planner events and step reports. Invalid
 desktop I/O action schemas fail compilation before runtime observation or input.
+For report consumers, each compiled action also surfaces a top-level `safety`
+object with approval requirement, approval reason, reversibility, idempotence,
+allowed window scope, and allowed region.
 
 The `execution_path` event records whether an action attempt uses the standard,
 fast, or careful path. Fast-path timing events include the original sampled

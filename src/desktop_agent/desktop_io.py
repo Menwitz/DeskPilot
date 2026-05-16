@@ -156,7 +156,7 @@ class DesktopIoAction:
 
     def to_metadata(self) -> dict[str, object]:
         kind_spec = desktop_io_kind_spec(self.kind)
-        return {
+        metadata: dict[str, object] = {
             "id": self.id,
             "step_id": self.step_id,
             "kind": self.kind,
@@ -167,6 +167,10 @@ class DesktopIoAction:
             else {"kind": self.kind, "supported": False},
             "metadata": self.metadata,
         }
+        safety_metadata = self.metadata.get("safety")
+        if isinstance(safety_metadata, dict):
+            metadata["safety"] = safety_metadata
+        return metadata
 
 
 @dataclass(frozen=True)

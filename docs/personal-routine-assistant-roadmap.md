@@ -238,7 +238,7 @@ abuse, and hidden automation are not supported.
 - [x] Add action safety classes: `read_only`, `local_mutation`,
       `external_mutation`, `credential`, `payment`, `delete`, and
       `message_or_publish`.
-- [ ] Add action metadata for approval requirement, reversibility,
+- [x] Add action metadata for approval requirement, reversibility,
       idempotence, allowed windows, and allowed regions.
 - [ ] Add manual handoff action with prompt text, expected operator work, and
       resume verification.
