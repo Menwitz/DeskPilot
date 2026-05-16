@@ -58,6 +58,8 @@ class TraceSchemaV2:
                         "candidate_rankings",
                         "rejected_candidates",
                         "rejection_reasons",
+                        "confidence_values",
+                        "coordinate_conversion",
                     ],
                 },
                 "input": {

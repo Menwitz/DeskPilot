@@ -17,8 +17,10 @@ from desktop_agent.execution_paths import choose_execution_path
 from desktop_agent.perception import (
     ElementCandidate,
     PerceptionEngine,
+    RankedCandidate,
     TargetSelector,
     candidate_ranking_metadata,
+    rank_candidates,
     ui_state_snapshot_metadata,
 )
 from desktop_agent.recovery import (
@@ -32,7 +34,13 @@ from desktop_agent.safety import (
     NoopEmergencyStopMonitor,
     SafetyPolicy,
 )
-from desktop_agent.screen import ScreenObservation, ScreenObserver
+from desktop_agent.screen import (
+    Bounds,
+    ScreenObservation,
+    ScreenObserver,
+    screenshot_bounds_to_physical,
+    screenshot_point_to_physical,
+)
 from desktop_agent.task_compiler import TaskCompiler
 from desktop_agent.task_dsl import (
     TaskDefinition,
@@ -550,12 +558,24 @@ class ExecutionEngine:
                     selection_metadata["selection_blocked"] = (
                         "confidence_or_ambiguity_gate"
                     )
+            selection_blocked = selection_metadata.get("selection_blocked")
+            selection_metadata.update(
+                _target_reasoning_metadata(
+                    step,
+                    observation,
+                    candidates,
+                    target,
+                    config,
+                    selection_blocked
+                    if isinstance(selection_blocked, str)
+                    else None,
+                )
+            )
             self._record(
                 "select_target",
                 "target selected" if target else "no target selected",
                 selection_metadata,
             )
-            selection_blocked = selection_metadata.get("selection_blocked")
             self._record(
                 "ui_state_snapshot",
                 "ui state summarized",
@@ -1778,6 +1798,140 @@ def _observation_evidence(
         "monitor": _monitor_metadata(observation),
         "dpi_scale": _dpi_metadata(observation),
         "warnings": list(observation.warnings),
+    }
+
+
+def _target_reasoning_metadata(
+    step: TaskStep,
+    observation: ScreenObservation,
+    candidates: tuple[ElementCandidate, ...],
+    selected: ElementCandidate | None,
+    config: RuntimeConfig,
+    selection_blocked: str | None,
+) -> dict[str, object]:
+    ranked = rank_candidates(step, candidates, config)
+    selected_id = selected.id if selected is not None else None
+    snapshot_metadata = ui_state_snapshot_metadata(
+        step,
+        candidates,
+        selected,
+        config,
+        selection_blocked=selection_blocked,
+    )
+    blocked_candidates = snapshot_metadata.get("blocked_candidates")
+    if not isinstance(blocked_candidates, list):
+        blocked_candidates = []
+    rejected_reasons = {
+        str(candidate["id"]): str(candidate["blocked_reason"])
+        for candidate in blocked_candidates
+        if isinstance(candidate, dict)
+        and isinstance(candidate.get("id"), str)
+        and isinstance(candidate.get("blocked_reason"), str)
+    }
+    selected_snapshot = _reasoning_snapshot_for_id(ranked, selected_id, observation)
+    return {
+        "trace_schema_section": "target_reasoning",
+        "selected_candidate": selected_snapshot,
+        "selected_candidate_id": selected_id,
+        "rejected_candidates": [
+            _candidate_reasoning_snapshot(
+                ranked_candidate,
+                observation,
+                rejection_reason=rejected_reasons.get(ranked_candidate.candidate.id),
+            )
+            for ranked_candidate in ranked
+            if ranked_candidate.candidate.id != selected_id
+        ],
+        "rejection_reasons": rejected_reasons,
+        "confidence_values": {
+            ranked_candidate.candidate.id: ranked_candidate.candidate.confidence
+            for ranked_candidate in ranked
+        },
+        "coordinate_conversion": selected_snapshot.get("coordinate_conversion")
+        if selected_snapshot is not None
+        else None,
+    }
+
+
+def _reasoning_snapshot_for_id(
+    ranked: tuple[RankedCandidate, ...],
+    candidate_id: str | None,
+    observation: ScreenObservation,
+) -> dict[str, object] | None:
+    if candidate_id is None:
+        return None
+    for ranked_candidate in ranked:
+        if ranked_candidate.candidate.id == candidate_id:
+            return _candidate_reasoning_snapshot(ranked_candidate, observation)
+    return None
+
+
+def _candidate_reasoning_snapshot(
+    ranked: RankedCandidate,
+    observation: ScreenObservation,
+    *,
+    rejection_reason: str | None = None,
+) -> dict[str, object]:
+    candidate = ranked.candidate
+    snapshot: dict[str, object] = {
+        "id": candidate.id,
+        "source": candidate.source,
+        "label": candidate.label,
+        "confidence": candidate.confidence,
+        "enabled": candidate.enabled,
+        "visible": candidate.visible,
+        "rank": ranked.rank,
+        "fusion_score": ranked.score,
+        "target_match_score": ranked.target_match_score,
+        "region_match_score": ranked.region_match_score,
+        "bounds": _bounds_metadata(candidate.bounds),
+        "coordinate_conversion": _coordinate_conversion_metadata(
+            candidate,
+            observation,
+        ),
+    }
+    if rejection_reason is not None:
+        snapshot["rejection_reason"] = rejection_reason
+    return snapshot
+
+
+def _coordinate_conversion_metadata(
+    candidate: ElementCandidate,
+    observation: ScreenObservation,
+) -> dict[str, object]:
+    screenshot_center = candidate.bounds.center
+    metadata: dict[str, object] = {
+        "screenshot_bounds": _bounds_metadata(candidate.bounds),
+        "screenshot_center": list(screenshot_center),
+        "monitor": _monitor_metadata(observation),
+        "dpi_scale": _dpi_metadata(observation),
+    }
+    if observation.monitor is None:
+        metadata["conversion_status"] = "unavailable"
+        metadata["physical_bounds"] = None
+        metadata["physical_center"] = None
+        return metadata
+    physical_bounds = screenshot_bounds_to_physical(
+        candidate.bounds,
+        observation.monitor,
+    )
+    physical_center = screenshot_point_to_physical(
+        screenshot_center,
+        observation.monitor,
+    )
+    metadata["conversion_status"] = "converted"
+    metadata["physical_bounds"] = _bounds_metadata(physical_bounds)
+    metadata["physical_center"] = list(physical_center)
+    return metadata
+
+
+def _bounds_metadata(bounds: Bounds) -> dict[str, object]:
+    return {
+        "x": bounds.x,
+        "y": bounds.y,
+        "width": bounds.width,
+        "height": bounds.height,
+        "center": list(bounds.center),
     }
 
 

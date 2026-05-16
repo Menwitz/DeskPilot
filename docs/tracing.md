@@ -147,6 +147,10 @@ After target selection, the planner emits `ui_state_snapshot` with visible
 controls, the selected candidate, confidence and fusion scores, and blocked
 candidate reasons such as disabled, not visible, below confidence threshold,
 outside region, target mismatch, or ambiguity gate.
+The `select_target` event also includes a `target_reasoning` schema section:
+selected candidate details, rejected candidates with rejection reasons,
+confidence values by candidate ID, and coordinate conversion from screenshot
+bounds to physical desktop coordinates when monitor metadata is available.
 
 ## Replay
 

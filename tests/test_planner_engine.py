@@ -567,6 +567,81 @@ def test_execution_engine_records_post_action_observation_evidence(
     assert phases.index("observe_after_action") < phases.index("verify_result")
 
 
+def test_execution_engine_records_target_reasoning_and_coordinate_conversion() -> None:
+    task = TaskDefinition(
+        name="target-reasoning",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+    )
+    observation = ScreenObservation(
+        active_window_title="DeskPilot Fixture",
+        monitor=MonitorInfo(
+            left=100,
+            top=200,
+            width=1200,
+            height=800,
+            scale_x=2.0,
+            scale_y=2.0,
+            is_primary=True,
+        ),
+    )
+    trace_sink = MemoryTraceSink()
+    engine = _engine(
+        task,
+        screen_observer=SequenceScreenObserver((observation,)),
+        perception=SequencePerceptionEngine(
+            (
+                (
+                    _candidate("candidate-selected", "Submit", confidence=0.97),
+                    _candidate(
+                        "candidate-disabled",
+                        "Submit",
+                        x=220,
+                        confidence=0.96,
+                        enabled=False,
+                    ),
+                ),
+            ),
+        ),
+        actuator=SequenceActuator((ActionResult(True, "clicked"),)),
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    selection = next(event for event in report.events if event.phase == "select_target")
+    selected = selection.metadata["selected_candidate"]
+    rejected = selection.metadata["rejected_candidates"]
+    conversion = selection.metadata["coordinate_conversion"]
+    assert isinstance(selected, dict)
+    assert isinstance(rejected, list)
+    assert isinstance(conversion, dict)
+    assert report.status == "passed"
+    assert selection.metadata["trace_schema_section"] == "target_reasoning"
+    assert selected["id"] == "candidate-selected"
+    assert selected["confidence"] == 0.97
+    assert selection.metadata["confidence_values"] == {
+        "candidate-selected": 0.97,
+        "candidate-disabled": 0.96,
+    }
+    assert rejected[0]["id"] == "candidate-disabled"
+    assert rejected[0]["rejection_reason"] == "disabled"
+    assert selection.metadata["rejection_reasons"] == {
+        "candidate-disabled": "disabled",
+    }
+    assert conversion["screenshot_center"] == [60, 35]
+    assert conversion["physical_center"] == [220, 270]
+    assert conversion["physical_bounds"] == {
+        "x": 120,
+        "y": 240,
+        "width": 200,
+        "height": 60,
+        "center": [220, 270],
+    }
+    assert conversion["conversion_status"] == "converted"
+
+
 def test_execution_engine_runs_checkpoint_before_irreversible_action() -> None:
     task = TaskDefinition(
         name="checkpoint-pass",

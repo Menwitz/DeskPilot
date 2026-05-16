@@ -191,7 +191,7 @@ abuse, and hidden automation are not supported.
       focused element, cursor position, monitor geometry, and DPI.
 - [x] Capture post-action screenshot, active window title, process metadata,
       focused element, cursor position, and warnings.
-- [ ] Record selected candidate, rejected candidates, rejection reasons,
+- [x] Record selected candidate, rejected candidates, rejection reasons,
       confidence values, and coordinate conversion.
 - [ ] Add visual state delta summaries for focus changes, visible text changes,
       target appearance/disappearance, and scroll movement.
