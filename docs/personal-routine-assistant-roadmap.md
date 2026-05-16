@@ -185,6 +185,9 @@ abuse, and hidden automation are not supported.
 - [x] Add review-gated promotion coverage to the opt-in Windows smoke pipeline
       so `--require-review` and review status archives are exercised on owned
       Windows runs.
+- [x] Add a Windows proof-suite runner script that collects preflight, browser,
+      native, mixed, recovery, report, status, archive, and review-template
+      artifacts in one repeatable operator flow.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

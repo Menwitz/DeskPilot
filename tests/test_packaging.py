@@ -13,6 +13,7 @@ def test_packaging_files_exist() -> None:
     assert Path("scripts/build-windows-exe.ps1").exists()
     assert Path("scripts/build-windows-installer.ps1").exists()
     assert Path("scripts/verify-windows-package.ps1").exists()
+    assert Path("scripts/run-windows-proof-suite.ps1").exists()
 
 
 def test_pyproject_exposes_optional_app_dependency_group() -> None:
@@ -58,6 +59,7 @@ def test_windows_installer_script_packages_cli_app_and_local_assets() -> None:
     assert "deskpilot.exe" in script
     assert "deskpilot-app.exe" in script
     assert "default-config.yaml" in script
+    assert "scripts/run-windows-proof-suite.ps1" in script
     assert "Copy-Item \"docs\"" in script
     assert "Copy-Item \"examples\"" in script
     assert "Copy-Item \"routine_packs\"" in script
@@ -85,3 +87,21 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "PySide6: available" in script
     assert "& $AppExePath --describe-shell" in script
     assert "final-report.json" in script
+
+
+def test_windows_proof_suite_runner_collects_reviewable_evidence() -> None:
+    script = Path("scripts/run-windows-proof-suite.ps1").read_text(encoding="utf-8")
+
+    assert '"proof",' in script
+    assert '"preflight"' in script
+    assert "browser-fixture" in script
+    assert "native-fixture" in script
+    assert "mixed-fixture" in script
+    assert "recovery-fixture" in script
+    assert "--record-video" in script
+    assert "ExternalVideo" in script
+    assert "--require-preflight" in script
+    assert "--write-review-template" in script
+    assert "proof validate-review" in script
+    assert "--require-review" in script
+    assert "proof-suite-review-status.json" in script

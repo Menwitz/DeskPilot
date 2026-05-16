@@ -34,10 +34,12 @@ if (Test-Path $InstallerRoot) {
 New-Item -ItemType Directory -Force -Path $InstallerRoot | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $InstallerRoot "bin") | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $InstallerRoot "config") | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $InstallerRoot "scripts") | Out-Null
 
 Copy-Item $CliExe (Join-Path $InstallerRoot "bin/deskpilot.exe")
 Copy-Item $AppExe (Join-Path $InstallerRoot "bin/deskpilot-app.exe")
 Copy-Item "packaging/default-config.yaml" (Join-Path $InstallerRoot "config/default-config.yaml")
+Copy-Item "scripts/run-windows-proof-suite.ps1" (Join-Path $InstallerRoot "scripts/run-windows-proof-suite.ps1")
 Copy-Item "docs" (Join-Path $InstallerRoot "docs") -Recurse
 Copy-Item "examples" (Join-Path $InstallerRoot "examples") -Recurse
 if (Test-Path "routine_packs") {
@@ -98,6 +100,7 @@ Commands after install:
 - bin\deskpilot.exe --help
 - bin\deskpilot.exe dry-run examples\browser-task.yaml --config config\default-config.yaml
 - bin\deskpilot-app.exe --check
+- scripts\run-windows-proof-suite.ps1 -DeskPilotCommand bin\deskpilot.exe
 '@ | Set-Content -Encoding UTF8 (Join-Path $InstallerRoot "README.txt")
 
 $Manifest = [ordered]@{
@@ -110,6 +113,7 @@ $Manifest = [ordered]@{
     examples = "examples"
     routine_packs = "routine_packs"
     playbooks = "playbooks"
+    proof_suite_runner = "scripts\run-windows-proof-suite.ps1"
     created_at = (Get-Date).ToUniversalTime().ToString("o")
 }
 $Manifest | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 (Join-Path $InstallerRoot "manifest.json")

@@ -11,6 +11,11 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Close unrelated sensitive windows before starting the countdown.
 - [ ] Start screen recording before running the command.
 - [ ] Run the command from the repository root with an explicit `--trace-root`.
+- [ ] For the full four-workflow proof pack, prefer
+      `scripts/run-windows-proof-suite.ps1 -UseUv -TraceRoot <trace-root>` from
+      source or
+      `scripts/run-windows-proof-suite.ps1 -DeskPilotCommand bin\deskpilot.exe
+      -TraceRoot <trace-root>` from the installer bundle.
 - [ ] Run `desktop-agent proof preflight --trace-root <trace-root>` and resolve
       failed Windows platform, trace-root, or video-capture checks before the
       proof countdown.

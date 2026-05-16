@@ -14,6 +14,9 @@ DeskPilot packages the Windows executable with PyInstaller.
   local installer bundle plus `dist/DeskPilot-Windows.zip`.
 - `scripts/verify-windows-package.ps1` runs packaged `--help`, dry-run,
   routine listing, trace replay, and native app smoke checks.
+- `scripts/run-windows-proof-suite.ps1` runs the browser, native, mixed, and
+  recovery proof pack on an owned unlocked Windows desktop, then writes suite
+  reports, status JSON, archive, and review template artifacts.
 
 Install the native operator app dependencies with:
 
@@ -34,6 +37,7 @@ Run from the repository root in PowerShell:
 scripts/build-windows-exe.ps1
 scripts/build-windows-installer.ps1
 scripts/verify-windows-package.ps1
+scripts/run-windows-proof-suite.ps1 -UseUv -TraceRoot traces/windows-proof-suite
 ```
 
 The installer bundle contains:
@@ -43,6 +47,7 @@ The installer bundle contains:
 - `config/default-config.yaml`
 - `docs/`
 - `examples/`
+- `scripts/run-windows-proof-suite.ps1`
 - `routine_packs/`, when present
 - `playbooks/`, when present
 - `install.ps1`, `uninstall.ps1`, `README.txt`, and `manifest.json`
@@ -58,6 +63,15 @@ root and verifies that `final-report.json` was written, runs
 `routine_packs\`, and runs `deskpilot-app.exe --check` plus
 `deskpilot-app.exe --describe-shell` when the app executable exists. The app
 check must report bundled PySide6 availability for packaged Windows builds.
+
+`scripts\run-windows-proof-suite.ps1` is the real desktop evidence collector.
+Run it only from an owned, unlocked Windows desktop or VM. From source, pass
+`-UseUv`; from the installer bundle, pass
+`-DeskPilotCommand bin\deskpilot.exe`. Use `-ExternalVideo` when recording with
+an external screen recorder instead of built-in `ffmpeg` capture. The script
+writes `proof-preflight.json`, runs all four proof commands, validates the
+suite, writes review artifacts, and prints the final human-review promotion
+commands.
 
 Real `run` verification still requires an unlocked Windows desktop with the
 browser or native fixture visible.
