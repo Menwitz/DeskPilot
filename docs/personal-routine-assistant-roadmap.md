@@ -44,7 +44,7 @@ abuse, and hidden automation are not supported.
       routine can reference.
 - [x] Define `goal plan` as the planner output that maps a user goal to one or
       more known routines.
-- [ ] Define `manual handoff` as a planned pause where the operator must inspect,
+- [x] Define `manual handoff` as a planned pause where the operator must inspect,
       approve, or complete a step.
 - [ ] Define `proof bundle` as a Windows run package containing command,
       environment metadata, video, trace, screenshots, and final report.

@@ -96,10 +96,12 @@ The task compiler preserves these semantic action names and also emits a
 - `drag`: `observe`, `move`, `drag`, `verify`
 - `manual_handoff`: `handoff`, `verify`
 
-`manual_handoff` pauses the run for operator work and then resumes with a
-read-only verification. It requires `handoff_prompt` or `text`,
-`expected_operator_work`, and `verify`. The compiled handoff action records
-the prompt, expected operator work, and resume verification in trace metadata.
+`manual_handoff` is a planned pause where the operator must inspect, approve,
+or complete work before DeskPilot continues. It pauses the run for operator
+work and then resumes with a read-only verification. It requires
+`handoff_prompt` or `text`, `expected_operator_work`, and `verify`. The compiled
+handoff action records the prompt, expected operator work, and resume
+verification in trace metadata.
 
 ## Verification Types
 
