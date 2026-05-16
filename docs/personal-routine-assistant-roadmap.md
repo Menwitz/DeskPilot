@@ -323,7 +323,7 @@ abuse, and hidden automation are not supported.
 
 ### Tasks
 
-- [ ] Add routine pack directories for `browser`, `native`, `social-content`,
+- [x] Add routine pack directories for `browser`, `native`, `social-content`,
       `email-writing`, `files`, `research`, and `publishing`.
 - [ ] Add `RoutineDefinition` schema with ID, name, description, goal,
       required app/site, tags, inputs, outputs, safety class, schedule policy,
