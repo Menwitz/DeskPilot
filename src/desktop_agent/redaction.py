@@ -116,6 +116,56 @@ def screenshot_blur_masks(policy: RedactionPolicy) -> tuple[ScreenshotBlurMask, 
     )
 
 
+def mask_typed_text(text: str, policy: RedactionPolicy) -> str | None:
+    """Return a masked text placeholder according to the typed-text policy."""
+    if policy.typed_text == "mask":
+        return "*" * len(text)
+    if policy.typed_text == "suppress":
+        return None
+    return text
+
+
+def typed_text_redaction_metadata(
+    text: str,
+    policy: RedactionPolicy,
+) -> dict[str, object]:
+    """Return trace-safe typed-text redaction metadata without changing input."""
+    metadata: dict[str, object] = {
+        "typed_text_redaction": policy.typed_text,
+        "typed_text_suppressed": policy.typed_text == "suppress",
+    }
+    if policy.typed_text != "full":
+        metadata["typed_text_value"] = mask_typed_text(text, policy)
+    return metadata
+
+
+def mask_content_variable_names(
+    variable_names: Sequence[str],
+    policy: RedactionPolicy,
+) -> tuple[str, ...]:
+    """Mask or suppress content-variable names for trace/report metadata."""
+    if policy.content_variables == "suppress":
+        return ()
+    if policy.content_variables == "mask_names":
+        return tuple(f"variable_{index}" for index, _ in enumerate(variable_names, 1))
+    return tuple(variable_names)
+
+
+def content_variable_redaction_metadata(
+    variable_names: Sequence[str],
+    policy: RedactionPolicy,
+) -> dict[str, object]:
+    """Return metadata that explains how content-variable names were handled."""
+    return {
+        "content_variable_names": list(
+            mask_content_variable_names(variable_names, policy),
+        ),
+        "content_variable_count": len(variable_names),
+        "content_variable_name_redaction": policy.content_variables,
+        "content_variables_redacted": True,
+    }
+
+
 def validate_redaction_policy(
     policy: RedactionPolicy,
     *,

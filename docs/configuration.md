@@ -91,6 +91,11 @@ Set `screenshots: blur_sensitive_zones` with `sensitive_zones` entries to define
 coordinate blur masks for screenshot evidence. Each zone uses `id`, `x`, `y`,
 `width`, `height`, and an optional `reason`; actual redaction must still be
 requested by policy.
+Set `typed_text: mask` to write fixed-length typed-text placeholders into
+action metadata while the actuator still sends the original text. Set
+`content_variables: mask_names` to replace variable names in site-playbook
+metadata with `variable_1`, `variable_2`, and so on; fingerprints remain based
+on the real local values for approval checks.
 
 ## Task Overrides
 

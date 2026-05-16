@@ -59,7 +59,9 @@ operator confirmation state, approval-manifest presence, mutation limit, and
 the block/pass reason.
 For sensitive site workflows, final report metadata records validated approval
 manifest fields and content-variable fingerprints, while step metadata records
-variable names with `content_variables_redacted: true`.
+variable names, masked variable names, or counts according to
+`redaction_policy.content_variables`, always with
+`content_variables_redacted: true`.
 For execution-profile runs, `safety-audit.json` and `safety-audit.md` summarize
 the active policy preset, operator-approval state, allowed windows, emergency
 stop hotkey, sensitive steps, checkpoint coverage, and audit findings.
@@ -67,6 +69,9 @@ Text-entry `execute_action` events include `keyboard_cadence_applied`,
 `keyboard_interval_count`, and `keyboard_interval_seconds` when a cadence
 profile inserts bounded waits between typed characters. The Markdown report
 prints the interval count on the action row.
+When `redaction_policy.typed_text` is `mask` or `suppress`, action metadata also
+records the typed-text redaction mode and a masked or suppressed value; the
+actuator still sends the original text to the local desktop.
 Scroll `execute_action` events include `scroll_cadence_applied`,
 `scroll_step_count`, `scroll_step_clicks`, and `scroll_interval_seconds` when a
 cadence profile splits a multi-click wheel action. The Markdown report prints

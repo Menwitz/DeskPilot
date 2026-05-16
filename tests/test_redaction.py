@@ -1,7 +1,11 @@
 from desktop_agent.redaction import (
     RedactionPolicy,
+    content_variable_redaction_metadata,
+    mask_content_variable_names,
+    mask_typed_text,
     redaction_policy_from_mapping,
     screenshot_blur_masks,
+    typed_text_redaction_metadata,
     validate_redaction_policy,
 )
 
@@ -94,3 +98,29 @@ def test_redaction_policy_validation_rejects_invalid_sensitive_zones() -> None:
     assert any("id must be unique" in error for error in errors)
     assert any("x and y must not be negative" in error for error in errors)
     assert any("width and height" in error for error in errors)
+
+
+def test_typed_text_masking_preserves_length_without_changing_input() -> None:
+    policy = RedactionPolicy(typed_text="mask")
+
+    assert mask_typed_text("secret", policy) == "******"
+    assert typed_text_redaction_metadata("secret", policy) == {
+        "typed_text_redaction": "mask",
+        "typed_text_suppressed": False,
+        "typed_text_value": "******",
+    }
+
+
+def test_content_variable_name_masking_reports_counts() -> None:
+    policy = RedactionPolicy(content_variables="mask_names")
+
+    assert mask_content_variable_names(("post_text", "post_url"), policy) == (
+        "variable_1",
+        "variable_2",
+    )
+    assert content_variable_redaction_metadata(("post_text", "post_url"), policy) == {
+        "content_variable_names": ["variable_1", "variable_2"],
+        "content_variable_count": 2,
+        "content_variable_name_redaction": "mask_names",
+        "content_variables_redacted": True,
+    }

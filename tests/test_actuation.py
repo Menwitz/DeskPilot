@@ -16,6 +16,7 @@ from desktop_agent.actuation import (
 )
 from desktop_agent.config import ExecutionProfile, RuntimeConfig
 from desktop_agent.perception import ElementCandidate
+from desktop_agent.redaction import RedactionPolicy
 from desktop_agent.safety import StaticEmergencyStopMonitor
 from desktop_agent.screen import Bounds, MonitorInfo, ScreenObservation
 from desktop_agent.task_dsl import TaskRegion, TaskStep
@@ -204,11 +205,16 @@ def test_keyboard_cadence_never_changes_typed_text() -> None:
         TaskStep(id="type-note", action="type_text", text=text),
         None,
         ScreenObservation(),
-        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+        RuntimeConfig(
+            allowed_windows=("DeskPilot Fixture",),
+            redaction_policy=RedactionPolicy(typed_text="mask"),
+        ),
     )
 
     assert result.success is True
     assert result.metadata["text_length"] == len(text)
+    assert result.metadata["typed_text_redaction"] == "mask"
+    assert result.metadata["typed_text_value"] == "*" * len(text)
     assert [event.kind for event in backend.events] == ["type_text"]
     assert backend.events[0].text == text
 

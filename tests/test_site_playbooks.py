@@ -4,6 +4,7 @@ import pytest
 
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.content_variables import ContentVariableError, ContentVariables
+from desktop_agent.redaction import RedactionPolicy
 from desktop_agent.site_playbooks import (
     SitePlaybookValidationError,
     SiteTaskCompiler,
@@ -337,8 +338,36 @@ def test_site_flow_resolves_content_variables_and_records_fingerprint(
         "post_url",
     ]
     assert task.metadata["content_variable_names"] == ["post_text", "post_url"]
+    assert task.metadata["content_variable_name_redaction"] == "fingerprint_only"
     assert str(task.metadata["content_variables_fingerprint"]).startswith("sha256:")
     assert task.metadata["content_variables_redacted"] is True
+
+
+def test_site_compiler_masks_content_variable_names_when_configured(
+    tmp_path: Path,
+) -> None:
+    playbook = load_site_playbook(
+        _write_playbook(tmp_path, _variable_playbook()),
+    )
+    variables = ContentVariables(
+        {
+            "post_text": "DeskPilot launch note",
+            "post_url": "https://example.test/launch",
+        },
+    )
+
+    task = SiteTaskCompiler(
+        variables,
+        RedactionPolicy(content_variables="mask_names"),
+    ).compile(playbook, "publish-post")
+
+    assert task.steps[0].metadata["content_variable_names"] == [
+        "variable_1",
+        "variable_2",
+    ]
+    assert task.metadata["content_variable_names"] == ["variable_1", "variable_2"]
+    assert task.metadata["content_variable_count"] == 2
+    assert task.metadata["content_variable_name_redaction"] == "mask_names"
 
 
 def test_site_flow_rejects_missing_content_variables(tmp_path: Path) -> None:

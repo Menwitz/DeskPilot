@@ -12,6 +12,10 @@ import yaml
 
 from desktop_agent.config import ConfigOverrides
 from desktop_agent.content_variables import ContentVariables, load_content_variables
+from desktop_agent.redaction import (
+    RedactionPolicy,
+    content_variable_redaction_metadata,
+)
 from desktop_agent.task_dsl import (
     SUPPORTED_ACTIONS,
     SUPPORTED_VERIFICATION_TYPES,
@@ -128,8 +132,13 @@ class SitePlaybook:
 class SiteTaskCompiler:
     """Compiles validated website playbook flows into DeskPilot tasks."""
 
-    def __init__(self, variables: ContentVariables | None = None) -> None:
+    def __init__(
+        self,
+        variables: ContentVariables | None = None,
+        redaction_policy: RedactionPolicy | None = None,
+    ) -> None:
         self._variables = variables or load_content_variables(None)
+        self._redaction_policy = redaction_policy or RedactionPolicy()
 
     def compile(self, playbook: SitePlaybook, flow_id: str) -> TaskDefinition:
         validate_site_playbook(playbook)
@@ -141,6 +150,7 @@ class SiteTaskCompiler:
                 flow,
                 site_step,
                 self._variables,
+                self._redaction_policy,
             )
             steps.extend(_blocked_state_checks(playbook, compiled_step))
             steps.append(compiled_step)
@@ -157,6 +167,7 @@ class SiteTaskCompiler:
                 flow,
                 tuple(steps),
                 self._variables,
+                self._redaction_policy,
             ),
         )
 
@@ -318,6 +329,7 @@ def _compile_site_step(
     flow: SiteFlow,
     site_step: SiteFlowStep,
     variables: ContentVariables,
+    redaction_policy: RedactionPolicy,
 ) -> TaskStep:
     landmark = _landmark_by_id(playbook, site_step.landmark)
     target = variables.resolve(site_step.target or _landmark_target(landmark))
@@ -346,10 +358,7 @@ def _compile_site_step(
     }
     if variable_names:
         metadata.update(
-            {
-                "content_variable_names": list(variable_names),
-                "content_variables_redacted": True,
-            }
+            content_variable_redaction_metadata(variable_names, redaction_policy),
         )
     return TaskStep(
         id=site_step.id,
@@ -469,6 +478,7 @@ def _compiled_task_metadata(
     flow: SiteFlow,
     steps: tuple[TaskStep, ...],
     variables: ContentVariables,
+    redaction_policy: RedactionPolicy,
 ) -> dict[str, object]:
     metadata: dict[str, object] = {
         "site_id": playbook.site_id,
@@ -491,9 +501,11 @@ def _compiled_task_metadata(
     if variable_names:
         metadata.update(
             {
-                "content_variable_names": list(variable_names),
+                **content_variable_redaction_metadata(
+                    variable_names,
+                    redaction_policy,
+                ),
                 "content_variables_fingerprint": variables.fingerprint(variable_names),
-                "content_variables_redacted": True,
                 "content_variables_source_path": str(variables.source_path)
                 if variables.source_path
                 else None,

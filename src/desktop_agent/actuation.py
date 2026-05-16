@@ -12,6 +12,7 @@ from typing import Any, ClassVar, Literal, Protocol
 
 from desktop_agent.config import RuntimeConfig
 from desktop_agent.perception import ElementCandidate
+from desktop_agent.redaction import typed_text_redaction_metadata
 from desktop_agent.sampling import SampleRecord, SeededSampler
 from desktop_agent.screen import (
     Bounds,
@@ -841,6 +842,7 @@ class DesktopActuator(Actuator):
             {
                 "input_action": "type_text",
                 "text_length": len(step.text),
+                **typed_text_redaction_metadata(step.text, config.redaction_policy),
                 **cadence.metadata(),
             },
         )

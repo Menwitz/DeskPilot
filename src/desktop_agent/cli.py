@@ -98,6 +98,7 @@ from desktop_agent.recorder import (
     RecorderReviewMetadata,
     generate_task_from_recorder_session,
 )
+from desktop_agent.redaction import RedactionPolicy
 from desktop_agent.routines import (
     RoutineDefinition,
     RoutineDefinitionError,
@@ -1109,6 +1110,7 @@ def _compile_routine_task(
             playbook_dir,
             routine.reference.playbook_site,
             routine.reference.playbook_flow,
+            redaction_policy=routine.redaction_policy,
         )
     return replace(
         task,
@@ -1250,11 +1252,16 @@ def _compile_site(args: argparse.Namespace) -> int:
 
 
 def _run_site_task(args: argparse.Namespace, *, dry_run: bool) -> int:
+    config = resolve_runtime_config(
+        YamlConfigLoader().load(args.config),
+        cli_overrides=_cli_overrides_from_args(args),
+    )
     task = _compile_site_flow(
         args.playbook_dir,
         args.site,
         args.flow,
         variables_path=args.variables,
+        redaction_policy=config.redaction_policy,
     )
     return _run_loaded_task(
         args,
@@ -1271,11 +1278,12 @@ def _compile_site_flow(
     flow_id: str,
     *,
     variables_path: Path | None = None,
+    redaction_policy: RedactionPolicy | None = None,
 ) -> TaskDefinition:
     playbook = _load_named_site(playbook_dir, site_id)
     resolve_site_flow(playbook, flow_id)
     variables = load_content_variables(variables_path)
-    return SiteTaskCompiler(variables).compile(playbook, flow_id)
+    return SiteTaskCompiler(variables, redaction_policy).compile(playbook, flow_id)
 
 
 def _load_named_site(playbook_dir: Path, site_id: str) -> SitePlaybook:
