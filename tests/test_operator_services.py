@@ -260,6 +260,48 @@ def test_local_trace_service_lists_and_reads_reports(tmp_path: Path) -> None:
     assert report["selected_routine_id"] == "browser.search"
 
 
+def test_local_trace_service_inspects_failed_trace_for_app_review(
+    tmp_path: Path,
+) -> None:
+    trace_root = tmp_path / "traces"
+    trace_dir = trace_root / "failed-run"
+    trace_dir.mkdir(parents=True)
+    (trace_dir / "task.yaml").write_text("name: Browser search\n", encoding="utf-8")
+    (trace_dir / "config.json").write_text("{}", encoding="utf-8")
+    (trace_dir / "trace-schema.json").write_text("{}", encoding="utf-8")
+    (trace_dir / "action-log.jsonl").write_text("", encoding="utf-8")
+    (trace_dir / "final-report.json").write_text(
+        json.dumps(
+            {
+                "task_name": "Browser search",
+                "status": "failed",
+                "metadata": {"routine_id": "browser.search"},
+                "steps": [
+                    {
+                        "step_id": "click-submit",
+                        "status": "failed",
+                        "metadata": {"failure_category": "selection_ambiguity"},
+                    },
+                ],
+            },
+        ),
+        encoding="utf-8",
+    )
+    service = LocalTraceService(trace_root)
+
+    inspection = service.inspect_failed_trace(trace_dir)
+
+    assert inspection.status == "failed"
+    assert inspection.task_name == "Browser search"
+    assert inspection.routine_id == "browser.search"
+    assert inspection.failure_reasons == ("step click-submit: selection_ambiguity",)
+    assert inspection.proposal_count == 1
+    assert inspection.diagnostic_ready is True
+    assert inspection.analysis_json_path.exists()
+    assert inspection.analysis_markdown_path.exists()
+    assert inspection.metadata()["proposal_count"] == 1
+
+
 def test_local_catalog_service_raises_for_unknown_routine(tmp_path: Path) -> None:
     root = tmp_path / "routine_packs"
     _write_routine(

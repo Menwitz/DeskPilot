@@ -47,6 +47,9 @@ load status so failed runs can be inspected without rerunning desktop input.
 The same page includes failure-analysis review state with proposal count,
 rationale, YAML snippets, `review_required`, and `applies_automatically` fields
 so proposed fixes remain manual until approved.
+The trace service can analyze a failed trace, write
+`failed-run-analysis.json` and `failed-run-analysis.md`, and return concise
+failure reasons for the app timeline.
 
 The Settings page includes trace root, screenshot saving, video capture, Ollama
 enablement, emergency hotkey, default activity profile, and proof-mode fields.
@@ -88,7 +91,8 @@ project modules:
 - Approval service: list active routines requiring operator approval and record
   evidence-backed approve or deny decisions with checkpoint evidence, content
   fingerprint, approver, reason, and decision timestamp.
-- Trace service: list local trace directories and read JSON reports.
+- Trace service: list local trace directories, read JSON reports, and inspect
+  failed traces with local review-only analysis artifacts.
 - Routine-pack service: list installed packs, install validated local packs,
   and remove installed packs.
 

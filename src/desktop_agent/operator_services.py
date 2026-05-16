@@ -11,6 +11,10 @@ from typing import Protocol, cast
 
 import yaml
 
+from desktop_agent.failed_run_analyzer import (
+    analyze_failed_run_trace,
+    write_failed_run_analysis,
+)
 from desktop_agent.recorder import (
     RecorderController,
     RecorderEvent,
@@ -101,6 +105,34 @@ class OperatorRunStartResult:
             "reason": self.reason,
             "next_action": self.next_action,
             "execution_gate": self.execution_gate.metadata(),
+        }
+
+
+@dataclass(frozen=True)
+class OperatorFailedTraceInspection:
+    """App-facing summary of why a failed trace stopped."""
+
+    trace_dir: Path
+    task_name: str
+    status: str
+    routine_id: str | None
+    failure_reasons: tuple[str, ...]
+    proposal_count: int
+    diagnostic_ready: bool
+    analysis_json_path: Path
+    analysis_markdown_path: Path
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "trace_dir": str(self.trace_dir),
+            "task_name": self.task_name,
+            "status": self.status,
+            "routine_id": self.routine_id,
+            "failure_reasons": list(self.failure_reasons),
+            "proposal_count": self.proposal_count,
+            "diagnostic_ready": self.diagnostic_ready,
+            "analysis_json_path": str(self.analysis_json_path),
+            "analysis_markdown_path": str(self.analysis_markdown_path),
         }
 
 
@@ -338,6 +370,10 @@ class TraceService(Protocol):
 
     def read_report(self, trace_dir: Path) -> dict[str, object]:
         """Read a trace report JSON file."""
+        ...
+
+    def inspect_failed_trace(self, trace_dir: Path) -> OperatorFailedTraceInspection:
+        """Analyze a failed trace and write local review artifacts."""
         ...
 
 
@@ -744,6 +780,24 @@ class LocalTraceService:
                 return cast(dict[str, object], loaded)
         raise OperatorServiceError(f"trace report not found: {trace_dir}")
 
+    def inspect_failed_trace(self, trace_dir: Path) -> OperatorFailedTraceInspection:
+        report = self.read_report(trace_dir)
+        if report.get("status") == "passed":
+            raise OperatorServiceError("failed trace inspection requires failed status")
+        analysis = analyze_failed_run_trace(trace_dir)
+        write_failed_run_analysis(trace_dir, analysis)
+        return OperatorFailedTraceInspection(
+            trace_dir=trace_dir,
+            task_name=analysis.task_name,
+            status=analysis.status,
+            routine_id=analysis.routine_id,
+            failure_reasons=_failed_trace_reasons(report),
+            proposal_count=len(analysis.proposals),
+            diagnostic_ready=analysis.diagnostic_ready,
+            analysis_json_path=trace_dir / "failed-run-analysis.json",
+            analysis_markdown_path=trace_dir / "failed-run-analysis.md",
+        )
+
 
 class LocalRoutinePackService:
     """Routine-pack boundary backed by local manifest import and removal ops."""
@@ -897,6 +951,32 @@ def _recorder_selected_targets(session: RecorderSession) -> tuple[str, ...]:
             if isinstance(text, str):
                 targets.append(text)
     return tuple(dict.fromkeys(targets))
+
+
+def _failed_trace_reasons(report: dict[str, object]) -> tuple[str, ...]:
+    reasons: list[str] = []
+    abort_reason = report.get("abort_reason")
+    if isinstance(abort_reason, str) and abort_reason:
+        reasons.append(abort_reason)
+    steps = report.get("steps")
+    if isinstance(steps, list):
+        for step in steps:
+            if isinstance(step, dict):
+                reasons.extend(_failed_step_reasons(step))
+    return tuple(dict.fromkeys(reasons))
+
+
+def _failed_step_reasons(step: dict[str, object]) -> tuple[str, ...]:
+    if step.get("status") == "passed":
+        return ()
+    step_id = step.get("step_id") if isinstance(step.get("step_id"), str) else "?"
+    metadata = step.get("metadata")
+    if not isinstance(metadata, dict):
+        return (f"step {step_id}: failed",)
+    failure_category = metadata.get("failure_category")
+    if isinstance(failure_category, str) and failure_category:
+        return (f"step {step_id}: {failure_category}",)
+    return (f"step {step_id}: failed",)
 
 
 def _recorder_screenshot_paths(session: RecorderSession) -> tuple[Path, ...]:
