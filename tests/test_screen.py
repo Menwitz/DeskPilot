@@ -19,6 +19,16 @@ def test_mss_observer_populates_active_window_title(
     monkeypatch.setattr(screen, "ensure_desktop_available", lambda: None)
     monkeypatch.setattr(observer, "detect_monitors", lambda: (monitor,))
     monkeypatch.setattr(screen, "detect_active_window_title", lambda: "DeskPilot")
+    monkeypatch.setattr(
+        screen,
+        "detect_active_window_process",
+        lambda: {"process_id": 1234, "process_name": "notepad.exe"},
+    )
+    monkeypatch.setattr(
+        screen,
+        "detect_focused_element",
+        lambda: {"name": "Routine", "class_name": "Edit"},
+    )
 
     def capture_region(
         region: Bounds,
@@ -34,6 +44,14 @@ def test_mss_observer_populates_active_window_title(
 
     assert observation.active_window_title == "DeskPilot"
     assert observation.size == (800, 600)
+    assert observation.metadata["active_window_process"] == {
+        "process_id": 1234,
+        "process_name": "notepad.exe",
+    }
+    assert observation.metadata["focused_element"] == {
+        "name": "Routine",
+        "class_name": "Edit",
+    }
 
 
 def test_mss_capture_region_writes_png_with_keyword_output(

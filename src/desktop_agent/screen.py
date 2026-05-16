@@ -98,7 +98,7 @@ class MssScreenObserver(ScreenObserver):
             active_window_title=detect_active_window_title(),
             monitor=monitor,
             warnings=warnings,
-            metadata={"monitor_count": len(monitors)},
+            metadata=_desktop_context_metadata(len(monitors)),
         )
 
     def detect_monitors(self) -> tuple[MonitorInfo, ...]:
@@ -195,7 +195,7 @@ def detect_windows_dpi_scale() -> tuple[float, float]:
     if sys.platform != "win32":
         return (1.0, 1.0)
     try:
-        user32 = ctypes.windll.user32
+        user32 = _windows_user32()
         dpi = int(user32.GetDpiForSystem())
     except Exception:
         return (1.0, 1.0)
@@ -206,32 +206,77 @@ def detect_windows_dpi_scale() -> tuple[float, float]:
 def detect_active_window_title() -> str | None:
     """Read the current Windows foreground-window title when available."""
 
+    foreground_window = _foreground_window_handle()
+    if foreground_window is None:
+        return None
+    return _window_text(foreground_window)
+
+
+def detect_active_window_process() -> dict[str, object] | None:
+    """Read foreground process metadata without capturing command-line content."""
+
     if sys.platform != "win32":
         return None
+    foreground_window = _foreground_window_handle()
+    if foreground_window is None:
+        return None
     try:
-        user32 = ctypes.windll.user32
-        foreground_window = int(user32.GetForegroundWindow())
-        if foreground_window == 0:
-            return None
-        length = int(user32.GetWindowTextLengthW(foreground_window))
-        if length <= 0:
-            return None
-        buffer = ctypes.create_unicode_buffer(length + 1)
-        copied = int(
-            user32.GetWindowTextW(foreground_window, buffer, length + 1),
+        process_id = ctypes.c_ulong()
+        _windows_user32().GetWindowThreadProcessId(
+            foreground_window,
+            ctypes.byref(process_id),
         )
     except Exception:
         return None
-    if copied <= 0:
+    if process_id.value == 0:
         return None
-    return buffer.value or None
+    metadata: dict[str, object] = {"process_id": int(process_id.value)}
+    process_name = _process_name_from_pid(int(process_id.value))
+    if process_name:
+        metadata["process_name"] = process_name
+    return metadata
+
+
+def detect_focused_element() -> dict[str, object] | None:
+    """Read the focused Win32 control inside the foreground window when possible."""
+
+    if sys.platform != "win32":
+        return None
+    foreground_window = _foreground_window_handle()
+    if foreground_window is None:
+        return None
+    try:
+        thread_id = int(
+            _windows_user32().GetWindowThreadProcessId(foreground_window, None)
+        )
+        gui_info = _GuiThreadInfo()
+        gui_info.cbSize = ctypes.sizeof(_GuiThreadInfo)
+        if not _windows_user32().GetGUIThreadInfo(
+            thread_id,
+            ctypes.byref(gui_info),
+        ):
+            return None
+    except Exception:
+        return None
+
+    focus_handle = _handle_value(gui_info.hwndFocus)
+    if focus_handle is None:
+        return None
+    metadata: dict[str, object] = {"control_handle": focus_handle}
+    control_text = _window_text(focus_handle)
+    class_name = _window_class_name(focus_handle)
+    if control_text:
+        metadata["name"] = control_text
+    if class_name:
+        metadata["class_name"] = class_name
+    return metadata
 
 
 def ensure_desktop_available() -> None:
     if sys.platform != "win32":
         return
     try:
-        foreground_window = int(ctypes.windll.user32.GetForegroundWindow())
+        foreground_window = int(_windows_user32().GetForegroundWindow())
     except Exception as exc:
         raise ScreenUnavailableError(
             "unable to inspect Windows desktop session",
@@ -255,6 +300,123 @@ def _combined_monitor(monitors: tuple[MonitorInfo, ...]) -> MonitorInfo:
     right = max(monitor.left + monitor.width for monitor in monitors)
     bottom = max(monitor.top + monitor.height for monitor in monitors)
     return MonitorInfo(left=left, top=top, width=right - left, height=bottom - top)
+
+
+def _desktop_context_metadata(monitor_count: int) -> dict[str, object]:
+    metadata: dict[str, object] = {"monitor_count": monitor_count}
+    active_window_process = detect_active_window_process()
+    if active_window_process is not None:
+        metadata["active_window_process"] = active_window_process
+    focused_element = detect_focused_element()
+    if focused_element is not None:
+        metadata["focused_element"] = focused_element
+    return metadata
+
+
+class _Rect(ctypes.Structure):
+    _fields_ = [
+        ("left", ctypes.c_long),
+        ("top", ctypes.c_long),
+        ("right", ctypes.c_long),
+        ("bottom", ctypes.c_long),
+    ]
+
+
+class _GuiThreadInfo(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", ctypes.c_ulong),
+        ("flags", ctypes.c_ulong),
+        ("hwndActive", ctypes.c_void_p),
+        ("hwndFocus", ctypes.c_void_p),
+        ("hwndCapture", ctypes.c_void_p),
+        ("hwndMenuOwner", ctypes.c_void_p),
+        ("hwndMoveSize", ctypes.c_void_p),
+        ("hwndCaret", ctypes.c_void_p),
+        ("rcCaret", _Rect),
+    ]
+
+
+def _foreground_window_handle() -> int | None:
+    if sys.platform != "win32":
+        return None
+    try:
+        foreground_window = int(_windows_user32().GetForegroundWindow())
+    except Exception:
+        return None
+    return foreground_window or None
+
+
+def _window_text(window_handle: int) -> str | None:
+    try:
+        user32 = _windows_user32()
+        length = int(user32.GetWindowTextLengthW(window_handle))
+        if length <= 0:
+            return None
+        buffer = ctypes.create_unicode_buffer(length + 1)
+        copied = int(user32.GetWindowTextW(window_handle, buffer, length + 1))
+    except Exception:
+        return None
+    if copied <= 0:
+        return None
+    return buffer.value or None
+
+
+def _window_class_name(window_handle: int) -> str | None:
+    try:
+        buffer = ctypes.create_unicode_buffer(256)
+        copied = int(_windows_user32().GetClassNameW(window_handle, buffer, 256))
+    except Exception:
+        return None
+    if copied <= 0:
+        return None
+    return buffer.value or None
+
+
+def _process_name_from_pid(process_id: int) -> str | None:
+    if sys.platform != "win32":
+        return None
+    process_handle = None
+    try:
+        kernel32 = _windows_kernel32()
+        process_handle = kernel32.OpenProcess(0x1000, False, process_id)
+        if not process_handle:
+            return None
+        buffer = ctypes.create_unicode_buffer(260)
+        size = ctypes.c_ulong(len(buffer))
+        if not kernel32.QueryFullProcessImageNameW(
+            process_handle,
+            0,
+            buffer,
+            ctypes.byref(size),
+        ):
+            return None
+    except Exception:
+        return None
+    finally:
+        if process_handle:
+            _windows_kernel32().CloseHandle(process_handle)
+    return buffer.value.rsplit("\\", 1)[-1] or None
+
+
+def _handle_value(handle: object) -> int | None:
+    if handle is None:
+        return None
+    if isinstance(handle, int):
+        value = handle
+    else:
+        raw_value = getattr(handle, "value", None)
+        if not isinstance(raw_value, int):
+            return None
+        value = raw_value
+    return value or None
+
+
+def _windows_user32() -> Any:
+    return cast(Any, ctypes).windll.user32
+
+
+def _windows_kernel32() -> Any:
+    return cast(Any, ctypes).windll.kernel32
 
 
 def _screenshot_name() -> str:

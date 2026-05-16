@@ -59,6 +59,13 @@ Scroll `execute_action` events include `scroll_cadence_applied`,
 cadence profile splits a multi-click wheel action. The Markdown report prints
 the emitted step count on the action row.
 
+Pre-action `observe_screen` events include `pre_action_evidence` before
+candidate detection or desktop input runs. The evidence bundle contains the
+screenshot path, active-window title, active-window process metadata when
+available, focused element metadata when available, cursor readback and cursor
+position, monitor geometry, and DPI scale. These fields are also stored as event
+metadata in `final-report.json` for report and replay tooling.
+
 The `compile_task` event records static step order, dependency edges, and
 expected UI state transitions before the planner observes the screen or attempts
 input. Task JSON also stores each step's `depends_on` and `expected_state`
@@ -158,7 +165,8 @@ for the run.
 
 The schema defines five top-level evidence sections:
 
-- `observation`: screenshots, focus, cursor, OCR, UIA, and CV state.
+- `observation`: screenshots, active-window process, focus, cursor, monitor,
+  DPI, OCR, UIA, and CV state.
 - `target_reasoning`: selected candidate, competing candidates, and rejection
   reasons.
 - `input`: planned and emitted mouse, keyboard, scroll, wait, or dry-run input.

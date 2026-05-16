@@ -43,8 +43,11 @@ class TraceSchemaV2:
                     "typical_fields": [
                         "screenshot_path",
                         "active_window_title",
-                        "process",
+                        "active_window_process",
+                        "focused_element",
                         "cursor_position",
+                        "monitor",
+                        "dpi_scale",
                         "visible_controls",
                     ],
                 },

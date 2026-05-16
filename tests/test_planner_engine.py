@@ -12,6 +12,7 @@ from desktop_agent.planner import ExecutionEngine
 from desktop_agent.safety import LocalSafetyPolicy
 from desktop_agent.screen import (
     Bounds,
+    MonitorInfo,
     ScreenObservation,
     ScreenObserver,
     StaticScreenObserver,
@@ -415,6 +416,85 @@ def test_execution_engine_records_elapsed_input_wait_before_action() -> None:
     assert wait_event.metadata["elapsed_wait_seconds"] == 0.2
     assert wait_event.metadata["before_desktop_input"] is True
     assert phases.index("input_wait") < phases.index("execute_action")
+
+
+def test_execution_engine_records_pre_action_observation_evidence(
+    tmp_path: Path,
+) -> None:
+    task = TaskDefinition(
+        name="pre-action-evidence",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+    )
+    observation = ScreenObservation(
+        screenshot_path=tmp_path / "before.png",
+        size=(800, 600),
+        active_window_title="DeskPilot Fixture",
+        monitor=MonitorInfo(
+            left=10,
+            top=20,
+            width=800,
+            height=600,
+            scale_x=1.25,
+            scale_y=1.5,
+            is_primary=True,
+        ),
+        metadata={
+            "active_window_process": {
+                "process_id": 1234,
+                "process_name": "notepad.exe",
+            },
+            "focused_element": {
+                "name": "Routine",
+                "class_name": "Edit",
+            },
+        },
+    )
+    trace_sink = MemoryTraceSink()
+    engine = _engine(
+        task,
+        screen_observer=SequenceScreenObserver((observation,)),
+        perception=SequencePerceptionEngine((_candidate_tuple("Submit"),)),
+        actuator=SequenceActuator((ActionResult(True, "clicked"),)),
+        trace_sink=trace_sink,
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    phases = [event.phase for event in report.events]
+    observe_event = next(
+        event for event in report.events if event.phase == "observe_screen"
+    )
+    evidence = observe_event.metadata["pre_action_evidence"]
+    assert isinstance(evidence, dict)
+    assert report.status == "passed"
+    assert observe_event.metadata["trace_schema_section"] == "observation"
+    assert observe_event.metadata["observation_role"] == "pre_action"
+    assert evidence["screenshot_path"] == str(tmp_path / "before.png")
+    assert evidence["active_window_title"] == "DeskPilot Fixture"
+    assert evidence["active_window_process"] == {
+        "process_id": 1234,
+        "process_name": "notepad.exe",
+    }
+    assert evidence["focused_element"] == {
+        "name": "Routine",
+        "class_name": "Edit",
+    }
+    assert evidence["cursor_position"] == [333, 444]
+    assert evidence["cursor_readback"] == {"status": "passed", "position": [333, 444]}
+    assert evidence["monitor"] == {
+        "left": 10,
+        "top": 20,
+        "width": 800,
+        "height": 600,
+        "scale_x": 1.25,
+        "scale_y": 1.5,
+        "is_primary": True,
+    }
+    assert evidence["dpi_scale"] == {"scale_x": 1.25, "scale_y": 1.5}
+    assert phases.index("observe_screen") < phases.index("detect_candidates")
+    assert phases.index("observe_screen") < phases.index("execute_action")
 
 
 def test_execution_engine_runs_checkpoint_before_irreversible_action() -> None:

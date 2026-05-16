@@ -489,7 +489,11 @@ class ExecutionEngine:
                     ),
                 )
             observation = self.screen_observer.observe(config)
-            observation_metadata = _observation_metadata(step.id, observation, attempt)
+            observation_metadata = self._pre_action_observation_metadata(
+                step,
+                observation,
+                attempt,
+            )
             observation_metadata["step_category"] = step_category(step)
             self._record(
                 "observe_screen",
@@ -1274,7 +1278,11 @@ class ExecutionEngine:
         phase: str = "detect_candidates",
     ) -> tuple[ScreenObservation, tuple[ElementCandidate, ...]]:
         observation = self.screen_observer.observe(config)
-        observation_metadata = _observation_metadata(step.id, observation, attempt)
+        observation_metadata = self._pre_action_observation_metadata(
+            step,
+            observation,
+            attempt,
+        )
         observation_metadata["step_category"] = step_category(step)
         self._record(
             "observe_screen",
@@ -1348,7 +1356,13 @@ class ExecutionEngine:
             else None,
             "screen_size": list(observation.size),
             "active_window_title": observation.active_window_title,
+            "active_window_process": _metadata_dict(
+                observation,
+                "active_window_process",
+            ),
+            "focused_element": _metadata_dict(observation, "focused_element"),
             "monitor": _monitor_metadata(observation),
+            "dpi_scale": _dpi_metadata(observation),
             "candidate_count": len(candidates),
             "candidates_by_source": _candidates_by_source(candidates),
             "chosen_target": snapshot_metadata.get("selected_candidate"),
@@ -1371,6 +1385,22 @@ class ExecutionEngine:
                 "error_type": type(exc).__name__,
             }
         return {"status": "passed", "position": list(point)}
+
+    def _pre_action_observation_metadata(
+        self,
+        step: TaskStep,
+        observation: ScreenObservation,
+        attempt: int,
+    ) -> dict[str, object]:
+        metadata = _observation_metadata(step.id, observation, attempt)
+        cursor_readback = self._cursor_readback_metadata()
+        metadata["trace_schema_section"] = "observation"
+        metadata["observation_role"] = "pre_action"
+        metadata["pre_action_evidence"] = _observation_evidence(
+            observation,
+            cursor_readback,
+        )
+        return metadata
 
     def _step_passed(
         self,
@@ -1689,8 +1719,50 @@ def _observation_metadata(
         else None,
         "size": list(observation.size),
         "active_window_title": observation.active_window_title,
+        "active_window_process": _metadata_dict(
+            observation,
+            "active_window_process",
+        ),
+        "focused_element": _metadata_dict(observation, "focused_element"),
+        "monitor": _monitor_metadata(observation),
+        "dpi_scale": _dpi_metadata(observation),
         "warnings": list(observation.warnings),
     }
+
+
+def _observation_evidence(
+    observation: ScreenObservation,
+    cursor_readback: dict[str, object],
+) -> dict[str, object]:
+    cursor_position = cursor_readback.get("position")
+    return {
+        "screenshot_path": str(observation.screenshot_path)
+        if observation.screenshot_path
+        else None,
+        "screen_size": list(observation.size),
+        "active_window_title": observation.active_window_title,
+        "active_window_process": _metadata_dict(
+            observation,
+            "active_window_process",
+        ),
+        "focused_element": _metadata_dict(observation, "focused_element"),
+        "cursor_position": cursor_position
+        if isinstance(cursor_position, list)
+        else None,
+        "cursor_readback": cursor_readback,
+        "monitor": _monitor_metadata(observation),
+        "dpi_scale": _dpi_metadata(observation),
+    }
+
+
+def _metadata_dict(
+    observation: ScreenObservation,
+    key: str,
+) -> dict[str, object] | None:
+    value = observation.metadata.get(key)
+    if isinstance(value, dict):
+        return {str(item_key): item_value for item_key, item_value in value.items()}
+    return None
 
 
 def _monitor_metadata(observation: ScreenObservation) -> dict[str, object] | None:
@@ -1704,6 +1776,15 @@ def _monitor_metadata(observation: ScreenObservation) -> dict[str, object] | Non
         "scale_x": observation.monitor.scale_x,
         "scale_y": observation.monitor.scale_y,
         "is_primary": observation.monitor.is_primary,
+    }
+
+
+def _dpi_metadata(observation: ScreenObservation) -> dict[str, object] | None:
+    if observation.monitor is None:
+        return None
+    return {
+        "scale_x": observation.monitor.scale_x,
+        "scale_y": observation.monitor.scale_y,
     }
 
 

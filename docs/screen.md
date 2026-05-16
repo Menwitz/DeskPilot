@@ -10,6 +10,11 @@ detected and `primary_monitor_only` is enabled, the observation includes a clear
 warning. Region capture is implemented as a reusable primitive for active-window
 and template-search workflows.
 
+Each Windows observation also attempts to attach local desktop context metadata:
+the foreground process ID and process name, plus the focused Win32 control handle,
+label, and class name when those APIs are available. The observer does not record
+process command lines.
+
 ## Coordinate Spaces
 
 Screenshot coordinates are pixel positions in captured images. Physical
