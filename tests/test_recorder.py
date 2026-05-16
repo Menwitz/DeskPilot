@@ -4,7 +4,11 @@ from pathlib import Path
 from pytest import CaptureFixture
 
 from desktop_agent.cli import main
-from desktop_agent.recorder import RecorderController
+from desktop_agent.recorder import (
+    RecorderCandidateContext,
+    RecorderController,
+    RecorderEvent,
+)
 
 
 def test_recorder_controller_runs_control_state_machine(tmp_path: Path) -> None:
@@ -29,6 +33,42 @@ def test_recorder_controller_runs_control_state_machine(tmp_path: Path) -> None:
     assert payload["status"] == "saved"
     assert payload["event_count"] == 0
     assert not state_path.exists()
+
+
+def test_recorder_event_model_round_trips_desktop_context(tmp_path: Path) -> None:
+    state_path = tmp_path / "recording.json"
+    controller = RecorderController(state_path)
+    controller.start(name="Click submit")
+    event = RecorderEvent.create(
+        "selected_point",
+        active_window="DeskPilot Fixture",
+        screenshot_path="screenshots/before.png",
+        selected_point=(120, 240),
+        input_event={"kind": "mouse_down", "button": "left"},
+        candidate_context=(
+            RecorderCandidateContext(
+                source="uia",
+                label="Submit",
+                control_type="Button",
+                bounds={"x": 100, "y": 220, "width": 80, "height": 30},
+                confidence=0.98,
+            ),
+        ),
+        metadata={"note": "operator clicked primary button"},
+    )
+
+    updated = controller.record_event(event)
+    loaded = controller.load()
+    payload = json.loads(state_path.read_text(encoding="utf-8"))
+
+    assert updated.events == (event,)
+    assert loaded.events == (event,)
+    assert payload["event_count"] == 1
+    assert payload["events"][0]["event_type"] == "selected_point"
+    assert payload["events"][0]["active_window"] == "DeskPilot Fixture"
+    assert payload["events"][0]["selected_point"] == [120, 240]
+    assert payload["events"][0]["candidate_context"][0]["control_type"] == "Button"
+    assert payload["events"][0]["input_event"]["kind"] == "mouse_down"
 
 
 def test_cli_record_exposes_start_pause_stop_save_discard_controls(

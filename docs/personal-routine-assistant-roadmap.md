@@ -278,7 +278,7 @@ abuse, and hidden automation are not supported.
 
 - [x] Add `desktop-agent record` with start, pause, stop, save, and discard
       controls.
-- [ ] Add a recorder event model for observation, input event, selected point,
+- [x] Add a recorder event model for observation, input event, selected point,
       active window, screenshot path, candidate context, and timestamp.
 - [ ] Capture UIA element name/control type/bounds around clicked points.
 - [ ] Capture OCR text blocks around clicked points.

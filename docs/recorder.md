@@ -22,6 +22,13 @@ desktop-agent record save --state traces/recorder-session.json --output traces/m
 desktop-agent record discard --state traces/recorder-session.json
 ```
 
-The saved JSON uses `deskpilot_recorder_session_v1` and currently contains the
-session ID, name, status, timestamps, and an empty event list. Event capture and
-editable YAML/playbook generation are tracked in the recorder roadmap tasks.
+The saved JSON uses `deskpilot_recorder_session_v1` and contains the session
+ID, name, status, timestamps, event count, and recorder events. Recorder events
+are timestamped records with an event type (`observation`, `input_event`, or
+`selected_point`), active-window title, screenshot path, selected point,
+low-level input payload, candidate context, and metadata. Candidate context can
+carry source, label, UIA control type, bounds, confidence, and source-specific
+metadata.
+
+Live Windows event capture and editable YAML/playbook generation are tracked in
+the remaining recorder roadmap tasks.
