@@ -213,6 +213,94 @@ def test_validate_proof_suite_can_require_passing_preflight(tmp_path: Path) -> N
     assert result.preflight_errors == ()
 
 
+def test_validate_proof_suite_can_require_passing_review_status(
+    tmp_path: Path,
+) -> None:
+    for proof_name in (
+        "browser-fixture",
+        "native-fixture",
+        "mixed-fixture",
+        "recovery-fixture",
+    ):
+        _write_proof_bundle(
+            tmp_path,
+            proof_name=proof_name,
+            trace_dir_name=proof_name,
+            include_video=False,
+        )
+    _write_completed_review_status(tmp_path)
+
+    result = validate_proof_suite(
+        tmp_path,
+        require_video=False,
+        require_review=True,
+    )
+
+    assert result.passed
+    assert result.review_status_path == tmp_path / "proof-suite-review-status.json"
+    assert result.review_errors == ()
+
+
+def test_validate_proof_suite_reports_missing_required_review_status(
+    tmp_path: Path,
+) -> None:
+    _write_proof_bundle(
+        tmp_path,
+        proof_name="browser-fixture",
+        trace_dir_name="browser-fixture",
+        include_video=False,
+    )
+
+    result = validate_proof_suite(
+        tmp_path,
+        require_video=False,
+        require_review=True,
+    )
+
+    assert not result.passed
+    assert (
+        f"proof review status not found: {tmp_path / 'proof-suite-review-status.json'}"
+        in result.errors
+    )
+
+
+def test_validate_proof_suite_reports_failed_required_review_status(
+    tmp_path: Path,
+) -> None:
+    _write_proof_bundle(
+        tmp_path,
+        proof_name="browser-fixture",
+        trace_dir_name="browser-fixture",
+        include_video=False,
+    )
+    review_path = tmp_path / "proof-suite-review.md"
+    review_path.write_text(
+        "\n".join(
+            [
+                "# DeskPilot Windows Proof Suite Review",
+                "- Reviewer: Ada",
+                "- Review date: 2026-05-16",
+                "- [ ] Pass",
+                "- [x] Fail",
+                "- [x] The run happened on an owned, unlocked Windows desktop or VM.",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+    write_proof_review_status(validate_proof_review(review_path))
+
+    result = validate_proof_suite(
+        tmp_path,
+        require_video=False,
+        require_review=True,
+    )
+
+    assert not result.passed
+    assert "proof review status is not passed: failed" in result.errors
+    assert "proof review decision is not pass: fail" in result.errors
+
+
 def test_validate_proof_suite_reports_missing_required_preflight(
     tmp_path: Path,
 ) -> None:
@@ -309,6 +397,7 @@ def test_write_proof_suite_status_records_monitoring_payload(
     assert saved_payload == payload
     assert payload["status"] == "failed"
     assert payload["preflight_report_path"] is None
+    assert payload["review_status_path"] is None
     assert payload["missing_proofs"] == [
         "native-fixture",
         "mixed-fixture",
@@ -343,7 +432,8 @@ def test_write_proof_suite_runbook_lists_next_operator_commands(
     ) in runbook
     assert (
         "desktop-agent proof validate-suite "
-        f"{tmp_path} --allow-missing-video --require-preflight --write-report "
+        f"{tmp_path} --allow-missing-video --require-preflight --require-review "
+        "--write-report "
         "--write-status-json --write-runbook"
     ) in runbook
 
@@ -443,6 +533,7 @@ def test_write_proof_suite_archive_packages_review_artifacts(
             require_video=False,
         ),
     )
+    _write_completed_review_status(tmp_path)
     result = validate_proof_suite(tmp_path, require_video=False)
 
     archive_path = write_proof_suite_archive(result, require_video=False)
@@ -455,10 +546,31 @@ def test_write_proof_suite_archive_packages_review_artifacts(
     assert "proof-suite-next-actions.md" in names
     assert "proof-suite-review.md" in names
     assert "proof-preflight.json" in names
+    assert "proof-suite-review-status.json" in names
     assert "browser-fixture/proof-manifest.json" in names
     assert "browser-fixture/browser-fixture-report.json" in names
     assert "browser-fixture/action-log.jsonl" in names
     assert "browser-fixture/screenshots/shot-1.png" in names
+
+
+def _write_completed_review_status(root: Path) -> Path:
+    review_path = root / "proof-suite-review.md"
+    review_path.write_text(
+        "\n".join(
+            [
+                "# DeskPilot Windows Proof Suite Review",
+                "- Reviewer: Ada",
+                "- Review date: 2026-05-16",
+                "- [x] Pass",
+                "- [ ] Fail",
+                "- [x] The run happened on an owned, unlocked Windows desktop or VM.",
+                "- [x] Video or justified external recording reviewed.",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+    return write_proof_review_status(validate_proof_review(review_path))
 
 
 def _write_proof_bundle(

@@ -180,6 +180,8 @@ abuse, and hidden automation are not supported.
       decision, required checks, per-proof checks, and blocking findings.
 - [x] Add proof review validation and status JSON for completed human review
       sign-off records.
+- [x] Add `--require-review` suite validation so proof promotion can fail when
+      completed human review sign-off is missing or failed.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

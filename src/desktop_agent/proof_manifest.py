@@ -140,6 +140,8 @@ class ProofSuiteValidation:
     duplicate_proofs: tuple[str, ...]
     preflight_report_path: Path | None
     preflight_errors: tuple[str, ...]
+    review_status_path: Path | None
+    review_errors: tuple[str, ...]
     warnings: tuple[str, ...]
 
     @property
@@ -149,6 +151,7 @@ class ProofSuiteValidation:
     @property
     def errors(self) -> tuple[str, ...]:
         errors = list(self.preflight_errors)
+        errors.extend(self.review_errors)
         errors.extend(f"missing proof bundle: {name}" for name in self.missing_proofs)
         for result in self.bundle_results:
             proof_name = result.proof_name or str(result.trace_dir)
@@ -433,6 +436,7 @@ def validate_proof_suite(
     expected_proofs: tuple[str, ...] = REQUIRED_WINDOWS_PROOF_NAMES,
     require_video: bool = True,
     require_preflight: bool = False,
+    require_review: bool = False,
 ) -> ProofSuiteValidation:
     """Validate that a trace root contains every required Windows proof bundle."""
 
@@ -440,6 +444,11 @@ def validate_proof_suite(
     preflight_report_path, preflight_errors = _validate_preflight_report(
         trace_root,
         require_preflight,
+        warnings,
+    )
+    review_status_path, review_errors = _validate_review_status_report(
+        trace_root,
+        require_review,
         warnings,
     )
     manifests_by_name: dict[str, list[Path]] = {}
@@ -482,6 +491,8 @@ def validate_proof_suite(
         duplicate_proofs=duplicates,
         preflight_report_path=preflight_report_path,
         preflight_errors=preflight_errors,
+        review_status_path=review_status_path,
+        review_errors=review_errors,
         warnings=tuple(warnings),
     )
 
@@ -626,6 +637,10 @@ def proof_suite_status_metadata(validation: ProofSuiteValidation) -> dict[str, o
         if validation.preflight_report_path is not None
         else None,
         "preflight_errors": list(validation.preflight_errors),
+        "review_status_path": str(validation.review_status_path)
+        if validation.review_status_path is not None
+        else None,
+        "review_errors": list(validation.review_errors),
         "expected_proofs": list(validation.expected_proofs),
         "missing_proofs": list(validation.missing_proofs),
         "duplicate_proofs": list(validation.duplicate_proofs),
@@ -922,6 +937,9 @@ def _proof_suite_archive_files(
     preflight_report_path = validation.trace_root / PROOF_PREFLIGHT_REPORT_NAME
     if preflight_report_path.exists():
         paths.append(preflight_report_path)
+    review_status_path = validation.trace_root / PROOF_SUITE_REVIEW_STATUS_NAME
+    if review_status_path.exists():
+        paths.append(review_status_path)
     for bundle in validation.bundle_results:
         paths.append(bundle.manifest_path)
         paths.extend(path for _, path in bundle.artifact_paths)
@@ -1095,7 +1113,8 @@ def _proof_suite_validation_command(trace_root: Path, require_video: bool) -> st
     allow_missing_video = "" if require_video else " --allow-missing-video"
     return (
         f"- `desktop-agent proof validate-suite {_shell_arg(trace_root)}"
-        f"{allow_missing_video} --require-preflight --write-report "
+        f"{allow_missing_video} --require-preflight --require-review "
+        "--write-report "
         "--write-status-json "
         "--write-runbook`"
     )
@@ -1161,6 +1180,38 @@ def _validate_preflight_report(
                     f"{status or 'missing'}",
                 )
     return report_path, tuple(errors)
+
+
+def _validate_review_status_report(
+    trace_root: Path,
+    require_review: bool,
+    warnings: list[str],
+) -> tuple[Path | None, tuple[str, ...]]:
+    status_path = trace_root / PROOF_SUITE_REVIEW_STATUS_NAME
+    if not status_path.exists():
+        if require_review:
+            return None, (f"proof review status not found: {status_path}",)
+        warnings.append(f"proof review status not found: {status_path}")
+        return None, ()
+
+    errors: list[str] = []
+    payload = _load_json_object(status_path, errors, "proof review status")
+    if payload is None:
+        return status_path, tuple(errors)
+    if payload.get("status") != "passed":
+        errors.append(
+            "proof review status is not passed: "
+            f"{payload.get('status', 'missing')}",
+        )
+    if payload.get("decision") != "pass":
+        errors.append(
+            "proof review decision is not pass: "
+            f"{payload.get('decision', 'missing')}",
+        )
+    unchecked_items = payload.get("unchecked_items")
+    if isinstance(unchecked_items, list) and unchecked_items:
+        errors.append("proof review status has unchecked required items")
+    return status_path, tuple(errors)
 
 
 def _validate_manifest_metadata(

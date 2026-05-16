@@ -50,6 +50,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Run `desktop-agent proof validate-review <path-to-proof-suite-review.md>
       --write-status-json` and store `proof-suite-review-status.json` with the
       review record.
+- [ ] Run `desktop-agent proof validate-suite <trace-root>
+      --require-preflight --require-review` before final promotion.
 
 ## Required Proof Bundle
 
@@ -99,6 +101,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] `proof-suite-review-status.json` records the completed human review
       validation status, decision, checked item count, unchecked items, and
       blocking errors.
+- [ ] Final `validate-suite --require-preflight --require-review` fails if
+      either preflight readiness or human review sign-off is missing or failed.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 
