@@ -248,6 +248,121 @@ def test_file_trace_sink_applies_metadata_only_trace_mode(tmp_path: Path) -> Non
     assert config_payload["redaction_policy"]["evidence_mode"] == "metadata_only"
 
 
+def test_metadata_only_failed_trace_keeps_debuggable_report_metadata(
+    tmp_path: Path,
+) -> None:
+    task = TaskDefinition(
+        name="metadata failure",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+    )
+    trace_sink = FileTraceSink()
+    trace_sink.prepare_run(
+        task,
+        RuntimeConfig(
+            trace_root=tmp_path / "traces",
+            redaction_policy=RedactionPolicy(evidence_mode="metadata_only"),
+        ),
+    )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="observe_screen",
+            message="pre-action observation captured",
+            metadata={
+                "pre_action_evidence": {
+                    "screenshot_path": None,
+                    "active_window_title": "DeskPilot Fixture",
+                    "focused_element": {"name": "Submit"},
+                    "cursor_position": {"x": 20, "y": 30},
+                },
+            },
+        )
+    )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="select_target",
+            message="no target selected",
+            metadata={
+                "selection_blocked": "confidence_or_ambiguity_gate",
+                "candidate_rankings": [
+                    {
+                        "candidate_id": "candidate-Submit",
+                        "label": "Submit",
+                        "confidence": 0.41,
+                    },
+                ],
+            },
+        )
+    )
+    trace_sink.record_event(
+        TraceEvent(
+            phase="reobserve_after_failure",
+            message="post-failure observation captured",
+            metadata={
+                "post_action_evidence": {
+                    "screenshot_path": None,
+                    "active_window_title": "DeskPilot Fixture",
+                    "cursor_position": {"x": 20, "y": 30},
+                },
+            },
+        )
+    )
+    trace_sink.record_step(
+        StepReport(
+            step_id="click-submit",
+            action="click_text",
+            status="failed",
+            attempts=2,
+            message="target confidence below threshold",
+            candidate_id="candidate-Submit",
+            metadata={
+                "failure_category": "target_selection_failure",
+                "manual_handoff_required": True,
+            },
+        )
+    )
+
+    report = trace_sink.write_final_report(
+        "failed",
+        abort_reason="target confidence below threshold",
+    )
+
+    assert report.trace_dir is not None
+    assert not (report.trace_dir / "screenshots").exists()
+    assert not (report.trace_dir / "ocr").exists()
+    final_report = json.loads(
+        (report.trace_dir / "final-report.json").read_text(encoding="utf-8")
+    )
+    action_log = (report.trace_dir / "action-log.jsonl").read_text(encoding="utf-8")
+    markdown = (report.trace_dir / "final-report.md").read_text(encoding="utf-8")
+
+    assert final_report["status"] == "failed"
+    assert final_report["abort_reason"] == "target confidence below threshold"
+    assert final_report["trace_schema_version"] == TRACE_SCHEMA_V2.version
+    assert final_report["steps"][0]["candidate_id"] == "candidate-Submit"
+    assert final_report["steps"][0]["metadata"]["manual_handoff_required"] is True
+    assert final_report["events"][0]["metadata"]["pre_action_evidence"] == {
+        "screenshot_path": None,
+        "active_window_title": "DeskPilot Fixture",
+        "focused_element": {"name": "Submit"},
+        "cursor_position": {"x": 20, "y": 30},
+    }
+    assert final_report["events"][1]["metadata"]["candidate_rankings"][0] == {
+        "candidate_id": "candidate-Submit",
+        "label": "Submit",
+        "confidence": 0.41,
+    }
+    assert final_report["events"][2]["metadata"]["post_action_evidence"] == {
+        "screenshot_path": None,
+        "active_window_title": "DeskPilot Fixture",
+        "cursor_position": {"x": 20, "y": 30},
+    }
+    assert "confidence_or_ambiguity_gate" in markdown
+    assert "[target_selection_failure]" in markdown
+    assert "candidate_rankings" in action_log
+
+
 def test_file_trace_sink_includes_recovery_decision_metadata_in_reports(
     tmp_path: Path,
 ) -> None:

@@ -28,6 +28,10 @@ raw content payloads in reports.
 When `redaction_policy.evidence_mode` is `metadata_only`, the resolved runtime
 config disables screenshot and OCR text artifact files while preserving
 structured trace metadata, action logs, and reports.
+Failed metadata-only runs must still keep enough local report metadata to debug
+the failure path: final reports retain the abort reason, failed step status,
+candidate ID, failure category, candidate rankings, before/after observation
+metadata, cursor/focus details when available, and the action-log event stream.
 
 ## Report Contents
 
