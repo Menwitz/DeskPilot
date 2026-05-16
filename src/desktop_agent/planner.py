@@ -958,6 +958,12 @@ class ExecutionEngine:
                         verification.message,
                         last_candidate_id,
                         action_count,
+                        success_evidence=_success_evidence_metadata(
+                            verification_observation,
+                            action_result,
+                            state_delta_metadata,
+                            verification,
+                        ),
                     ),
                 )
 
@@ -1572,10 +1578,14 @@ class ExecutionEngine:
         message: str,
         candidate_id: str | None,
         action_count: int | None,
+        *,
+        success_evidence: dict[str, object] | None = None,
     ) -> StepReport:
         metadata = _step_report_metadata(step)
         if action_count is not None:
             metadata["action_count"] = action_count
+        if success_evidence is not None:
+            metadata["success_evidence"] = success_evidence
         return StepReport(
             step_id=step.id,
             action=step.action,
@@ -2091,6 +2101,25 @@ def _scroll_failure_evidence_metadata(
         "scroll_clicks": state_delta.get("scroll_clicks"),
         "scroll_step_count": state_delta.get("scroll_step_count"),
         "scroll_step_clicks": state_delta.get("scroll_step_clicks"),
+        "state_delta": state_delta,
+    }
+
+
+def _success_evidence_metadata(
+    observation: ScreenObservation,
+    action_result: ActionResult,
+    state_delta: dict[str, object],
+    verification: VerificationResult,
+) -> dict[str, object]:
+    return {
+        "success_evidence_type": "passed_action",
+        "action_message": action_result.message,
+        "verification_message": verification.message,
+        "verification_outcome": verification.resolved_outcome,
+        "post_action_evidence": _observation_evidence(
+            observation,
+            {"status": "not_captured_in_step_summary"},
+        ),
         "state_delta": state_delta,
     }
 

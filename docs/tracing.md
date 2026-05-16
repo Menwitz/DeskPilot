@@ -147,6 +147,8 @@ Failed type steps include `failure_evidence` with the active window, focused
 element, active process, and state delta captured around the typing attempt.
 Failed scroll steps include `failure_evidence` with `scroll_moved` and emitted
 scroll-click metadata so reports can show whether the viewport likely moved.
+Passed action steps include `success_evidence` with post-action evidence,
+verification outcome, and state delta for the resulting state.
 Markdown event rows include compact decision details for recovery paths,
 ambiguity gates, and timing delays so timing, ambiguity, recovery, and safety
 stops can be reviewed without opening the JSON report. Final actuator guard

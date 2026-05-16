@@ -591,6 +591,55 @@ def test_execution_engine_records_post_action_observation_evidence(
     assert phases.index("observe_after_action") < phases.index("verify_result")
 
 
+def test_execution_engine_passed_action_includes_success_evidence() -> None:
+    task = TaskDefinition(
+        name="passed-action-evidence",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="click-submit",
+                action="click_text",
+                target="Submit",
+                verify=VerificationDefinition(type="visible_text", text="Success"),
+            ),
+        ),
+    )
+    before = ScreenObservation(active_window_title="DeskPilot Fixture")
+    after = ScreenObservation(
+        active_window_title="DeskPilot Fixture - Done",
+        metadata={"focused_element": {"name": "Success", "class_name": "Text"}},
+    )
+    engine = _engine(
+        task,
+        screen_observer=SequenceScreenObserver((before, after)),
+        perception=SequencePerceptionEngine(
+            (_candidate_tuple("Submit"), _candidate_tuple("Success")),
+        ),
+        actuator=SequenceActuator((ActionResult(True, "clicked"),)),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    evidence = report.steps[0].metadata["success_evidence"]
+    assert isinstance(evidence, dict)
+    post_action = evidence["post_action_evidence"]
+    state_delta = evidence["state_delta"]
+    assert isinstance(post_action, dict)
+    assert isinstance(state_delta, dict)
+    assert report.status == "passed"
+    assert evidence["success_evidence_type"] == "passed_action"
+    assert evidence["action_message"] == "clicked"
+    assert evidence["verification_outcome"] == "passed"
+    assert post_action["active_window_title"] == "DeskPilot Fixture - Done"
+    assert post_action["focused_element"] == {
+        "name": "Success",
+        "class_name": "Text",
+    }
+    assert state_delta["target_appeared"] is True
+    assert state_delta["visible_text_added"] == ["Success"]
+
+
 def test_execution_engine_records_target_reasoning_and_coordinate_conversion() -> None:
     task = TaskDefinition(
         name="target-reasoning",
