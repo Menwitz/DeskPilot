@@ -208,7 +208,7 @@ abuse, and hidden automation are not supported.
 - [x] A failed type shows the focused window and focused element before typing.
 - [x] A failed scroll shows whether the viewport moved.
 - [x] A passed action includes concrete evidence of the resulting state.
-- [ ] Trace replay can explain each executed step without live desktop access.
+- [x] Trace replay can explain each executed step without live desktop access.
 
 ## Phase 3: Low-Level Desktop I/O Task Model
 

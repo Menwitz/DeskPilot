@@ -1226,8 +1226,10 @@ def _replay_summary_markdown(trace_dir: Path, report: dict[str, object]) -> str:
         lines.append("- No step timeline available.")
     lines.extend(["", "## Evidence"])
     evidence_lines = _replay_evidence_lines(report)
-    if evidence_lines:
+    step_evidence_lines = _replay_step_evidence_lines(report)
+    if evidence_lines or step_evidence_lines:
         lines.extend(evidence_lines)
+        lines.extend(step_evidence_lines)
     else:
         lines.append("- No screenshot or state-delta evidence found.")
     return "\n".join(lines) + "\n"
@@ -1286,6 +1288,58 @@ def _append_state_delta_lines(
         value = metadata.get(key)
         if value not in (None, [], False):
             lines.append(f"  - {label}: `{value}`")
+
+
+def _replay_step_evidence_lines(report: dict[str, object]) -> list[str]:
+    steps = report.get("steps")
+    if not isinstance(steps, list):
+        return []
+    lines: list[str] = []
+    for step in steps:
+        if not isinstance(step, dict):
+            continue
+        metadata = step.get("metadata")
+        if not isinstance(metadata, dict):
+            continue
+        raw_step_id = step.get("step_id")
+        step_id = raw_step_id if isinstance(raw_step_id, str) else "?"
+        for key in ("success_evidence", "failure_evidence"):
+            evidence = metadata.get(key)
+            if isinstance(evidence, dict):
+                _append_step_evidence_lines(lines, step_id, key, evidence)
+    return lines
+
+
+def _append_step_evidence_lines(
+    lines: list[str],
+    step_id: str,
+    key: str,
+    evidence: dict[object, object],
+) -> None:
+    lines.append(f"- step `{step_id}` `{key}`")
+    for field, label in (
+        ("success_evidence_type", "Success evidence type"),
+        ("failure_evidence_type", "Failure evidence type"),
+        ("action_message", "Action message"),
+        ("verification_outcome", "Verification outcome"),
+        ("before_active_window_title", "Before active window"),
+        ("before_focused_element", "Before focused element"),
+        ("scroll_moved", "Scroll moved"),
+    ):
+        value = evidence.get(field)
+        if value not in (None, [], False):
+            lines.append(f"  - {label}: `{value}`")
+    post_action = evidence.get("post_action_evidence")
+    if isinstance(post_action, dict):
+        screenshot_path = post_action.get("screenshot_path")
+        active_window_title = post_action.get("active_window_title")
+        if isinstance(screenshot_path, str):
+            lines.append(f"  - Post screenshot: `{screenshot_path}`")
+        if isinstance(active_window_title, str):
+            lines.append(f"  - Post active window: `{active_window_title}`")
+    state_delta = evidence.get("state_delta")
+    if isinstance(state_delta, dict):
+        _append_state_delta_lines(lines, state_delta)
 
 
 def _proof(args: argparse.Namespace) -> int:

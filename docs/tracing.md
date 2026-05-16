@@ -176,7 +176,9 @@ selected candidates, verification outcomes, recovery reasons, manual handoff,
 state-delta changes, and scroll movement.
 Add `--write-summary` to write `replay-summary.md` in the trace directory with
 the timeline, screenshot paths from pre/post action evidence, and state-delta
-changes.
+changes. The summary also includes step-level `success_evidence` and
+`failure_evidence`, so each executed step can be reviewed without live desktop
+access.
 
 `desktop-agent proof replay <trace-dir>` reads `proof-manifest.json` and prints
 the proof name, original command, status, environment metadata, and artifact

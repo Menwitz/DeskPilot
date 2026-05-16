@@ -1279,6 +1279,23 @@ def test_cli_replay_writes_markdown_summary(
                         "action": "click_text",
                         "status": "passed",
                         "attempts": 1,
+                        "metadata": {
+                            "success_evidence": {
+                                "success_evidence_type": "passed_action",
+                                "action_message": "clicked",
+                                "verification_outcome": "passed",
+                                "post_action_evidence": {
+                                    "screenshot_path": str(after),
+                                    "active_window_title": (
+                                        "DeskPilot Fixture - Done"
+                                    ),
+                                },
+                                "state_delta": {
+                                    "visible_text_added": ["Success"],
+                                    "target_appeared": True,
+                                },
+                            },
+                        },
                     },
                 ],
                 "events": [
@@ -1332,6 +1349,9 @@ def test_cli_replay_writes_markdown_summary(
     assert f"Screenshot: `{after}`" in summary
     assert "Visible text added: `['Success']`" in summary
     assert "Target appeared: `True`" in summary
+    assert "step `click-submit` `success_evidence`" in summary
+    assert "Success evidence type: `passed_action`" in summary
+    assert "Post active window: `DeskPilot Fixture - Done`" in summary
 
 
 def test_cli_replay_points_to_proof_replay_for_manifest_trace(
