@@ -29,7 +29,7 @@ abuse, and hidden automation are not supported.
 - [x] DeskPilot supports goal-to-routine planning.
 - [x] DeskPilot supports optional local Ollama planning and ranking.
 - [ ] DeskPilot provides video plus trace proof for real Windows workflows.
-- [ ] DeskPilot supports human-paced visible routine scheduling over time.
+- [x] DeskPilot supports human-paced visible routine scheduling over time.
 - [x] DeskPilot supports trace redaction controls for screenshots, OCR text,
       typed text, variables, and video.
 
