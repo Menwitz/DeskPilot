@@ -599,6 +599,77 @@ def test_cli_proof_native_fixture_prints_trace_report(
     assert "step replace-native-fixture-text: type_text" in output
 
 
+def test_cli_proof_mixed_fixture_prints_trace_report(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    from desktop_agent.mouse_demo import MouseDemoReport, MouseDemoStep
+
+    def fake_run_mixed_fixture(
+        *,
+        trace_root: Path,
+        random_seed: int,
+        movement_smoothness: float,
+        countdown_seconds: float,
+        native_text: str,
+        browser_find_text: str,
+        page_load_seconds: float,
+    ) -> MouseDemoReport:
+        assert trace_root == tmp_path
+        assert random_seed == 89
+        assert movement_smoothness == 0.9
+        assert countdown_seconds == 0
+        assert native_text == "handoff"
+        assert browser_find_text == "browser marker"
+        assert page_load_seconds == 0
+        return MouseDemoReport(
+            status="passed",
+            trace_dir=tmp_path / "trace",
+            report_path=tmp_path / "trace" / "mixed-fixture-report.json",
+            proof_manifest_path=tmp_path / "trace" / "proof-manifest.json",
+            steps=(
+                MouseDemoStep(
+                    "switch-back-to-browser",
+                    "press_chord",
+                    {},
+                ),
+            ),
+        )
+
+    monkeypatch.setattr(
+        "desktop_agent.cli.run_mixed_fixture",
+        fake_run_mixed_fixture,
+    )
+
+    status = main(
+        [
+            "proof",
+            "mixed-fixture",
+            "--trace-root",
+            str(tmp_path),
+            "--random-seed",
+            "89",
+            "--movement-smoothness",
+            "0.9",
+            "--countdown-seconds",
+            "0",
+            "--native-text",
+            "handoff",
+            "--browser-find-text",
+            "browser marker",
+            "--page-load-seconds",
+            "0",
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "status: passed" in output
+    assert f"manifest: {tmp_path / 'trace' / 'proof-manifest.json'}" in output
+    assert "step switch-back-to-browser: press_chord" in output
+
+
 def test_cli_windows_smoke_checklist_prints_checks(
     tmp_path: Path,
     capsys: CaptureFixture[str],

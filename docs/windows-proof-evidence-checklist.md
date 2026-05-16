@@ -108,6 +108,25 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Reviewer confirms the proof uses no app API, accessibility write API,
       clipboard injection, or fake text surface.
 
+## `desktop-agent proof mixed-fixture`
+
+- [ ] Command recorded:
+      `desktop-agent proof mixed-fixture --trace-root traces
+      --countdown-seconds 5`.
+- [ ] Video shows Microsoft Edge opening the generated local browser fixture.
+- [ ] Video shows Notepad opening after the browser step.
+- [ ] Video shows the configured native handoff text typed into Notepad.
+- [ ] Video shows `Alt+Tab` switching focus back to Edge.
+- [ ] Video shows Edge Find searching for the configured browser fixture text.
+- [ ] `mixed-fixture-report.json` exists and has `status: passed`.
+- [ ] `action-log.jsonl` contains browser fixture creation, Edge launch,
+      Notepad launch, native typing, Alt+Tab switching, browser Find, and
+      cursor-readback monitoring records.
+- [ ] Post-action screenshots show browser, native app, window switching, and
+      browser-return evidence where visible.
+- [ ] Reviewer confirms the proof uses no browser API, app API, accessibility
+      write API, or synthetic window switch.
+
 ## `desktop-agent windows-smoke-checklist`
 
 - [ ] Command recorded:
@@ -127,8 +146,6 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 
 Use the same global and bundle checks for each fixture command as it lands.
 
-- [ ] `desktop-agent proof mixed-fixture` evidence shows a browser-to-native
-      handoff and real window switching.
 - [ ] `desktop-agent proof recovery-fixture` evidence shows delayed, stale,
       duplicated, disabled, occluded, or moving-target recovery behavior.
 

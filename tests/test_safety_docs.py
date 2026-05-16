@@ -84,6 +84,7 @@ def test_windows_proof_docs_cover_manual_evidence_review() -> None:
         "proof-manifest.json",
         "demo-input",
         "demo-linkedin",
+        "mixed-fixture",
         "native-fixture",
         "windows-smoke-checklist",
         "video",

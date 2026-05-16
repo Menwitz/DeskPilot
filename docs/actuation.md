@@ -131,6 +131,16 @@ The command opens Notepad, types text, selects the buffer with `Ctrl+A`, replace
 the text, and writes proof artifacts. See
 [Native Fixture Proof](native-fixture-proof.md) for the runbook.
 
+For a mixed browser-to-native handoff proof, run:
+
+```powershell
+uv run desktop-agent proof mixed-fixture
+```
+
+The command opens Edge, opens Notepad, types native text, switches back to Edge
+with `Alt+Tab`, and writes proof artifacts. See
+[Mixed Fixture Proof](mixed-fixture-proof.md) for the runbook.
+
 For a compact Windows smoke checklist, run:
 
 ```powershell

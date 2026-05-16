@@ -15,6 +15,7 @@ from desktop_agent.mouse_demo import (
     _demo_actuation_profile,
     _run_browser_fixture_sequence,
     _run_linkedin_sequence,
+    _run_mixed_fixture_sequence,
     _run_native_fixture_sequence,
     _run_windows_smoke_sequence,
     _write_browser_fixture_html,
@@ -23,6 +24,7 @@ from desktop_agent.mouse_demo import (
     run_browser_fixture,
     run_input_demo,
     run_linkedin_demo,
+    run_mixed_fixture,
     run_mouse_demo,
     run_native_fixture,
     run_windows_smoke_checklist,
@@ -370,6 +372,66 @@ def test_native_fixture_sequence_edits_notepad_text() -> None:
     assert observer.observe_count == len(steps)
 
 
+def test_mixed_fixture_sequence_switches_between_edge_and_notepad(
+    tmp_path: Path,
+) -> None:
+    backend = FakeInputBackend(start_position=(0, 0))
+    controller = RealInputController(backend, _instant_demo_profile())
+    observer = FakeScreenObserver(active_window_title="Mixed Fixture")
+    recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=tmp_path,
+        observer=observer,
+    )
+    fixture_path = tmp_path / "browser-fixture.html"
+
+    steps = _run_mixed_fixture_sequence(
+        controller,
+        fixture_path=fixture_path,
+        fixture_url=fixture_path.as_uri(),
+        native_text="handoff text",
+        browser_find_text="DeskPilot Browser Fixture",
+        page_load_seconds=0,
+        evidence_recorder=recorder,
+        launch_edge=lambda initial_url: MouseDemoStep(
+            "open-edge",
+            "launch_application",
+            {"initial_url": initial_url},
+        ),
+        launch_notepad=lambda: MouseDemoStep(
+            "open-notepad",
+            "launch_application",
+            {"application": "notepad.exe"},
+        ),
+    )
+
+    typed_text = "".join(
+        event.text or "" for event in backend.events if event.kind == "type_text"
+    )
+    assert [step.step_id for step in steps] == [
+        "write-mixed-browser-fixture",
+        "open-edge",
+        "open-notepad",
+        "type-mixed-native-text",
+        "switch-back-to-browser",
+        "open-browser-find",
+        "type-mixed-browser-find-text",
+        "confirm-mixed-browser-find-text",
+        "close-browser-find",
+        "final-cursor-readback",
+    ]
+    assert typed_text == "handoff textDeskPilot Browser Fixture"
+    assert any(
+        event.kind == "key_down" and event.key == "alt"
+        for event in backend.events
+    )
+    assert any(
+        event.kind == "press_key" and event.key == "tab" for event in backend.events
+    )
+    assert all("post_action_evidence" in step.metadata for step in steps)
+    assert observer.observe_count == len(steps)
+
+
 def test_windows_smoke_sequence_checks_cursor_notepad_edge_and_trace() -> None:
     backend = FakeInputBackend(start_position=(0, 0))
     controller = RealInputController(backend, _instant_demo_profile())
@@ -454,6 +516,16 @@ def test_run_native_fixture_requires_windows(
 
     with pytest.raises(MouseDemoError, match="proof native-fixture requires Windows"):
         run_native_fixture(trace_root=tmp_path)
+
+
+def test_run_mixed_fixture_requires_windows(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("desktop_agent.mouse_demo.sys.platform", "darwin")
+
+    with pytest.raises(MouseDemoError, match="proof mixed-fixture requires Windows"):
+        run_mixed_fixture(trace_root=tmp_path)
 
 
 def test_run_windows_smoke_checklist_requires_windows(

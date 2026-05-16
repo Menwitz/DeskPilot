@@ -923,6 +923,106 @@ def run_native_fixture(
     )
 
 
+def run_mixed_fixture(
+    *,
+    trace_root: Path = Path("traces"),
+    random_seed: int = 20260515,
+    movement_smoothness: float = 0.85,
+    countdown_seconds: float = 3.0,
+    native_text: str = "DeskPilot mixed native handoff",
+    browser_find_text: str = "DeskPilot Browser Fixture",
+    page_load_seconds: float = 1.5,
+) -> MouseDemoReport:
+    """Open Edge and Notepad, then switch between them with real keyboard input."""
+
+    if sys.platform != "win32":
+        raise MouseDemoError("proof mixed-fixture requires Windows desktop input")
+    if not 0 <= movement_smoothness <= 1:
+        raise MouseDemoError("movement_smoothness must be between 0 and 1")
+    if countdown_seconds < 0:
+        raise MouseDemoError("countdown_seconds must not be negative")
+    if page_load_seconds < 0:
+        raise MouseDemoError("page_load_seconds must not be negative")
+    if not native_text:
+        raise MouseDemoError("native_text must not be empty")
+    if not browser_find_text:
+        raise MouseDemoError("browser_find_text must not be empty")
+
+    _set_process_dpi_aware()
+    trace_dir = _prepare_trace_dir(trace_root, "mixed-fixture")
+    fixture_path = _write_browser_fixture_html(
+        trace_dir,
+        "DeskPilot mixed fixture result",
+    )
+    fixture_url = fixture_path.resolve().as_uri()
+    profile = _demo_actuation_profile(random_seed, movement_smoothness)
+    backend = WindowsInputBackend(move_mode="absolute")
+    controller = RealInputController(backend, profile)
+    evidence_recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=trace_dir,
+    )
+    steps: list[MouseDemoStep] = []
+    status = "passed"
+    reason: str | None = None
+    started_at = _timestamp()
+    screen_bounds: tuple[int, int, int, int] | None = None
+
+    try:
+        _countdown(countdown_seconds)
+        screen_bounds = _windows_virtual_screen_bounds()
+        steps.extend(
+            _run_mixed_fixture_sequence(
+                controller,
+                fixture_path=fixture_path,
+                fixture_url=fixture_url,
+                native_text=native_text,
+                browser_find_text=browser_find_text,
+                page_load_seconds=page_load_seconds,
+                evidence_recorder=evidence_recorder,
+            )
+        )
+    except Exception as exc:  # pragma: no cover - exercised manually on Windows.
+        status = "failed"
+        reason = str(exc)
+
+    report_path = _write_report(
+        trace_dir,
+        tuple(steps),
+        status,
+        reason,
+        report_name="mixed-fixture-report.json",
+    )
+    proof_manifest_path = _write_proof_manifest(
+        trace_dir,
+        proof_name="mixed-fixture",
+        command=_mixed_fixture_command(
+            trace_root,
+            random_seed,
+            movement_smoothness,
+            countdown_seconds,
+            native_text,
+            browser_find_text,
+            page_load_seconds,
+        ),
+        status=status,
+        reason=reason,
+        started_at=started_at,
+        completed_at=_timestamp(),
+        report_path=report_path,
+        steps=tuple(steps),
+        monitor_bounds=screen_bounds,
+    )
+    return MouseDemoReport(
+        status=status,
+        reason=reason,
+        trace_dir=trace_dir,
+        report_path=report_path,
+        steps=tuple(steps),
+        proof_manifest_path=proof_manifest_path,
+    )
+
+
 def run_windows_smoke_checklist(
     *,
     trace_root: Path = Path("traces"),
@@ -1257,6 +1357,78 @@ def _run_native_fixture_sequence(
     _record_step(
         steps,
         controller.type_text("replace-native-fixture-text", replacement_text),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.current_position_step("final-cursor-readback"),
+        evidence_recorder,
+    )
+    return tuple(steps)
+
+
+def _run_mixed_fixture_sequence(
+    controller: RealInputController,
+    *,
+    fixture_path: Path,
+    fixture_url: str,
+    native_text: str,
+    browser_find_text: str,
+    page_load_seconds: float,
+    evidence_recorder: PostActionEvidenceRecorder | None = None,
+    launch_edge: Callable[[str], MouseDemoStep] | None = None,
+    launch_notepad: Callable[[], MouseDemoStep] | None = None,
+) -> tuple[MouseDemoStep, ...]:
+    steps: list[MouseDemoStep] = []
+    edge_launcher = launch_edge or _launch_edge
+    notepad_launcher = launch_notepad or _launch_notepad
+
+    _record_step(
+        steps,
+        MouseDemoStep(
+            "write-mixed-browser-fixture",
+            "write_fixture",
+            {
+                "fixture_path": str(fixture_path),
+                "fixture_url": fixture_url,
+                "expected_browser_find_text": browser_find_text,
+            },
+        ),
+        evidence_recorder,
+    )
+    _record_step(steps, edge_launcher(fixture_url), evidence_recorder)
+    controller.pause(page_load_seconds)
+    _record_step(steps, notepad_launcher(), evidence_recorder)
+    controller.pause(1.0)
+    _record_step(
+        steps,
+        controller.type_text("type-mixed-native-text", native_text),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.press_chord("switch-back-to-browser", "alt+tab"),
+        evidence_recorder,
+    )
+    controller.pause(0.80)
+    _record_step(
+        steps,
+        controller.press_chord("open-browser-find", "ctrl+f"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.type_text("type-mixed-browser-find-text", browser_find_text),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.press_chord("confirm-mixed-browser-find-text", "enter"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.press_chord("close-browser-find", "esc"),
         evidence_recorder,
     )
     _record_step(
@@ -1850,6 +2022,36 @@ def _native_fixture_command(
         initial_text,
         "--replacement-text",
         replacement_text,
+    )
+
+
+def _mixed_fixture_command(
+    trace_root: Path,
+    random_seed: int,
+    movement_smoothness: float,
+    countdown_seconds: float,
+    native_text: str,
+    browser_find_text: str,
+    page_load_seconds: float,
+) -> tuple[str, ...]:
+    return (
+        "desktop-agent",
+        "proof",
+        "mixed-fixture",
+        "--trace-root",
+        str(trace_root),
+        "--random-seed",
+        str(random_seed),
+        "--movement-smoothness",
+        str(movement_smoothness),
+        "--countdown-seconds",
+        str(countdown_seconds),
+        "--native-text",
+        native_text,
+        "--browser-find-text",
+        browser_find_text,
+        "--page-load-seconds",
+        str(page_load_seconds),
     )
 
 
