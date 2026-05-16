@@ -11,10 +11,19 @@ from pathlib import Path
 from typing import Literal, Protocol, cast
 from uuid import uuid4
 
-from desktop_agent.task_dsl import TaskDefinition, TaskStep, VerificationDefinition
+from desktop_agent.task_dsl import (
+    TaskDefinition,
+    TaskRegion,
+    TaskStep,
+    VerificationDefinition,
+)
 
 RECORDER_SESSION_FORMAT = "deskpilot_recorder_session_v1"
 RECORDER_DEFAULT_RISK_CLASS = "review_required"
+RECORDER_CONFIRMATION_RISK_CLASSES = frozenset({"high", "sensitive"})
+RECORDER_CONFIRMATION_ACTIONS = frozenset(
+    {"click_text", "click_image", "click_uia", "type_text", "press_key", "scroll"},
+)
 RecorderStatus = Literal["recording", "paused", "stopped", "saved"]
 RecorderEventType = Literal["observation", "input_event", "selected_point"]
 
@@ -578,11 +587,12 @@ def generate_task_from_recorder_session(session: RecorderSession) -> TaskDefinit
     if not steps:
         raise RecorderGenerationError("recorder session has no task-generating events")
     review = session.review.normalized(session.name)
+    final_steps = _apply_confirmation_markers(tuple(steps), review.risk_class)
     return TaskDefinition(
         name=review.routine_name,
         allowed_windows=_allowed_windows_from_events(session.events),
         timeout_seconds=300,
-        steps=tuple(steps),
+        steps=final_steps,
         metadata={
             "recorder_session_id": session.session_id,
             "recorder_event_count": len(session.events),
@@ -754,14 +764,21 @@ def _click_step_from_event(index: int, event: RecorderEvent) -> TaskStep | None:
     if context is None:
         return None
     step_id = _step_id(index, f"click-{context.source}")
+    region = _region_from_context(context)
     if context.source == "uia":
         return TaskStep(
             id=step_id,
             action="click_uia",
             target=context.label or context.control_type,
+            region=region,
         )
     if context.source == "ocr":
-        return TaskStep(id=step_id, action="click_text", target=context.label)
+        return TaskStep(
+            id=step_id,
+            action="click_text",
+            target=context.label,
+            region=region,
+        )
     if context.source == "image":
         snippet_path = context.metadata.get("snippet_path")
         if not isinstance(snippet_path, str):
@@ -771,8 +788,49 @@ def _click_step_from_event(index: int, event: RecorderEvent) -> TaskStep | None:
             action="click_image",
             image=Path(snippet_path),
             target=context.label,
+            region=region,
         )
     return None
+
+
+def _region_from_context(context: RecorderCandidateContext) -> TaskRegion | None:
+    bounds = context.bounds
+    if bounds is None:
+        return None
+    width = bounds.get("width", 0)
+    height = bounds.get("height", 0)
+    if width <= 0 or height <= 0:
+        return None
+    return TaskRegion(
+        x=bounds.get("x", 0),
+        y=bounds.get("y", 0),
+        width=width,
+        height=height,
+    )
+
+
+def _apply_confirmation_markers(
+    steps: tuple[TaskStep, ...],
+    risk_class: str,
+) -> tuple[TaskStep, ...]:
+    if risk_class not in RECORDER_CONFIRMATION_RISK_CLASSES:
+        return steps
+    return tuple(_mark_step_confirmation(step, risk_class) for step in steps)
+
+
+def _mark_step_confirmation(step: TaskStep, risk_class: str) -> TaskStep:
+    if step.action not in RECORDER_CONFIRMATION_ACTIONS:
+        return step
+    # Recorder-generated risky steps use the shared Task DSL confirmation marker.
+    return replace(
+        step,
+        requires_confirmation=True,
+        metadata={
+            **step.metadata,
+            "recorder_sensitive_marker": "requires_confirmation",
+            "recorder_risk_class": risk_class,
+        },
+    )
 
 
 def _input_step_from_event(index: int, event: RecorderEvent) -> TaskStep | None:

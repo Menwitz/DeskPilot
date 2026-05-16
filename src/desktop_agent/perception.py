@@ -105,14 +105,18 @@ class DryRunPerceptionEngine(PerceptionEngine):
         label = _dry_run_label(step)
         if label is None:
             return ()
+        bounds = _dry_run_candidate_bounds(step)
         return (
             ElementCandidate(
                 id=f"dry-run-{step.id}",
                 source="unknown",
                 label=label,
-                bounds=Bounds(x=0, y=0, width=1, height=1),
+                bounds=bounds,
                 confidence=1.0,
-                metadata={"dry_run": True},
+                metadata={
+                    "dry_run": True,
+                    "synthetic_region_match": step.region is not None,
+                },
             ),
         )
 
@@ -580,3 +584,16 @@ def _dry_run_label(step: TaskStep) -> str | None:
     if step.verify and step.verify.image:
         return step.verify.image.name
     return None
+
+
+def _dry_run_candidate_bounds(step: TaskStep) -> Bounds:
+    if step.region is None:
+        return Bounds(x=0, y=0, width=1, height=1)
+    # Region-scoped dry-runs should validate the authored region instead of
+    # failing the same region filter that real perception uses.
+    return Bounds(
+        x=step.region.x,
+        y=step.region.y,
+        width=max(1, step.region.width),
+        height=max(1, step.region.height),
+    )

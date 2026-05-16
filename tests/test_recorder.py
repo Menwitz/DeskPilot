@@ -405,6 +405,55 @@ def test_recorder_generates_supported_task_steps_from_events() -> None:
     assert task.steps[7].target == "Done"
 
 
+def test_recorder_marks_high_risk_steps_for_confirmation() -> None:
+    session = _session_with_events(
+        (
+            RecorderEvent.create(
+                "selected_point",
+                active_window="DeskPilot Fixture",
+                candidate_context=(
+                    RecorderCandidateContext(
+                        source="uia",
+                        label="Publish",
+                        control_type="Button",
+                        bounds={"x": 10, "y": 10, "width": 80, "height": 24},
+                    ),
+                ),
+            ),
+            RecorderEvent.create(
+                "input_event",
+                active_window="DeskPilot Fixture",
+                input_event={"kind": "type_text", "text": "sensitive draft"},
+            ),
+            RecorderEvent.create(
+                "observation",
+                active_window="DeskPilot Fixture",
+                metadata={
+                    "suggested_action": "assert_visible",
+                    "target": "Draft saved",
+                },
+            ),
+        ),
+        review=RecorderReviewMetadata(
+            routine_name="Sensitive fixture",
+            risk_class="high",
+        ),
+    )
+
+    task = generate_task_from_recorder_session(session)
+
+    BasicTaskValidator().validate(task, RuntimeConfig())
+    assert [step.requires_confirmation for step in task.steps] == [
+        True,
+        True,
+        False,
+    ]
+    assert task.steps[0].metadata["recorder_sensitive_marker"] == (
+        "requires_confirmation"
+    )
+    assert task.steps[0].metadata["recorder_risk_class"] == "high"
+
+
 def test_recorder_infers_verification_from_post_action_state_delta() -> None:
     session = _session_with_events(
         (
@@ -515,7 +564,13 @@ def test_recorder_uses_candidate_selectors_instead_of_raw_points() -> None:
     assert task.steps[0].target == "Submit"
     assert task.steps[1].target == "Search"
     assert task.steps[2].image == Path("snippets/fallback.pgm")
-    assert all(step.region is None for step in task.steps)
+    assert task.steps[0].region is not None
+    assert task.steps[0].region.x == 20
+    assert task.steps[0].region.y == 40
+    assert task.steps[1].region is not None
+    assert task.steps[1].region.width == 140
+    assert task.steps[2].region is not None
+    assert task.steps[2].region.height == 32
     assert all("point" not in step.metadata for step in task.steps)
 
 
@@ -626,6 +681,50 @@ def test_cli_record_export_task_writes_valid_browser_fixture_yaml(
     assert task.steps[2].verify is not None
     assert task.steps[2].verify.text == "Results ready"
     assert task.metadata["routine_tags"] == ["browser", "search"]
+    assert all(not step.requires_confirmation for step in task.steps)
+
+
+def test_cli_record_export_task_marks_high_risk_yaml_steps(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    state_path = tmp_path / "recorder-state.json"
+    output_path = tmp_path / "high-risk-routine.yaml"
+    controller = RecorderController(state_path)
+    controller.start(
+        name="Sensitive browser fixture",
+        review=RecorderReviewMetadata(
+            routine_name="Sensitive browser routine",
+            risk_class="high",
+        ),
+    )
+    for event in _fake_browser_event_stream():
+        controller.record_event(event)
+    controller.stop()
+
+    status = main(
+        [
+            "record",
+            "export-task",
+            "--state",
+            str(state_path),
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    payload = yaml.safe_load(output_path.read_text(encoding="utf-8"))
+    task = YamlTaskLoader().load(output_path)
+    BasicTaskValidator().validate(task, RuntimeConfig())
+    assert status == 0
+    assert "recording task exported:" in output
+    assert payload["steps"][0]["requires_confirmation"] is True
+    assert payload["steps"][0]["metadata"]["recorder_sensitive_marker"] == (
+        "requires_confirmation"
+    )
+    assert payload["steps"][0]["metadata"]["recorder_risk_class"] == "high"
+    assert task.steps[0].requires_confirmation is True
 
 
 def test_cli_record_export_task_writes_valid_native_fixture_yaml(
@@ -709,6 +808,18 @@ def test_exported_recorder_yaml_can_be_edited_dry_run_and_proof_planned(
     capsys.readouterr()
 
     payload = yaml.safe_load(output_path.read_text(encoding="utf-8"))
+    assert payload["allowed_windows"] == ["Browser Fixture"]
+    assert payload["steps"][0]["target"] == "Search"
+    assert payload["steps"][0]["region"] == {
+        "x": 20,
+        "y": 40,
+        "width": 120,
+        "height": 24,
+    }
+    assert payload["steps"][2]["verify"] == {
+        "type": "visible_text",
+        "text": "Results ready",
+    }
     payload["name"] = "Edited browser search routine"
     payload["steps"][1]["text"] = "DeskPilot edited query"
     output_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")

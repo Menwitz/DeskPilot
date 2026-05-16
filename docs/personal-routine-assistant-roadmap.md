@@ -269,7 +269,7 @@ abuse, and hidden automation are not supported.
 - [x] O1: Ship a Windows recorder that generates valid editable tasks.
 - [x] KR1: Recorder captures clicks, typing, hotkeys, scrolls, waits, active
       windows, screenshots, and candidate context.
-- [ ] KR2: Generated YAML includes allowed windows, targets, regions,
+- [x] KR2: Generated YAML includes allowed windows, targets, regions,
       verification suggestions, and sensitive-step markers.
 - [ ] KR3: Generated YAML passes `BasicTaskValidator`.
 - [ ] KR4: A recorded fixture routine can be rerun successfully after review.
