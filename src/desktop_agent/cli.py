@@ -70,6 +70,7 @@ from desktop_agent.platforms.windows.uia import (
     write_uia_tree_snapshot,
 )
 from desktop_agent.preview import build_dry_run_preview, render_dry_run_preview
+from desktop_agent.recorder import RecorderController, RecorderError
 from desktop_agent.safety import (
     LocalSafetyPolicy,
     NoopEmergencyStopMonitor,
@@ -128,6 +129,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _calibrate_target(args)
         if args.command == "benchmark-run":
             return _run_benchmark(args)
+        if args.command == "record":
+            return _record(args)
         if args.command in {"demo-input", "demo-mouse"}:
             return _demo_input(args)
         if args.command == "demo-linkedin":
@@ -144,6 +147,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ConfigError,
         ApprovalManifestError,
         SitePlaybookValidationError,
+        RecorderError,
         TaskValidationError,
         MouseDemoError,
         OSError,
@@ -273,6 +277,12 @@ def _build_parser() -> argparse.ArgumentParser:
     benchmark_parser.add_argument("--confidence-threshold", type=float)
     benchmark_parser.add_argument("--allowed-window", action="append", default=[])
 
+    record_parser = subparsers.add_parser(
+        "record",
+        help="control a local routine recording session",
+    )
+    _add_record_options(record_parser)
+
     demo_input_parser = subparsers.add_parser(
         "demo-input",
         help="demonstrate global real Windows cursor and keyboard input",
@@ -297,6 +307,39 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     _add_windows_smoke_checklist_options(windows_smoke_parser)
     return parser
+
+
+def _add_record_options(parser: argparse.ArgumentParser) -> None:
+    record_subparsers = parser.add_subparsers(dest="record_command")
+    start_parser = record_subparsers.add_parser("start", help="start recording")
+    _add_record_state_option(start_parser)
+    start_parser.add_argument("--name", default="untitled routine")
+    start_parser.add_argument("--overwrite", action="store_true")
+
+    pause_parser = record_subparsers.add_parser("pause", help="pause recording")
+    _add_record_state_option(pause_parser)
+
+    stop_parser = record_subparsers.add_parser("stop", help="stop recording")
+    _add_record_state_option(stop_parser)
+
+    save_parser = record_subparsers.add_parser("save", help="save recording")
+    _add_record_state_option(save_parser)
+    save_parser.add_argument("--output", required=True, type=Path)
+
+    discard_parser = record_subparsers.add_parser(
+        "discard",
+        help="discard recording",
+    )
+    _add_record_state_option(discard_parser)
+
+
+def _add_record_state_option(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--state",
+        default=Path("traces/recorder-session.json"),
+        type=Path,
+        help="local recorder control-state file",
+    )
 
 
 def _add_task_options(parser: argparse.ArgumentParser) -> None:
@@ -970,6 +1013,34 @@ def _run_benchmark(args: argparse.Namespace) -> int:
         and report.acceptance.passed
         else 1
     )
+
+
+def _record(args: argparse.Namespace) -> int:
+    controller = RecorderController(args.state)
+    if args.record_command == "start":
+        session = controller.start(name=args.name, overwrite=args.overwrite)
+        print(f"recording started: {session.session_id}")
+        print(f"state: {args.state}")
+        return 0
+    if args.record_command == "pause":
+        session = controller.pause()
+        print(f"recording paused: {session.session_id}")
+        return 0
+    if args.record_command == "stop":
+        session = controller.stop()
+        print(f"recording stopped: {session.session_id}")
+        return 0
+    if args.record_command == "save":
+        session = controller.save(args.output)
+        print(f"recording saved: {session.session_id}")
+        print(f"output: {args.output}")
+        return 0
+    if args.record_command == "discard":
+        session = controller.discard()
+        print(f"recording discarded: {session.session_id}")
+        return 0
+    print("error: record subcommand required")
+    return 2
 
 
 def _demo_input(args: argparse.Namespace) -> int:

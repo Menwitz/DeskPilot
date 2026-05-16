@@ -276,7 +276,7 @@ abuse, and hidden automation are not supported.
 
 ### Tasks
 
-- [ ] Add `desktop-agent record` with start, pause, stop, save, and discard
+- [x] Add `desktop-agent record` with start, pause, stop, save, and discard
       controls.
 - [ ] Add a recorder event model for observation, input event, selected point,
       active window, screenshot path, candidate context, and timestamp.
