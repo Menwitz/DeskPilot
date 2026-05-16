@@ -37,7 +37,7 @@ def test_dry_run_preview_renders_timing_bounds_and_recovery_paths() -> None:
 
     assert "policy preset: strict_qa" in rendered
     assert "step click-submit (click_text, navigation)" in rendered
-    assert "safety: local_mutation; mutation local" in rendered
+    assert "safety: local_mutation; mutation local; mutates state yes" in rendered
     assert "approval not required; reversibility usually_reversible" in rendered
     assert "window scope 1" in rendered
     assert "action 0.050-0.250s x3" in rendered
@@ -45,3 +45,24 @@ def test_dry_run_preview_renders_timing_bounds_and_recovery_paths() -> None:
     assert "worst-case wait 1.350s" in rendered
     assert "missed_target -> wait_and_reobserve -> abort_with_trace" in rendered
     assert "chosen wait_and_reobserve constrained" in rendered
+
+
+def test_dry_run_preview_marks_read_only_actions_as_non_mutating() -> None:
+    task = TaskDefinition(
+        name="read-only preview",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="assert-ready",
+                action="assert_visible",
+                target="Ready",
+            ),
+        ),
+    )
+
+    rendered = render_dry_run_preview(
+        build_dry_run_preview(task, RuntimeConfig()),
+    )
+
+    assert "safety: read_only; mutation none; mutates state no" in rendered

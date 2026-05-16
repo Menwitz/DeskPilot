@@ -168,8 +168,9 @@ pass that read-only verification before timing or action execution.
 Each resolved step also carries action-safety metadata in traces and reports:
 the safety class, mutation risk, approval requirement, reversibility,
 idempotence, effective allowed-window scope, and allowed region. Dry-run
-previews print the same summary so task authors can see likely mutation and
-approval behavior before a routine runs.
+previews print the same summary, including an explicit `mutates state yes/no`
+label, so task authors can see likely mutation and approval behavior before a
+routine runs.
 The public action-safety classes are `read_only`, `local_mutation`,
 `external_mutation`, `credential`, `payment`, `delete`, and
 `message_or_publish`.

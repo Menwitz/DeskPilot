@@ -249,7 +249,7 @@ abuse, and hidden automation are not supported.
 
 ### Acceptance Criteria
 
-- [ ] A task author can tell which actions mutate state before running.
+- [x] A task author can tell which actions mutate state before running.
 - [ ] Risky actions stop before input unless confirmation or manifest approval
       is present.
 - [ ] Emergency stop can interrupt long movement, drag, typing, scroll, and wait

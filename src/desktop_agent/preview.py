@@ -75,15 +75,18 @@ def render_dry_run_preview(preview: DryRunPreview) -> str:
         lines.append(f"  step {step.step_id} ({step.action}, {step.category})")
         safety_class = step.safety_metadata["action_safety_class"]
         mutation_risk = step.safety_metadata["mutation_risk"]
+        mutates_state = step.safety_metadata["mutates_state"]
         approval_required = step.safety_metadata["approval_required"]
         reversibility = step.safety_metadata["reversibility"]
         window_scope = step.safety_metadata["window_scope"]
         scope_count = len(window_scope) if isinstance(window_scope, list) else 0
+        mutates_label = "yes" if mutates_state is True else "no"
         approval_label = "required" if approval_required is True else "not required"
         lines.append(
             "    safety: "
-            f"{safety_class}; mutation {mutation_risk}; approval "
-            f"{approval_label}; reversibility {reversibility}; "
+            f"{safety_class}; mutation {mutation_risk}; mutates state "
+            f"{mutates_label}; approval {approval_label}; "
+            f"reversibility {reversibility}; "
             f"window scope {scope_count}",
         )
         lines.append(

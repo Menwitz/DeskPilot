@@ -156,6 +156,7 @@ def test_cli_dry_run_preview_shows_timing_bounds_and_recovery_paths(
 
     output = capsys.readouterr().out
     assert status == 0
+    assert "safety: local_mutation; mutation local; mutates state yes" in output
     assert "timing: action 0.050-0.250s x2" in output
     assert "retry 0.100-0.300s x1" in output
     assert "recovery: missed_target -> wait_and_reobserve -> abort_with_trace" in output
