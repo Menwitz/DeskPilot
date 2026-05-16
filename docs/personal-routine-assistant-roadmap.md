@@ -214,7 +214,7 @@ abuse, and hidden automation are not supported.
 
 ### Goals
 
-- [ ] Make real desktop operations explicit below semantic YAML actions.
+- [x] Make real desktop operations explicit below semantic YAML actions.
 - [ ] Track mutation risk, approval needs, reversibility, and app/window scope
       per action.
 - [ ] Preserve existing YAML compatibility while adding a lower-level compiled

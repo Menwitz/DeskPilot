@@ -89,6 +89,10 @@ timing events include the original sampled delay, the upper-bound delay, and the
 extension amount. Both paths include target confidence and
 `safety_checks_required: true` so reports can confirm path selection did not
 remove safety checks.
+The `desktop_io_plan` event records how each semantic YAML action maps to
+low-level desktop operations such as `observe`, `move`, `click`, `type`,
+`hotkey`, `wheel`, `verify`, and `wait`. The same operation list is copied onto
+`execute_action` metadata.
 
 For steps with `checkpoint`, traces include `observe_checkpoint`,
 `checkpoint_candidates`, and `verification_checkpoint` before any action timing

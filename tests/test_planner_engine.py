@@ -442,6 +442,38 @@ def test_execution_engine_records_elapsed_input_wait_before_action() -> None:
     assert phases.index("input_wait") < phases.index("execute_action")
 
 
+def test_execution_engine_records_desktop_io_plan_for_semantic_action() -> None:
+    task = TaskDefinition(
+        name="desktop-io-plan",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="click-submit", action="click_text", target="Submit"),),
+    )
+    engine = _engine(task)
+
+    report = engine.run(Path("task.yaml"))
+
+    phases = [event.phase for event in report.events]
+    plan = next(event for event in report.events if event.phase == "desktop_io_plan")
+    execute = next(event for event in report.events if event.phase == "execute_action")
+    assert report.status == "passed"
+    assert plan.metadata["semantic_action"] == "click_text"
+    assert plan.metadata["desktop_io_operations"] == [
+        "observe",
+        "move",
+        "click",
+        "verify",
+    ]
+    assert plan.metadata["desktop_io_operation_count"] == 4
+    assert execute.metadata["desktop_io_operations"] == [
+        "observe",
+        "move",
+        "click",
+        "verify",
+    ]
+    assert phases.index("desktop_io_plan") < phases.index("execute_action")
+
+
 def test_execution_engine_records_pre_action_observation_evidence(
     tmp_path: Path,
 ) -> None:

@@ -730,6 +730,11 @@ class ExecutionEngine:
                 "execution path selected",
                 _step_metadata(step, **execution_path.metadata()),
             )
+            self._record(
+                "desktop_io_plan",
+                "semantic action compiled to desktop I/O",
+                _step_metadata(step, **_desktop_io_plan_metadata(step)),
+            )
             if step.checkpoint is not None:
                 checkpoint = self._run_verification_checkpoint(
                     step,
@@ -826,7 +831,11 @@ class ExecutionEngine:
                         failure_category="timeout",
                     ),
                 )
-            action_metadata = _step_metadata(step, success=action_result.success)
+            action_metadata = _step_metadata(
+                step,
+                success=action_result.success,
+                **_desktop_io_plan_metadata(step),
+            )
             action_metadata.update(action_result.metadata)
             self._record(
                 "execute_action",
@@ -2103,6 +2112,33 @@ def _scroll_failure_evidence_metadata(
         "scroll_step_clicks": state_delta.get("scroll_step_clicks"),
         "state_delta": state_delta,
     }
+
+
+def _desktop_io_plan_metadata(step: TaskStep) -> dict[str, object]:
+    operations = _desktop_io_operations(step.action)
+    return {
+        "semantic_action": step.action,
+        "desktop_io_operations": operations,
+        "desktop_io_operation_count": len(operations),
+    }
+
+
+def _desktop_io_operations(action: str) -> list[str]:
+    mapping = {
+        "click_text": ["observe", "move", "click", "verify"],
+        "click_image": ["observe", "move", "click", "verify"],
+        "click_uia": ["observe", "move", "click", "verify"],
+        "double_click": ["observe", "move", "double_click", "verify"],
+        "drag": ["observe", "move", "drag", "verify"],
+        "type_text": ["observe", "type", "verify"],
+        "press_key": ["observe", "hotkey", "verify"],
+        "scroll": ["observe", "wheel", "verify"],
+        "scroll_until": ["observe", "wheel", "observe", "verify"],
+        "wait_for": ["observe", "wait", "verify"],
+        "assert_visible": ["observe", "verify"],
+        "branch_if_visible": ["observe", "verify"],
+    }
+    return list(mapping.get(action, ["observe", action, "verify"]))
 
 
 def _success_evidence_metadata(
