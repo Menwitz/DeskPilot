@@ -21,6 +21,8 @@ logged-in Windows desktop session.
 - Risky submission and confirmation-required actions stop before observation,
   timing, or actuation unless the step is confirmed by operator approval or an
   approved site manifest.
+- Emergency stop polling interrupts planner waits and long desktop movement,
+  drag, typing, and scroll chunks before the next bounded input segment.
 - Sensitive site dry-runs validate local content variables, approval manifests,
   checkpoints, and trace metadata without sending desktop input.
 - Trace artifacts remain local by default; content payloads are represented by

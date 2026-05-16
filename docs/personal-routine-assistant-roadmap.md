@@ -252,7 +252,7 @@ abuse, and hidden automation are not supported.
 - [x] A task author can tell which actions mutate state before running.
 - [x] Risky actions stop before input unless confirmation or manifest approval
       is present.
-- [ ] Emergency stop can interrupt long movement, drag, typing, scroll, and wait
+- [x] Emergency stop can interrupt long movement, drag, typing, scroll, and wait
       actions.
 - [ ] Existing examples continue to validate and dry-run.
 

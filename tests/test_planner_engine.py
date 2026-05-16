@@ -1240,6 +1240,33 @@ def test_execution_engine_wait_for_polls_until_candidate_is_visible() -> None:
     assert "recover" in {event.phase for event in report.events}
 
 
+def test_execution_engine_checks_emergency_stop_during_wait_for_polling() -> None:
+    clock = FakeClock()
+    task = TaskDefinition(
+        name="wait-for-emergency-stop",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(TaskStep(id="wait", action="wait_for", target="Ready"),),
+    )
+    engine = _engine(
+        task,
+        perception=SequencePerceptionEngine(((),)),
+        clock=clock,
+        emergency_stop_monitor=SequenceEmergencyStopMonitor(
+            (False, False, True),
+        ),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    assert report.status == "emergency_stopped"
+    assert report.steps[0].message == "emergency stop requested"
+    assert report.steps[0].metadata["failure_category"] == "safety_stop"
+    assert report.steps[0].attempts == 2
+    assert round(clock.now, 2) == 0.1
+    assert "execute_action" not in {event.phase for event in report.events}
+
+
 def test_execution_engine_retries_stale_ui_selection_before_action() -> None:
     task = TaskDefinition(
         name="stale-ui",
