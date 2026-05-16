@@ -409,7 +409,7 @@ abuse, and hidden automation are not supported.
 
 ### OKRs
 
-- [ ] O1: Add goal-to-routine planning.
+- [x] O1: Add goal-to-routine planning.
 - [ ] KR1: Deterministic rules match goals to routines by app, site, tags,
       input/output types, safety class, and historical success.
 - [ ] KR2: Planner asks for missing required inputs before execution.
