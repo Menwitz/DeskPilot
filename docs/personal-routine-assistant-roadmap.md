@@ -27,7 +27,7 @@ abuse, and hidden automation are not supported.
 - [ ] DeskPilot supports a 300-routine catalog.
 - [ ] DeskPilot supports recorder-generated editable YAML and playbooks.
 - [x] DeskPilot supports goal-to-routine planning.
-- [ ] DeskPilot supports optional local Ollama planning and ranking.
+- [x] DeskPilot supports optional local Ollama planning and ranking.
 - [ ] DeskPilot provides video plus trace proof for real Windows workflows.
 - [ ] DeskPilot supports human-paced visible routine scheduling over time.
 - [ ] DeskPilot supports trace redaction controls for screenshots, OCR text,
