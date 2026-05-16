@@ -36,9 +36,9 @@ Observe -> Interpret -> Decide -> Actuate -> Verify
 - [ ] Do not market this as "human behavior simulation."
 - [ ] Do not optimize for stealth, CAPTCHA bypass, rate-limit evasion, or
       anti-bot circumvention.
-- [ ] Do not depend on Playwright, browser DevTools, LinkedIn APIs, or app
+- [x] Do not depend on Playwright, browser DevTools, LinkedIn APIs, or app
       plugins for the proof demos.
-- [ ] Do not use rendered fixture cursors as proof of control.
+- [x] Do not use rendered fixture cursors as proof of control.
 - [ ] Do not perform account-mutating actions in public demo flows.
 
 ## Phase 1: Prove Real Desktop Actuation

@@ -159,7 +159,7 @@ abuse, and hidden automation are not supported.
       and cursor readback.
 - [ ] A reviewer can verify from artifacts that real OS input occurred.
 - [x] Non-Windows real `run` exits with a clear unsupported-platform message.
-- [ ] Proof commands do not use browser DevTools, Playwright, app APIs, or
+- [x] Proof commands do not use browser DevTools, Playwright, app APIs, or
       fixture-only fake cursors.
 
 ## Phase 2: Closed-Loop Verification Upgrade

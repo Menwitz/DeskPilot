@@ -21,6 +21,44 @@ from desktop_agent.task_dsl import (
 from desktop_agent.tracing import MemoryTraceSink
 
 
+def test_proof_commands_stay_on_real_os_input_boundary() -> None:
+    mouse_demo_code = Path("src/desktop_agent/mouse_demo.py").read_text(
+        encoding="utf-8"
+    )
+    proof_code = "\n".join(
+        [
+            mouse_demo_code,
+            Path("src/desktop_agent/cli.py").read_text(encoding="utf-8"),
+        ]
+    ).lower()
+    proof_docs = "\n".join(
+        [
+            Path("docs/mouse-demo.md").read_text(encoding="utf-8"),
+            Path("docs/linkedin-demo.md").read_text(encoding="utf-8"),
+            Path("docs/browser-fixture-proof.md").read_text(encoding="utf-8"),
+            Path("docs/native-fixture-proof.md").read_text(encoding="utf-8"),
+            Path("docs/mixed-fixture-proof.md").read_text(encoding="utf-8"),
+            Path("docs/recovery-fixture-proof.md").read_text(encoding="utf-8"),
+            Path("docs/windows-proof-evidence-checklist.md").read_text(
+                encoding="utf-8"
+            ),
+        ]
+    )
+
+    for forbidden in ("playwright", "selenium", "webdriver", "devtools"):
+        assert forbidden not in proof_code
+    assert "WindowsInputBackend" in mouse_demo_code
+    assert "RealInputController" in mouse_demo_code
+    for phrase in (
+        "synthetic cursor",
+        "does not use Playwright",
+        "does not use app APIs",
+        "no browser API",
+        "no app API",
+    ):
+        assert phrase in proof_docs
+
+
 class FailingOnceActuator:
     def __init__(self) -> None:
         self.calls = 0
