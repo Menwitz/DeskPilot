@@ -95,6 +95,17 @@ def test_windows_smoke_proof_command_passes_on_owned_desktop(
     manifests = sorted(trace_root.glob("*/proof-manifest.json"))
     assert exit_code == 0, f"{' '.join(command)} smoke command failed"
     assert manifests, f"{' '.join(command)} did not write a proof manifest"
+    validation_exit_code = main(
+        [
+            "proof",
+            "validate",
+            str(manifests[0].parent),
+            "--allow-missing-video",
+        ]
+    )
+    assert validation_exit_code == 0, (
+        f"{' '.join(command)} proof bundle validation failed"
+    )
 
 
 def _require_windows_smoke() -> None:
