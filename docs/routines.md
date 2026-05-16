@@ -89,13 +89,14 @@ report metadata when a routine is compiled.
 
 ## Quarantine
 
-Routine definitions can carry `failed_evidence_count`, `quarantine_status`, and
-`quarantine_reason`. `quarantine_status` supports `active` and `quarantined`.
-Routines are computed as quarantined when they are explicitly marked
-`quarantined` or when `failed_evidence_count` reaches three failed evidence
-records. Quarantined status is included in compiled task metadata and
-`show-routine` output so catalog reports can hold unstable routines back from
-promotion or unattended use.
+Routine definitions can carry `failed_evidence_count`,
+`quarantine_failure_threshold`, `quarantine_status`, and `quarantine_reason`.
+`quarantine_status` supports `active` and `quarantined`. Routines are computed
+as quarantined when they are explicitly marked `quarantined` or when failed
+evidence or historical failure counters reach the configured threshold. The
+default threshold is three. Quarantined status is included in compiled task
+metadata and `show-routine` output so catalog reports can hold unstable routines
+back from promotion or unattended use.
 
 ## Historical Counters
 
@@ -103,7 +104,9 @@ promotion or unattended use.
 artifacts, groups reports by `metadata.routine_id`, and counts passed, failed,
 aborted, and emergency-stopped runs. `generate-routine-docs` can receive
 `--failure-history-root <trace-root>` to include historical failure counts in
-the routine catalog index without rewriting reviewed routine YAML.
+the routine catalog index without rewriting reviewed routine YAML. `run-routine`
+and `dry-run-routine` can receive the same option to block historically brittle
+routines at the execution gate.
 
 ## Catalog Loading
 

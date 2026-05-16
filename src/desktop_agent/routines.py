@@ -155,6 +155,7 @@ class RoutineDefinition:
     reference: RoutineReference
     schedule: RoutineSchedule = RoutineSchedule()
     failed_evidence_count: int = 0
+    quarantine_failure_threshold: int = ROUTINE_QUARANTINE_FAILURE_THRESHOLD
     quarantine_status: str = "active"
     quarantine_reason: str | None = None
     source_path: Path | None = None
@@ -173,6 +174,9 @@ class RoutineDefinition:
             "routine_reference_kind": self.reference.kind,
             "routine_schedule": self.schedule.metadata(),
             "routine_failed_evidence_count": self.failed_evidence_count,
+            "routine_quarantine_failure_threshold": (
+                self.quarantine_failure_threshold
+            ),
             "routine_quarantine_status": quarantine,
             "routine_quarantine_reason": self.quarantine_reason,
             "routine_promotion_gates": [
@@ -375,6 +379,13 @@ def routine_definition_from_mapping(
             data.get("failed_evidence_count"),
             "failed_evidence_count",
         ),
+        quarantine_failure_threshold=(
+            _optional_positive_int(
+                data.get("quarantine_failure_threshold"),
+                "quarantine_failure_threshold",
+            )
+            or ROUTINE_QUARANTINE_FAILURE_THRESHOLD
+        ),
         quarantine_status=(
             _optional_string(data, "quarantine_status") or "active"
         ),
@@ -423,6 +434,8 @@ def validate_routine_definition(routine: RoutineDefinition) -> None:
         errors.append("expected_duration_seconds must be greater than zero")
     if routine.failed_evidence_count < 0:
         errors.append("failed_evidence_count must not be negative")
+    if routine.quarantine_failure_threshold <= 0:
+        errors.append("quarantine_failure_threshold must be greater than zero")
     if routine.quarantine_status not in SUPPORTED_QUARANTINE_STATUSES:
         errors.append(f"unsupported quarantine_status: {routine.quarantine_status}")
     if routine.quarantine_status == "quarantined" and not routine.quarantine_reason:
@@ -504,11 +517,18 @@ def routine_promotion_gates(
     return tuple(gates)
 
 
-def routine_quarantine_status(routine: RoutineDefinition) -> str:
-    """Return active/quarantined from explicit state and failed evidence count."""
+def routine_quarantine_status(
+    routine: RoutineDefinition,
+    failure_counters: RoutineFailureCounters | None = None,
+) -> str:
+    """Return active/quarantined from explicit state and failure thresholds."""
     if routine.quarantine_status == "quarantined":
         return "quarantined"
-    if routine.failed_evidence_count >= ROUTINE_QUARANTINE_FAILURE_THRESHOLD:
+    historical_failures = (
+        failure_counters.failure_count if failure_counters is not None else 0
+    )
+    effective_failures = max(routine.failed_evidence_count, historical_failures)
+    if effective_failures >= routine.quarantine_failure_threshold:
         return "quarantined"
     return "active"
 
@@ -516,6 +536,7 @@ def routine_quarantine_status(routine: RoutineDefinition) -> str:
 def routine_execution_gate(
     catalog: RoutineCatalog,
     routine_id: str,
+    failure_counters: Mapping[str, RoutineFailureCounters] | None = None,
 ) -> RoutineExecutionGate:
     """Return whether a routine ID may enter the execution pipeline."""
     if not ROUTINE_ID_PATTERN.fullmatch(routine_id):
@@ -540,7 +561,8 @@ def routine_execution_gate(
             reason="invalid_routine_definition",
             routine=routine,
         )
-    if routine_quarantine_status(routine) != "active":
+    routine_counter = (failure_counters or {}).get(routine.id)
+    if routine_quarantine_status(routine, routine_counter) != "active":
         return RoutineExecutionGate(
             routine_id=routine_id,
             allowed=False,
@@ -558,9 +580,10 @@ def routine_execution_gate(
 def require_validated_routine_for_execution(
     catalog: RoutineCatalog,
     routine_id: str,
+    failure_counters: Mapping[str, RoutineFailureCounters] | None = None,
 ) -> RoutineDefinition:
     """Return a routine only after the execution safety gate passes."""
-    gate = routine_execution_gate(catalog, routine_id)
+    gate = routine_execution_gate(catalog, routine_id, failure_counters)
     if not gate.allowed or gate.routine is None:
         raise RoutineDefinitionError(
             f"routine execution blocked: {gate.reason} ({routine_id})",
@@ -598,7 +621,8 @@ def render_routine_catalog_index(
         f"{_format_counter(_field_counts(routines, 'schedule_policy'))}",
         f"- Schedule-constrained routines: {_schedule_constrained_count(routines)}",
         f"- Windows proof required: {_windows_proof_required_count(routines)}",
-        f"- Quarantined routines: {_quarantined_count(routines)}",
+        "- Quarantined routines: "
+        f"{_quarantined_count_with_history(routines, counters)}",
         f"- Historical failed runs: {_historical_failure_count(routines, counters)}",
         f"- Approval gaps: {_approval_gap_summary(routines)}",
         "",
@@ -631,7 +655,10 @@ def render_routine_catalog_index(
             "  reference kind, failed evidence count, historical failure count,",
             "  quarantine status, and promotion gates.",
             "- Quarantine rule: routines are quarantined when explicitly marked or",
-            "  when failed evidence count reaches three.",
+            "  when failed evidence or historical failures reach the configured",
+            "  threshold.",
+            "- Configurable threshold: routine definitions may set",
+            "  quarantine_failure_threshold to override the default of three.",
             "",
         ],
     )
@@ -673,6 +700,21 @@ def _windows_proof_required_count(routines: Iterable[RoutineDefinition]) -> int:
 def _quarantined_count(routines: Iterable[RoutineDefinition]) -> int:
     return sum(
         1 for routine in routines if routine_quarantine_status(routine) == "quarantined"
+    )
+
+
+def _quarantined_count_with_history(
+    routines: Iterable[RoutineDefinition],
+    counters: Mapping[str, RoutineFailureCounters],
+) -> int:
+    return sum(
+        1
+        for routine in routines
+        if routine_quarantine_status(
+            routine,
+            counters.get(routine.id),
+        )
+        == "quarantined"
     )
 
 
@@ -718,7 +760,7 @@ def _routine_index_row(
         routine.approval_policy,
         routine.schedule_policy,
         gates,
-        routine_quarantine_status(routine),
+        routine_quarantine_status(routine, counters.get(routine.id)),
         str(counters.get(routine.id, _empty_counter(routine.id)).failure_count),
         _routine_reference_label(routine),
     )

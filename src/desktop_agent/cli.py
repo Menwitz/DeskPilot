@@ -310,6 +310,7 @@ def _build_parser() -> argparse.ArgumentParser:
     run_routine_parser.add_argument("routine_id")
     _add_routine_catalog_options(run_routine_parser)
     _add_site_catalog_options(run_routine_parser)
+    _add_routine_failure_history_options(run_routine_parser)
     _add_runtime_options(run_routine_parser)
 
     dry_run_routine_parser = subparsers.add_parser(
@@ -319,6 +320,7 @@ def _build_parser() -> argparse.ArgumentParser:
     dry_run_routine_parser.add_argument("routine_id")
     _add_routine_catalog_options(dry_run_routine_parser)
     _add_site_catalog_options(dry_run_routine_parser)
+    _add_routine_failure_history_options(dry_run_routine_parser)
     _add_runtime_options(dry_run_routine_parser)
 
     plan_goal_parser = subparsers.add_parser(
@@ -679,6 +681,14 @@ def _add_routine_catalog_options(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_routine_failure_history_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--failure-history-root",
+        type=Path,
+        help="optional trace root used to apply routine quarantine counters",
+    )
+
+
 def _add_site_run_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("site")
     parser.add_argument("flow")
@@ -823,6 +833,7 @@ def _show_routine(args: argparse.Namespace) -> int:
     for line in _routine_schedule_summary(routine).splitlines():
         print(f"  {line}")
     print(f"failed_evidence_count: {routine.failed_evidence_count}")
+    print(f"quarantine_failure_threshold: {routine.quarantine_failure_threshold}")
     print(f"quarantine_status: {routine_quarantine_status(routine)}")
     if routine.quarantine_reason:
         print(f"quarantine_reason: {routine.quarantine_reason}")
@@ -894,7 +905,17 @@ def _run_routine(args: argparse.Namespace, *, dry_run: bool) -> int:
 
 def _load_executable_routine(args: argparse.Namespace) -> RoutineDefinition:
     catalog = load_routine_catalog(args.routine_pack_root)
-    return require_validated_routine_for_execution(catalog, args.routine_id)
+    failure_history_root = getattr(args, "failure_history_root", None)
+    failure_counters = (
+        routine_failure_counters_from_trace_root(failure_history_root)
+        if failure_history_root is not None
+        else None
+    )
+    return require_validated_routine_for_execution(
+        catalog,
+        args.routine_id,
+        failure_counters,
+    )
 
 
 def _plan_goal(args: argparse.Namespace) -> int:
@@ -1011,6 +1032,7 @@ def _routine_to_yaml_dict(routine: RoutineDefinition) -> dict[str, object]:
         "expected_duration_seconds": routine.expected_duration_seconds,
         "reference": _routine_reference_to_yaml_dict(routine),
         "failed_evidence_count": routine.failed_evidence_count,
+        "quarantine_failure_threshold": routine.quarantine_failure_threshold,
         "quarantine_status": routine.quarantine_status,
     }
     _put_optional(payload, "required_app", routine.required_app)

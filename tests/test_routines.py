@@ -10,6 +10,7 @@ from desktop_agent.config import RuntimeConfig
 from desktop_agent.routines import (
     RoutineCatalog,
     RoutineDefinitionError,
+    RoutineFailureCounters,
     load_routine_catalog,
     load_routine_definition,
     render_routine_catalog_index,
@@ -426,6 +427,48 @@ def test_routine_failure_counters_scan_trace_reports(tmp_path: Path) -> None:
     assert native.failure_count == 1
 
 
+def test_routine_quarantine_status_uses_configured_history_threshold() -> None:
+    routine = routine_definition_from_mapping(
+        {
+            "id": "browser.brittle",
+            "name": "Brittle browser routine",
+            "description": "A routine with historical failures.",
+            "goal": "Show configured quarantine thresholds.",
+            "tags": ["browser"],
+            "inputs": [],
+            "outputs": [],
+            "safety_class": "low",
+            "schedule_policy": "manual",
+            "approval_policy": "none",
+            "expected_duration_seconds": 30,
+            "failed_evidence_count": 1,
+            "quarantine_failure_threshold": 2,
+            "reference": {
+                "type": "task",
+                "path": "tasks/brittle.yaml",
+            },
+        },
+    )
+    counter = RoutineFailureCounters(
+        routine_id="browser.brittle",
+        total_runs=2,
+        failed_runs=2,
+    )
+    catalog = RoutineCatalog(root=Path("routine_packs"), routines=(routine,))
+
+    gate = routine_execution_gate(
+        catalog,
+        "browser.brittle",
+        {"browser.brittle": counter},
+    )
+
+    assert routine_quarantine_status(routine) == "active"
+    assert routine_quarantine_status(routine, counter) == "quarantined"
+    assert routine.report_metadata()["routine_quarantine_failure_threshold"] == 2
+    assert gate.allowed is False
+    assert gate.reason == "routine_quarantined"
+
+
 def test_routine_execution_gate_allows_only_validated_catalog_routines() -> None:
     routine = routine_definition_from_mapping(
         {
@@ -542,6 +585,7 @@ def test_routine_cli_lists_shows_compiles_exports_and_dry_runs(
         required_app="Microsoft Edge",
         required_site="example.com",
         task_path="tasks/browser-search.yaml",
+        quarantine_failure_threshold=1,
     )
     config_path.write_text(f"trace_root: {tmp_path / 'traces'}\n", encoding="utf-8")
 
@@ -624,6 +668,26 @@ def test_routine_cli_lists_shows_compiles_exports_and_dry_runs(
         == 0
     )
     assert "task: Browser search" in capsys.readouterr().out
+
+    _write_final_report(
+        tmp_path / "history" / "failed" / "final-report.json",
+        routine_id="browser.search",
+        status="failed",
+    )
+    assert (
+        main(
+            [
+                "dry-run-routine",
+                "browser.search",
+                "--routine-pack-root",
+                str(root),
+                "--failure-history-root",
+                str(tmp_path / "history"),
+            ],
+        )
+        == 2
+    )
+    assert "routine_quarantined" in capsys.readouterr().out
 
 
 def test_routine_docs_generation_renders_index_and_template(
@@ -736,10 +800,16 @@ def _write_routine(
     required_app: str,
     required_site: str | None,
     task_path: str,
+    quarantine_failure_threshold: int | None = None,
 ) -> None:
     site_lines = []
     if required_site is not None:
         site_lines.append(f"required_site: {required_site}")
+    threshold_lines = []
+    if quarantine_failure_threshold is not None:
+        threshold_lines.append(
+            f"quarantine_failure_threshold: {quarantine_failure_threshold}",
+        )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         "\n".join(
@@ -760,6 +830,7 @@ def _write_routine(
                 "schedule_policy: manual",
                 "approval_policy: none",
                 "expected_duration_seconds: 30",
+                *threshold_lines,
                 "reference:",
                 "  type: task",
                 f"  path: {task_path}",
