@@ -574,7 +574,7 @@ abuse, and hidden automation are not supported.
 - [x] DeskPilot works with local AI disabled.
 - [x] Ollama-assisted routine ranking can be enabled locally.
 - [x] Invalid model output is rejected safely.
-- [ ] Model-assisted plans are traceable.
+- [x] Model-assisted plans are traceable.
 - [ ] No model output sends raw desktop input outside validated routines.
 
 ## Phase 11: Privacy, Redaction, And Packaging Hardening
