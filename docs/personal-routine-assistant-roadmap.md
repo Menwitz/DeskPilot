@@ -56,7 +56,7 @@ abuse, and hidden automation are not supported.
 - [x] Alpha assistant: recorder, routine library, and native app can run local
       routines manually.
 - [ ] Beta catalog: 300 routines validate, dry-run, and carry safety metadata.
-- [ ] Planner release: goal-to-routine planning selects routines and asks for
+- [x] Planner release: goal-to-routine planning selects routines and asks for
       missing inputs.
 - [ ] UI release: PySide6 app supports library, approvals, run queue, pause,
       stop, recorder review, and trace replay.
