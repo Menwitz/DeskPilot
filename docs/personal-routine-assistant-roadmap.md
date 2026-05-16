@@ -178,7 +178,7 @@ abuse, and hidden automation are not supported.
 - [x] KR2: Verification supports `passed`, `failed`, and `inconclusive`.
 - [x] KR3: Replay summarizes screenshots, focus state, cursor readback, target
       reasoning, and state delta for each step.
-- [ ] KR4: Failed actions include enough evidence to diagnose target, focus,
+- [x] KR4: Failed actions include enough evidence to diagnose target, focus,
       timing, safety, or verification failure.
 
 ### Tasks
