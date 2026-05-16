@@ -516,7 +516,7 @@ abuse, and hidden automation are not supported.
 - [x] Reuse existing recovery policies for stale observation, missed target,
       disabled control, occluded control, transient loading, and verification
       failure.
-- [ ] Add recovery tree execution for refocus, reobserve, alternate candidate,
+- [x] Add recovery tree execution for refocus, reobserve, alternate candidate,
       scroll search, wait for enabled, wait for loading, reopen surface, and
       manual handoff.
 - [ ] Add focus-loss recovery with allowed-window refocus and post-refocus

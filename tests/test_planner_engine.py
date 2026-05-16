@@ -1302,6 +1302,8 @@ def test_execution_engine_retries_stale_ui_selection_before_action() -> None:
     assert actuator.calls == 1
     assert recover.metadata["recovery_reason"] == "stale_observation"
     assert recover.metadata["recovery_chosen_action"] == "reobserve_screen"
+    assert recover.metadata["recovery_tree_chosen_action"] == "reobserve_screen"
+    assert recover.metadata["recovery_tree_can_retry"] is True
 
 
 def test_execution_engine_retries_delayed_disabled_control() -> None:
@@ -1335,6 +1337,8 @@ def test_execution_engine_retries_delayed_disabled_control() -> None:
     assert actuator.calls == 1
     assert recover.metadata["recovery_reason"] == "disabled_control"
     assert recover.metadata["recovery_backoff_strategy"] == "bounded_exponential"
+    assert recover.metadata["recovery_tree_chosen_action"] == "wait_for_enabled"
+    assert recover.metadata["recovery_tree_action_count"] == 2
 
 
 def test_execution_engine_reports_duplicated_labels_as_ambiguity_gate() -> None:

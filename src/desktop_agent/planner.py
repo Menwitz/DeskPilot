@@ -28,6 +28,7 @@ from desktop_agent.perception import (
 from desktop_agent.recovery import (
     RECOVERY_POLICIES,
     RecoveryPolicy,
+    build_recovery_tree_execution,
     constrain_recovery_policy,
     recovery_policy_for_action_result,
     recovery_policy_for_selection,
@@ -1882,12 +1883,21 @@ def _recovery_metadata(
     recovery_metadata = _step_metadata(step, **metadata)
     constrained = constrain_recovery_policy(step, policy)
     recovery_metadata.update(constrained.metadata())
+    failed_attempt = metadata.get("failed_attempt")
+    next_attempt = metadata.get("next_attempt")
+    recovery_tree = build_recovery_tree_execution(
+        step,
+        policy,
+        failed_attempt=failed_attempt if isinstance(failed_attempt, int) else None,
+        next_attempt=next_attempt if isinstance(next_attempt, int) else None,
+    )
+    recovery_metadata.update(recovery_tree.metadata())
     recovery_metadata.update(
         _recovery_path_metadata(
             reason=constrained.policy.reason,
             chosen_action=constrained.chosen_action,
-            failed_attempt=metadata.get("failed_attempt"),
-            next_attempt=metadata.get("next_attempt"),
+            failed_attempt=failed_attempt,
+            next_attempt=next_attempt,
             failure_observation_phase=metadata.get("failure_observation_phase"),
         )
     )

@@ -168,7 +168,11 @@ written. The recovery monitor then runs candidate detection on the fresh
 observation and records `recover_candidates`, so deep-search output is visible
 in the trace. Recovery events also include `recovery_chosen_action`,
 `recovery_path`, `recovery_path_summary`, and `reobserve_before_retry`; the
-Markdown report prints the path summary on recovery rows.
+Markdown report prints the path summary on recovery rows. The same event
+includes `recovery_tree_actions`, `recovery_tree_chosen_action`,
+`recovery_tree_can_retry`, and `recovery_tree_requires_operator` so the operator
+UI can show the concrete recovery tree for refocus, reobserve, alternate
+candidate, scroll search, wait, reopen-surface, and handoff branches.
 Retry timing events and recovery events include bounded-backoff metadata:
 `retry_backoff_strategy`, `retry_index`, `retry_budget`,
 `retry_backoff_fraction`, and `retry_limit_respected`.

@@ -54,6 +54,57 @@ class ConstrainedRecoveryPolicy:
         return metadata
 
 
+@dataclass(frozen=True)
+class RecoveryTreeAction:
+    """One executable node in a bounded recovery tree."""
+
+    action: str
+    phase: str
+    requires_operator: bool = False
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "action": self.action,
+            "phase": self.phase,
+            "requires_operator": self.requires_operator,
+        }
+
+
+@dataclass(frozen=True)
+class RecoveryTreeExecution:
+    """Concrete recovery tree emitted before retry or handoff."""
+
+    reason: str
+    chosen_action: str
+    actions: tuple[RecoveryTreeAction, ...]
+    failed_attempt: int | None = None
+    next_attempt: int | None = None
+
+    @property
+    def requires_operator(self) -> bool:
+        return any(action.requires_operator for action in self.actions)
+
+    @property
+    def can_retry(self) -> bool:
+        return (
+            self.chosen_action != "abort_with_trace"
+            and not self.requires_operator
+            and self.next_attempt is not None
+        )
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "recovery_tree_reason": self.reason,
+            "recovery_tree_chosen_action": self.chosen_action,
+            "recovery_tree_actions": [action.metadata() for action in self.actions],
+            "recovery_tree_action_count": len(self.actions),
+            "recovery_tree_requires_operator": self.requires_operator,
+            "recovery_tree_can_retry": self.can_retry,
+            "recovery_tree_failed_attempt": self.failed_attempt,
+            "recovery_tree_next_attempt": self.next_attempt,
+        }
+
+
 RECOVERY_POLICIES: dict[str, RecoveryPolicy] = {
     "stale_observation": RecoveryPolicy(
         name="refresh_stale_observation",
@@ -107,6 +158,51 @@ RECOVERY_POLICIES: dict[str, RecoveryPolicy] = {
             "manual_handoff",
             "abort_with_trace",
         ),
+    ),
+}
+
+
+RECOVERY_TREE_ACTIONS: dict[str, tuple[RecoveryTreeAction, ...]] = {
+    "refocus_allowed_window": (
+        RecoveryTreeAction("refocus_allowed_window", "prepare"),
+        RecoveryTreeAction("reobserve_screen", "observe"),
+    ),
+    "reobserve_screen": (
+        RecoveryTreeAction("reobserve_screen", "observe"),
+    ),
+    "retry_alternate_candidate": (
+        RecoveryTreeAction("retry_alternate_candidate", "select"),
+        RecoveryTreeAction("reobserve_screen", "observe"),
+    ),
+    "retry_with_fresh_candidates": (
+        RecoveryTreeAction("reobserve_screen", "observe"),
+        RecoveryTreeAction("retry_with_fresh_candidates", "select"),
+    ),
+    "scroll_search_region": (
+        RecoveryTreeAction("scroll_search_region", "act"),
+        RecoveryTreeAction("reobserve_screen", "observe"),
+    ),
+    "wait_and_reobserve": (
+        RecoveryTreeAction("wait_and_reobserve", "wait"),
+        RecoveryTreeAction("reobserve_screen", "observe"),
+    ),
+    "wait_for_enabled": (
+        RecoveryTreeAction("wait_for_enabled", "wait"),
+        RecoveryTreeAction("reobserve_screen", "observe"),
+    ),
+    "wait_for_loading": (
+        RecoveryTreeAction("wait_for_loading", "wait"),
+        RecoveryTreeAction("reobserve_screen", "observe"),
+    ),
+    "reopen_surface": (
+        RecoveryTreeAction("reopen_surface", "act"),
+        RecoveryTreeAction("reobserve_screen", "observe"),
+    ),
+    "manual_handoff": (
+        RecoveryTreeAction("manual_handoff", "handoff", requires_operator=True),
+    ),
+    "abort_with_trace": (
+        RecoveryTreeAction("abort_with_trace", "abort"),
     ),
 }
 
@@ -174,6 +270,29 @@ def constrain_recovery_policy(
             backoff_strategy=policy.backoff_strategy,
         ),
         rule,
+    )
+
+
+def build_recovery_tree_execution(
+    step: TaskStep,
+    policy: RecoveryPolicy,
+    *,
+    failed_attempt: int | None = None,
+    next_attempt: int | None = None,
+) -> RecoveryTreeExecution:
+    """Build the concrete recovery tree after task-authored constraints."""
+    constrained = constrain_recovery_policy(step, policy)
+    chosen_action = constrained.chosen_action
+    actions = RECOVERY_TREE_ACTIONS.get(
+        chosen_action,
+        (RecoveryTreeAction(chosen_action, "act"),),
+    )
+    return RecoveryTreeExecution(
+        reason=constrained.policy.reason,
+        chosen_action=chosen_action,
+        actions=actions,
+        failed_attempt=failed_attempt,
+        next_attempt=next_attempt,
     )
 
 

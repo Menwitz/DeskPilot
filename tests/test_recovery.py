@@ -2,6 +2,8 @@ from desktop_agent.actuation import ActionResult
 from desktop_agent.perception import ElementCandidate
 from desktop_agent.recovery import (
     RECOVERY_POLICIES,
+    RECOVERY_TREE_ACTIONS,
+    build_recovery_tree_execution,
     constrain_recovery_policy,
     recovery_policy_for_action_result,
     recovery_policy_for_selection,
@@ -104,3 +106,57 @@ def test_recovery_policy_constrains_actions_from_task_rule() -> None:
     assert constrained.chosen_action == "wait_for_loading"
     assert constrained.metadata()["recovery_chosen_action"] == "wait_for_loading"
     assert constrained.metadata()["recovery_actions_constrained"] is True
+
+
+def test_recovery_tree_covers_supported_execution_actions() -> None:
+    expected_actions = {
+        "refocus_allowed_window",
+        "reobserve_screen",
+        "retry_alternate_candidate",
+        "scroll_search_region",
+        "wait_for_enabled",
+        "wait_for_loading",
+        "reopen_surface",
+        "manual_handoff",
+    }
+
+    assert expected_actions <= set(RECOVERY_TREE_ACTIONS)
+
+
+def test_recovery_tree_execution_records_retry_and_operator_handoff() -> None:
+    retry_tree = build_recovery_tree_execution(
+        TaskStep(id="click-submit", action="click_text", target="Submit"),
+        RECOVERY_POLICIES["transient_loading"],
+        failed_attempt=1,
+        next_attempt=2,
+    )
+    handoff_tree = build_recovery_tree_execution(
+        TaskStep(
+            id="verify-result",
+            action="assert_visible",
+            target="Success",
+            recovery=(
+                RecoveryRule(
+                    reason="verification_inconclusive",
+                    actions=("manual_handoff", "abort_with_trace"),
+                ),
+            ),
+        ),
+        RECOVERY_POLICIES["verification_inconclusive"],
+        failed_attempt=1,
+        next_attempt=2,
+    )
+
+    retry_metadata = retry_tree.metadata()
+    handoff_metadata = handoff_tree.metadata()
+
+    assert retry_tree.chosen_action == "wait_for_loading"
+    assert [action.action for action in retry_tree.actions] == [
+        "wait_for_loading",
+        "reobserve_screen",
+    ]
+    assert retry_metadata["recovery_tree_can_retry"] is True
+    assert handoff_tree.chosen_action == "manual_handoff"
+    assert handoff_tree.requires_operator is True
+    assert handoff_metadata["recovery_tree_requires_operator"] is True
+    assert handoff_metadata["recovery_tree_can_retry"] is False

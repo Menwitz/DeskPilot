@@ -263,6 +263,7 @@ def test_task_dsl_accepts_safe_action_variants_for_equivalent_actions(
                 "      - reason: transient_loading",
                 "        actions:",
                 "          - wait_for_loading",
+                "          - reopen_surface",
                 "          - abort_with_trace",
                 "",
             ],
@@ -277,6 +278,7 @@ def test_task_dsl_accepts_safe_action_variants_for_equivalent_actions(
     assert task.steps[0].recovery[0].reason == "transient_loading"
     assert task.steps[0].recovery[0].actions == (
         "wait_for_loading",
+        "reopen_surface",
         "abort_with_trace",
     )
 
