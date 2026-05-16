@@ -885,6 +885,11 @@ class ExecutionEngine:
                     action_result,
                     state_delta_metadata,
                 )
+            elif step.action == "scroll":
+                last_failure_evidence = _scroll_failure_evidence_metadata(
+                    action_result,
+                    state_delta_metadata,
+                )
 
             if verification.resolved_outcome == "inconclusive":
                 last_message = verification.message
@@ -2070,6 +2075,22 @@ def _type_failure_evidence_metadata(
             observation,
             "active_window_process",
         ),
+        "state_delta": state_delta,
+    }
+
+
+def _scroll_failure_evidence_metadata(
+    action_result: ActionResult,
+    state_delta: dict[str, object],
+) -> dict[str, object]:
+    return {
+        "failure_evidence_type": "failed_scroll",
+        "action_message": action_result.message,
+        "action_success": action_result.success,
+        "scroll_moved": state_delta.get("scroll_moved"),
+        "scroll_clicks": state_delta.get("scroll_clicks"),
+        "scroll_step_count": state_delta.get("scroll_step_count"),
+        "scroll_step_clicks": state_delta.get("scroll_step_clicks"),
         "state_delta": state_delta,
     }
 

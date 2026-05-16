@@ -1283,6 +1283,54 @@ def test_execution_engine_failed_type_includes_focus_evidence() -> None:
     }
 
 
+def test_execution_engine_failed_scroll_includes_movement_evidence() -> None:
+    task = TaskDefinition(
+        name="failed-scroll-evidence",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(
+                id="scroll-list",
+                action="scroll",
+                text="-3",
+                retry=0,
+                region=TaskRegion(x=0, y=0, width=100, height=100),
+            ),
+        ),
+    )
+    engine = _engine(
+        task,
+        perception=SequencePerceptionEngine(((),)),
+        actuator=SequenceActuator(
+            (
+                ActionResult(
+                    False,
+                    "scroll failed",
+                    metadata={
+                        "input_action": "scroll",
+                        "scroll_clicks": -3,
+                        "scroll_step_count": 0,
+                        "scroll_step_clicks": [],
+                    },
+                ),
+            ),
+        ),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    evidence = report.steps[0].metadata["failure_evidence"]
+    assert isinstance(evidence, dict)
+    assert report.status == "failed"
+    assert report.steps[0].metadata["failure_category"] == "actuation_failure"
+    assert evidence["failure_evidence_type"] == "failed_scroll"
+    assert evidence["action_message"] == "scroll failed"
+    assert evidence["scroll_moved"] is False
+    assert evidence["scroll_clicks"] == -3
+    assert evidence["scroll_step_count"] == 0
+    assert evidence["scroll_step_clicks"] == []
+
+
 def test_execution_engine_missed_target_includes_diagnostic_bundle(
     tmp_path: Path,
 ) -> None:
