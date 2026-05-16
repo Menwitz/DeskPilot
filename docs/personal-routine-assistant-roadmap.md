@@ -152,6 +152,9 @@ abuse, and hidden automation are not supported.
       and per-step screenshot evidence without re-executing input.
 - [x] Add proof bundle validation to the opt-in Windows smoke pipeline for
       browser, native, mixed, recovery, and smoke-checklist proof commands.
+- [x] Add a proof suite validation command that requires browser, native, mixed,
+      and recovery proof bundles under one trace root before Phase 1 acceptance
+      review.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

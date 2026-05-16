@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import cast
 
-from desktop_agent.proof_manifest import validate_proof_bundle
+from desktop_agent.proof_manifest import validate_proof_bundle, validate_proof_suite
 
 
 def test_validate_proof_bundle_accepts_complete_evidence(tmp_path: Path) -> None:
@@ -48,12 +48,55 @@ def test_validate_proof_bundle_can_allow_missing_video_for_disabled_capture(
     )
 
 
+def test_validate_proof_suite_requires_all_fixture_bundles(tmp_path: Path) -> None:
+    for proof_name in (
+        "browser-fixture",
+        "native-fixture",
+        "mixed-fixture",
+        "recovery-fixture",
+    ):
+        _write_proof_bundle(
+            tmp_path,
+            proof_name=proof_name,
+            trace_dir_name=proof_name,
+        )
+
+    result = validate_proof_suite(tmp_path)
+
+    assert result.passed
+    assert result.missing_proofs == ()
+    assert tuple(bundle.proof_name for bundle in result.bundle_results) == (
+        "browser-fixture",
+        "native-fixture",
+        "mixed-fixture",
+        "recovery-fixture",
+    )
+
+
+def test_validate_proof_suite_reports_missing_bundle(tmp_path: Path) -> None:
+    _write_proof_bundle(
+        tmp_path,
+        proof_name="browser-fixture",
+        trace_dir_name="browser-fixture",
+        include_video=False,
+    )
+
+    result = validate_proof_suite(tmp_path, require_video=False)
+
+    assert not result.passed
+    assert "missing proof bundle: native-fixture" in result.errors
+    assert "missing proof bundle: mixed-fixture" in result.errors
+    assert "missing proof bundle: recovery-fixture" in result.errors
+
+
 def _write_proof_bundle(
     root: Path,
     *,
+    proof_name: str = "browser-fixture",
+    trace_dir_name: str = "trace",
     include_video: bool = True,
 ) -> Path:
-    trace_dir = root / "trace"
+    trace_dir = root / trace_dir_name
     screenshot_dir = trace_dir / "screenshots"
     screenshot_dir.mkdir(parents=True)
     screenshot_path = screenshot_dir / "shot-1.png"
@@ -72,7 +115,7 @@ def _write_proof_bundle(
         + "\n",
         encoding="utf-8",
     )
-    report_path = trace_dir / "browser-fixture-report.json"
+    report_path = trace_dir / f"{proof_name}-report.json"
     report_path.write_text(
         json.dumps(
             {
@@ -103,8 +146,8 @@ def _write_proof_bundle(
 
     manifest: dict[str, object] = {
         "schema_version": 1,
-        "proof_name": "browser-fixture",
-        "command": ["desktop-agent", "proof", "browser-fixture"],
+        "proof_name": proof_name,
+        "command": ["desktop-agent", "proof", proof_name],
         "status": "passed",
         "artifacts": {
             "trace_dir": str(trace_dir),

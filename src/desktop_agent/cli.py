@@ -93,7 +93,7 @@ from desktop_agent.platforms.windows.uia import (
     write_uia_tree_snapshot,
 )
 from desktop_agent.preview import build_dry_run_preview, render_dry_run_preview
-from desktop_agent.proof_manifest import validate_proof_bundle
+from desktop_agent.proof_manifest import validate_proof_bundle, validate_proof_suite
 from desktop_agent.recorder import (
     RECORDER_DEFAULT_RISK_CLASS,
     RecorderController,
@@ -523,6 +523,16 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     proof_validate_parser.add_argument("trace_dir", type=Path)
     proof_validate_parser.add_argument(
+        "--allow-missing-video",
+        action="store_true",
+        help="validate non-video proof artifacts when video capture was disabled",
+    )
+    proof_validate_suite_parser = proof_subparsers.add_parser(
+        "validate-suite",
+        help="validate browser, native, mixed, and recovery proof bundles",
+    )
+    proof_validate_suite_parser.add_argument("trace_root", type=Path)
+    proof_validate_suite_parser.add_argument(
         "--allow-missing-video",
         action="store_true",
         help="validate non-video proof artifacts when video capture was disabled",
@@ -2647,6 +2657,8 @@ def _proof(args: argparse.Namespace) -> int:
         return _proof_replay(args)
     if args.proof_command == "validate":
         return _proof_validate(args)
+    if args.proof_command == "validate-suite":
+        return _proof_validate_suite(args)
     if args.proof_command == "browser-fixture":
         return _proof_browser_fixture(args)
     if args.proof_command == "native-fixture":
@@ -2670,6 +2682,31 @@ def _proof_validate(args: argparse.Namespace) -> int:
         print(f"artifact {label}: {path}")
     for warning in result.warnings:
         print(f"warning: {warning}")
+    for error in result.errors:
+        print(f"error: {error}")
+    return 0 if result.passed else 1
+
+
+def _proof_validate_suite(args: argparse.Namespace) -> int:
+    result = validate_proof_suite(
+        args.trace_root,
+        require_video=not args.allow_missing_video,
+    )
+    print(f"trace_root: {args.trace_root}")
+    print(f"suite: {'passed' if result.passed else 'failed'}")
+    print(f"expected: {', '.join(result.expected_proofs)}")
+    for warning in result.warnings:
+        print(f"warning: {warning}")
+    for duplicate in result.duplicate_proofs:
+        print(f"warning: duplicate proof bundle: {duplicate}")
+    for bundle in result.bundle_results:
+        proof_name = bundle.proof_name or str(bundle.trace_dir)
+        print(
+            f"proof {proof_name}: {'passed' if bundle.passed else 'failed'} "
+            f"({bundle.trace_dir})",
+        )
+        for warning in bundle.warnings:
+            print(f"warning: {proof_name}: {warning}")
     for error in result.errors:
         print(f"error: {error}")
     return 0 if result.passed else 1

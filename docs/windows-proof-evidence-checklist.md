@@ -23,6 +23,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Run `desktop-agent proof validate <trace-dir>` and save the terminal
       output; use `--allow-missing-video` only when video capture was
       intentionally disabled and separately justified.
+- [ ] After browser, native, mixed, and recovery bundles are collected under
+      the same trace root, run `desktop-agent proof validate-suite <trace-root>`
+      and save the terminal output before Phase 1 acceptance review.
 
 ## Required Proof Bundle
 
@@ -48,6 +51,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       metadata, cursor readback, and post-action evidence where available.
 - [ ] `desktop-agent proof validate <trace-dir>` reports `validation: passed`
       before a proof bundle is promoted.
+- [ ] `desktop-agent proof validate-suite <trace-root>` reports `suite: passed`
+      before the four-workflow proof pack is promoted.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 

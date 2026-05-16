@@ -1686,6 +1686,26 @@ def test_cli_proof_validate_reports_bundle_errors(
     assert "error: action_log_path is empty" in output
 
 
+def test_cli_proof_validate_suite_reports_missing_bundles(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    write_proof_manifest(trace_dir)
+
+    status = main(["proof", "validate-suite", str(tmp_path)])
+
+    output = capsys.readouterr().out
+    assert status == 1
+    assert "suite: failed" in output
+    assert (
+        "expected: browser-fixture, native-fixture, mixed-fixture, recovery-fixture"
+        in output
+    )
+    assert "error: missing proof bundle: browser-fixture" in output
+    assert "error: missing proof bundle: native-fixture" in output
+
+
 def test_cli_benchmark_run_writes_metrics_and_report(
     tmp_path: Path,
     capsys: CaptureFixture[str],

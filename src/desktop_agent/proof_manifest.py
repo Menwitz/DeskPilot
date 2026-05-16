@@ -7,6 +7,13 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+REQUIRED_WINDOWS_PROOF_NAMES: tuple[str, ...] = (
+    "browser-fixture",
+    "native-fixture",
+    "mixed-fixture",
+    "recovery-fixture",
+)
+
 
 @dataclass(frozen=True)
 class ProofManifestArtifacts:
@@ -99,6 +106,7 @@ class ProofBundleValidation:
 
     trace_dir: Path
     manifest_path: Path
+    proof_name: str | None
     status: str
     errors: tuple[str, ...]
     warnings: tuple[str, ...]
@@ -107,6 +115,30 @@ class ProofBundleValidation:
     @property
     def passed(self) -> bool:
         return not self.errors
+
+
+@dataclass(frozen=True)
+class ProofSuiteValidation:
+    """Validation result for a complete multi-workflow Windows proof set."""
+
+    trace_root: Path
+    expected_proofs: tuple[str, ...]
+    bundle_results: tuple[ProofBundleValidation, ...]
+    missing_proofs: tuple[str, ...]
+    duplicate_proofs: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    @property
+    def passed(self) -> bool:
+        return not self.errors
+
+    @property
+    def errors(self) -> tuple[str, ...]:
+        errors = [f"missing proof bundle: {name}" for name in self.missing_proofs]
+        for result in self.bundle_results:
+            proof_name = result.proof_name or str(result.trace_dir)
+            errors.extend(f"{proof_name}: {error}" for error in result.errors)
+        return tuple(errors)
 
 
 def validate_proof_bundle(
@@ -125,12 +157,14 @@ def validate_proof_bundle(
         return ProofBundleValidation(
             trace_dir=trace_dir,
             manifest_path=manifest_path,
+            proof_name=None,
             status="failed",
             errors=tuple(errors),
             warnings=tuple(warnings),
             artifact_paths=(),
         )
 
+    proof_name = _string_value(manifest.get("proof_name"))
     status = _string_value(manifest.get("status"))
     if status != "passed":
         errors.append(f"proof status is not passed: {status or 'missing'}")
@@ -222,10 +256,62 @@ def validate_proof_bundle(
     return ProofBundleValidation(
         trace_dir=trace_dir,
         manifest_path=manifest_path,
+        proof_name=proof_name,
         status="passed" if not errors else "failed",
         errors=tuple(errors),
         warnings=tuple(warnings),
         artifact_paths=tuple(artifact_paths),
+    )
+
+
+def validate_proof_suite(
+    trace_root: Path,
+    *,
+    expected_proofs: tuple[str, ...] = REQUIRED_WINDOWS_PROOF_NAMES,
+    require_video: bool = True,
+) -> ProofSuiteValidation:
+    """Validate that a trace root contains every required Windows proof bundle."""
+
+    warnings: list[str] = []
+    manifests_by_name: dict[str, list[Path]] = {}
+    for manifest_path in sorted(trace_root.glob("*/proof-manifest.json")):
+        errors: list[str] = []
+        manifest = _load_json_object(manifest_path, errors, "proof manifest")
+        if manifest is None:
+            warnings.extend(errors)
+            continue
+        proof_name = _string_value(manifest.get("proof_name"))
+        if proof_name is None:
+            warnings.append(f"proof manifest missing proof_name: {manifest_path}")
+            continue
+        manifests_by_name.setdefault(proof_name, []).append(manifest_path.parent)
+
+    missing = tuple(name for name in expected_proofs if name not in manifests_by_name)
+    duplicates = tuple(
+        name
+        for name, trace_dirs in sorted(manifests_by_name.items())
+        if len(trace_dirs) > 1
+    )
+    bundle_results: list[ProofBundleValidation] = []
+    for proof_name in expected_proofs:
+        trace_dirs = manifests_by_name.get(proof_name)
+        if not trace_dirs:
+            continue
+        # Use the most recent directory name when repeated proof attempts exist.
+        bundle_results.append(
+            validate_proof_bundle(
+                sorted(trace_dirs)[-1],
+                require_video=require_video,
+            ),
+        )
+
+    return ProofSuiteValidation(
+        trace_root=trace_root,
+        expected_proofs=expected_proofs,
+        bundle_results=tuple(bundle_results),
+        missing_proofs=missing,
+        duplicate_proofs=duplicates,
+        warnings=tuple(warnings),
     )
 
 
