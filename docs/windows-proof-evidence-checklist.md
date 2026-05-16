@@ -26,6 +26,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] After browser, native, mixed, and recovery bundles are collected under
       the same trace root, run `desktop-agent proof validate-suite <trace-root>`
       and save the terminal output before Phase 1 acceptance review.
+- [ ] Run `desktop-agent proof validate-suite <trace-root> --write-report` and
+      review `proof-suite-report.md` before promoting the four-workflow proof
+      pack.
 
 ## Required Proof Bundle
 
@@ -53,6 +56,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       before a proof bundle is promoted.
 - [ ] `desktop-agent proof validate-suite <trace-root>` reports `suite: passed`
       before the four-workflow proof pack is promoted.
+- [ ] `proof-suite-report.md` summarizes every required proof, missing bundle,
+      duplicate bundle, warning, and blocking validation error.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 

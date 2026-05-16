@@ -13,6 +13,7 @@ REQUIRED_WINDOWS_PROOF_NAMES: tuple[str, ...] = (
     "mixed-fixture",
     "recovery-fixture",
 )
+PROOF_SUITE_REPORT_NAME = "proof-suite-report.md"
 
 
 @dataclass(frozen=True)
@@ -313,6 +314,107 @@ def validate_proof_suite(
         duplicate_proofs=duplicates,
         warnings=tuple(warnings),
     )
+
+
+def render_proof_suite_report(validation: ProofSuiteValidation) -> str:
+    """Render a reviewer-facing Markdown report for a proof suite validation."""
+
+    bundles_by_name = {
+        bundle.proof_name: bundle
+        for bundle in validation.bundle_results
+        if bundle.proof_name is not None
+    }
+    lines = [
+        "# DeskPilot Windows Proof Suite Report",
+        "",
+        f"- Trace root: `{validation.trace_root}`",
+        f"- Status: `{'passed' if validation.passed else 'failed'}`",
+        f"- Expected proofs: `{', '.join(validation.expected_proofs)}`",
+        "",
+        "## Proofs",
+        "",
+    ]
+    for proof_name in validation.expected_proofs:
+        bundle = bundles_by_name.get(proof_name)
+        if bundle is None:
+            lines.extend(
+                [
+                    f"### {proof_name}",
+                    "",
+                    "- Status: `missing`",
+                    "",
+                ],
+            )
+            continue
+        lines.extend(
+            [
+                f"### {proof_name}",
+                "",
+                f"- Status: `{'passed' if bundle.passed else 'failed'}`",
+                f"- Trace directory: `{bundle.trace_dir}`",
+                f"- Manifest: `{bundle.manifest_path}`",
+            ],
+        )
+        if bundle.artifact_paths:
+            lines.append("- Artifacts:")
+            lines.extend(
+                f"  - `{label}`: `{path}`" for label, path in bundle.artifact_paths
+            )
+        if bundle.warnings:
+            lines.append("- Warnings:")
+            lines.extend(f"  - {warning}" for warning in bundle.warnings)
+        proof_errors = tuple(
+            error.removeprefix(f"{proof_name}: ")
+            for error in validation.errors
+            if error.startswith(f"{proof_name}: ")
+        )
+        if proof_errors:
+            lines.append("- Errors:")
+            lines.extend(f"  - {error}" for error in proof_errors)
+        lines.append("")
+
+    lines.extend(["## Suite Findings", ""])
+    if validation.missing_proofs:
+        lines.append("- Missing proofs:")
+        lines.extend(f"  - `{proof_name}`" for proof_name in validation.missing_proofs)
+    if validation.duplicate_proofs:
+        lines.append("- Duplicate proofs:")
+        lines.extend(
+            f"  - `{proof_name}`" for proof_name in validation.duplicate_proofs
+        )
+    if validation.warnings:
+        lines.append("- Warnings:")
+        lines.extend(f"  - {warning}" for warning in validation.warnings)
+    has_no_findings = (
+        not validation.errors
+        and not validation.warnings
+        and not validation.duplicate_proofs
+    )
+    if has_no_findings:
+        lines.append("- No blocking findings.")
+    else:
+        suite_errors = [
+            error
+            for error in validation.errors
+            if error.startswith("missing proof bundle:")
+        ]
+        if suite_errors:
+            lines.append("- Errors:")
+            lines.extend(f"  - {error}" for error in suite_errors)
+    lines.append("")
+    return "\n".join(lines)
+
+
+def write_proof_suite_report(
+    validation: ProofSuiteValidation,
+    output_path: Path | None = None,
+) -> Path:
+    """Write a Markdown report for an existing proof suite validation."""
+
+    report_path = output_path or validation.trace_root / PROOF_SUITE_REPORT_NAME
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(render_proof_suite_report(validation), encoding="utf-8")
+    return report_path
 
 
 def _load_json_object(

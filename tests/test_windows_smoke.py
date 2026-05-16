@@ -10,6 +10,12 @@ import pytest
 from desktop_agent.cli import main
 
 SMOKE_ENV = "DESKPILOT_WINDOWS_SMOKE"
+PROOF_SUITE_COMMANDS = (
+    ("proof", "browser-fixture"),
+    ("proof", "native-fixture"),
+    ("proof", "mixed-fixture"),
+    ("proof", "recovery-fixture"),
+)
 
 pytestmark = pytest.mark.windows_smoke
 
@@ -67,10 +73,7 @@ def test_windows_smoke_fixture_run_passes_on_owned_desktop(
     "command",
     [
         ("windows-smoke-checklist",),
-        ("proof", "browser-fixture"),
-        ("proof", "native-fixture"),
-        ("proof", "mixed-fixture"),
-        ("proof", "recovery-fixture"),
+        *PROOF_SUITE_COMMANDS,
     ],
 )
 def test_windows_smoke_proof_command_passes_on_owned_desktop(
@@ -106,6 +109,38 @@ def test_windows_smoke_proof_command_passes_on_owned_desktop(
     assert validation_exit_code == 0, (
         f"{' '.join(command)} proof bundle validation failed"
     )
+
+
+def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> None:
+    _require_windows_smoke()
+    trace_root = tmp_path / "proof-suite"
+
+    for command in PROOF_SUITE_COMMANDS:
+        exit_code = main(
+            [
+                *command,
+                "--trace-root",
+                str(trace_root),
+                "--countdown-seconds",
+                "0",
+                "--video-policy",
+                "disabled",
+            ],
+        )
+        assert exit_code == 0, f"{' '.join(command)} suite command failed"
+
+    validation_exit_code = main(
+        [
+            "proof",
+            "validate-suite",
+            str(trace_root),
+            "--allow-missing-video",
+            "--write-report",
+        ],
+    )
+
+    assert validation_exit_code == 0, "proof suite validation failed"
+    assert (trace_root / "proof-suite-report.md").exists()
 
 
 def _require_windows_smoke() -> None:

@@ -93,7 +93,11 @@ from desktop_agent.platforms.windows.uia import (
     write_uia_tree_snapshot,
 )
 from desktop_agent.preview import build_dry_run_preview, render_dry_run_preview
-from desktop_agent.proof_manifest import validate_proof_bundle, validate_proof_suite
+from desktop_agent.proof_manifest import (
+    validate_proof_bundle,
+    validate_proof_suite,
+    write_proof_suite_report,
+)
 from desktop_agent.recorder import (
     RECORDER_DEFAULT_RISK_CLASS,
     RecorderController,
@@ -536,6 +540,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--allow-missing-video",
         action="store_true",
         help="validate non-video proof artifacts when video capture was disabled",
+    )
+    proof_validate_suite_parser.add_argument(
+        "--write-report",
+        action="store_true",
+        help="write proof-suite-report.md after validation",
+    )
+    proof_validate_suite_parser.add_argument(
+        "--report-path",
+        type=Path,
+        help="write the suite report to an explicit Markdown path",
     )
     proof_browser_parser = proof_subparsers.add_parser(
         "browser-fixture",
@@ -2709,6 +2723,9 @@ def _proof_validate_suite(args: argparse.Namespace) -> int:
             print(f"warning: {proof_name}: {warning}")
     for error in result.errors:
         print(f"error: {error}")
+    if args.write_report or args.report_path:
+        report_path = write_proof_suite_report(result, args.report_path)
+        print(f"report: {report_path}")
     return 0 if result.passed else 1
 
 

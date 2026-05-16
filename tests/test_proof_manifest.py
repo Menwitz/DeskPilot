@@ -2,7 +2,12 @@ import json
 from pathlib import Path
 from typing import cast
 
-from desktop_agent.proof_manifest import validate_proof_bundle, validate_proof_suite
+from desktop_agent.proof_manifest import (
+    render_proof_suite_report,
+    validate_proof_bundle,
+    validate_proof_suite,
+    write_proof_suite_report,
+)
 
 
 def test_validate_proof_bundle_accepts_complete_evidence(tmp_path: Path) -> None:
@@ -87,6 +92,29 @@ def test_validate_proof_suite_reports_missing_bundle(tmp_path: Path) -> None:
     assert "missing proof bundle: native-fixture" in result.errors
     assert "missing proof bundle: mixed-fixture" in result.errors
     assert "missing proof bundle: recovery-fixture" in result.errors
+
+
+def test_write_proof_suite_report_summarizes_bundle_status(tmp_path: Path) -> None:
+    _write_proof_bundle(
+        tmp_path,
+        proof_name="browser-fixture",
+        trace_dir_name="browser-fixture",
+        include_video=False,
+    )
+    result = validate_proof_suite(tmp_path, require_video=False)
+
+    report = render_proof_suite_report(result)
+    report_path = write_proof_suite_report(result)
+
+    assert report_path == tmp_path / "proof-suite-report.md"
+    assert report_path.read_text(encoding="utf-8") == report
+    assert "# DeskPilot Windows Proof Suite Report" in report
+    assert "- Status: `failed`" in report
+    assert "### browser-fixture" in report
+    assert "- Status: `passed`" in report
+    assert "### native-fixture" in report
+    assert "- Status: `missing`" in report
+    assert "- Missing proofs:" in report
 
 
 def _write_proof_bundle(

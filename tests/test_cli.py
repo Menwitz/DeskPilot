@@ -1706,6 +1706,33 @@ def test_cli_proof_validate_suite_reports_missing_bundles(
     assert "error: missing proof bundle: native-fixture" in output
 
 
+def test_cli_proof_validate_suite_writes_report(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    report_path = tmp_path / "review" / "suite.md"
+    write_proof_manifest(trace_dir)
+
+    status = main(
+        [
+            "proof",
+            "validate-suite",
+            str(tmp_path),
+            "--write-report",
+            "--report-path",
+            str(report_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    report = report_path.read_text(encoding="utf-8")
+    assert status == 1
+    assert f"report: {report_path}" in output
+    assert "# DeskPilot Windows Proof Suite Report" in report
+    assert "- Status: `failed`" in report
+
+
 def test_cli_benchmark_run_writes_metrics_and_report(
     tmp_path: Path,
     capsys: CaptureFixture[str],
