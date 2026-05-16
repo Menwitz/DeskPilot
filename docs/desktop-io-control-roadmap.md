@@ -153,7 +153,7 @@ Acceptance:
 
 - [x] Add Windows smoke checklist command for Edge launch, Notepad typing,
       cursor readback, and trace file creation.
-- [ ] Add Windows smoke tests gated by `DESKPILOT_WINDOWS_SMOKE=1`.
+- [x] Add Windows smoke tests gated by `DESKPILOT_WINDOWS_SMOKE=1`.
 - [x] Add a manual VM acceptance checklist for each demo command.
 - [ ] Add trace schema versioning.
 - [ ] Add a trace redaction policy for screenshots and typed text.

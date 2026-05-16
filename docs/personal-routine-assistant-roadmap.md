@@ -695,7 +695,7 @@ abuse, and hidden automation are not supported.
       and video metadata.
 - [x] App service tests for catalog, run queue, approvals, recorder review, and
       trace viewer state transitions.
-- [ ] Windows smoke tests for proof commands behind `DESKPILOT_WINDOWS_SMOKE=1`.
+- [x] Windows smoke tests for proof commands behind `DESKPILOT_WINDOWS_SMOKE=1`.
 - [ ] Live public-site smoke tests remain opt-in and never perform final
       external mutations without explicit approval evidence.
 - [ ] Full local quality gate remains `.venv/bin/python -m pytest`,

@@ -63,6 +63,40 @@ def test_windows_smoke_fixture_run_passes_on_owned_desktop(
     assert exit_code == 0, f"{fixture_name} smoke run failed"
 
 
+@pytest.mark.parametrize(
+    "command",
+    [
+        ("windows-smoke-checklist",),
+        ("proof", "browser-fixture"),
+        ("proof", "native-fixture"),
+        ("proof", "mixed-fixture"),
+        ("proof", "recovery-fixture"),
+    ],
+)
+def test_windows_smoke_proof_command_passes_on_owned_desktop(
+    tmp_path: Path,
+    command: tuple[str, ...],
+) -> None:
+    _require_windows_smoke()
+    trace_root = tmp_path / "-".join(command)
+
+    exit_code = main(
+        [
+            *command,
+            "--trace-root",
+            str(trace_root),
+            "--countdown-seconds",
+            "0",
+            "--video-policy",
+            "disabled",
+        ]
+    )
+
+    manifests = sorted(trace_root.glob("*/proof-manifest.json"))
+    assert exit_code == 0, f"{' '.join(command)} smoke command failed"
+    assert manifests, f"{' '.join(command)} did not write a proof manifest"
+
+
 def _require_windows_smoke() -> None:
     # The environment gate prevents real desktop input from running in CI or dev
     # shells unless the operator has prepared the local Windows fixture session.
