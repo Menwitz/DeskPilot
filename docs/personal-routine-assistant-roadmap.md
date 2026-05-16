@@ -674,7 +674,7 @@ abuse, and hidden automation are not supported.
 - [x] `RecorderSession`: raw recorder event stream plus generated routine output.
 - [x] `GoalPlan`: user goal, candidate routines, selected routine, missing
       inputs, approval needs, and explanation.
-- [ ] `LocalModelProvider`: optional local model adapter interface with Ollama
+- [x] `LocalModelProvider`: optional local model adapter interface with Ollama
       as the first implementation.
 - [ ] `OperatorAppService`: Python service boundary used by the PySide6 app.
 - [ ] `ProofManifest`: Windows proof artifact index for command, environment,

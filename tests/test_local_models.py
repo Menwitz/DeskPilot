@@ -9,6 +9,7 @@ from desktop_agent.local_model_validation import validate_routine_ranking_respon
 from desktop_agent.local_models import (
     FakeLocalModelProvider,
     LocalModelInfo,
+    LocalModelProvider,
     LocalModelStatus,
     OllamaLocalModelProvider,
     write_local_model_status_report,
@@ -32,6 +33,40 @@ def test_ollama_status_skips_probe_when_disabled_by_default() -> None:
     assert status.available is False
     assert status.models == ()
     assert calls == []
+
+
+def test_local_model_provider_interface_exposes_status_and_inventory() -> None:
+    def snapshot(provider: LocalModelProvider) -> dict[str, object]:
+        status = provider.status(probe_when_disabled=True)
+        models = provider.list_models()
+        return {
+            "provider": status.provider,
+            "available": status.available,
+            "model_names": [model.name for model in models],
+        }
+
+    fake_snapshot = snapshot(
+        FakeLocalModelProvider(models=(LocalModelInfo(name="fake-ranker"),))
+    )
+    ollama_snapshot = snapshot(
+        OllamaLocalModelProvider(
+            LocalModelConfig(enabled=False),
+            get_json=lambda _url, _timeout: {
+                "models": [{"name": "llama3.2:latest"}],
+            },
+        )
+    )
+
+    assert fake_snapshot == {
+        "provider": "fake",
+        "available": True,
+        "model_names": ["fake-ranker"],
+    }
+    assert ollama_snapshot == {
+        "provider": "ollama",
+        "available": True,
+        "model_names": ["llama3.2:latest"],
+    }
 
 
 def test_ollama_status_lists_models_from_local_tags_endpoint() -> None:
