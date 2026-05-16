@@ -9,6 +9,7 @@ the execution pipeline as the active `config.trace_root`.
 - `config.json` stores the normalized runtime configuration used by the run.
 - `task.json` stores the normalized task definition.
 - `action-log.jsonl` stores every trace event as newline-delimited JSON.
+- `trace-schema.json` stores the TraceSchemaV2 contract used by the run.
 - `safety-audit.json` stores an execution-profile safety audit when
   `execution_profile.enabled` is true.
 - `safety-audit.md` stores the human-readable safety audit for the same runs.
@@ -147,3 +148,20 @@ paths without rerunning desktop input. Add `--open-artifacts` to open existing
 artifact paths with the local OS file manager for manual review.
 When proof video capture is enabled, replay also lists the local `proof-video.mp4`
 and `video-capture.log` paths recorded in the manifest.
+
+## TraceSchemaV2
+
+`TraceSchemaV2` is the closed-loop trace contract for observe-decide-act-verify
+runs. Every file-backed run writes `trace-schema.json`, every action-log row
+includes `trace_schema_version`, and `final-report.json` embeds the schema used
+for the run.
+
+The schema defines five top-level evidence sections:
+
+- `observation`: screenshots, focus, cursor, OCR, UIA, and CV state.
+- `target_reasoning`: selected candidate, competing candidates, and rejection
+  reasons.
+- `input`: planned and emitted mouse, keyboard, scroll, wait, or dry-run input.
+- `verification`: post-action checks and post-action evidence.
+- `state_delta`: focus changes, visible text changes, viewport movement, and
+  other observed differences before and after input.

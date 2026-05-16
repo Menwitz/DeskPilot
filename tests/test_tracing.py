@@ -19,7 +19,12 @@ from desktop_agent.task_dsl import (
     TaskStep,
     VerificationDefinition,
 )
-from desktop_agent.tracing import FileTraceSink, StepReport, TraceEvent
+from desktop_agent.tracing import (
+    TRACE_SCHEMA_V2,
+    FileTraceSink,
+    StepReport,
+    TraceEvent,
+)
 
 
 class TraceScreenObserver:
@@ -107,6 +112,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert report.trace_dir is not None
     assert report.trace_dir.exists()
     assert (report.trace_dir / "config.json").exists()
+    assert (report.trace_dir / "trace-schema.json").exists()
     assert (report.trace_dir / "task.json").exists()
     assert (report.trace_dir / "action-log.jsonl").exists()
     assert (report.trace_dir / "safety-audit.json").exists()
@@ -118,10 +124,21 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
 
     final_report = json.loads((report.trace_dir / "final-report.json").read_text())
     config_payload = json.loads((report.trace_dir / "config.json").read_text())
+    schema_payload = json.loads((report.trace_dir / "trace-schema.json").read_text())
     task_payload = json.loads((report.trace_dir / "task.json").read_text())
     audit_payload = json.loads((report.trace_dir / "safety-audit.json").read_text())
     action_log = (report.trace_dir / "action-log.jsonl").read_text().splitlines()
     assert final_report["status"] == "passed"
+    assert final_report["trace_schema_version"] == TRACE_SCHEMA_V2.version
+    assert final_report["trace_schema"]["sections"]["observation"]
+    assert schema_payload["version"] == TRACE_SCHEMA_V2.version
+    assert set(schema_payload["sections"]) == {
+        "observation",
+        "target_reasoning",
+        "input",
+        "verification",
+        "state_delta",
+    }
     assert final_report["abort_reason"] is None
     assert final_report["steps"][0]["candidate_id"] == "candidate-Submit"
     assert final_report["steps"][0]["metadata"]["step_category"] == "submission"
@@ -144,6 +161,7 @@ def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:
     assert task_payload["steps"][0]["entropy_budget"] == 1.0
     assert task_payload["steps"][0]["resolved_category"] == "submission"
     assert any("candidate_rankings" in line for line in action_log)
+    assert all('"trace_schema_version": "2"' in line for line in action_log)
     assert any('"policy_preset": "strict_qa"' in line for line in action_log)
     assert any('"step_category": "submission"' in line for line in action_log)
     assert any("entropy_budget" in line for line in action_log)

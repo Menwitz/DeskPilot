@@ -185,7 +185,7 @@ abuse, and hidden automation are not supported.
 
 - [x] Keep existing final reports, action logs, candidate rankings, and trace
       directories.
-- [ ] Add `TraceSchemaV2` with explicit observation, target reasoning, input,
+- [x] Add `TraceSchemaV2` with explicit observation, target reasoning, input,
       verification, and state-delta sections.
 - [ ] Capture pre-action screenshot, active window title, process metadata,
       focused element, cursor position, monitor geometry, and DPI.

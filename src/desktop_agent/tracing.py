@@ -29,6 +29,68 @@ StepStatus = Literal["passed", "failed", "skipped"]
 
 
 @dataclass(frozen=True)
+class TraceSchemaV2:
+    """Versioned closed-loop trace contract for observe-decide-act-verify runs."""
+
+    version: str = "2"
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "version": self.version,
+            "sections": {
+                "observation": {
+                    "description": "screen, focus, cursor, OCR, UIA, and CV state",
+                    "typical_fields": [
+                        "screenshot_path",
+                        "active_window_title",
+                        "process",
+                        "cursor_position",
+                        "visible_controls",
+                    ],
+                },
+                "target_reasoning": {
+                    "description": "selected target, alternatives, and rejections",
+                    "typical_fields": [
+                        "selected_candidate",
+                        "candidate_rankings",
+                        "rejected_candidates",
+                        "rejection_reasons",
+                    ],
+                },
+                "input": {
+                    "description": "real or dry-run input planned and emitted",
+                    "typical_fields": [
+                        "input_action",
+                        "movement_points",
+                        "keyboard_interval_seconds",
+                        "scroll_step_clicks",
+                    ],
+                },
+                "verification": {
+                    "description": "post-action checks and observed state changes",
+                    "typical_fields": [
+                        "verification_type",
+                        "verification_status",
+                        "post_action_evidence",
+                    ],
+                },
+                "state_delta": {
+                    "description": "focused, visual, text, and viewport changes",
+                    "typical_fields": [
+                        "state_delta",
+                        "focus_changed",
+                        "visible_text_changed",
+                        "viewport_moved",
+                    ],
+                },
+            },
+        }
+
+
+TRACE_SCHEMA_V2 = TraceSchemaV2()
+
+
+@dataclass(frozen=True)
 class TraceEvent:
     """Single monitoring event emitted by the execution pipeline."""
 
@@ -140,6 +202,7 @@ class FileTraceSink(TraceSink):
         self._run_dir = _run_directory(config.trace_root, task.name)
         self._run_dir.mkdir(parents=True, exist_ok=False)
         runtime_config = replace(config, trace_root=self._run_dir)
+        _write_json(self._run_dir / "trace-schema.json", TRACE_SCHEMA_V2.to_dict())
         _write_json(self._run_dir / "config.json", _config_to_dict(runtime_config))
         _write_json(self._run_dir / "task.json", _task_to_dict(task))
         if runtime_config.execution_profile.enabled:
@@ -158,6 +221,7 @@ class FileTraceSink(TraceSink):
             return
         payload = {
             "index": len(self.events),
+            "trace_schema_version": TRACE_SCHEMA_V2.version,
             "phase": event.phase,
             "message": event.message,
             "metadata": _json_safe(event.metadata),
@@ -326,6 +390,8 @@ def _verification_to_dict(
 
 def _run_report_to_dict(report: RunReport) -> dict[str, object]:
     return {
+        "trace_schema_version": TRACE_SCHEMA_V2.version,
+        "trace_schema": TRACE_SCHEMA_V2.to_dict(),
         "task_name": report.task_name,
         "status": report.status,
         "abort_reason": report.abort_reason,
