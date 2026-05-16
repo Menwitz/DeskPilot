@@ -1,0 +1,13 @@
+id: native.settings-default-apps-open
+name: Windows default apps settings open
+description: Open default apps settings through the Run dialog for read-only review.
+goal: Navigate directly to default app settings without changing file associations.
+required_app: Settings
+tags: [native, settings, review]
+inputs: [Windows desktop]
+outputs: [default apps settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/settings-default-apps-open.yaml}

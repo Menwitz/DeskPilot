@@ -368,6 +368,10 @@ abuse, and hidden automation are not supported.
 - [x] Add fourth native scale-out batch for Notepad dialogs and zoom,
       Calculator modes and panels, Character Map, System Information, Resource
       Monitor, and On-Screen Keyboard utility launches.
+- [x] Add fifth native scale-out batch for sound, notifications, power,
+      personalization, time, accessibility, accounts, gaming, mouse, keyboard,
+      printers, optional features, default apps, startup apps, and troubleshoot
+      Settings review pages.
 - [x] Add social/content routines for LinkedIn, Medium, X/Twitter, Instagram,
       Facebook, YouTube, and TikTok read-only, draft, and approved publish
       surfaces.

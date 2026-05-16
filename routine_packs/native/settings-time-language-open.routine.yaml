@@ -1,0 +1,13 @@
+id: native.settings-time-language-open
+name: Windows time and language settings open
+description: Open date and time settings through the Run dialog for read-only review.
+goal: Navigate directly to time settings without changing locale or clock values.
+required_app: Settings
+tags: [native, settings, review]
+inputs: [Windows desktop]
+outputs: [date and time settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/settings-time-language-open.yaml}

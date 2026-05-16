@@ -1,0 +1,13 @@
+id: native.settings-optional-features-open
+name: Windows optional features settings open
+description: Open optional features settings through the Run dialog for read-only review.
+goal: Navigate directly to optional features without installing or removing features.
+required_app: Settings
+tags: [native, settings, review]
+inputs: [Windows desktop]
+outputs: [optional features settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/settings-optional-features-open.yaml}

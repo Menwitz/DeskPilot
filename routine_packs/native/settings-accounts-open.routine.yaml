@@ -1,0 +1,13 @@
+id: native.settings-accounts-open
+name: Windows accounts settings open
+description: Open accounts settings through the Run dialog for read-only review.
+goal: Navigate directly to account settings without changing sign-in or profile options.
+required_app: Settings
+tags: [native, settings, review]
+inputs: [Windows desktop]
+outputs: [accounts settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/settings-accounts-open.yaml}

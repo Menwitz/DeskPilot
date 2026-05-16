@@ -1,0 +1,13 @@
+id: native.settings-gaming-open
+name: Windows gaming settings open
+description: Open gaming settings through the Run dialog for read-only review.
+goal: Navigate directly to gaming settings without changing capture or game mode settings.
+required_app: Settings
+tags: [native, settings, review]
+inputs: [Windows desktop]
+outputs: [gaming settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/settings-gaming-open.yaml}

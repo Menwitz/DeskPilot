@@ -1,0 +1,13 @@
+id: native.settings-mouse-open
+name: Windows mouse settings open
+description: Open mouse settings through the Run dialog for read-only review.
+goal: Navigate directly to mouse settings without changing pointer or scroll behavior.
+required_app: Settings
+tags: [native, settings, review]
+inputs: [Windows desktop]
+outputs: [mouse settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/settings-mouse-open.yaml}

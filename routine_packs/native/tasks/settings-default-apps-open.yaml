@@ -1,0 +1,24 @@
+name: Windows default apps settings open task
+allowed_windows:
+  - Windows
+  - Settings
+timeout_seconds: 30
+steps:
+  - id: open-run-dialog
+    action: press_key
+    text: win+r
+    verify:
+      type: visible_text
+      text: Run
+  - id: type-default-apps-settings-uri
+    action: type_text
+    text: "ms-settings:defaultapps"
+    verify:
+      type: visible_text
+      text: "ms-settings:defaultapps"
+  - id: submit-settings-uri
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Default apps
