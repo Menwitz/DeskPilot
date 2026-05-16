@@ -70,14 +70,14 @@ abuse, and hidden automation are not supported.
 - [x] Reframe the next product direction as a personal local routine assistant.
 - [x] Preserve YAML tasks and website playbooks as the execution substrate.
 - [x] Define human-paced visible automation without stealth or evasion.
-- [ ] Make this roadmap the active source of truth for post-v1 implementation.
+- [x] Make this roadmap the active source of truth for post-v1 implementation.
 
 ### OKRs
 
 - [x] O1: Make the product promise concrete.
 - [x] KR1: Add this roadmap as a checkable implementation tracker.
-- [ ] KR2: Update top-level docs to point to this roadmap.
-- [ ] KR3: Move recorder, planner, UI, catalog, proof, and redaction work into
+- [x] KR2: Update top-level docs to point to this roadmap.
+- [x] KR3: Move recorder, planner, UI, catalog, proof, and redaction work into
       active planning milestones.
 - [x] KR4: Document allowed and unsupported automation behavior in product
       language.
@@ -88,7 +88,7 @@ abuse, and hidden automation are not supported.
       handoff, verification, and goal plan.
 - [x] Add release ladder for proof demo, alpha assistant, beta catalog, planner
       release, UI release, and hardened product.
-- [ ] Update `README.md` to link this roadmap.
+- [x] Update `README.md` to link this roadmap.
 - [x] Update `docs/roadmap.md` to distinguish the completed v1 roadmap from this
       product roadmap.
 - [x] Keep `docs/desktop-io-control-roadmap.md` as the lower-level desktop I/O
@@ -102,7 +102,7 @@ abuse, and hidden automation are not supported.
 - [x] A new engineer can understand the product direction without reading prior
       chat.
 - [x] The roadmap distinguishes implemented foundation from future product work.
-- [ ] Top-level docs link to this roadmap.
+- [x] Top-level docs link to this roadmap.
 - [x] Safety docs explicitly separate human-paced local automation from stealth
       or evasion.
 

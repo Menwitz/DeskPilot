@@ -80,6 +80,7 @@ fail with a clear unavailable message on unsupported platforms.
 - [Real Input Demo](docs/mouse-demo.md)
 - [OCR](docs/ocr.md)
 - [Packaging](docs/packaging.md)
+- [Personal Routine Assistant Roadmap](docs/personal-routine-assistant-roadmap.md)
 - [Planner](docs/planner.md)
 - [Post-v1 Backlog](docs/post-v1-backlog.md)
 - [Screen layer](docs/screen.md)
