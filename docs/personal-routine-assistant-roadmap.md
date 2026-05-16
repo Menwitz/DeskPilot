@@ -688,7 +688,7 @@ abuse, and hidden automation are not supported.
       model provider, proof manifest, and routine pack schemas.
 - [x] Planner tests for goal-to-routine selection, missing inputs, approvals,
       manual handoff, schedule windows, cooldowns, and stop reasons.
-- [ ] Recorder tests with fake UIA/OCR/CV event streams that generate valid YAML.
+- [x] Recorder tests with fake UIA/OCR/CV event streams that generate valid YAML.
 - [ ] Trace tests proving every real action has before/after evidence and replay
       output.
 - [ ] Redaction tests for screenshots, OCR text, typed text, variables, reports,
