@@ -441,7 +441,7 @@ abuse, and hidden automation are not supported.
 
 - [x] A user goal can select a routine from the catalog.
 - [x] Ambiguous goals show alternatives instead of guessing.
-- [ ] Missing inputs block execution until provided.
+- [x] Missing inputs block execution until provided.
 - [ ] Local model suggestions never execute raw actions directly.
 - [ ] Goal plans are traceable and replayable.
 
