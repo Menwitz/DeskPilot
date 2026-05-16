@@ -664,7 +664,7 @@ abuse, and hidden automation are not supported.
 
 ## Public Interfaces To Add
 
-- [ ] `RoutineDefinition`: user-facing routine metadata and task/playbook
+- [x] `RoutineDefinition`: user-facing routine metadata and task/playbook
       reference.
 - [ ] `DesktopIoAction`: compiled low-level observe, input, verify, and handoff
       action model.

@@ -9,6 +9,7 @@ from desktop_agent.perception import (
     PerceptionEngine,
 )
 from desktop_agent.planner import ExecutionEngine
+from desktop_agent.routines import RoutineDefinition, routine_definition_from_mapping
 from desktop_agent.safety import LocalSafetyPolicy
 from desktop_agent.screen import Bounds, ScreenObservation, StaticScreenObserver
 from desktop_agent.task_dsl import (
@@ -20,6 +21,37 @@ from desktop_agent.task_dsl import (
     YamlTaskLoader,
 )
 from desktop_agent.tracing import MemoryTraceSink
+
+
+def test_routine_definition_public_interface_exposes_report_metadata() -> None:
+    routine = routine_definition_from_mapping(
+        {
+            "id": "daily-inbox-review",
+            "name": "Daily Inbox Review",
+            "description": "Review new messages and summarize follow-ups.",
+            "goal": "Review the inbox",
+            "required_app": "browser",
+            "required_site": "mail.example.test",
+            "tags": ["email", "daily"],
+            "inputs": ["account"],
+            "outputs": ["summary"],
+            "safety_class": "low",
+            "schedule_policy": "manual",
+            "approval_policy": "none",
+            "expected_duration_seconds": 120,
+            "reference": {"type": "task", "path": "tasks/email-review.yaml"},
+        }
+    )
+
+    metadata = routine.report_metadata()
+
+    assert isinstance(routine, RoutineDefinition)
+    assert metadata["routine_id"] == "daily-inbox-review"
+    assert metadata["routine_name"] == "Daily Inbox Review"
+    assert metadata["routine_reference_kind"] == "task"
+    assert metadata["routine_schema_version"] == routine.schema_version
+    assert "routine_redaction_policy" in metadata
+    assert "routine_promotion_gates" in metadata
 
 
 def test_proof_commands_stay_on_real_os_input_boundary() -> None:
