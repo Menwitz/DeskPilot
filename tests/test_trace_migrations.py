@@ -79,6 +79,49 @@ def test_load_and_migrate_trace_report_reads_json(tmp_path: Path) -> None:
     assert migration["from_version"] == "1"
 
 
+def test_trace_migration_preserves_legacy_fields_without_mutating_payload() -> None:
+    legacy = {
+        "task_name": "legacy",
+        "status": "failed",
+        "metadata": {
+            "routine_id": "browser.legacy",
+            "legacy_context": "kept",
+        },
+        "steps": [
+            {
+                "step_id": "open",
+                "action": "click_text",
+                "legacy_step_metadata": {"selector": "#open"},
+            },
+        ],
+        "events": [
+            {
+                "phase": "observe",
+                "metadata": {"legacy_observation": "active window"},
+                "legacy_event_field": "kept",
+            },
+        ],
+        "legacy_report_field": {"operator_note": "old report still useful"},
+    }
+
+    migrated = migrate_trace_report_payload(legacy)
+    steps = cast(list[dict[str, object]], migrated["steps"])
+    events = cast(list[dict[str, object]], migrated["events"])
+
+    assert migrated["metadata"] == {
+        "routine_id": "browser.legacy",
+        "legacy_context": "kept",
+    }
+    assert migrated["legacy_report_field"] == {
+        "operator_note": "old report still useful",
+    }
+    assert steps[0]["legacy_step_metadata"] == {"selector": "#open"}
+    assert events[0]["metadata"] == {"legacy_observation": "active window"}
+    assert events[0]["legacy_event_field"] == "kept"
+    assert "trace_schema_version" not in legacy
+    assert "message" not in cast(list[dict[str, object]], legacy["events"])[0]
+
+
 def test_trace_migration_rejects_unknown_schema_version() -> None:
     with pytest.raises(TraceMigrationError, match="unsupported trace schema"):
         migrate_trace_report_payload({"trace_schema_version": "99"})

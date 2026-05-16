@@ -95,6 +95,9 @@ packs loadable by filling reviewed defaults for missing tags, inputs, outputs,
 safety class, schedule policy, approval policy, and expected duration. It also
 converts legacy `task_path`, `playbook.site`/`playbook.flow`, or
 `playbook_site`/`playbook_flow` fields into the current `reference` block.
+Existing legacy fields are preserved when they are already present, and the
+migration operates on a copied payload so catalog loading does not rewrite the
+source routine file.
 
 Loaded routines report `routine_schema_version` and `routine_schema_migration`
 metadata so traces, catalog reports, and operator monitoring can show whether a

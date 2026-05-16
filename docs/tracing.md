@@ -274,7 +274,10 @@ for the run.
 `desktop_agent.trace_migrations` contains the compatibility helpers for older
 local trace artifacts. The migration layer upgrades legacy final reports and
 action-log rows to the current schema, fills missing event defaults, rejects
-unknown schema versions, and records whether the migration was applied.
+unknown schema versions, preserves existing report, step, event, and metadata
+fields, and records whether the migration was applied. Migration works on a
+copied payload so reading an old trace for replay or review does not rewrite the
+source artifact in place.
 
 The schema defines six top-level evidence sections:
 

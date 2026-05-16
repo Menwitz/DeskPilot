@@ -112,6 +112,38 @@ def test_catalog_load_migrates_legacy_routine_files(tmp_path: Path) -> None:
     assert search_results[0].routine.id == "browser.legacy-search"
 
 
+def test_routine_migration_preserves_legacy_fields_without_mutating_payload() -> None:
+    legacy = {
+        "id": "browser.legacy-custom",
+        "name": "Legacy custom routine",
+        "description": "Carry old pack metadata forward.",
+        "goal": "Preserve existing migration metadata.",
+        "task_path": "tasks/custom.yaml",
+        "tags": ["legacy"],
+        "inputs": ["query"],
+        "outputs": ["summary"],
+        "safety_class": "medium",
+        "schedule_policy": "manual",
+        "approval_policy": "none",
+        "expected_duration_seconds": 75,
+        "legacy_pack_metadata": {"owner": "local"},
+    }
+
+    migrated = migrate_routine_definition_payload(legacy)
+    reference = cast(dict[str, object], migrated["reference"])
+
+    assert migrated["tags"] == ["legacy"]
+    assert migrated["inputs"] == ["query"]
+    assert migrated["outputs"] == ["summary"]
+    assert migrated["safety_class"] == "medium"
+    assert migrated["expected_duration_seconds"] == 75
+    assert migrated["legacy_pack_metadata"] == {"owner": "local"}
+    assert reference == {"type": "task", "path": "tasks/custom.yaml"}
+    assert "routine_schema_version" not in legacy
+    assert "routine_schema_migration" not in legacy
+    assert "reference" not in legacy
+
+
 def test_routine_migration_rejects_unknown_schema_version() -> None:
     with pytest.raises(RoutineMigrationError, match="unsupported routine schema"):
         migrate_routine_definition_payload({"routine_schema_version": "99"})

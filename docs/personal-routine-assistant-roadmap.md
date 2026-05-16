@@ -617,7 +617,7 @@ abuse, and hidden automation are not supported.
 - [x] Full-evidence traces remain available when explicitly selected or left as
       default.
 - [x] Packaged Windows app launches and can run dry-run workflows.
-- [ ] Schema migrations preserve old traces and routines.
+- [x] Schema migrations preserve old traces and routines.
 
 ## Phase 12: Beta Release And Ecosystem
 
