@@ -711,7 +711,7 @@ abuse, and hidden automation are not supported.
 - [ ] A user can run, pause, resume, stop, approve, and replay routines from the
       native app.
 - [ ] A 300-routine catalog validates and carries safety metadata.
-- [ ] Optional local Ollama assistance is useful but never required.
+- [x] Optional local Ollama assistance is useful but never required.
 - [ ] All high-risk external mutations require approval and checkpoint evidence.
 - [ ] Failed runs are diagnosable from local artifacts without rerunning desktop
       input.
