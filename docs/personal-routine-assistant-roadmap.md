@@ -272,7 +272,7 @@ abuse, and hidden automation are not supported.
 - [x] KR2: Generated YAML includes allowed windows, targets, regions,
       verification suggestions, and sensitive-step markers.
 - [x] KR3: Generated YAML passes `BasicTaskValidator`.
-- [ ] KR4: A recorded fixture routine can be rerun successfully after review.
+- [x] KR4: A recorded fixture routine can be rerun successfully after review.
 
 ### Tasks
 
