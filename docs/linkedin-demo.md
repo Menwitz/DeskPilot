@@ -47,6 +47,8 @@ page without OCR, UIA, browser automation APIs, Playwright, or a fixture window.
 The trace records launch metadata, keyboard cadence, pointer frames with
 `GetCursorPos` readback, wheel events, post-action screenshots, active-window
 titles, monitoring events in `action-log.jsonl`, and final status.
+Use [Windows Proof Evidence Checklist](windows-proof-evidence-checklist.md) to
+record the manual video, trace, manifest, and replay evidence for review.
 
 ## Safety
 

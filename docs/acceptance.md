@@ -35,6 +35,9 @@ The following acceptance items require an unlocked, logged-in Windows desktop:
 
 Use [Windows E2E Checklist](windows-e2e-checklist.md) for the manual commands,
 expected results, and trace evidence to collect.
+Use [Windows Proof Evidence Checklist](windows-proof-evidence-checklist.md) for
+manual proof bundles that must include video, trace, screenshots, manifest,
+action log, replay output, and reviewer signoff.
 The checklist also includes opt-in `pytest -m windows_smoke` coverage for
 unlocked owned Windows sessions; those tests stay skipped by default outside
 that environment.

@@ -119,6 +119,8 @@ uv run desktop-agent windows-smoke-checklist
 The command verifies cursor readback, Notepad typing, Edge launch, trace file
 creation, post-action screenshots, and monitoring logs. See
 [Windows Smoke Checklist Command](windows-smoke-checklist.md) for the runbook.
+Use [Windows Proof Evidence Checklist](windows-proof-evidence-checklist.md) when
+recording manual proof bundles for review.
 
 ## Platform Support
 

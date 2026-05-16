@@ -68,6 +68,33 @@ def test_troubleshooting_documents_public_site_failure_modes() -> None:
         assert phrase in documentation
 
 
+def test_windows_proof_docs_cover_manual_evidence_review() -> None:
+    documentation = "\n".join(
+        [
+            Path("docs/windows-proof-evidence-checklist.md").read_text(
+                encoding="utf-8"
+            ),
+            Path("docs/actuation.md").read_text(encoding="utf-8"),
+            Path("docs/acceptance.md").read_text(encoding="utf-8"),
+        ]
+    )
+
+    for phrase in (
+        "desktop-agent proof replay <trace-dir>",
+        "proof-manifest.json",
+        "demo-input",
+        "demo-linkedin",
+        "windows-smoke-checklist",
+        "video",
+        "trace",
+        "screenshots",
+        "action-log.jsonl",
+        "candidate rankings",
+        "reviewer signoff",
+    ):
+        assert phrase in documentation
+
+
 def test_release_notes_distinguish_natural_execution_from_impersonation() -> None:
     documentation = Path("docs/release-notes.md").read_text(encoding="utf-8")
 

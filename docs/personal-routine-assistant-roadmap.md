@@ -149,7 +149,7 @@ abuse, and hidden automation are not supported.
       paths without re-executing input.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
-- [ ] Add a Windows manual evidence checklist for each proof command.
+- [x] Add a Windows manual evidence checklist for each proof command.
 
 ### Acceptance Criteria
 

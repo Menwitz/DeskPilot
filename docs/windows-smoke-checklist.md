@@ -42,8 +42,12 @@ Expected files:
 
 - `windows-smoke-checklist-report.json`
 - `windows-smoke-checklist.md`
+- `proof-manifest.json`
 - `action-log.jsonl`
 - `screenshots/*.png`
+
+Use [Windows Proof Evidence Checklist](windows-proof-evidence-checklist.md) to
+record the manual video, trace, manifest, and replay evidence for review.
 
 ## Acceptance
 
@@ -51,5 +55,7 @@ Expected files:
 - [ ] Notepad opens and shows the configured smoke text.
 - [ ] Edge opens in a fresh window.
 - [ ] The report contains `post_action_evidence` for every smoke check.
+- [ ] `proof-manifest.json` links the report, action log, screenshots, command,
+      environment metadata, and trace directory.
 - [ ] `action-log.jsonl` contains one line per smoke check.
 - [ ] `screenshots/` contains post-action screenshots.

@@ -47,6 +47,8 @@ events in `action-log.jsonl`, and final status.
 
 It proves low-level global cursor and keyboard control. It does not prove OCR,
 UIA, screenshots, candidate fusion, YAML planning, or website target selection.
+Use [Windows Proof Evidence Checklist](windows-proof-evidence-checklist.md) to
+record the manual video, trace, manifest, and replay evidence for review.
 
 ## Safety
 
