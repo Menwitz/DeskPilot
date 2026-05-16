@@ -1,0 +1,16 @@
+name: Calculator history open task
+allowed_windows:
+  - Calculator
+timeout_seconds: 25
+steps:
+  - id: open-history
+    action: press_key
+    text: ctrl+h
+    verify:
+      type: visible_text
+      text: History
+  - id: confirm-history
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: History

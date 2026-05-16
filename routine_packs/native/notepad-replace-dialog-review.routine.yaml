@@ -1,0 +1,13 @@
+id: native.notepad-replace-dialog-review
+name: Notepad replace dialog review
+description: Open the Notepad replace dialog and close it without editing text.
+goal: Inspect the replace surface before a user-approved editing routine.
+required_app: Notepad
+tags: [native, notepad, review]
+inputs: [active Notepad document]
+outputs: [replace dialog reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference: {type: task, path: tasks/notepad-replace-dialog-review.yaml}

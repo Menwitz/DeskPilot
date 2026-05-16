@@ -1,0 +1,24 @@
+name: Resource Monitor open task
+allowed_windows:
+  - Windows
+  - Resource Monitor
+timeout_seconds: 30
+steps:
+  - id: open-run-dialog
+    action: press_key
+    text: win+r
+    verify:
+      type: visible_text
+      text: Run
+  - id: type-resource-monitor-command
+    action: type_text
+    text: resmon
+    verify:
+      type: visible_text
+      text: resmon
+  - id: submit-resource-monitor-command
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Resource Monitor

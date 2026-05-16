@@ -1,0 +1,13 @@
+id: native.character-map-open
+name: Character Map open
+description: Open Windows Character Map through the Run dialog for local review.
+goal: Exercise native utility launch through keyboard I/O.
+required_app: Windows
+tags: [native, windows, utility]
+inputs: [Windows desktop]
+outputs: [Character Map visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/character-map-open.yaml}

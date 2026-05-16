@@ -1,0 +1,24 @@
+name: On-Screen Keyboard open task
+allowed_windows:
+  - Windows
+  - On-Screen Keyboard
+timeout_seconds: 30
+steps:
+  - id: open-run-dialog
+    action: press_key
+    text: win+r
+    verify:
+      type: visible_text
+      text: Run
+  - id: type-on-screen-keyboard-command
+    action: type_text
+    text: osk
+    verify:
+      type: visible_text
+      text: osk
+  - id: submit-on-screen-keyboard-command
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: On-Screen Keyboard

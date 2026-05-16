@@ -361,6 +361,9 @@ abuse, and hidden automation are not supported.
 - [x] Add third native scale-out batch for File Explorer address, refresh,
       properties, rename review, preview/details panes, taskbar search, system
       tray focus, and direct Settings page review routines.
+- [x] Add fourth native scale-out batch for Notepad dialogs and zoom,
+      Calculator modes and panels, Character Map, System Information, Resource
+      Monitor, and On-Screen Keyboard utility launches.
 - [x] Add social/content routines for LinkedIn, Medium, X/Twitter, Instagram,
       Facebook, YouTube, and TikTok read-only, draft, and approved publish
       surfaces.

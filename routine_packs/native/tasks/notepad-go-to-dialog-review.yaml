@@ -1,0 +1,17 @@
+name: Notepad go to dialog review task
+allowed_windows:
+  - Notepad
+timeout_seconds: 25
+steps:
+  - id: open-go-to-dialog
+    action: press_key
+    text: ctrl+g
+    verify:
+      type: visible_text
+      text: Go To
+  - id: close-go-to-dialog
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: Notepad

@@ -1,0 +1,13 @@
+id: native.notepad-zoom-out
+name: Notepad zoom out
+description: Decrease Notepad zoom once and verify the document surface remains active.
+goal: Exercise native text zoom control without editing the document.
+required_app: Notepad
+tags: [native, notepad, zoom]
+inputs: [active Notepad document]
+outputs: [document zoom decreased]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 10
+reference: {type: task, path: tasks/notepad-zoom-out.yaml}

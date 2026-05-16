@@ -1,0 +1,16 @@
+name: Notepad zoom in task
+allowed_windows:
+  - Notepad
+timeout_seconds: 20
+steps:
+  - id: zoom-in
+    action: press_key
+    text: ctrl+plus
+    verify:
+      type: visible_text
+      text: Notepad
+  - id: confirm-notepad-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Notepad

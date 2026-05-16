@@ -1,0 +1,13 @@
+id: native.calculator-history-open
+name: Calculator history open
+description: Open Calculator history for read-only review.
+goal: Inspect recent calculation history without changing the current result.
+required_app: Calculator
+tags: [native, calculator, history]
+inputs: [active Calculator window]
+outputs: [calculator history visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference: {type: task, path: tasks/calculator-history-open.yaml}

@@ -1,0 +1,13 @@
+id: native.notepad-select-all-review
+name: Notepad select all review
+description: Select all text in Notepad for review without copying, cutting, or editing.
+goal: Verify full-document selection behavior before an approved copy/edit routine.
+required_app: Notepad
+tags: [native, notepad, selection]
+inputs: [active Notepad document]
+outputs: [document text selected]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 10
+reference: {type: task, path: tasks/notepad-select-all-review.yaml}

@@ -1,0 +1,13 @@
+id: native.resource-monitor-open
+name: Resource Monitor open
+description: Open Windows Resource Monitor through the Run dialog for local review.
+goal: Inspect native performance monitoring availability without changing processes.
+required_app: Windows
+tags: [native, windows, monitoring]
+inputs: [Windows desktop]
+outputs: [Resource Monitor visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/resource-monitor-open.yaml}

@@ -1,0 +1,13 @@
+id: native.notepad-go-to-dialog-review
+name: Notepad go to dialog review
+description: Open the Notepad go-to dialog and close it without moving the cursor.
+goal: Inspect line navigation controls before a user-approved document routine.
+required_app: Notepad
+tags: [native, notepad, review]
+inputs: [active Notepad document]
+outputs: [go-to dialog reviewed]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference: {type: task, path: tasks/notepad-go-to-dialog-review.yaml}

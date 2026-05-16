@@ -1,0 +1,13 @@
+id: native.calculator-date-calculation-mode
+name: Calculator date calculation mode
+description: Switch Calculator to date calculation mode and verify the date surface.
+goal: Exercise native Calculator date calculation navigation.
+required_app: Calculator
+tags: [native, calculator, mode]
+inputs: [active Calculator window]
+outputs: [date calculation mode visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/calculator-date-calculation-mode.yaml}

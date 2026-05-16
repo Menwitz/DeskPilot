@@ -1,0 +1,13 @@
+id: native.notepad-zoom-reset
+name: Notepad zoom reset
+description: Reset Notepad zoom and verify the document surface remains active.
+goal: Return a Notepad document to default zoom without editing content.
+required_app: Notepad
+tags: [native, notepad, zoom]
+inputs: [active Notepad document]
+outputs: [document zoom reset]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 10
+reference: {type: task, path: tasks/notepad-zoom-reset.yaml}

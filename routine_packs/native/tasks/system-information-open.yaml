@@ -1,0 +1,24 @@
+name: System Information open task
+allowed_windows:
+  - Windows
+  - System Information
+timeout_seconds: 30
+steps:
+  - id: open-run-dialog
+    action: press_key
+    text: win+r
+    verify:
+      type: visible_text
+      text: Run
+  - id: type-system-information-command
+    action: type_text
+    text: msinfo32
+    verify:
+      type: visible_text
+      text: msinfo32
+  - id: submit-system-information-command
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: System Information

@@ -1,0 +1,13 @@
+id: native.on-screen-keyboard-open
+name: On-Screen Keyboard open
+description: Open Windows On-Screen Keyboard through the Run dialog for local review.
+goal: Verify accessibility utility launch through visible keyboard input.
+required_app: Windows
+tags: [native, windows, accessibility]
+inputs: [Windows desktop]
+outputs: [On-Screen Keyboard visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/on-screen-keyboard-open.yaml}

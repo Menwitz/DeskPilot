@@ -1,0 +1,16 @@
+name: Calculator memory open task
+allowed_windows:
+  - Calculator
+timeout_seconds: 25
+steps:
+  - id: open-memory-panel
+    action: click_text
+    target: Memory
+    verify:
+      type: visible_text
+      text: Memory
+  - id: confirm-memory-panel
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Memory

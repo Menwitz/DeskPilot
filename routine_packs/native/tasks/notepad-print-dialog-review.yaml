@@ -1,0 +1,17 @@
+name: Notepad print dialog review task
+allowed_windows:
+  - Notepad
+timeout_seconds: 30
+steps:
+  - id: open-print-dialog
+    action: press_key
+    text: ctrl+p
+    verify:
+      type: visible_text
+      text: Print
+  - id: close-print-dialog
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: Notepad

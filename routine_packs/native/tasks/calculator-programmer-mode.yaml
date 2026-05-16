@@ -1,0 +1,19 @@
+name: Calculator programmer mode task
+allowed_windows:
+  - Calculator
+timeout_seconds: 30
+steps:
+  - id: open-mode-menu
+    action: click_text
+    target: Open Navigation
+  - id: choose-programmer
+    action: click_text
+    target: Programmer
+    verify:
+      type: visible_text
+      text: Programmer
+  - id: confirm-programmer-mode
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Programmer

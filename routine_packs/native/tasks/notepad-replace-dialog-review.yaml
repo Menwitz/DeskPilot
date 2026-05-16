@@ -1,0 +1,17 @@
+name: Notepad replace dialog review task
+allowed_windows:
+  - Notepad
+timeout_seconds: 25
+steps:
+  - id: open-replace-dialog
+    action: press_key
+    text: ctrl+h
+    verify:
+      type: visible_text
+      text: Replace
+  - id: close-replace-dialog
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: Notepad
