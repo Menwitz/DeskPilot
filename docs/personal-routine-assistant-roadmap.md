@@ -496,7 +496,7 @@ abuse, and hidden automation are not supported.
 
 ### Goals
 
-- [ ] Improve routine resilience against ordinary UI variance.
+- [x] Improve routine resilience against ordinary UI variance.
 - [ ] Keep recovery explicit, bounded, safe, and auditable.
 - [ ] Use failed traces to improve routines without silently changing outcomes.
 
