@@ -708,7 +708,7 @@ abuse, and hidden automation are not supported.
 - [x] A user can record a routine, review generated YAML, save it, and rerun it.
 - [x] A user can state a goal and get a selected known routine or a clear
       missing-input prompt.
-- [ ] A user can run, pause, resume, stop, approve, and replay routines from the
+- [x] A user can run, pause, resume, stop, approve, and replay routines from the
       native app.
 - [ ] A 300-routine catalog validates and carries safety metadata.
 - [x] Optional local Ollama assistance is useful but never required.
