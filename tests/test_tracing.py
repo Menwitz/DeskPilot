@@ -25,6 +25,7 @@ from desktop_agent.tracing import (
     FileTraceSink,
     StepReport,
     TraceEvent,
+    TraceSchemaV2,
 )
 
 
@@ -62,6 +63,45 @@ class TargetEchoPerceptionEngine(PerceptionEngine):
                 confidence=0.95,
             ),
         )
+
+
+def test_trace_schema_v2_public_interface_lists_closed_loop_sections() -> None:
+    schema = TraceSchemaV2().to_dict()
+    sections = schema["sections"]
+
+    assert isinstance(sections, dict)
+
+    assert schema["version"] == TRACE_SCHEMA_V2.version
+    assert set(sections) == {
+        "observation",
+        "target_reasoning",
+        "input",
+        "verification",
+        "state_delta",
+        "model_assistance",
+    }
+    observation = sections["observation"]
+    target_reasoning = sections["target_reasoning"]
+    input_section = sections["input"]
+    verification = sections["verification"]
+    assert isinstance(observation, dict)
+    assert isinstance(target_reasoning, dict)
+    assert isinstance(input_section, dict)
+    assert isinstance(verification, dict)
+    observation_fields = observation["typical_fields"]
+    target_fields = target_reasoning["typical_fields"]
+    input_fields = input_section["typical_fields"]
+    verification_fields = verification["typical_fields"]
+    assert isinstance(observation_fields, list)
+    assert isinstance(target_fields, list)
+    assert isinstance(input_fields, list)
+    assert isinstance(verification_fields, list)
+    assert "screenshot_path" in observation_fields
+    assert "cursor_position" in observation_fields
+    assert "selected_candidate" in target_fields
+    assert "candidate_rankings" in target_fields
+    assert "input_action" in input_fields
+    assert "verification_outcome" in verification_fields
 
 
 def test_file_trace_sink_writes_run_artifacts(tmp_path: Path) -> None:

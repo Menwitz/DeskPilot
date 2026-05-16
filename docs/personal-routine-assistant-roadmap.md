@@ -668,7 +668,7 @@ abuse, and hidden automation are not supported.
       reference.
 - [x] `DesktopIoAction`: compiled low-level observe, input, verify, and handoff
       action model.
-- [ ] `TraceSchemaV2`: versioned evidence model for video, before/after
+- [x] `TraceSchemaV2`: versioned evidence model for video, before/after
       observations, target reasoning, input events, verification, state deltas,
       and redaction.
 - [ ] `RecorderSession`: raw recorder event stream plus generated routine output.
