@@ -80,6 +80,30 @@ class LiveRunPanelState:
         }
 
 
+@dataclass(frozen=True)
+class ApprovalDialogState:
+    """Approval dialog fields shown before high-risk local actions continue."""
+
+    routine_id: str
+    step_id: str
+    risk_class: str
+    checkpoint_evidence: str
+    content_fingerprint: str
+    status: str = "pending"
+    actions: tuple[str, ...] = ("approve", "deny")
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "routine_id": self.routine_id,
+            "step_id": self.step_id,
+            "risk_class": self.risk_class,
+            "checkpoint_evidence": self.checkpoint_evidence,
+            "content_fingerprint": self.content_fingerprint,
+            "status": self.status,
+            "actions": list(self.actions),
+        }
+
+
 def operator_app_shell_spec() -> OperatorAppShell:
     """Return the Phase 8 native app shell page contract."""
     pages = (
@@ -108,6 +132,7 @@ def operator_app_shell_spec() -> OperatorAppShell:
             page_id="approvals",
             title="Approvals",
             purpose="Review high-risk steps before local execution continues.",
+            panel_ids=("approval_dialog",),
         ),
         OperatorAppPage(
             page_id="trace_viewer",
@@ -156,6 +181,22 @@ def render_live_run_panel_text(state: LiveRunPanelState | None = None) -> str:
             f"- Next action: {active_state.next_action or 'none'}",
             f"- Elapsed seconds: {active_state.elapsed_seconds:g}",
             f"- Stop controls: {', '.join(active_state.stop_controls)}",
+        ],
+    ) + "\n"
+
+
+def render_approval_dialog_text(state: ApprovalDialogState) -> str:
+    """Render approval dialog details for diagnostics and tests."""
+    return "\n".join(
+        [
+            "Approval",
+            f"- Routine ID: {state.routine_id}",
+            f"- Step ID: {state.step_id}",
+            f"- Risk class: {state.risk_class}",
+            f"- Checkpoint evidence: {state.checkpoint_evidence}",
+            f"- Content fingerprint: {state.content_fingerprint}",
+            f"- Status: {state.status}",
+            f"- Actions: {', '.join(state.actions)}",
         ],
     ) + "\n"
 
@@ -229,5 +270,13 @@ def _page_widget(qt_widgets: Any, page: OperatorAppPage) -> Any:
     if "live_run" in page.panel_ids:
         for line in render_live_run_panel_text().splitlines():
             layout.addWidget(qt_widgets.QLabel(line))
+    if "approval_dialog" in page.panel_ids:
+        layout.addWidget(qt_widgets.QLabel("Approval"))
+        layout.addWidget(qt_widgets.QLabel("Routine ID: pending"))
+        layout.addWidget(qt_widgets.QLabel("Step ID: pending"))
+        layout.addWidget(qt_widgets.QLabel("Risk class: pending"))
+        layout.addWidget(qt_widgets.QLabel("Checkpoint evidence: pending"))
+        layout.addWidget(qt_widgets.QLabel("Content fingerprint: pending"))
+        layout.addWidget(qt_widgets.QLabel("Actions: approve, deny"))
     layout.addStretch(1)
     return widget

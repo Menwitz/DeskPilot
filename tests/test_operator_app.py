@@ -5,9 +5,11 @@ from pytest import CaptureFixture
 
 from desktop_agent.operator_app import main
 from desktop_agent.operator_app_shell import (
+    ApprovalDialogState,
     LiveRunPanelState,
     default_live_run_panel_state,
     operator_app_shell_spec,
+    render_approval_dialog_text,
     render_live_run_panel_text,
     render_operator_app_shell_text,
 )
@@ -47,6 +49,8 @@ def test_operator_app_shell_exposes_required_pages() -> None:
         "help",
     ]
     assert shell.pages[0].panel_ids == ("live_run",)
+    approvals_page = next(page for page in shell.pages if page.page_id == "approvals")
+    assert approvals_page.panel_ids == ("approval_dialog",)
     assert shell.metadata()["pages"]
 
 
@@ -101,3 +105,24 @@ def test_live_run_panel_defaults_to_idle() -> None:
 
     assert state.status == "idle"
     assert state.current_routine_id is None
+
+
+def test_approval_dialog_state_tracks_required_review_fields() -> None:
+    state = ApprovalDialogState(
+        routine_id="social.publish",
+        step_id="submit-post",
+        risk_class="high",
+        checkpoint_evidence="checkpoint screenshot present",
+        content_fingerprint="sha256:abc123",
+    )
+
+    metadata = state.metadata()
+    text = render_approval_dialog_text(state)
+
+    assert metadata["routine_id"] == "social.publish"
+    assert metadata["step_id"] == "submit-post"
+    assert metadata["risk_class"] == "high"
+    assert metadata["checkpoint_evidence"] == "checkpoint screenshot present"
+    assert metadata["content_fingerprint"] == "sha256:abc123"
+    assert metadata["actions"] == ["approve", "deny"]
+    assert "Actions: approve, deny" in text

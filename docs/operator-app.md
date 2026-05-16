@@ -22,6 +22,10 @@ current routine, current step, screenshot preview path, selected target, next
 action, elapsed seconds, run status, and stop controls: pause, resume, cancel,
 and emergency stop.
 
+The Approvals page includes the approval dialog contract. It shows routine ID,
+step ID, risk class, checkpoint evidence, content fingerprint, current status,
+and explicit approve/deny actions before high-risk work can continue.
+
 `deskpilot-app --describe-shell` prints this shell contract without importing
 PySide6. `deskpilot-app --check` verifies that the entry point is installed and
 reports whether PySide6 is available.

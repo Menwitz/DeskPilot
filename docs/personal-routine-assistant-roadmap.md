@@ -474,7 +474,7 @@ abuse, and hidden automation are not supported.
       approvals, and trace APIs.
 - [x] Add live run panel with current routine, current step, screenshot preview,
       selected target, next action, elapsed time, status, and stop controls.
-- [ ] Add approval dialog with routine ID, step ID, risk class, checkpoint
+- [x] Add approval dialog with routine ID, step ID, risk class, checkpoint
       evidence, content fingerprint, and approve/deny actions.
 - [ ] Add recorder review UI with generated YAML, selected targets, screenshots,
       and verification suggestions.
