@@ -68,8 +68,9 @@ widgets can share the same page IDs in tests, packaging, and documentation.
 
 ## Local Service Boundary
 
-`desktop_agent.operator_services` defines the app-facing service boundary. The
-initial concrete bundle is local-only and wraps existing project modules:
+`desktop_agent.operator_services.OperatorAppService` defines the app-facing
+service boundary. The initial concrete bundle is local-only and wraps existing
+project modules:
 
 - Catalog service: list, search, and inspect routine definitions.
 - Recorder service: expose supported recording operations.

@@ -170,6 +170,45 @@ class RoutinePackService(Protocol):
         ...
 
 
+class OperatorAppService(Protocol):
+    """Composite Python service boundary consumed by PySide6 app widgets."""
+
+    @property
+    def catalog(self) -> CatalogService:
+        """Return the routine catalog boundary."""
+        ...
+
+    @property
+    def recorder(self) -> RecorderService:
+        """Return the recorder boundary."""
+        ...
+
+    @property
+    def runner(self) -> RunnerService:
+        """Return the runner boundary."""
+        ...
+
+    @property
+    def scheduler(self) -> SchedulerService:
+        """Return the scheduler boundary."""
+        ...
+
+    @property
+    def approvals(self) -> ApprovalService:
+        """Return the approval boundary."""
+        ...
+
+    @property
+    def traces(self) -> TraceService:
+        """Return the local trace boundary."""
+        ...
+
+    @property
+    def routine_packs(self) -> RoutinePackService:
+        """Return the routine-pack boundary."""
+        ...
+
+
 @dataclass(frozen=True)
 class LocalOperatorServices:
     """Concrete local service bundle injected into the operator app shell."""

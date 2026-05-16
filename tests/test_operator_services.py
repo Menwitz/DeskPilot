@@ -9,6 +9,7 @@ from desktop_agent.operator_services import (
     LocalRoutinePackService,
     LocalSchedulerService,
     LocalTraceService,
+    OperatorAppService,
     OperatorServiceError,
     default_local_operator_services,
 )
@@ -53,6 +54,41 @@ def test_local_operator_services_expose_catalog_runner_approvals_and_queue(
     assert queue_metadata["run_queue_size"] == 0
     assert "generate_yaml" in services.recorder.capabilities()
     assert services.routine_packs.list_packs() == ()
+
+
+def test_operator_app_service_interface_groups_local_boundaries(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "routine_packs"
+    _write_routine(
+        root / "browser" / "search.routine.yaml",
+        routine_id="browser.search",
+        approval_policy="none",
+    )
+    services = default_local_operator_services(
+        routine_pack_root=root,
+        trace_root=tmp_path / "traces",
+    )
+
+    def describe(service: OperatorAppService) -> dict[str, object]:
+        return {
+            "routine_count": len(service.catalog.list_routines()),
+            "recorder_capabilities": service.recorder.capabilities(),
+            "queue": service.scheduler.queue_metadata(),
+            "trace_count": len(service.traces.list_traces()),
+            "pack_count": len(service.routine_packs.list_packs()),
+        }
+
+    summary = describe(services)
+    recorder_capabilities = cast(tuple[str, ...], summary["recorder_capabilities"])
+    queue = cast(dict[str, object], summary["queue"])
+
+    assert summary["routine_count"] == 1
+    assert "generate_yaml" in recorder_capabilities
+    assert queue["run_queue_size"] == 0
+    assert queue["run_queue_entries"] == []
+    assert summary["trace_count"] == 0
+    assert summary["pack_count"] == 0
 
 
 def test_local_trace_service_lists_and_reads_reports(tmp_path: Path) -> None:
