@@ -1,0 +1,16 @@
+name: Browser open history task
+allowed_windows:
+  - Browser
+timeout_seconds: 25
+steps:
+  - id: open-history
+    action: press_key
+    text: ctrl+h
+    verify:
+      type: visible_text
+      text: History
+  - id: confirm-history-visible
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: History

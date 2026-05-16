@@ -1,0 +1,23 @@
+name: Browser zoom reset task
+allowed_windows:
+  - Browser
+timeout_seconds: 25
+steps:
+  - id: zoom-in
+    action: press_key
+    text: ctrl+plus
+    verify:
+      type: visible_text
+      text: Zoom
+  - id: zoom-out
+    action: press_key
+    text: ctrl+minus
+    verify:
+      type: visible_text
+      text: Zoom
+  - id: reset-zoom
+    action: press_key
+    text: ctrl+0
+    verify:
+      type: visible_text
+      text: Zoom

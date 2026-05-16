@@ -1,0 +1,20 @@
+id: browser.restore-closed-tab
+name: Browser restore closed tab
+description: Reopen the most recently closed browser tab from the current window.
+goal: Restore a tab that was closed during the current browser session.
+required_app: Browser
+tags:
+  - browser
+  - navigation
+  - tabs
+inputs:
+  - recently closed tab
+outputs:
+  - restored tab visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/restore-closed-tab.yaml

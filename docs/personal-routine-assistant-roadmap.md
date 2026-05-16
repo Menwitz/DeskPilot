@@ -336,6 +336,9 @@ abuse, and hidden automation are not supported.
 - [x] Add routine quarantine status for routines with repeated failed evidence.
 - [x] Add browser routines for navigation, forms, search, reading, content
       extraction, writing surfaces, downloads, and settings pages.
+- [x] Add first browser scale-out batch for tabs, find, page-link capture,
+      bookmarks, print/save review, zoom, history, extensions, and private
+      windows.
 - [x] Add native routines for Notepad, Calculator, Settings, File Explorer,
       clipboard, app switching, window management, and simple Office-like
       surfaces.

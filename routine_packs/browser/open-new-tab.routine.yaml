@@ -1,0 +1,20 @@
+id: browser.open-new-tab
+name: Browser open new tab
+description: Open a fresh browser tab and confirm the search surface is ready.
+goal: Prepare a new tab for a reviewed navigation or search routine.
+required_app: Browser
+tags:
+  - browser
+  - navigation
+  - tabs
+inputs:
+  - browser window
+outputs:
+  - new tab ready
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 15
+reference:
+  type: task
+  path: tasks/open-new-tab.yaml

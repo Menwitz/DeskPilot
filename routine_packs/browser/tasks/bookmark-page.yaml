@@ -1,0 +1,23 @@
+name: Browser bookmark page task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-bookmark-dialog
+    action: press_key
+    text: ctrl+d
+    requires_confirmation: true
+    verify:
+      type: visible_text
+      text: Bookmark
+  - id: save-bookmark
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Bookmark
+  - id: confirm-bookmark-complete
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Browser

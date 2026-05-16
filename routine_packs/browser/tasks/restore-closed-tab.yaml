@@ -1,0 +1,19 @@
+name: Browser restore closed tab task
+allowed_windows:
+  - Browser
+timeout_seconds: 20
+steps:
+  - id: confirm-browser
+    action: wait_for
+    target: Browser
+  - id: restore-tab
+    action: press_key
+    text: ctrl+shift+t
+    verify:
+      type: visible_text
+      text: Browser
+  - id: confirm-restored-surface
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Browser

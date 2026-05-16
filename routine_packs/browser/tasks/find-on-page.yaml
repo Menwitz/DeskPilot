@@ -1,0 +1,26 @@
+name: Browser find on page task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: confirm-page
+    action: wait_for
+    target: Page
+  - id: open-find
+    action: press_key
+    text: ctrl+f
+    verify:
+      type: visible_text
+      text: Find
+  - id: type-find-phrase
+    action: type_text
+    text: Reviewed search phrase
+    verify:
+      type: visible_text
+      text: Reviewed search phrase
+  - id: advance-to-match
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Reviewed search phrase

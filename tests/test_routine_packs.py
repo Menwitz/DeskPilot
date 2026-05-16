@@ -44,7 +44,7 @@ def test_builtin_routine_catalog_has_broad_reusable_surface_coverage() -> None:
             assert routine.reference.task_path.exists()
 
     assert len(catalog.routines) >= 30
-    assert pack_counts["browser"] >= 8
+    assert pack_counts["browser"] >= 20
     assert pack_counts["native"] >= 8
     assert pack_counts["social-content"] >= 21
 
@@ -240,6 +240,18 @@ def test_browser_routine_pack_contains_seed_categories() -> None:
         "browser.writing-surface-draft",
         "browser.download-open",
         "browser.settings-open",
+        "browser.open-new-tab",
+        "browser.close-current-tab",
+        "browser.restore-closed-tab",
+        "browser.find-on-page",
+        "browser.copy-page-link",
+        "browser.bookmark-page",
+        "browser.print-page-dialog",
+        "browser.save-page-dialog",
+        "browser.zoom-reset",
+        "browser.history-open",
+        "browser.extensions-open",
+        "browser.private-window-open",
     }
     routines = {
         routine.id: routine

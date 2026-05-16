@@ -1,0 +1,20 @@
+id: browser.history-open
+name: Browser open history
+description: Open the browser history surface for local review.
+goal: Show recent browser history in the current browser profile.
+required_app: Browser
+tags:
+  - browser
+  - history
+  - review
+inputs:
+  - browser profile
+outputs:
+  - history page visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/history-open.yaml

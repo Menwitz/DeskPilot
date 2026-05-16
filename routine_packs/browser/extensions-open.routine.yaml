@@ -1,0 +1,20 @@
+id: browser.extensions-open
+name: Browser open extensions
+description: Navigate to the browser extensions management surface for review.
+goal: Inspect installed browser extension state without changing settings.
+required_app: Browser
+tags:
+  - browser
+  - settings
+  - extensions
+inputs:
+  - browser profile
+outputs:
+  - extensions page visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/extensions-open.yaml

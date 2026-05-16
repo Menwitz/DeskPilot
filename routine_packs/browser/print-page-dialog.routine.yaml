@@ -1,0 +1,20 @@
+id: browser.print-page-dialog
+name: Browser print page dialog
+description: Open the browser print dialog and return to the page without printing.
+goal: Review print options for the current page without committing output.
+required_app: Browser
+tags:
+  - browser
+  - export
+  - print
+inputs:
+  - current page
+outputs:
+  - print dialog reviewed
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/print-page-dialog.yaml

@@ -1,0 +1,20 @@
+name: Browser save page dialog task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: open-save-dialog
+    action: press_key
+    text: ctrl+s
+    verify:
+      type: visible_text
+      text: Save
+  - id: review-save-dialog
+    action: wait_for
+    target: Save
+  - id: close-save-dialog
+    action: press_key
+    text: escape
+    verify:
+      type: visible_text
+      text: Browser

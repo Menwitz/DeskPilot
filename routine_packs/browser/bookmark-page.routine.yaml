@@ -1,0 +1,20 @@
+id: browser.bookmark-page
+name: Browser bookmark page
+description: Open the bookmark dialog for the current page and save it after confirmation.
+goal: Add the current page to browser bookmarks with visible approval.
+required_app: Browser
+tags:
+  - browser
+  - bookmarks
+  - organization
+inputs:
+  - current page
+outputs:
+  - bookmark saved
+safety_class: medium
+schedule_policy: manual
+approval_policy: confirm
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/bookmark-page.yaml

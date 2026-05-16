@@ -1,0 +1,20 @@
+id: browser.save-page-dialog
+name: Browser save page dialog
+description: Open the save-page dialog for review and close it without writing a file.
+goal: Inspect save-page options without creating local output.
+required_app: Browser
+tags:
+  - browser
+  - export
+  - files
+inputs:
+  - current page
+outputs:
+  - save dialog reviewed
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference:
+  type: task
+  path: tasks/save-page-dialog.yaml

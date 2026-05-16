@@ -1,0 +1,19 @@
+name: Browser close current tab task
+allowed_windows:
+  - Browser
+timeout_seconds: 20
+steps:
+  - id: confirm-browser
+    action: wait_for
+    target: Browser
+  - id: close-tab
+    action: press_key
+    text: ctrl+w
+    verify:
+      type: visible_text
+      text: Browser
+  - id: confirm-browser-remains
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Browser

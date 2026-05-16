@@ -1,0 +1,20 @@
+id: browser.private-window-open
+name: Browser open private window
+description: Open a private browsing window and verify the private surface appears.
+goal: Prepare an isolated browser window for a reviewed task.
+required_app: Browser
+tags:
+  - browser
+  - windows
+  - privacy
+inputs:
+  - browser window
+outputs:
+  - private window visible
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference:
+  type: task
+  path: tasks/private-window-open.yaml

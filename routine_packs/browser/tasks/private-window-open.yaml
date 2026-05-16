@@ -1,0 +1,19 @@
+name: Browser open private window task
+allowed_windows:
+  - Browser
+timeout_seconds: 25
+steps:
+  - id: confirm-browser
+    action: wait_for
+    target: Browser
+  - id: open-private-window
+    action: press_key
+    text: ctrl+shift+n
+    verify:
+      type: visible_text
+      text: Private
+  - id: confirm-private-window
+    action: assert_visible
+    verify:
+      type: visible_text
+      text: Private
