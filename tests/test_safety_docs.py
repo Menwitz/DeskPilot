@@ -19,6 +19,32 @@ def test_execution_profile_docs_preserve_unsupported_use_boundary() -> None:
         assert phrase in documentation
 
 
+def test_product_contract_preserves_local_first_authorized_use_boundary() -> None:
+    documentation = " ".join(
+        "\n".join(
+            [
+                Path("docs/project-definition.md").read_text(encoding="utf-8"),
+                Path("docs/safety.md").read_text(encoding="utf-8"),
+                Path("docs/personal-routine-assistant-roadmap.md").read_text(
+                    encoding="utf-8",
+                ),
+            ]
+        ).split()
+    )
+
+    for phrase in (
+        "Screenshots, OCR output, traces, and reports stay local by default",
+        "no cloud AI dependency",
+        "authorized to automate",
+        "human-paced visible automation without stealth or evasion",
+        "stealth automation",
+        "CAPTCHA bypass",
+        "bot-detection evasion",
+        "hidden automation",
+    ):
+        assert phrase in documentation
+
+
 def test_operator_guidance_documents_timing_budget_and_report_checks() -> None:
     documentation = Path("docs/configuration.md").read_text(encoding="utf-8")
 
