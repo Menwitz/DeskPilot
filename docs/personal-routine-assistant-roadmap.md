@@ -549,7 +549,7 @@ abuse, and hidden automation are not supported.
 
 - [x] O1: Integrate optional local model assistance safely.
 - [x] KR1: Add `LocalModelProvider` interface and Ollama implementation.
-- [ ] KR2: Model output can rank routines, summarize traces, extract draft
+- [x] KR2: Model output can rank routines, summarize traces, extract draft
       inputs, and suggest YAML improvements.
 - [ ] KR3: Model output cannot execute raw desktop actions directly.
 - [ ] KR4: Every model-assisted decision is disclosed in the trace.

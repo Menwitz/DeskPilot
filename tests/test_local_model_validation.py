@@ -48,6 +48,55 @@ def test_validate_missing_input_response_rejects_unknown_keys() -> None:
     assert "inputs contains unknown key(s): unexpected" in result.errors
 
 
+def test_validate_phase_10_advisory_outputs_accept_known_references() -> None:
+    missing_inputs = validate_missing_input_response(
+        {
+            "inputs": {"recipient": "Sam", "message": "Daily update"},
+            "unknown_inputs": [],
+            "explanation": "Both values are present in the goal text.",
+        },
+        required_inputs=("recipient", "message"),
+    )
+    trace_summary = validate_trace_summary_response(
+        {
+            "summary": "The click missed the submit button.",
+            "likely_failure_reason": "ambiguous selector",
+            "evidence_references": ["action-log.jsonl#3"],
+        },
+        event_references=("action-log.jsonl#3",),
+    )
+    yaml_improvement = validate_yaml_improvement_response(
+        {
+            "proposals": [
+                {
+                    "step_id": "click-submit",
+                    "rationale": "Use a narrower region.",
+                    "yaml_snippet": "- id: click-submit\n  region:\n    x: REVIEW",
+                    "review_required": True,
+                    "applies_automatically": False,
+                },
+            ],
+        },
+        known_step_ids=("click-submit",),
+    )
+
+    assert missing_inputs.accepted is True
+    assert trace_summary.accepted is True
+    assert yaml_improvement.accepted is True
+    assert trace_summary.normalized_output["evidence_references"] == [
+        "action-log.jsonl#3",
+    ]
+    assert yaml_improvement.normalized_output["proposals"] == [
+        {
+            "step_id": "click-submit",
+            "rationale": "Use a narrower region.",
+            "yaml_snippet": "- id: click-submit\n  region:\n    x: REVIEW",
+            "review_required": True,
+            "applies_automatically": False,
+        },
+    ]
+
+
 def test_validate_trace_summary_response_requires_known_evidence_refs() -> None:
     result = validate_trace_summary_response(
         {
