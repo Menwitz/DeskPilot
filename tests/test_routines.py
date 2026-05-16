@@ -211,6 +211,7 @@ def test_routine_definition_schema_loads_schedule_constraints(
                 "  cooldown_seconds: 1800",
                 "  max_runs_per_day: 2",
                 "  max_runs_per_week: 8",
+                "  max_actions_per_hour: 12",
                 "  max_external_mutations: 1",
                 "  stop_conditions:",
                 "    - active_window_not_allowed",
@@ -230,6 +231,7 @@ def test_routine_definition_schema_loads_schedule_constraints(
 
     assert routine.schedule.cooldown_seconds == 1800
     assert routine.schedule.max_runs_per_day == 2
+    assert routine.schedule.max_actions_per_hour == 12
     assert routine.schedule.max_external_mutations == 1
     assert routine.schedule.stop_conditions == (
         "active_window_not_allowed",
@@ -245,6 +247,7 @@ def test_routine_definition_schema_loads_schedule_constraints(
     metadata = routine.report_metadata()["routine_schedule"]
     assert isinstance(metadata, dict)
     assert metadata["max_runs_per_week"] == 8
+    assert metadata["max_actions_per_hour"] == 12
     assert search_results[0].routine.id == "browser.morning-review"
 
     assert (
@@ -259,6 +262,7 @@ def test_routine_definition_schema_loads_schedule_constraints(
         == 0
     )
     show_output = capsys.readouterr().out
+    assert "max_actions_per_hour: 12" in show_output
     assert "max_external_mutations: 1" in show_output
     assert "operator_check_in_required" in show_output
 
@@ -277,6 +281,7 @@ def test_routine_definition_schema_loads_schedule_constraints(
     )
     exported = yaml.safe_load(export_path.read_text(encoding="utf-8"))
     assert exported["schedule"]["max_runs_per_day"] == 2
+    assert exported["schedule"]["max_actions_per_hour"] == 12
     assert exported["schedule"]["allowed_time_windows"][0]["start"] == "09:00"
 
 

@@ -130,6 +130,7 @@ class RoutineSchedule:
     cooldown_seconds: float = 0.0
     max_runs_per_day: int | None = None
     max_runs_per_week: int | None = None
+    max_actions_per_hour: int | None = None
     max_external_mutations: int | None = None
     stop_conditions: tuple[str, ...] = ()
 
@@ -141,6 +142,7 @@ class RoutineSchedule:
             "cooldown_seconds": self.cooldown_seconds,
             "max_runs_per_day": self.max_runs_per_day,
             "max_runs_per_week": self.max_runs_per_week,
+            "max_actions_per_hour": self.max_actions_per_hour,
             "max_external_mutations": self.max_external_mutations,
             "stop_conditions": list(self.stop_conditions),
         }
@@ -928,6 +930,10 @@ def _schedule_from_value(value: object) -> RoutineSchedule:
             data.get("max_runs_per_week"),
             "schedule.max_runs_per_week",
         ),
+        max_actions_per_hour=_optional_positive_int(
+            data.get("max_actions_per_hour"),
+            "schedule.max_actions_per_hour",
+        ),
         max_external_mutations=_optional_non_negative_int_or_none(
             data.get("max_external_mutations"),
             "schedule.max_external_mutations",
@@ -984,7 +990,11 @@ def _schedule_errors(schedule: RoutineSchedule) -> list[str]:
             errors.append(f"{prefix}.timezone is required")
     if schedule.cooldown_seconds < 0:
         errors.append("schedule.cooldown_seconds must not be negative")
-    for field_name in ("max_runs_per_day", "max_runs_per_week"):
+    for field_name in (
+        "max_runs_per_day",
+        "max_runs_per_week",
+        "max_actions_per_hour",
+    ):
         value = getattr(schedule, field_name)
         if value is not None and value <= 0:
             errors.append(f"schedule.{field_name} must be greater than zero")
@@ -1067,6 +1077,9 @@ def _schedule_search_text(schedule: RoutineSchedule) -> str:
         else "",
         f"max runs week {schedule.max_runs_per_week}"
         if schedule.max_runs_per_week is not None
+        else "",
+        f"max actions hour {schedule.max_actions_per_hour}"
+        if schedule.max_actions_per_hour is not None
         else "",
         f"max external mutations {schedule.max_external_mutations}"
         if schedule.max_external_mutations is not None

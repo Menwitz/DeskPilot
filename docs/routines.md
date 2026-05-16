@@ -43,6 +43,7 @@ schedule:
   cooldown_seconds: 1800
   max_runs_per_day: 3
   max_runs_per_week: 10
+  max_actions_per_hour: 12
   max_external_mutations: 1
   stop_conditions:
     - active_window_not_allowed
@@ -123,7 +124,8 @@ report metadata when a routine is compiled.
   `days` from `mon` through `sun`, and a `timezone` label. Omit `days` for every
   day.
 - `cooldown_seconds` must be non-negative.
-- `max_runs_per_day` and `max_runs_per_week` must be positive when present.
+- `max_runs_per_day`, `max_runs_per_week`, and `max_actions_per_hour` must be
+  positive when present.
 - `max_external_mutations` must be non-negative when present.
 - `stop_conditions` are reviewed strings such as `active_window_not_allowed`,
   `operator_check_in_required`, or `approval_missing`.

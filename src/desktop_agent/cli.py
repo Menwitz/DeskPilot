@@ -1404,6 +1404,8 @@ def _routine_schedule_summary(routine: RoutineDefinition) -> str:
         lines.append(f"max_runs_per_day: {schedule.max_runs_per_day}")
     if schedule.max_runs_per_week is not None:
         lines.append(f"max_runs_per_week: {schedule.max_runs_per_week}")
+    if schedule.max_actions_per_hour is not None:
+        lines.append(f"max_actions_per_hour: {schedule.max_actions_per_hour}")
     if schedule.max_external_mutations is not None:
         lines.append(f"max_external_mutations: {schedule.max_external_mutations}")
     if schedule.stop_conditions:
@@ -1430,6 +1432,8 @@ def _routine_schedule_to_yaml_dict(routine: RoutineDefinition) -> dict[str, obje
         payload["max_runs_per_day"] = schedule.max_runs_per_day
     if schedule.max_runs_per_week is not None:
         payload["max_runs_per_week"] = schedule.max_runs_per_week
+    if schedule.max_actions_per_hour is not None:
+        payload["max_actions_per_hour"] = schedule.max_actions_per_hour
     if schedule.max_external_mutations is not None:
         payload["max_external_mutations"] = schedule.max_external_mutations
     if schedule.stop_conditions:
