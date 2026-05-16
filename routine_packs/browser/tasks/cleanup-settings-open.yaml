@@ -1,0 +1,23 @@
+name: Browser cleanup settings open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: focus-address-bar
+    action: press_key
+    text: ctrl+l
+    verify:
+      type: visible_text
+      text: Address
+  - id: type-cleanup-settings-open-url
+    action: type_text
+    text: "browser://settings/cleanup"
+    verify:
+      type: visible_text
+      text: "browser://settings/cleanup"
+  - id: load-cleanup-settings-open
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Clean up

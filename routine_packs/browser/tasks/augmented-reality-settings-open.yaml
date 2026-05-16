@@ -1,0 +1,23 @@
+name: Browser augmented reality settings open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: focus-address-bar
+    action: press_key
+    text: ctrl+l
+    verify:
+      type: visible_text
+      text: Address
+  - id: type-augmented-reality-settings-open-url
+    action: type_text
+    text: "browser://settings/content/ar"
+    verify:
+      type: visible_text
+      text: "browser://settings/content/ar"
+  - id: load-augmented-reality-settings-open
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Augmented reality

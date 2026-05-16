@@ -1,0 +1,13 @@
+id: browser.third-party-cookies-settings-open
+name: Browser third-party cookies settings open
+description: Open browser third-party cookie settings for read-only review.
+goal: Inspect third-party cookie controls without changing privacy behavior.
+required_app: Browser
+tags: [browser, settings, cookies]
+inputs: [browser settings]
+outputs: [third-party cookies settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/third-party-cookies-settings-open.yaml}

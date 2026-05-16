@@ -1,0 +1,13 @@
+id: browser.file-editing-settings-open
+name: Browser file editing settings open
+description: Open browser file editing permission settings for read-only review.
+goal: Inspect file editing permissions without changing site access.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [file editing settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/file-editing-settings-open.yaml}

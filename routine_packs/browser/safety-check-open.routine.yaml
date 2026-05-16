@@ -1,0 +1,13 @@
+id: browser.safety-check-open
+name: Browser safety check open
+description: Open browser safety check settings for read-only review.
+goal: Inspect safety check status without changing browser settings.
+required_app: Browser
+tags: [browser, settings, security]
+inputs: [browser settings]
+outputs: [safety check visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/safety-check-open.yaml}

@@ -1,0 +1,13 @@
+id: browser.payment-handlers-settings-open
+name: Browser payment handlers settings open
+description: Open browser payment handler settings for read-only review.
+goal: Inspect payment handler permissions without changing payment behavior.
+required_app: Browser
+tags: [browser, settings, payments]
+inputs: [browser settings]
+outputs: [payment handler settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/payment-handlers-settings-open.yaml}

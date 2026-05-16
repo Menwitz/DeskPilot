@@ -1,0 +1,13 @@
+id: browser.fonts-settings-open
+name: Browser fonts settings open
+description: Open browser fonts settings for read-only review.
+goal: Inspect font preferences without changing browser appearance.
+required_app: Browser
+tags: [browser, settings, appearance]
+inputs: [browser settings]
+outputs: [fonts settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/fonts-settings-open.yaml}

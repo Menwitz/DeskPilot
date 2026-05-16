@@ -1,0 +1,23 @@
+name: Browser serial ports settings open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: focus-address-bar
+    action: press_key
+    text: ctrl+l
+    verify:
+      type: visible_text
+      text: Address
+  - id: type-serial-ports-settings-open-url
+    action: type_text
+    text: "browser://settings/content/serialPorts"
+    verify:
+      type: visible_text
+      text: "browser://settings/content/serialPorts"
+  - id: load-serial-ports-settings-open
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Serial ports

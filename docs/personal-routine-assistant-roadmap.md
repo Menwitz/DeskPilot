@@ -353,6 +353,11 @@ abuse, and hidden automation are not supported.
       JavaScript, images, PDFs, ads, background sync, automatic downloads,
       handlers, sound, protected content, insecure content, clipboard, and USB
       permission review pages.
+- [x] Add sixth browser scale-out batch for fonts, site data, all sites,
+      recent permission activity, serial, HID, file editing, payment handlers,
+      window placement, local fonts, zoom levels, AR/VR, idle detection,
+      sensors, file system access, MIDI, third-party cookies, safety check, and
+      cleanup review pages.
 - [x] Add native routines for Notepad, Calculator, Settings, File Explorer,
       clipboard, app switching, window management, and simple Office-like
       surfaces.

@@ -1,0 +1,23 @@
+name: Browser site data settings open task
+allowed_windows:
+  - Browser
+timeout_seconds: 30
+steps:
+  - id: focus-address-bar
+    action: press_key
+    text: ctrl+l
+    verify:
+      type: visible_text
+      text: Address
+  - id: type-site-data-settings-open-url
+    action: type_text
+    text: "browser://settings/siteData"
+    verify:
+      type: visible_text
+      text: "browser://settings/siteData"
+  - id: load-site-data-settings-open
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Site data

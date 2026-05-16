@@ -1,0 +1,13 @@
+id: browser.file-system-access-settings-open
+name: Browser file system access settings open
+description: Open browser file system access settings for read-only review.
+goal: Inspect file system access controls without granting or revoking access.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [file system access settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/file-system-access-settings-open.yaml}

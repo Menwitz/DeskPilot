@@ -1,0 +1,13 @@
+id: browser.recent-permissions-settings-open
+name: Browser recent permissions settings open
+description: Open browser recent permission activity for read-only review.
+goal: Inspect recent permission activity without changing site access.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [recent permission activity visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/recent-permissions-settings-open.yaml}

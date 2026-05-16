@@ -1,0 +1,13 @@
+id: browser.serial-ports-settings-open
+name: Browser serial ports settings open
+description: Open browser serial port permission settings for read-only review.
+goal: Inspect serial port permissions without changing device access.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [serial port settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/serial-ports-settings-open.yaml}

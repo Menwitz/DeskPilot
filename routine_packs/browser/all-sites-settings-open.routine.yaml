@@ -1,0 +1,13 @@
+id: browser.all-sites-settings-open
+name: Browser all sites settings open
+description: Open the browser all-sites permission list for read-only review.
+goal: Inspect per-site permission entries without changing site access.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [all sites settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/all-sites-settings-open.yaml}

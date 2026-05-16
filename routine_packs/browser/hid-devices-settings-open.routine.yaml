@@ -1,0 +1,13 @@
+id: browser.hid-devices-settings-open
+name: Browser HID devices settings open
+description: Open browser HID device permission settings for read-only review.
+goal: Inspect HID device permissions without changing device access.
+required_app: Browser
+tags: [browser, settings, permissions]
+inputs: [browser settings]
+outputs: [HID device settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 25
+reference: {type: task, path: tasks/hid-devices-settings-open.yaml}
