@@ -10,6 +10,12 @@ from desktop_agent.cli import (
     main,
 )
 from desktop_agent.config import RuntimeConfig
+from desktop_agent.goal_planning import (
+    GoalModelRanking,
+    GoalPlan,
+    GoalPlanCandidate,
+)
+from desktop_agent.goal_reporting import write_goal_plan_trace
 from desktop_agent.local_models import LocalModelInfo, LocalModelStatus
 from desktop_agent.ocr import OcrTextBlock
 from desktop_agent.perception import DryRunPerceptionEngine, ElementCandidate
@@ -1350,6 +1356,64 @@ def test_cli_replay_summarizes_final_report(
     assert status == 0
     assert "status: failed" in output
     assert "reason: fixture" in output
+
+
+def test_cli_replay_summarizes_goal_plan_trace(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    plan = GoalPlan(
+        user_goal="Search the web",
+        normalized_intent="browser search",
+        candidate_routines=(
+            GoalPlanCandidate(
+                routine_id="browser.search-web",
+                routine_name="Browser web search",
+                score=10,
+                safety_class="low",
+                approval_policy="none",
+            ),
+        ),
+        selected_routine_id="browser.search-web",
+        explanation="The browser search routine matches the goal.",
+        execution_status="ready",
+        model_ranking=GoalModelRanking(
+            provider="ollama",
+            model="llama3.1",
+            enabled=True,
+            attempted=True,
+            status="applied",
+            selected_routine_id="browser.search-web",
+            candidate_order=("browser.search-web",),
+            output_hash="abc123",
+            affected_selection=False,
+        ),
+    )
+    trace_dir = write_goal_plan_trace(plan, tmp_path / "traces")
+
+    status = main(["replay", str(trace_dir), "--write-summary"])
+
+    output = capsys.readouterr().out
+    summary_path = trace_dir / "replay-summary.md"
+    summary = summary_path.read_text(encoding="utf-8")
+    assert status == 0
+    assert f"trace: {trace_dir}" in output
+    assert "goal plan: Search the web" in output
+    assert "status: ready" in output
+    assert "selected: browser.search-web" in output
+    assert (
+        "- goal_plan: goal plan ready [selected browser.search-web candidates 1]"
+        in output
+    )
+    assert (
+        "- model_assistance: model assistance applied "
+        "[model ollama/llama3.1 status applied affected_selection False]"
+        in output
+    )
+    assert f"summary: {summary_path}" in output
+    assert "# DeskPilot Goal Plan Replay Summary" in summary
+    assert "- Desktop input required: `False`" in summary
+    assert "`browser.search-web` score `10` safety `low` approval `none`" in summary
 
 
 def test_cli_analyze_failed_run_writes_review_artifacts(

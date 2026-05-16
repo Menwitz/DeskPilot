@@ -46,7 +46,9 @@ from desktop_agent.focus_recovery import (
     create_platform_focus_recovery_controller,
 )
 from desktop_agent.goal_planning import (
+    GoalPlan,
     GoalRoutingRequest,
+    goal_plan_from_mapping,
     missing_input_prompts,
     rank_goal_plan_with_optional_model,
     route_goal_to_routine,
@@ -2127,6 +2129,9 @@ def _collect_uia(
 def _replay(args: argparse.Namespace) -> int:
     report_path = args.trace_dir / "final-report.json"
     if not report_path.exists():
+        goal_report_path = args.trace_dir / "goal-plan-report.json"
+        if goal_report_path.exists():
+            return _replay_goal_plan(args)
         print(f"error: final report not found: {report_path}")
         if (args.trace_dir / "proof-manifest.json").exists():
             print(f"hint: use desktop-agent proof replay {args.trace_dir}")
@@ -2157,6 +2162,58 @@ def _replay(args: argparse.Namespace) -> int:
         print(f"summary: {summary_path}")
     if args.verbose:
         print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
+def _replay_goal_plan(args: argparse.Namespace) -> int:
+    goal_plan_path = args.trace_dir / "goal-plan.json"
+    report_path = args.trace_dir / "goal-plan-report.json"
+    if not goal_plan_path.exists():
+        print(f"error: goal plan not found: {goal_plan_path}")
+        return 1
+
+    goal_plan_payload = json.loads(goal_plan_path.read_text(encoding="utf-8"))
+    if not isinstance(goal_plan_payload, dict):
+        print("error: goal plan must contain a JSON object")
+        return 1
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    if not isinstance(report, dict):
+        print("error: goal plan report must contain a JSON object")
+        return 1
+
+    plan = goal_plan_from_mapping(goal_plan_payload)
+    events = _read_goal_plan_action_log(args.trace_dir / "action-log.jsonl")
+
+    print(f"trace: {args.trace_dir}")
+    print(f"goal plan: {plan.user_goal}")
+    print(f"intent: {plan.normalized_intent}")
+    print(f"status: {plan.execution_status}")
+    print(f"selected: {plan.selected_routine_id or 'none'}")
+    print(f"candidates: {len(plan.candidate_routines)}")
+    if plan.missing_inputs:
+        print(f"missing_inputs: {', '.join(plan.missing_inputs)}")
+    for line in _goal_plan_replay_timeline_lines(events):
+        print(line)
+    if args.write_summary:
+        summary_path = _write_goal_plan_replay_summary(
+            args.trace_dir,
+            plan,
+            report,
+            events,
+        )
+        print(f"summary: {summary_path}")
+    if args.verbose:
+        print(
+            json.dumps(
+                {
+                    "goal_plan": plan.metadata(),
+                    "report": report,
+                    "events": events,
+                },
+                indent=2,
+                sort_keys=True,
+            ),
+        )
     return 0
 
 
@@ -2219,6 +2276,124 @@ def _event_step_id(event: dict[str, object]) -> str | None:
         if isinstance(value, str):
             return value
     return None
+
+
+def _read_goal_plan_action_log(path: Path) -> list[dict[str, object]]:
+    if not path.exists():
+        return []
+    events: list[dict[str, object]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        event = json.loads(line)
+        if isinstance(event, dict):
+            events.append(event)
+    return events
+
+
+def _goal_plan_replay_timeline_lines(
+    events: list[dict[str, object]],
+) -> list[str]:
+    if not events:
+        return []
+    lines = ["timeline:"]
+    for event in events:
+        phase = event.get("phase") if isinstance(event.get("phase"), str) else "?"
+        message = (
+            event.get("message") if isinstance(event.get("message"), str) else "?"
+        )
+        lines.append(f"- {phase}: {message}{_goal_plan_replay_event_suffix(event)}")
+    return lines
+
+
+def _goal_plan_replay_event_suffix(event: dict[str, object]) -> str:
+    metadata = event.get("metadata")
+    if not isinstance(metadata, dict):
+        return ""
+    bits: list[str] = []
+    phase = event.get("phase")
+    if phase == "goal_plan":
+        selected = metadata.get("selected_routine_id")
+        candidate_count = metadata.get("candidate_count")
+        if isinstance(selected, str):
+            bits.append(f"selected {selected}")
+        if isinstance(candidate_count, int):
+            bits.append(f"candidates {candidate_count}")
+    if phase == "model_assistance":
+        provider = metadata.get("provider")
+        model = metadata.get("model")
+        status = metadata.get("status")
+        affected = metadata.get("affected_selection")
+        if isinstance(provider, str) and isinstance(model, str):
+            bits.append(f"model {provider}/{model}")
+        if isinstance(status, str):
+            bits.append(f"status {status}")
+        if isinstance(affected, bool):
+            bits.append(f"affected_selection {affected}")
+    return f" [{' '.join(bits)}]" if bits else ""
+
+
+def _write_goal_plan_replay_summary(
+    trace_dir: Path,
+    plan: GoalPlan,
+    report: dict[str, object],
+    events: list[dict[str, object]],
+) -> Path:
+    summary_path = trace_dir / "replay-summary.md"
+    summary_path.write_text(
+        _goal_plan_replay_summary_markdown(trace_dir, plan, report, events),
+        encoding="utf-8",
+    )
+    return summary_path
+
+
+def _goal_plan_replay_summary_markdown(
+    trace_dir: Path,
+    plan: GoalPlan,
+    report: dict[str, object],
+    events: list[dict[str, object]],
+) -> str:
+    desktop_input_required = report.get("desktop_input_required")
+    lines = [
+        "# DeskPilot Goal Plan Replay Summary",
+        "",
+        f"- Trace: `{trace_dir}`",
+        f"- Goal: `{plan.user_goal}`",
+        f"- Intent: `{plan.normalized_intent}`",
+        f"- Status: `{plan.execution_status}`",
+        f"- Selected routine: `{plan.selected_routine_id or 'none'}`",
+        f"- Candidates: `{len(plan.candidate_routines)}`",
+        f"- Desktop input required: `{desktop_input_required}`",
+    ]
+    if plan.missing_inputs:
+        lines.append(f"- Missing inputs: `{', '.join(plan.missing_inputs)}`")
+    if plan.candidate_routines:
+        lines.extend(["", "## Candidates", ""])
+        for candidate in plan.candidate_routines:
+            lines.append(
+                "- "
+                f"`{candidate.routine_id}` score `{candidate.score:g}` "
+                f"safety `{candidate.safety_class}` "
+                f"approval `{candidate.approval_policy}`",
+            )
+    if plan.model_ranking is not None:
+        ranking = plan.model_ranking
+        lines.extend(
+            [
+                "",
+                "## Model Assistance",
+                "",
+                f"- Provider: `{ranking.provider}`",
+                f"- Model: `{ranking.model}`",
+                f"- Status: `{ranking.status}`",
+                f"- Affected selection: `{ranking.affected_selection}`",
+            ],
+        )
+    timeline = _goal_plan_replay_timeline_lines(events)
+    if timeline:
+        lines.extend(["", "## Timeline", ""])
+        lines.extend(timeline[1:])
+    return "\n".join(lines) + "\n"
 
 
 def _replay_event_suffix(event: dict[str, object]) -> str:

@@ -84,6 +84,16 @@ Every `plan-goal` run writes a local goal trace under `trace_root`, or under
 `--trace-root` when supplied. The trace includes `goal-plan.json`,
 `goal-plan-report.json`, `goal-plan-report.md`, `trace-schema.json`, and
 `action-log.jsonl`.
+Goal traces are replayable through the shared replay command without desktop
+input:
+
+```bash
+desktop-agent replay <goal-trace-dir> --write-summary
+```
+
+Replay prints the selected routine, candidate count, planning timeline, and
+model-assistance disclosure when present. `--write-summary` writes
+`replay-summary.md` next to the source artifacts for trace review.
 
 ## Optional Ollama Ranking
 

@@ -130,12 +130,18 @@ def _goal_plan_report_payload(
     goal_plan_path: Path,
     model_disclosure: dict[str, object] | None,
 ) -> dict[str, object]:
+    trace_dir = goal_plan_path.parent
     return {
         "trace_schema_version": TRACE_SCHEMA_V2.version,
         "trace_schema": TRACE_SCHEMA_V2.to_dict(),
         "status": plan.execution_status,
         "selected_routine_id": plan.selected_routine_id,
+        "trace_dir": str(trace_dir),
         "goal_plan_path": str(goal_plan_path),
+        # Goal planning traces are dry-run artifacts; replay must never move I/O.
+        "replayable": True,
+        "desktop_input_required": False,
+        "replay_command": f"desktop-agent replay {trace_dir}",
         "model_disclosure": model_disclosure,
     }
 

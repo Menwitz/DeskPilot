@@ -57,6 +57,10 @@ def test_goal_plan_trace_writes_model_disclosure_fields(tmp_path: Path) -> None:
     assert (trace_dir / "trace-schema.json").exists()
     assert (trace_dir / "goal-plan-report.md").exists()
     assert report["trace_schema"]["sections"]["model_assistance"]
+    assert report["trace_dir"] == str(trace_dir)
+    assert report["replayable"] is True
+    assert report["desktop_input_required"] is False
+    assert report["replay_command"] == f"desktop-agent replay {trace_dir}"
     assert report["model_disclosure"]["provider"] == "ollama"
     assert metadata["provider"] == "ollama"
     assert metadata["model"] == "llama3.1"
