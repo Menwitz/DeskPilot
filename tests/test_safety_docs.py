@@ -68,6 +68,26 @@ def test_troubleshooting_documents_public_site_failure_modes() -> None:
         assert phrase in documentation
 
 
+def test_troubleshooting_documents_local_environment_failures() -> None:
+    documentation = Path("docs/troubleshooting.md").read_text(encoding="utf-8")
+
+    for phrase in (
+        "Missing Windows Permissions Or UIA Access",
+        "Desktop Session Is Locked",
+        "OCR Is Unavailable Or Disabled",
+        "Video Capture Fails",
+        "Local Model Is Unavailable",
+        "Tesseract",
+        "video-capture.log",
+        "proof-video.mp4",
+        "--video-policy disabled",
+        "desktop-agent local-model status",
+        "local_model.enabled",
+        "Windows desktop input",
+    ):
+        assert phrase in documentation
+
+
 def test_windows_proof_docs_cover_manual_evidence_review() -> None:
     documentation = "\n".join(
         [

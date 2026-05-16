@@ -14,7 +14,44 @@ without rerunning desktop input.
 ## Desktop Session Is Locked
 
 DeskPilot v1 requires an unlocked, logged-in desktop. Unlock the Windows
-session, make the fixture window visible, and rerun the task.
+session, make the fixture window visible, and rerun the task. Do not run real
+desktop input from a Windows service, scheduled task without an interactive
+session, disconnected RDP session, or locked screen; screenshots, UIA focus,
+cursor readback, and `SendInput` cannot prove the visible workflow in those
+states.
+
+Checks:
+
+- Run `desktop-agent windows-smoke-checklist --trace-root traces` from the same
+  user session that will run the proof.
+- Confirm the monitor is awake, the desktop is unlocked, and the target app is
+  visible in the foreground.
+- Inspect `final-report.json` for active-window, screenshot, focus, or cursor
+  readback evidence gaps.
+
+## Missing Windows Permissions Or UIA Access
+
+Windows UI Automation and low-level input require the terminal or packaged app
+to run inside the same interactive desktop as the target app. If UIA candidates
+are empty, focus cannot be read, or input is blocked, treat it as an
+environment issue before changing selectors.
+
+Checks:
+
+- Install Windows support with the `windows` extra on machines that need UIA:
+  `pip install ".[windows]"`.
+- Run DeskPilot at the same integrity level as the target app. If the target
+  app is elevated, launch the terminal or packaged app elevated as well.
+- Keep the target window visible and inside the allowed window list.
+- Check `action-log.jsonl` for missing `uia_candidates`, active-window
+  rejection, `actuation_guard`, or `input_blocked` metadata.
+
+Actions:
+
+- Prefer fixing the session, privilege level, or allowed-window rule before
+  weakening confidence thresholds.
+- Rerun `desktop-agent inspect-screen` or `desktop-agent calibrate-target` and
+  verify that UIA, OCR, or image candidates are present before a real run.
 
 ## Active Window Is Rejected
 
@@ -31,6 +68,38 @@ Use `desktop-agent calibrate-target <task.yaml> --output <dir>` to capture a
 target calibration report. The report shows candidate rankings, UI state
 snapshot data, the selected candidate ID, or the rejection reason such as an
 ambiguity gate, low confidence, target mismatch, or no candidates.
+
+## OCR Is Unavailable Or Disabled
+
+OCR is optional and local-only. When Tesseract or the OCR Python dependencies
+are missing, DeskPilot can still use UIA and image candidates, but text rendered
+only as pixels may not be selectable.
+
+Symptoms:
+
+- No `ocr/` directory or OCR JSON appears in the trace even though screenshots
+  exist.
+- Candidate rankings contain UIA or image candidates but no OCR candidates.
+- A task that depends on visible rendered text fails with no candidates or low
+  confidence.
+
+Checks:
+
+- Install OCR support with `pip install ".[ocr]"` or `uv sync --extra ocr`.
+- Confirm the local Tesseract binary is installed and available on `PATH`.
+- Confirm redaction settings did not intentionally set OCR artifact output to
+  metadata-only or suppress OCR text evidence.
+- Run `desktop-agent inspect-screen --caption-output <path>` or
+  `desktop-agent calibrate-target <task.yaml> --output <dir>` and inspect the
+  candidate sources.
+
+Actions:
+
+- Prefer UIA selectors for native controls when available.
+- Improve contrast, zoom, DPI scaling, or target region before lowering OCR
+  confidence thresholds.
+- If local policy forbids OCR text artifacts, keep `ocr_text: suppress` and use
+  UIA or image matching for the routine.
 
 ## Ambiguity Gate Stops
 
@@ -213,3 +282,63 @@ Actions:
 Run `deskpilot.exe --help` first. If that works, run a `dry-run` with
 `packaging/default-config.yaml`. For real desktop execution, confirm the
 Windows optional dependencies are installed and the session is unlocked.
+
+## Video Capture Fails
+
+Proof video capture is optional and Windows-only. It uses ffmpeg `gdigrab` and
+writes `proof-video.mp4` plus `video-capture.log` in the trace directory when
+`--record-video` is enabled.
+
+Symptoms:
+
+- The CLI reports `video capture requires Windows desktop input`.
+- `proof-video.mp4` is missing, empty, or not linked from `proof-manifest.json`.
+- `video-capture.log` contains ffmpeg startup, monitor, or permission errors.
+
+Checks:
+
+- Confirm the run is on an unlocked Windows desktop, not a locked screen or
+  disconnected session.
+- Confirm `ffmpeg` is installed and available on `PATH`.
+- Inspect `video-capture.log`, `proof-manifest.json`, and `final-report.json`
+  before rerunning.
+- Confirm the selected `--video-fps` is greater than zero and low enough for
+  the machine to encode reliably.
+
+Actions:
+
+- Rerun the proof with `--record-video --video-fps 15` after fixing ffmpeg or
+  the interactive session.
+- Use `--video-policy disabled` when local policy forbids screen recording; the
+  trace and screenshots remain the proof source.
+- Keep the failed trace directory for review instead of overwriting evidence.
+
+## Local Model Is Unavailable
+
+Local model assistance is optional and disabled by default. DeskPilot must keep
+deterministic routing, validation, approvals, and safety gates working when
+Ollama is not installed, stopped, or missing the configured model.
+
+Symptoms:
+
+- `desktop-agent local-model status --config config.yaml` reports a disabled,
+  unreachable, or unhealthy provider.
+- Goal planning returns deterministic candidates but no accepted model ranking.
+- Trace or goal reports show model output rejected by the structured validator.
+
+Checks:
+
+- Confirm `local_model.enabled` is intentionally set to `true`; leave it
+  disabled when no model should be used.
+- Confirm the endpoint is loopback only: `127.0.0.1`, `localhost`, or `::1`.
+- Run `desktop-agent local-model list --config config.yaml` and verify the
+  configured model name exists.
+- Inspect model disclosure fields in the trace or goal-plan report:
+  provider, model name, prompt class, output hash, and accepted/rejected status.
+
+Actions:
+
+- Start Ollama locally or change the config to an installed local model.
+- Disable `use_for_goal_ranking` if deterministic routine search is sufficient.
+- Do not use remote model endpoints or model output that invents routine IDs,
+  URLs, commands, selectors, or actions.
