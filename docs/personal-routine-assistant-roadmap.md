@@ -572,7 +572,7 @@ abuse, and hidden automation are not supported.
 ### Acceptance Criteria
 
 - [x] DeskPilot works with local AI disabled.
-- [ ] Ollama-assisted routine ranking can be enabled locally.
+- [x] Ollama-assisted routine ranking can be enabled locally.
 - [ ] Invalid model output is rejected safely.
 - [ ] Model-assisted plans are traceable.
 - [ ] No model output sends raw desktop input outside validated routines.
