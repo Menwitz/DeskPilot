@@ -381,7 +381,7 @@ abuse, and hidden automation are not supported.
       `batch_work`.
 - [x] Add routine schedule schema with time windows, cooldowns, run limits,
       max external mutations, and stop conditions.
-- [ ] Add run queue model with pending, running, paused, blocked, completed,
+- [x] Add run queue model with pending, running, paused, blocked, completed,
       failed, canceled, and handed-off states.
 - [ ] Add scheduler trace events for selected time, wait reason, skip reason,
       pause, resume, retry-later, and operator intervention.
