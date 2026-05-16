@@ -242,7 +242,7 @@ abuse, and hidden automation are not supported.
       idempotence, allowed windows, and allowed regions.
 - [x] Add manual handoff action with prompt text, expected operator work, and
       resume verification.
-- [ ] Add emergency-stop checks between mouse path points, drag path points,
+- [x] Add emergency-stop checks between mouse path points, drag path points,
       typed characters, scroll chunks, and retry waits.
 - [ ] Add final active-window and allowed-region checks at the low-level action
       boundary.

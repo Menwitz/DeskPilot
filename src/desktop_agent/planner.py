@@ -118,6 +118,15 @@ class StepExecutionOutcome:
     stop_status: RunStatus | None = None
 
 
+@dataclass(frozen=True)
+class TimingDelayResult:
+    """Observed consumption of a bounded planner timing delay."""
+
+    elapsed_seconds: float
+    emergency_stopped: bool = False
+    emergency_stop_boundary: str | None = None
+
+
 class Clock(Protocol):
     """Time boundary used by tests to avoid real timeout delays."""
 
@@ -653,7 +662,17 @@ class ExecutionEngine:
                             retry_timing.reason,
                             timing_metadata,
                         )
-                    self._consume_timing_delay(retry_timing)
+                    delay_result = self._consume_timing_delay(
+                        retry_timing,
+                        config,
+                        emergency_stop_boundary="retry_wait",
+                    )
+                    if delay_result.emergency_stopped:
+                        return self._emergency_stop_outcome(
+                            step,
+                            attempt,
+                            last_candidate_id,
+                        )
                     continue
                 diagnostic_bundle = self._target_selection_diagnostics(
                     step,
@@ -804,7 +823,14 @@ class ExecutionEngine:
                         0.0,
                     )
                 self._record("execution_timing", action_timing.reason, metadata)
-            self._consume_input_wait(step, action_timing, attempt)
+            input_wait = self._consume_input_wait(
+                step,
+                action_timing,
+                attempt,
+                config,
+            )
+            if input_wait.emergency_stopped:
+                return self._emergency_stop_outcome(step, attempt, last_candidate_id)
             if self._deadline_expired(step_deadline):
                 return StepExecutionOutcome(
                     self._step_failed(
@@ -955,7 +981,17 @@ class ExecutionEngine:
                             retry_timing.reason,
                             timing_metadata,
                         )
-                    self._consume_timing_delay(retry_timing)
+                    delay_result = self._consume_timing_delay(
+                        retry_timing,
+                        config,
+                        emergency_stop_boundary="retry_wait",
+                    )
+                    if delay_result.emergency_stopped:
+                        return self._emergency_stop_outcome(
+                            step,
+                            attempt,
+                            last_candidate_id,
+                        )
                     continue
                 self._record(
                     "manual_handoff",
@@ -1040,7 +1076,17 @@ class ExecutionEngine:
                         retry_timing.reason,
                         timing_metadata,
                     )
-                self._consume_timing_delay(retry_timing)
+                delay_result = self._consume_timing_delay(
+                    retry_timing,
+                    config,
+                    emergency_stop_boundary="retry_wait",
+                )
+                if delay_result.emergency_stopped:
+                    return self._emergency_stop_outcome(
+                        step,
+                        attempt,
+                        last_candidate_id,
+                    )
 
         return StepExecutionOutcome(
             self._step_failed(
@@ -1208,7 +1254,14 @@ class ExecutionEngine:
                 metadata["step_category"] = step_category(step)
                 metadata["attempt"] = attempt
                 self._record("execution_timing", action_timing.reason, metadata)
-            self._consume_input_wait(step, action_timing, attempt)
+            input_wait = self._consume_input_wait(
+                step,
+                action_timing,
+                attempt,
+                config,
+            )
+            if input_wait.emergency_stopped:
+                return self._emergency_stop_outcome(step, attempt, None)
             if self._deadline_expired(step_deadline):
                 return StepExecutionOutcome(
                     self._step_failed(
@@ -1488,8 +1541,13 @@ class ExecutionEngine:
         step: TaskStep,
         decision: TimingDecision,
         attempt: int,
-    ) -> None:
-        elapsed_wait_seconds = self._consume_timing_delay(decision)
+        config: RuntimeConfig,
+    ) -> TimingDelayResult:
+        result = self._consume_timing_delay(
+            decision,
+            config,
+            emergency_stop_boundary="action_wait",
+        )
         if decision.phase == "action" and decision.delay_seconds > 0:
             self._record(
                 "input_wait",
@@ -1498,17 +1556,67 @@ class ExecutionEngine:
                     step,
                     attempt=attempt,
                     requested_delay_seconds=decision.delay_seconds,
-                    elapsed_wait_seconds=elapsed_wait_seconds,
+                    elapsed_wait_seconds=result.elapsed_seconds,
                     before_desktop_input=True,
                 ),
             )
+        return result
 
-    def _consume_timing_delay(self, decision: TimingDecision) -> float:
+    def _consume_timing_delay(
+        self,
+        decision: TimingDecision,
+        config: RuntimeConfig | None = None,
+        *,
+        emergency_stop_boundary: str = "timing_wait",
+    ) -> TimingDelayResult:
         if decision.delay_seconds <= 0:
-            return 0.0
+            return TimingDelayResult(0.0)
         started = self.clock.monotonic()
-        self.clock.sleep(decision.delay_seconds)
-        return max(0.0, self.clock.monotonic() - started)
+        remaining = decision.delay_seconds
+        while remaining > 0:
+            if (
+                config is not None
+                and self.emergency_stop_monitor.is_triggered(config)
+            ):
+                return self._timing_delay_emergency_stop(
+                    decision,
+                    started,
+                    emergency_stop_boundary,
+                )
+            sleep_seconds = min(POLL_INTERVAL_SECONDS, remaining)
+            self.clock.sleep(sleep_seconds)
+            remaining = max(0.0, remaining - sleep_seconds)
+        if config is not None and self.emergency_stop_monitor.is_triggered(config):
+            return self._timing_delay_emergency_stop(
+                decision,
+                started,
+                emergency_stop_boundary,
+            )
+        return TimingDelayResult(max(0.0, self.clock.monotonic() - started))
+
+    def _timing_delay_emergency_stop(
+        self,
+        decision: TimingDecision,
+        started: float,
+        boundary: str,
+    ) -> TimingDelayResult:
+        elapsed = max(0.0, self.clock.monotonic() - started)
+        self._record(
+            "emergency_stop",
+            "emergency stop requested during timing wait",
+            {
+                "timing_phase": decision.phase,
+                "timing_reason": decision.reason,
+                "requested_delay_seconds": decision.delay_seconds,
+                "elapsed_wait_seconds": elapsed,
+                "emergency_stop_boundary": boundary,
+            },
+        )
+        return TimingDelayResult(
+            elapsed_seconds=elapsed,
+            emergency_stopped=True,
+            emergency_stop_boundary=boundary,
+        )
 
     def _target_selection_diagnostics(
         self,

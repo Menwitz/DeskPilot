@@ -84,7 +84,9 @@ emergency-stop monitor between bounded low-level input events: movement path
 points, movement waits, mouse down/up events, drag phases, scroll chunks, typed
 characters, key chord phases, and cadence waits. If the guard trips mid-action,
 the action returns `input_blocked`, `actuation_guard: emergency_stop`, and an
-`emergency_stop_boundary` naming where input stopped.
+`emergency_stop_boundary` naming where input stopped. If a stop fires while a
+drag button is held, the actuator releases the button before returning the
+blocked result so the local desktop is not left inside an active drag gesture.
 
 ## Testing
 

@@ -125,7 +125,10 @@ in reports.
 
 `input_wait` events record requested and elapsed action-delay seconds after
 timing decisions and before `execute_action`, providing evidence that real
-desktop input was delayed by the timing controller.
+desktop input was delayed by the timing controller. If the emergency stop trips
+during an action wait or retry wait, the planner records an `emergency_stop`
+event with `timing_phase`, requested and elapsed wait seconds, and the
+`emergency_stop_boundary` that stopped the run.
 
 Each executed step also emits `step_timeout_budget` metadata with the planned
 action wait, retry wait, total planned wait, remaining timeout, and whether the

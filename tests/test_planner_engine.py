@@ -13,7 +13,11 @@ from desktop_agent.planner import (
     PassingStepVerifier,
     VerificationResult,
 )
-from desktop_agent.safety import LocalSafetyPolicy
+from desktop_agent.safety import (
+    EmergencyStopMonitor,
+    LocalSafetyPolicy,
+    NoopEmergencyStopMonitor,
+)
 from desktop_agent.screen import (
     Bounds,
     MonitorInfo,
@@ -74,6 +78,20 @@ class SequenceScreenObserver:
         index = min(self.calls, len(self._observations) - 1)
         self.calls += 1
         return self._observations[index]
+
+
+class SequenceEmergencyStopMonitor:
+    """Deterministic emergency-stop monitor for planner boundary tests."""
+
+    def __init__(self, states: tuple[bool, ...]) -> None:
+        self._states = states
+        self.calls = 0
+
+    def is_triggered(self, config: RuntimeConfig) -> bool:
+        _ = config
+        index = min(self.calls, len(self._states) - 1)
+        self.calls += 1
+        return self._states[index]
 
 
 class SequenceActuator:
@@ -265,6 +283,52 @@ def test_execution_engine_consumes_profile_timing_delays() -> None:
         0.3,
         0.2,
     ]
+
+
+def test_execution_engine_checks_emergency_stop_during_retry_waits() -> None:
+    clock = FakeClock()
+    trace_sink = MemoryTraceSink()
+    task = TaskDefinition(
+        name="retry-wait-emergency-stop",
+        allowed_windows=("DeskPilot Fixture",),
+        timeout_seconds=30,
+        steps=(
+            TaskStep(id="click-submit", action="click_text", target="Submit", retry=1),
+        ),
+    )
+    actuator = SequenceActuator((ActionResult(True, "clicked"),))
+    engine = _engine(
+        task,
+        config=RuntimeConfig(
+            confidence_threshold=0.8,
+            execution_profile=ExecutionProfile(
+                enabled=True,
+                action_delay_seconds=(0.0, 0.0),
+                retry_delay_seconds=(0.3, 0.3),
+            ),
+        ),
+        perception=SequencePerceptionEngine(((), _candidate_tuple("Submit"))),
+        actuator=actuator,
+        clock=clock,
+        trace_sink=trace_sink,
+        emergency_stop_monitor=SequenceEmergencyStopMonitor(
+            (False, False, False, True),
+        ),
+    )
+
+    report = engine.run(Path("task.yaml"))
+
+    stop_event = next(
+        event
+        for event in report.events
+        if event.phase == "emergency_stop"
+        and event.metadata.get("emergency_stop_boundary") == "retry_wait"
+    )
+    assert report.status == "emergency_stopped"
+    assert actuator.calls == 0
+    assert round(clock.now, 2) == 0.1
+    assert stop_event.metadata["requested_delay_seconds"] == 0.3
+    assert stop_event.metadata["elapsed_wait_seconds"] == 0.1
 
 
 def test_execution_engine_selects_safe_action_variant() -> None:
@@ -1777,6 +1841,7 @@ def _engine(
     trace_sink: MemoryTraceSink | None = None,
     screen_observer: ScreenObserver | None = None,
     verifier: SequenceVerifier | None = None,
+    emergency_stop_monitor: EmergencyStopMonitor | None = None,
 ) -> ExecutionEngine:
     return ExecutionEngine(
         config_loader=StaticConfigLoader(
@@ -1797,6 +1862,9 @@ def _engine(
         actuator=actuator or DryRunActuator(),
         verifier=verifier if verifier is not None else PassingStepVerifier(),
         clock=clock or FakeClock(),
+        emergency_stop_monitor=emergency_stop_monitor
+        if emergency_stop_monitor is not None
+        else NoopEmergencyStopMonitor(),
     )
 
 

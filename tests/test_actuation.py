@@ -471,6 +471,83 @@ def test_desktop_actuator_checks_emergency_stop_between_pointer_events() -> None
     assert [event.kind for event in backend.events] == ["move"]
 
 
+def test_desktop_actuator_releases_drag_on_emergency_stop_between_path_points() -> None:
+    backend = FakeInputBackend(
+        start_position=(0, 0),
+        active_window_title="DeskPilot Fixture",
+    )
+    actuator = DesktopActuator(
+        backend,
+        ActuationProfile(
+            movement_duration_seconds=(0.0, 0.0),
+            timing_variation_seconds=(0.0, 0.0),
+            movement_steps=1,
+            movement_smoothness=0.0,
+        ),
+        SequenceEmergencyStopMonitor((False, False, False, True)),
+    )
+    target = ElementCandidate(
+        id="tile-1",
+        source="uia",
+        label="Tile",
+        bounds=Bounds(x=0, y=0, width=10, height=10),
+        confidence=0.9,
+    )
+
+    result = actuator.execute(
+        TaskStep(
+            id="drag-tile",
+            action="drag",
+            target="Tile",
+            region=TaskRegion(x=100, y=100, width=10, height=10),
+        ),
+        target,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    assert result.success is False
+    assert result.metadata["emergency_stop_boundary"] == "movement_path"
+    assert [event.kind for event in backend.events] == [
+        "move",
+        "mouse_down",
+        "mouse_up",
+    ]
+    assert backend.events[-1].point == backend.events[0].point
+
+
+def test_desktop_actuator_checks_emergency_stop_between_scroll_chunks() -> None:
+    backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
+    actuator = DesktopActuator(
+        backend,
+        ActuationProfile(
+            movement_duration_seconds=(0.0, 0.0),
+            timing_variation_seconds=(0.0, 0.0),
+            scroll_interval_seconds=(0.01, 0.01),
+            movement_steps=1,
+            movement_smoothness=0.0,
+        ),
+        SequenceEmergencyStopMonitor((False, False, False, False, True)),
+    )
+
+    result = actuator.execute(
+        TaskStep(
+            id="scroll-results",
+            action="scroll",
+            region=TaskRegion(x=10, y=10, width=20, height=20),
+            text="-3",
+        ),
+        None,
+        ScreenObservation(),
+        RuntimeConfig(allowed_windows=("DeskPilot Fixture",)),
+    )
+
+    assert result.success is False
+    assert result.metadata["emergency_stop_boundary"] == "scroll"
+    assert [event.kind for event in backend.events] == ["move", "scroll", "sleep"]
+    assert backend.events[1].clicks == -1
+
+
 def test_desktop_actuator_checks_emergency_stop_between_typed_characters() -> None:
     backend = FakeInputBackend(active_window_title="DeskPilot Fixture")
     actuator = DesktopActuator(

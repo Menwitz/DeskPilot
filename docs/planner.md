@@ -50,7 +50,9 @@ required setup.
 Action timing waits are consumed immediately before desktop input. The planner
 measures the elapsed wait through its clock and emits `input_wait` before
 `execute_action`, so real runs can prove the timing controller's delay actually
-happened before input was sent.
+happened before input was sent. Action waits and retry waits are consumed in
+bounded polling slices so the emergency-stop monitor can interrupt before the
+next desktop action or retry attempt continues.
 
 ## Runtime Controls
 
@@ -91,7 +93,10 @@ emitting retry metadata. Failed action attempts also take a fresh read-only
 screen observation before retrying, run candidate detection against that
 observation, and attach the chosen recovery path to the trace and final report.
 Retry waits use bounded backoff from the recovery reason and are sampled within
-the configured retry delay range and retry budget.
+the configured retry delay range and retry budget. During those waits, the
+planner polls the emergency-stop monitor and records an `emergency_stop` event
+with `emergency_stop_boundary: retry_wait` if the operator stops the run before
+the next attempt.
 Target selection failures are split into recoverable UI states and true
 ambiguity. Stale observations, missing targets with no candidates, disabled
 controls, occluded controls, and loading states can retry inside the step retry

@@ -625,8 +625,14 @@ class DesktopActuator(Actuator):
         plan = self.move_mouse(start, start_target_size_pixels, config)
         self._raise_if_emergency_stopped(config, "drag_mouse_down")
         self._backend.mouse_down(start, button)
-        drag_plan = self.move_mouse(end, end_target_size_pixels, config)
-        self._raise_if_emergency_stopped(config, "drag_mouse_up")
+        try:
+            drag_plan = self.move_mouse(end, end_target_size_pixels, config)
+            self._raise_if_emergency_stopped(config, "drag_mouse_up")
+        except ActuationEmergencyStop:
+            # Release the held button before propagating the stop so the local
+            # desktop is not left in a drag gesture after an emergency abort.
+            self._backend.mouse_up(self._backend.current_position(), button)
+            raise
         self._backend.mouse_up(end, button)
         return MovementPlan(
             points=plan.points + drag_plan.points,
