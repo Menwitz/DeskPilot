@@ -45,7 +45,7 @@ def test_builtin_routine_catalog_has_broad_reusable_surface_coverage() -> None:
 
     assert len(catalog.routines) >= 30
     assert pack_counts["browser"] >= 100
-    assert pack_counts["native"] >= 80
+    assert pack_counts["native"] >= 100
     assert pack_counts["social-content"] >= 105
 
 
@@ -431,6 +431,26 @@ def test_native_routine_pack_contains_seed_categories() -> None:
         "native.settings-default-apps-open",
         "native.settings-startup-apps-open",
         "native.settings-troubleshoot-open",
+        "native.settings-color-filters-open",
+        "native.settings-narrator-open",
+        "native.settings-magnifier-open",
+        "native.settings-contrast-themes-open",
+        "native.settings-captions-open",
+        "native.settings-speech-open",
+        "native.settings-typing-open",
+        "native.settings-language-open",
+        "native.settings-region-open",
+        "native.settings-privacy-location-open",
+        "native.settings-camera-privacy-open",
+        "native.settings-microphone-privacy-open",
+        "native.settings-calendar-privacy-open",
+        "native.settings-contacts-privacy-open",
+        "native.settings-documents-privacy-open",
+        "native.settings-pictures-privacy-open",
+        "native.settings-videos-privacy-open",
+        "native.settings-file-system-privacy-open",
+        "native.settings-developer-mode-open",
+        "native.settings-activation-open",
     }
     routines = {
         routine.id: routine

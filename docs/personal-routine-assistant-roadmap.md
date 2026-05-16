@@ -377,6 +377,9 @@ abuse, and hidden automation are not supported.
       personalization, time, accessibility, accounts, gaming, mouse, keyboard,
       printers, optional features, default apps, startup apps, and troubleshoot
       Settings review pages.
+- [x] Add sixth native scale-out batch for color filters, Narrator, Magnifier,
+      contrast themes, captions, speech, typing, language, region, privacy
+      permissions, developer mode, and activation Settings review pages.
 - [x] Add social/content routines for LinkedIn, Medium, X/Twitter, Instagram,
       Facebook, YouTube, and TikTok read-only, draft, and approved publish
       surfaces.

@@ -1,0 +1,13 @@
+id: native.settings-language-open
+name: Windows language settings open
+description: Open language settings through the Run dialog for read-only review.
+goal: Navigate directly to language settings without changing language packs or input methods.
+required_app: Settings
+tags: [native, settings, review]
+inputs: [Windows desktop]
+outputs: [language settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/settings-language-open.yaml}

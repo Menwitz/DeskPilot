@@ -1,0 +1,13 @@
+id: native.settings-activation-open
+name: Windows activation settings open
+description: Open activation settings through the Run dialog for read-only review.
+goal: Navigate directly to activation settings without changing license state.
+required_app: Settings
+tags: [native, settings, review]
+inputs: [Windows desktop]
+outputs: [activation settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/settings-activation-open.yaml}

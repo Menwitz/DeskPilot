@@ -1,0 +1,24 @@
+name: Windows contacts privacy settings open task
+allowed_windows:
+  - Windows
+  - Settings
+timeout_seconds: 30
+steps:
+  - id: open-run-dialog
+    action: press_key
+    text: win+r
+    verify:
+      type: visible_text
+      text: Run
+  - id: type-settings-contacts-privacy-open-uri
+    action: type_text
+    text: "ms-settings:privacy-contacts"
+    verify:
+      type: visible_text
+      text: "ms-settings:privacy-contacts"
+  - id: submit-settings-uri
+    action: press_key
+    text: enter
+    verify:
+      type: visible_text
+      text: Contacts

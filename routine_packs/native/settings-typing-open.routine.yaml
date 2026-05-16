@@ -1,0 +1,13 @@
+id: native.settings-typing-open
+name: Windows typing settings open
+description: Open typing settings through the Run dialog for read-only review.
+goal: Navigate directly to typing settings without changing input behavior.
+required_app: Settings
+tags: [native, settings, review]
+inputs: [Windows desktop]
+outputs: [typing settings visible]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 20
+reference: {type: task, path: tasks/settings-typing-open.yaml}
