@@ -672,7 +672,7 @@ abuse, and hidden automation are not supported.
       observations, target reasoning, input events, verification, state deltas,
       and redaction.
 - [x] `RecorderSession`: raw recorder event stream plus generated routine output.
-- [ ] `GoalPlan`: user goal, candidate routines, selected routine, missing
+- [x] `GoalPlan`: user goal, candidate routines, selected routine, missing
       inputs, approval needs, and explanation.
 - [ ] `LocalModelProvider`: optional local model adapter interface with Ollama
       as the first implementation.

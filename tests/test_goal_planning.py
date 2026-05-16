@@ -94,9 +94,21 @@ def test_goal_plan_schema_blocks_missing_inputs_and_unsatisfied_approvals() -> N
     )
 
     assert plan.execution_ready is False
+    assert plan.selected_candidate is not None
+    assert plan.selected_candidate.routine_id == (
+        "social-content.linkedin-approved-publish"
+    )
     assert plan.missing_inputs == ("approval manifest",)
     assert plan.approvals[0].required is True
-    assert plan.metadata()["execution_status"] == "blocked"
+    metadata = plan.metadata()
+    approvals = cast(list[dict[str, object]], metadata["approvals"])
+    assert metadata["selected_routine_id"] == (
+        "social-content.linkedin-approved-publish"
+    )
+    assert metadata["missing_inputs"] == ["approval manifest"]
+    assert approvals[0]["reason"] == "Publishing requires reviewed content approval."
+    assert metadata["explanation"] == "Publishing is selected but blocked on approval."
+    assert metadata["execution_status"] == "blocked"
 
 
 def test_goal_plan_schema_rejects_invalid_selection() -> None:
