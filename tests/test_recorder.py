@@ -128,6 +128,57 @@ def test_recorder_event_model_round_trips_desktop_context(tmp_path: Path) -> Non
     assert payload["events"][0]["input_event"]["kind"] == "mouse_down"
 
 
+def test_recorder_session_public_interface_generates_task_output() -> None:
+    click_event = RecorderEvent.create(
+        "selected_point",
+        active_window="DeskPilot Fixture",
+        selected_point=(120, 240),
+        candidate_context=(
+            RecorderCandidateContext(
+                source="uia",
+                label="Inbox",
+                control_type="Button",
+                bounds={"x": 100, "y": 220, "width": 80, "height": 30},
+                confidence=0.98,
+            ),
+        ),
+    )
+    typing_event = RecorderEvent.create(
+        "input_event",
+        active_window="DeskPilot Fixture",
+        input_event={"kind": "type_text", "text": "follow up"},
+    )
+    session = RecorderSession(
+        session_id="session-1",
+        name="Inbox triage",
+        status="stopped",
+        created_at="2026-01-01T00:00:00+00:00",
+        updated_at="2026-01-01T00:01:00+00:00",
+        review=RecorderReviewMetadata(
+            routine_name="Inbox triage",
+            description="Open the inbox and enter a follow-up query.",
+            inputs=("mail account",),
+            outputs=("filtered inbox",),
+            tags=("email", "daily"),
+        ),
+        events=(click_event, typing_event),
+    )
+
+    payload = session.to_payload()
+    round_tripped = RecorderSession.from_payload(payload)
+    task = generate_task_from_recorder_session(round_tripped)
+
+    BasicTaskValidator().validate(task, RuntimeConfig())
+    assert payload["event_count"] == 2
+    assert round_tripped.events == (click_event, typing_event)
+    assert task.metadata["recorder_session_id"] == "session-1"
+    assert task.metadata["recorder_event_count"] == 2
+    assert task.metadata["routine_outputs"] == ["filtered inbox"]
+    assert [step.action for step in task.steps] == ["click_uia", "type_text"]
+    assert task.steps[0].target == "Inbox"
+    assert task.steps[1].text == "follow up"
+
+
 def test_recorder_review_metadata_flows_to_generated_task(tmp_path: Path) -> None:
     state_path = tmp_path / "recording.json"
     controller = RecorderController(state_path)

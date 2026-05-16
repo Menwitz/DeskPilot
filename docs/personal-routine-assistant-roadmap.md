@@ -671,7 +671,7 @@ abuse, and hidden automation are not supported.
 - [x] `TraceSchemaV2`: versioned evidence model for video, before/after
       observations, target reasoning, input events, verification, state deltas,
       and redaction.
-- [ ] `RecorderSession`: raw recorder event stream plus generated routine output.
+- [x] `RecorderSession`: raw recorder event stream plus generated routine output.
 - [ ] `GoalPlan`: user goal, candidate routines, selected routine, missing
       inputs, approval needs, and explanation.
 - [ ] `LocalModelProvider`: optional local model adapter interface with Ollama
