@@ -75,3 +75,39 @@ def test_native_routine_pack_contains_seed_categories() -> None:
         assert reference.task_path is not None
         task = YamlTaskLoader().load(reference.task_path)
         BasicTaskValidator().validate(task, RuntimeConfig())
+
+
+def test_social_content_routine_pack_contains_platform_surface_matrix() -> None:
+    catalog = load_routine_catalog(Path("routine_packs"))
+    platforms = (
+        "linkedin",
+        "medium",
+        "x-twitter",
+        "instagram",
+        "facebook",
+        "youtube",
+        "tiktok",
+    )
+    surfaces = ("read", "draft", "approved-publish")
+    expected_ids = {
+        f"social-content.{platform}-{surface}"
+        for platform in platforms
+        for surface in surfaces
+    }
+    routines = {
+        routine.id: routine
+        for routine in catalog.routines
+        if routine.id.startswith("social-content.")
+    }
+
+    assert expected_ids <= set(routines)
+    for routine_id in expected_ids:
+        routine = routines[routine_id]
+        reference = routine.reference
+        assert reference.kind == "task"
+        assert reference.task_path is not None
+        if routine_id.endswith("approved-publish"):
+            assert routine.approval_policy == "manifest_required"
+            assert routine.safety_class == "high"
+        task = YamlTaskLoader().load(reference.task_path)
+        BasicTaskValidator().validate(task, RuntimeConfig())

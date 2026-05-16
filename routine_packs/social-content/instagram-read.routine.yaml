@@ -1,0 +1,14 @@
+id: social-content.instagram-read
+name: Instagram read-only review
+description: Review visible Instagram content without drafting or publishing.
+goal: Read Instagram content with local trace evidence.
+required_app: Browser
+required_site: instagram.com
+tags: [social, instagram, read-only]
+inputs: [instagram page]
+outputs: [reviewed content]
+safety_class: low
+schedule_policy: manual
+approval_policy: none
+expected_duration_seconds: 45
+reference: {type: task, path: tasks/read-only-surface.yaml}

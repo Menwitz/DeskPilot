@@ -1,0 +1,14 @@
+name: Social content draft surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 60
+steps:
+  - id: focus-composer
+    action: click_text
+    target: Write
+  - id: type-reviewed-draft
+    action: type_text
+    text: Reviewed social draft
+    verify:
+      type: visible_text
+      text: Reviewed social draft

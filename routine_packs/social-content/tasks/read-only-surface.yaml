@@ -1,0 +1,14 @@
+name: Social content read-only surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 45
+steps:
+  - id: wait-for-feed
+    action: wait_for
+    target: Feed
+  - id: review-visible-content
+    action: scroll
+    text: "-3"
+  - id: confirm-feed-visible
+    action: assert_visible
+    target: Feed

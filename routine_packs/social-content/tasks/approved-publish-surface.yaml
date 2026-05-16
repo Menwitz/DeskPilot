@@ -1,0 +1,13 @@
+name: Social content approved publish surface task
+allowed_windows:
+  - Browser
+timeout_seconds: 60
+steps:
+  - id: publish-approved-content
+    action: click_text
+    target: Publish
+    category: submission
+    requires_confirmation: true
+    verify:
+      type: visible_text
+      text: Published

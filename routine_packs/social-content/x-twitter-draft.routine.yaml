@@ -1,0 +1,14 @@
+id: social-content.x-twitter-draft
+name: X/Twitter draft
+description: Prepare reviewed X/Twitter draft text without publishing.
+goal: Create an editable X/Twitter draft.
+required_app: Browser
+required_site: x.com
+tags: [social, x-twitter, draft]
+inputs: [draft text]
+outputs: [prepared draft]
+safety_class: medium
+schedule_policy: manual
+approval_policy: confirm
+expected_duration_seconds: 60
+reference: {type: task, path: tasks/draft-surface.yaml}

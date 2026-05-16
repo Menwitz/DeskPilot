@@ -1,0 +1,14 @@
+id: social-content.instagram-approved-publish
+name: Instagram approved publish
+description: Publish reviewed Instagram content only after explicit approval.
+goal: Submit approved Instagram content with confirmation and trace evidence.
+required_app: Browser
+required_site: instagram.com
+tags: [social, instagram, publish]
+inputs: [approved content]
+outputs: [published content]
+safety_class: high
+schedule_policy: manual
+approval_policy: manifest_required
+expected_duration_seconds: 60
+reference: {type: task, path: tasks/approved-publish-surface.yaml}

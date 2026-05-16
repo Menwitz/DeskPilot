@@ -1,0 +1,14 @@
+id: social-content.tiktok-draft
+name: TikTok draft
+description: Prepare reviewed TikTok draft text without publishing.
+goal: Create an editable TikTok draft.
+required_app: Browser
+required_site: tiktok.com
+tags: [social, tiktok, draft]
+inputs: [draft text]
+outputs: [prepared draft]
+safety_class: medium
+schedule_policy: manual
+approval_policy: confirm
+expected_duration_seconds: 60
+reference: {type: task, path: tasks/draft-surface.yaml}

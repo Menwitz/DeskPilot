@@ -1,0 +1,14 @@
+id: social-content.youtube-approved-publish
+name: YouTube approved publish
+description: Publish reviewed YouTube content only after explicit approval.
+goal: Submit approved YouTube content with confirmation and trace evidence.
+required_app: Browser
+required_site: youtube.com
+tags: [social, youtube, publish]
+inputs: [approved content]
+outputs: [published content]
+safety_class: high
+schedule_policy: manual
+approval_policy: manifest_required
+expected_duration_seconds: 60
+reference: {type: task, path: tasks/approved-publish-surface.yaml}

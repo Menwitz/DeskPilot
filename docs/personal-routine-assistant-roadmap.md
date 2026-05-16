@@ -339,7 +339,7 @@ abuse, and hidden automation are not supported.
 - [x] Add native routines for Notepad, Calculator, Settings, File Explorer,
       clipboard, app switching, window management, and simple Office-like
       surfaces.
-- [ ] Add social/content routines for LinkedIn, Medium, X/Twitter, Instagram,
+- [x] Add social/content routines for LinkedIn, Medium, X/Twitter, Instagram,
       Facebook, YouTube, and TikTok read-only, draft, and approved publish
       surfaces.
 - [ ] Add routine documentation templates and generated catalog index docs.
