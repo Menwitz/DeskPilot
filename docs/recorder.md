@@ -53,6 +53,14 @@ desktop-agent record review \
   --expected-duration-seconds 420
 ```
 
+Export the reviewed recording to editable task YAML:
+
+```bash
+desktop-agent record export-task \
+  --state traces/recorder-session.json \
+  --output routines/morning-inbox.yaml
+```
+
 The saved JSON uses `deskpilot_recorder_session_v1` and contains the session
 ID, name, status, timestamps, review metadata, event count, and recorder
 events. Review metadata captures routine name, description, inputs, outputs,
@@ -84,9 +92,11 @@ tasks infer `allowed_windows` from the active-window titles recorded on events.
 When an observation event carries planner-style `state_delta` metadata, the
 generator adds a visible-text verification suggestion to the previous action
 from newly appeared text such as `visible_text_added`.
-Generated task metadata includes the reviewed routine name, description, inputs,
-outputs, tags, risk class, and expected duration so trace artifacts and final
-reports can surface the operator-reviewed routine contract.
+`record export-task` writes the generated `TaskDefinition` as YAML that can be
+loaded by `YamlTaskLoader`, edited, dry-run, and then used in Windows proof
+flows. Generated task metadata includes the reviewed routine name, description,
+inputs, outputs, tags, risk class, and expected duration so trace artifacts and
+final reports can surface the operator-reviewed routine contract.
 
 ## Test Coverage
 

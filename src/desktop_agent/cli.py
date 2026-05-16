@@ -75,6 +75,7 @@ from desktop_agent.recorder import (
     RecorderController,
     RecorderError,
     RecorderReviewMetadata,
+    generate_task_from_recorder_session,
 )
 from desktop_agent.safety import (
     LocalSafetyPolicy,
@@ -343,6 +344,13 @@ def _add_record_options(parser: argparse.ArgumentParser) -> None:
     )
     _add_record_state_option(review_parser)
     _add_record_review_options(review_parser, include_routine_name=True)
+
+    export_parser = record_subparsers.add_parser(
+        "export-task",
+        help="export the current recording as editable task YAML",
+    )
+    _add_record_state_option(export_parser)
+    export_parser.add_argument("--output", required=True, type=Path)
 
     discard_parser = record_subparsers.add_parser(
         "discard",
@@ -1087,6 +1095,17 @@ def _record(args: argparse.Namespace) -> int:
         )
         print(f"recording review updated: {session.session_id}")
         print(f"routine: {session.review.routine_name}")
+        return 0
+    if args.record_command == "export-task":
+        session = controller.load()
+        task = generate_task_from_recorder_session(session)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(
+            yaml.safe_dump(_task_to_yaml_dict(task), sort_keys=False),
+            encoding="utf-8",
+        )
+        print(f"recording task exported: {session.session_id}")
+        print(f"task: {args.output}")
         return 0
     if args.record_command == "discard":
         session = controller.discard()

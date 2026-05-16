@@ -28,7 +28,12 @@ from desktop_agent.recorder import (
 )
 from desktop_agent.safety import LocalSafetyPolicy
 from desktop_agent.screen import Bounds, ScreenObservation, StaticScreenObserver
-from desktop_agent.task_dsl import BasicTaskValidator, StaticTaskLoader, TaskStep
+from desktop_agent.task_dsl import (
+    BasicTaskValidator,
+    StaticTaskLoader,
+    TaskStep,
+    YamlTaskLoader,
+)
 from desktop_agent.tracing import FileTraceSink
 
 
@@ -463,6 +468,57 @@ def test_fake_recorder_event_stream_report_includes_review_metadata(
         "text": "Results ready",
         "image": None,
     }
+
+
+def test_cli_record_export_task_writes_valid_browser_fixture_yaml(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    state_path = tmp_path / "recorder-state.json"
+    output_path = tmp_path / "browser-routine.yaml"
+    controller = RecorderController(state_path)
+    controller.start(
+        name="Browser fixture",
+        review=RecorderReviewMetadata(
+            routine_name="Browser search routine",
+            description="Search the browser fixture and confirm results",
+            inputs=("search query",),
+            outputs=("results page",),
+            tags=("browser", "search"),
+            risk_class="low",
+            expected_duration_seconds=30.0,
+        ),
+    )
+    for event in _fake_browser_event_stream():
+        controller.record_event(event)
+    controller.stop()
+
+    status = main(
+        [
+            "record",
+            "export-task",
+            "--state",
+            str(state_path),
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    task = YamlTaskLoader().load(output_path)
+    BasicTaskValidator().validate(task, RuntimeConfig())
+    assert status == 0
+    assert "recording task exported:" in output
+    assert task.name == "Browser search routine"
+    assert task.allowed_windows == ("Browser Fixture",)
+    assert [step.action for step in task.steps] == [
+        "click_text",
+        "type_text",
+        "press_key",
+    ]
+    assert task.steps[2].verify is not None
+    assert task.steps[2].verify.text == "Results ready"
+    assert task.metadata["routine_tags"] == ["browser", "search"]
 
 
 def test_cli_record_exposes_start_pause_stop_save_discard_controls(
