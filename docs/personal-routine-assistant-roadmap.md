@@ -451,7 +451,7 @@ abuse, and hidden automation are not supported.
 
 - [x] Ship a native PySide6 app for routine library, recorder, approvals,
       status, pause/stop, and trace review.
-- [ ] Make daily local use possible without remembering CLI commands.
+- [x] Make daily local use possible without remembering CLI commands.
 - [ ] Keep all safety and trace behavior shared with the CLI.
 
 ### OKRs
