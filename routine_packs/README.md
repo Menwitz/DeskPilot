@@ -1,9 +1,10 @@
 # Routine Packs
 
 Routine packs are the source directories for reviewed personal routines. Each
-pack will hold routine definitions, generated task YAML, dry-run evidence,
-proof notes, and pack-level documentation as Phase 5 expands the catalog.
-Routine definition schema fields are documented in `docs/routines.md`.
+pack will hold `*.routine.yaml` definitions, generated task YAML, dry-run
+evidence, proof notes, and pack-level documentation as Phase 5 expands the
+catalog. Routine definition schema fields, catalog loading, validation, and
+search behavior are documented in `docs/routines.md`.
 
 ## Packs
 

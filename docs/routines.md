@@ -55,3 +55,22 @@ Supported approval policies are `none`, `confirm`, `manifest_required`, and
 
 `RoutineDefinition.report_metadata()` returns JSON-safe fields for future trace,
 monitoring, search, and catalog quality reports.
+
+## Catalog Loading
+
+Routine catalogs load files named `*.routine.yaml` or `*.routine.yml` under
+`routine_packs/`:
+
+```python
+from pathlib import Path
+
+from desktop_agent.routines import load_routine_catalog
+
+catalog = load_routine_catalog(Path("routine_packs"))
+results = catalog.search("browser search")
+```
+
+The catalog validator rejects duplicate routine IDs and reuses the
+`RoutineDefinition` validation rules for every loaded file. Search is a local
+token index over routine IDs, names, tags, required app/site, description, goal,
+inputs, and outputs.

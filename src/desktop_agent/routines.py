@@ -71,6 +71,32 @@ class RoutineDefinition:
         }
 
 
+@dataclass(frozen=True)
+class RoutineSearchResult:
+    """Ranked catalog search hit for a routine query."""
+
+    routine: RoutineDefinition
+    score: int
+    matched_fields: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RoutineCatalog:
+    """Loaded routine catalog with ID lookup and local search."""
+
+    root: Path
+    routines: tuple[RoutineDefinition, ...]
+
+    def by_id(self, routine_id: str) -> RoutineDefinition | None:
+        for routine in self.routines:
+            if routine.id == routine_id:
+                return routine
+        return None
+
+    def search(self, query: str, *, limit: int = 20) -> tuple[RoutineSearchResult, ...]:
+        return search_routine_catalog(self, query, limit=limit)
+
+
 def load_routine_definition(path: Path) -> RoutineDefinition:
     """Load one routine YAML definition from a routine pack."""
     if not path.exists():
@@ -80,6 +106,24 @@ def load_routine_definition(path: Path) -> RoutineDefinition:
     routine = routine_definition_from_mapping(data, source_path=path)
     validate_routine_definition(routine)
     return routine
+
+
+def load_routine_catalog(root: Path = Path("routine_packs")) -> RoutineCatalog:
+    """Load every routine definition in a routine pack tree."""
+    if not root.exists():
+        raise RoutineDefinitionError(f"routine catalog directory not found: {root}")
+    paths = sorted(
+        {
+            *root.rglob("*.routine.yaml"),
+            *root.rglob("*.routine.yml"),
+        },
+    )
+    catalog = RoutineCatalog(
+        root=root,
+        routines=tuple(load_routine_definition(path) for path in paths),
+    )
+    validate_routine_catalog(catalog)
+    return catalog
 
 
 def routine_definition_from_mapping(
@@ -113,6 +157,26 @@ def routine_definition_from_mapping(
     return routine
 
 
+def validate_routine_catalog(catalog: RoutineCatalog) -> None:
+    """Validate catalog-wide constraints after loading routine definitions."""
+    errors: list[str] = []
+    seen: set[str] = set()
+    duplicate_ids: set[str] = set()
+    for routine in catalog.routines:
+        try:
+            validate_routine_definition(routine)
+        except RoutineDefinitionError as exc:
+            source = f"{routine.source_path}: " if routine.source_path else ""
+            errors.append(f"{source}{exc}")
+        if routine.id in seen:
+            duplicate_ids.add(routine.id)
+        seen.add(routine.id)
+    for routine_id in sorted(duplicate_ids):
+        errors.append(f"duplicate routine id: {routine_id}")
+    if errors:
+        raise RoutineDefinitionError("; ".join(errors))
+
+
 def validate_routine_definition(routine: RoutineDefinition) -> None:
     """Validate one routine definition before catalog indexing."""
     errors: list[str] = []
@@ -134,6 +198,41 @@ def validate_routine_definition(routine: RoutineDefinition) -> None:
         raise RoutineDefinitionError("; ".join(errors))
 
 
+def search_routine_catalog(
+    catalog: RoutineCatalog,
+    query: str,
+    *,
+    limit: int = 20,
+) -> tuple[RoutineSearchResult, ...]:
+    """Search routine metadata with a deterministic local token index."""
+    tokens = _query_tokens(query)
+    if not tokens or limit <= 0:
+        return ()
+
+    results: list[RoutineSearchResult] = []
+    for routine in catalog.routines:
+        score = 0
+        matched_fields: list[str] = []
+        for field_name, field_score, field_text in _routine_search_fields(routine):
+            field_tokens = set(_query_tokens(field_text))
+            matches = tokens & field_tokens
+            if not matches:
+                continue
+            score += field_score * len(matches)
+            matched_fields.append(field_name)
+        if score:
+            results.append(
+                RoutineSearchResult(
+                    routine=routine,
+                    score=score,
+                    matched_fields=tuple(dict.fromkeys(matched_fields)),
+                ),
+            )
+    return tuple(
+        sorted(results, key=lambda result: (-result.score, result.routine.id))[:limit],
+    )
+
+
 def _reference_from_value(value: object, base_dir: Path) -> RoutineReference:
     data = _mapping(value, "reference must be a mapping")
     kind_value = _required_string(data, "type")
@@ -150,6 +249,26 @@ def _reference_from_value(value: object, base_dir: Path) -> RoutineReference:
             playbook_flow=_required_string(data, "flow"),
         )
     raise RoutineDefinitionError("reference type must be task or playbook")
+
+
+def _routine_search_fields(
+    routine: RoutineDefinition,
+) -> tuple[tuple[str, int, str], ...]:
+    return (
+        ("id", 4, routine.id),
+        ("name", 4, routine.name),
+        ("tags", 3, " ".join(routine.tags)),
+        ("required_app", 2, routine.required_app or ""),
+        ("required_site", 2, routine.required_site or ""),
+        ("description", 1, routine.description),
+        ("goal", 1, routine.goal),
+        ("inputs", 1, " ".join(routine.inputs)),
+        ("outputs", 1, " ".join(routine.outputs)),
+    )
+
+
+def _query_tokens(value: str) -> set[str]:
+    return set(re.findall(r"[a-z0-9]+", value.lower()))
 
 
 def _reference_errors(reference: RoutineReference) -> list[str]:

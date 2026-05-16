@@ -328,7 +328,7 @@ abuse, and hidden automation are not supported.
 - [x] Add `RoutineDefinition` schema with ID, name, description, goal,
       required app/site, tags, inputs, outputs, safety class, schedule policy,
       approval policy, expected duration, and task/playbook reference.
-- [ ] Add catalog loader, validator, and search index.
+- [x] Add catalog loader, validator, and search index.
 - [ ] Add commands: `list-routines`, `show-routine`, `compile-routine`,
       `dry-run-routine`, `run-routine`, and `export-routine`.
 - [ ] Add routine promotion gates: schema validation, dry-run, fixture test,

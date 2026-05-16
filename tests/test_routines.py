@@ -4,6 +4,7 @@ import pytest
 
 from desktop_agent.routines import (
     RoutineDefinitionError,
+    load_routine_catalog,
     load_routine_definition,
     routine_definition_from_mapping,
 )
@@ -130,3 +131,117 @@ def test_routine_definition_schema_requires_task_or_playbook_reference() -> None
                 },
             },
         )
+
+
+def test_routine_catalog_loads_definitions_and_searches_metadata(
+    tmp_path: Path,
+) -> None:
+    _write_routine(
+        tmp_path / "browser" / "search.routine.yaml",
+        routine_id="browser.search",
+        name="Browser search",
+        description="Search from a browser input.",
+        goal="Reach browser search results.",
+        tags=("browser", "search"),
+        required_app="Microsoft Edge",
+        required_site="example.com",
+        task_path="tasks/browser-search.yaml",
+    )
+    _write_routine(
+        tmp_path / "native" / "notepad.routine.yaml",
+        routine_id="native.notepad-draft",
+        name="Notepad draft",
+        description="Open Notepad and draft local text.",
+        goal="Prepare a local draft.",
+        tags=("native", "writing"),
+        required_app="Notepad",
+        required_site=None,
+        task_path="tasks/notepad-draft.yaml",
+    )
+
+    catalog = load_routine_catalog(tmp_path)
+    browser_results = catalog.search("browser search")
+    notepad_results = catalog.search("notepad")
+
+    assert [routine.id for routine in catalog.routines] == [
+        "browser.search",
+        "native.notepad-draft",
+    ]
+    assert catalog.by_id("browser.search") is not None
+    assert browser_results[0].routine.id == "browser.search"
+    assert browser_results[0].score > 0
+    assert "name" in browser_results[0].matched_fields
+    assert notepad_results[0].routine.id == "native.notepad-draft"
+
+
+def test_routine_catalog_rejects_duplicate_ids(tmp_path: Path) -> None:
+    _write_routine(
+        tmp_path / "browser" / "search.routine.yaml",
+        routine_id="duplicate.routine",
+        name="Browser duplicate",
+        description="First duplicate.",
+        goal="Show duplicate validation.",
+        tags=("browser",),
+        required_app="Microsoft Edge",
+        required_site=None,
+        task_path="tasks/browser.yaml",
+    )
+    _write_routine(
+        tmp_path / "native" / "search.routine.yaml",
+        routine_id="duplicate.routine",
+        name="Native duplicate",
+        description="Second duplicate.",
+        goal="Show duplicate validation.",
+        tags=("native",),
+        required_app="Notepad",
+        required_site=None,
+        task_path="tasks/native.yaml",
+    )
+
+    with pytest.raises(RoutineDefinitionError, match="duplicate routine id"):
+        load_routine_catalog(tmp_path)
+
+
+def _write_routine(
+    path: Path,
+    *,
+    routine_id: str,
+    name: str,
+    description: str,
+    goal: str,
+    tags: tuple[str, ...],
+    required_app: str,
+    required_site: str | None,
+    task_path: str,
+) -> None:
+    site_lines = []
+    if required_site is not None:
+        site_lines.append(f"required_site: {required_site}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "\n".join(
+            [
+                f"id: {routine_id}",
+                f"name: {name}",
+                f"description: {description}",
+                f"goal: {goal}",
+                f"required_app: {required_app}",
+                *site_lines,
+                "tags:",
+                *(f"  - {tag}" for tag in tags),
+                "inputs:",
+                "  - input",
+                "outputs:",
+                "  - output",
+                "safety_class: low",
+                "schedule_policy: manual",
+                "approval_policy: none",
+                "expected_duration_seconds: 30",
+                "reference:",
+                "  type: task",
+                f"  path: {task_path}",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
