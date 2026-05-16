@@ -359,7 +359,7 @@ abuse, and hidden automation are not supported.
 - [x] Execute routines over time with visible, bounded, traceable timing.
 - [x] Support daily routine batches, cooldowns, allowed time windows, and
       operator check-ins.
-- [ ] Keep human-paced behavior inside safety, approval, and allowed-window
+- [x] Keep human-paced behavior inside safety, approval, and allowed-window
       limits.
 
 ### OKRs
