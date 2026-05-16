@@ -14,6 +14,7 @@ REQUIRED_WINDOWS_PROOF_NAMES: tuple[str, ...] = (
     "recovery-fixture",
 )
 PROOF_SUITE_REPORT_NAME = "proof-suite-report.md"
+PROOF_SUITE_STATUS_NAME = "proof-suite-status.json"
 
 
 @dataclass(frozen=True)
@@ -363,11 +364,7 @@ def render_proof_suite_report(validation: ProofSuiteValidation) -> str:
         if bundle.warnings:
             lines.append("- Warnings:")
             lines.extend(f"  - {warning}" for warning in bundle.warnings)
-        proof_errors = tuple(
-            error.removeprefix(f"{proof_name}: ")
-            for error in validation.errors
-            if error.startswith(f"{proof_name}: ")
-        )
+        proof_errors = tuple(_proof_errors_for_bundle(validation, proof_name))
         if proof_errors:
             lines.append("- Errors:")
             lines.extend(f"  - {error}" for error in proof_errors)
@@ -415,6 +412,85 @@ def write_proof_suite_report(
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(render_proof_suite_report(validation), encoding="utf-8")
     return report_path
+
+
+def proof_suite_status_metadata(validation: ProofSuiteValidation) -> dict[str, object]:
+    """Build a machine-readable proof suite status payload for monitoring."""
+
+    bundles_by_name = {
+        bundle.proof_name: bundle
+        for bundle in validation.bundle_results
+        if bundle.proof_name is not None
+    }
+    proofs: list[dict[str, object]] = []
+    for proof_name in validation.expected_proofs:
+        bundle = bundles_by_name.get(proof_name)
+        if bundle is None:
+            proofs.append(
+                {
+                    "proof_name": proof_name,
+                    "status": "missing",
+                    "trace_dir": None,
+                    "manifest_path": None,
+                    "warnings": [],
+                    "errors": [f"missing proof bundle: {proof_name}"],
+                    "artifacts": [],
+                },
+            )
+            continue
+        proofs.append(
+            {
+                "proof_name": proof_name,
+                "status": "passed" if bundle.passed else "failed",
+                "trace_dir": str(bundle.trace_dir),
+                "manifest_path": str(bundle.manifest_path),
+                "warnings": list(bundle.warnings),
+                "errors": _proof_errors_for_bundle(validation, proof_name),
+                "artifacts": [
+                    {"label": label, "path": str(path)}
+                    for label, path in bundle.artifact_paths
+                ],
+            },
+        )
+
+    return {
+        "schema_version": 1,
+        "trace_root": str(validation.trace_root),
+        "status": "passed" if validation.passed else "failed",
+        "expected_proofs": list(validation.expected_proofs),
+        "missing_proofs": list(validation.missing_proofs),
+        "duplicate_proofs": list(validation.duplicate_proofs),
+        "warnings": list(validation.warnings),
+        "errors": list(validation.errors),
+        "proofs": proofs,
+    }
+
+
+def write_proof_suite_status(
+    validation: ProofSuiteValidation,
+    output_path: Path | None = None,
+) -> Path:
+    """Write machine-readable proof suite status for CI and monitors."""
+
+    status_path = output_path or validation.trace_root / PROOF_SUITE_STATUS_NAME
+    status_path.parent.mkdir(parents=True, exist_ok=True)
+    status_path.write_text(
+        json.dumps(proof_suite_status_metadata(validation), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    return status_path
+
+
+def _proof_errors_for_bundle(
+    validation: ProofSuiteValidation,
+    proof_name: str,
+) -> list[str]:
+    prefix = f"{proof_name}: "
+    return [
+        error.removeprefix(prefix)
+        for error in validation.errors
+        if error.startswith(prefix)
+    ]
 
 
 def _load_json_object(

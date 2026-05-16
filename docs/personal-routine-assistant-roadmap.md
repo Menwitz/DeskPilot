@@ -157,6 +157,8 @@ abuse, and hidden automation are not supported.
       review.
 - [x] Add a proof suite report and opt-in Windows smoke gate for promoting the
       four-workflow proof pack as one reviewable artifact.
+- [x] Add a machine-readable proof suite status JSON for monitoring and CI
+      evidence archives.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

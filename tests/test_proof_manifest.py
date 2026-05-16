@@ -3,10 +3,12 @@ from pathlib import Path
 from typing import cast
 
 from desktop_agent.proof_manifest import (
+    proof_suite_status_metadata,
     render_proof_suite_report,
     validate_proof_bundle,
     validate_proof_suite,
     write_proof_suite_report,
+    write_proof_suite_status,
 )
 
 
@@ -115,6 +117,35 @@ def test_write_proof_suite_report_summarizes_bundle_status(tmp_path: Path) -> No
     assert "### native-fixture" in report
     assert "- Status: `missing`" in report
     assert "- Missing proofs:" in report
+
+
+def test_write_proof_suite_status_records_monitoring_payload(
+    tmp_path: Path,
+) -> None:
+    _write_proof_bundle(
+        tmp_path,
+        proof_name="browser-fixture",
+        trace_dir_name="browser-fixture",
+        include_video=False,
+    )
+    result = validate_proof_suite(tmp_path, require_video=False)
+
+    payload = proof_suite_status_metadata(result)
+    status_path = write_proof_suite_status(result)
+    saved_payload = json.loads(status_path.read_text(encoding="utf-8"))
+
+    assert status_path == tmp_path / "proof-suite-status.json"
+    assert saved_payload == payload
+    assert payload["status"] == "failed"
+    assert payload["missing_proofs"] == [
+        "native-fixture",
+        "mixed-fixture",
+        "recovery-fixture",
+    ]
+    proofs = cast(list[dict[str, object]], payload["proofs"])
+    assert proofs[0]["proof_name"] == "browser-fixture"
+    assert proofs[0]["status"] == "passed"
+    assert proofs[1]["status"] == "missing"
 
 
 def _write_proof_bundle(

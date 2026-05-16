@@ -136,11 +136,13 @@ def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> No
             str(trace_root),
             "--allow-missing-video",
             "--write-report",
+            "--write-status-json",
         ],
     )
 
     assert validation_exit_code == 0, "proof suite validation failed"
     assert (trace_root / "proof-suite-report.md").exists()
+    assert (trace_root / "proof-suite-status.json").exists()
 
 
 def _require_windows_smoke() -> None:

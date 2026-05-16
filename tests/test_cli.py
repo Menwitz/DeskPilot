@@ -1733,6 +1733,33 @@ def test_cli_proof_validate_suite_writes_report(
     assert "- Status: `failed`" in report
 
 
+def test_cli_proof_validate_suite_writes_status_json(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    status_path = tmp_path / "monitoring" / "suite-status.json"
+    write_proof_manifest(trace_dir)
+
+    status = main(
+        [
+            "proof",
+            "validate-suite",
+            str(tmp_path),
+            "--write-status-json",
+            "--status-json-path",
+            str(status_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    payload = json.loads(status_path.read_text(encoding="utf-8"))
+    assert status == 1
+    assert f"status_json: {status_path}" in output
+    assert payload["status"] == "failed"
+    assert "browser-fixture" in payload["missing_proofs"]
+
+
 def test_cli_benchmark_run_writes_metrics_and_report(
     tmp_path: Path,
     capsys: CaptureFixture[str],

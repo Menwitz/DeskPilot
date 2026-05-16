@@ -97,6 +97,7 @@ from desktop_agent.proof_manifest import (
     validate_proof_bundle,
     validate_proof_suite,
     write_proof_suite_report,
+    write_proof_suite_status,
 )
 from desktop_agent.recorder import (
     RECORDER_DEFAULT_RISK_CLASS,
@@ -550,6 +551,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--report-path",
         type=Path,
         help="write the suite report to an explicit Markdown path",
+    )
+    proof_validate_suite_parser.add_argument(
+        "--write-status-json",
+        action="store_true",
+        help="write proof-suite-status.json after validation",
+    )
+    proof_validate_suite_parser.add_argument(
+        "--status-json-path",
+        type=Path,
+        help="write the suite status JSON to an explicit path",
     )
     proof_browser_parser = proof_subparsers.add_parser(
         "browser-fixture",
@@ -2726,6 +2737,9 @@ def _proof_validate_suite(args: argparse.Namespace) -> int:
     if args.write_report or args.report_path:
         report_path = write_proof_suite_report(result, args.report_path)
         print(f"report: {report_path}")
+    if args.write_status_json or args.status_json_path:
+        status_path = write_proof_suite_status(result, args.status_json_path)
+        print(f"status_json: {status_path}")
     return 0 if result.passed else 1
 
 

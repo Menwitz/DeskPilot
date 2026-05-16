@@ -29,6 +29,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Run `desktop-agent proof validate-suite <trace-root> --write-report` and
       review `proof-suite-report.md` before promoting the four-workflow proof
       pack.
+- [ ] Run `desktop-agent proof validate-suite <trace-root>
+      --write-status-json` and archive `proof-suite-status.json` with monitoring
+      or CI evidence.
 
 ## Required Proof Bundle
 
@@ -58,6 +61,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       before the four-workflow proof pack is promoted.
 - [ ] `proof-suite-report.md` summarizes every required proof, missing bundle,
       duplicate bundle, warning, and blocking validation error.
+- [ ] `proof-suite-status.json` records the suite status, expected proofs,
+      missing proofs, duplicate proofs, warnings, errors, and per-proof artifact
+      paths for monitoring.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 
