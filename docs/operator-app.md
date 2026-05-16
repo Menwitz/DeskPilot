@@ -30,6 +30,10 @@ The Record page includes the recorder review panel. It shows generated YAML,
 selected targets, screenshot paths, verification suggestions, and review status
 before the operator saves a routine.
 
+The Trace Viewer page includes the trace timeline contract. It shows video,
+screenshots, action log, candidate reasoning, state delta, final report, and
+load status so failed runs can be inspected without rerunning desktop input.
+
 `deskpilot-app --describe-shell` prints this shell contract without importing
 PySide6. `deskpilot-app --check` verifies that the entry point is installed and
 reports whether PySide6 is available.

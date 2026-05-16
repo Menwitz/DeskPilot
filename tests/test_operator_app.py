@@ -8,12 +8,14 @@ from desktop_agent.operator_app_shell import (
     ApprovalDialogState,
     LiveRunPanelState,
     RecorderReviewPanelState,
+    TraceViewerTimelineState,
     default_live_run_panel_state,
     operator_app_shell_spec,
     render_approval_dialog_text,
     render_live_run_panel_text,
     render_operator_app_shell_text,
     render_recorder_review_text,
+    render_trace_viewer_timeline_text,
 )
 
 
@@ -55,6 +57,8 @@ def test_operator_app_shell_exposes_required_pages() -> None:
     assert record_page.panel_ids == ("recorder_review",)
     approvals_page = next(page for page in shell.pages if page.page_id == "approvals")
     assert approvals_page.panel_ids == ("approval_dialog",)
+    trace_page = next(page for page in shell.pages if page.page_id == "trace_viewer")
+    assert trace_page.panel_ids == ("trace_timeline",)
     assert shell.metadata()["pages"]
 
 
@@ -157,3 +161,37 @@ def test_recorder_review_panel_tracks_generated_yaml_and_evidence(
     assert "Recorder Review" in text
     assert "Generated YAML" in text
     assert "Search box, Submit" in text
+
+
+def test_trace_viewer_timeline_tracks_evidence_paths_and_reasoning(
+    tmp_path: Path,
+) -> None:
+    state = TraceViewerTimelineState(
+        video_path=tmp_path / "proof-video.mp4",
+        screenshot_paths=(tmp_path / "before.png", tmp_path / "after.png"),
+        action_log_path=tmp_path / "action-log.jsonl",
+        candidate_reasoning=("selected candidate-1", "rejected candidate-2"),
+        state_delta=("visible_text_changed",),
+        final_report_path=tmp_path / "final-report.json",
+        status="loaded",
+    )
+
+    metadata = state.metadata()
+    text = render_trace_viewer_timeline_text(state)
+
+    assert metadata["video_path"] == str(tmp_path / "proof-video.mp4")
+    assert metadata["screenshot_paths"] == [
+        str(tmp_path / "before.png"),
+        str(tmp_path / "after.png"),
+    ]
+    assert metadata["action_log_path"] == str(tmp_path / "action-log.jsonl")
+    assert metadata["candidate_reasoning"] == [
+        "selected candidate-1",
+        "rejected candidate-2",
+    ]
+    assert metadata["state_delta"] == ["visible_text_changed"]
+    assert metadata["final_report_path"] == str(tmp_path / "final-report.json")
+    assert metadata["status"] == "loaded"
+    assert "Trace Timeline" in text
+    assert "proof-video.mp4" in text
+    assert "selected candidate-1" in text

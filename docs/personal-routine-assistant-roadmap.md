@@ -478,7 +478,7 @@ abuse, and hidden automation are not supported.
       evidence, content fingerprint, and approve/deny actions.
 - [x] Add recorder review UI with generated YAML, selected targets, screenshots,
       and verification suggestions.
-- [ ] Add trace viewer timeline with video, screenshots, action log, candidate
+- [x] Add trace viewer timeline with video, screenshots, action log, candidate
       reasoning, state delta, and final report.
 - [ ] Add settings for trace root, screenshots, video capture, Ollama enablement,
       emergency hotkey, default activity profile, and proof mode.

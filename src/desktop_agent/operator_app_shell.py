@@ -124,6 +124,34 @@ class RecorderReviewPanelState:
         }
 
 
+@dataclass(frozen=True)
+class TraceViewerTimelineState:
+    """Trace viewer timeline fields for reviewing local evidence."""
+
+    video_path: Path | None = None
+    screenshot_paths: tuple[Path, ...] = ()
+    action_log_path: Path | None = None
+    candidate_reasoning: tuple[str, ...] = ()
+    state_delta: tuple[str, ...] = ()
+    final_report_path: Path | None = None
+    status: str = "empty"
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "video_path": str(self.video_path) if self.video_path else None,
+            "screenshot_paths": [str(path) for path in self.screenshot_paths],
+            "action_log_path": (
+                str(self.action_log_path) if self.action_log_path else None
+            ),
+            "candidate_reasoning": list(self.candidate_reasoning),
+            "state_delta": list(self.state_delta),
+            "final_report_path": (
+                str(self.final_report_path) if self.final_report_path else None
+            ),
+            "status": self.status,
+        }
+
+
 def operator_app_shell_spec() -> OperatorAppShell:
     """Return the Phase 8 native app shell page contract."""
     pages = (
@@ -159,6 +187,7 @@ def operator_app_shell_spec() -> OperatorAppShell:
             page_id="trace_viewer",
             title="Trace Viewer",
             purpose="Inspect screenshots, action logs, evidence, and reports.",
+            panel_ids=("trace_timeline",),
         ),
         OperatorAppPage(
             page_id="settings",
@@ -238,6 +267,31 @@ def render_recorder_review_text(state: RecorderReviewPanelState) -> str:
             f"- Screenshots: {screenshots}",
             "- Verification suggestions: "
             f"{', '.join(state.verification_suggestions) or 'none'}",
+        ],
+    ) + "\n"
+
+
+def render_trace_viewer_timeline_text(state: TraceViewerTimelineState) -> str:
+    """Render trace timeline evidence for diagnostics and tests."""
+    video = str(state.video_path) if state.video_path else "none"
+    action_log = str(state.action_log_path) if state.action_log_path else "none"
+    final_report = str(state.final_report_path) if state.final_report_path else "none"
+    screenshots = (
+        ", ".join(str(path) for path in state.screenshot_paths)
+        if state.screenshot_paths
+        else "none"
+    )
+    return "\n".join(
+        [
+            "Trace Timeline",
+            f"- Status: {state.status}",
+            f"- Video: {video}",
+            f"- Screenshots: {screenshots}",
+            f"- Action log: {action_log}",
+            "- Candidate reasoning: "
+            f"{', '.join(state.candidate_reasoning) or 'none'}",
+            f"- State delta: {', '.join(state.state_delta) or 'none'}",
+            f"- Final report: {final_report}",
         ],
     ) + "\n"
 
@@ -325,5 +379,13 @@ def _page_widget(qt_widgets: Any, page: OperatorAppPage) -> Any:
         layout.addWidget(qt_widgets.QLabel("Selected targets: pending"))
         layout.addWidget(qt_widgets.QLabel("Screenshots: pending"))
         layout.addWidget(qt_widgets.QLabel("Verification suggestions: pending"))
+    if "trace_timeline" in page.panel_ids:
+        layout.addWidget(qt_widgets.QLabel("Trace Timeline"))
+        layout.addWidget(qt_widgets.QLabel("Video: pending"))
+        layout.addWidget(qt_widgets.QLabel("Screenshots: pending"))
+        layout.addWidget(qt_widgets.QLabel("Action log: pending"))
+        layout.addWidget(qt_widgets.QLabel("Candidate reasoning: pending"))
+        layout.addWidget(qt_widgets.QLabel("State delta: pending"))
+        layout.addWidget(qt_widgets.QLabel("Final report: pending"))
     layout.addStretch(1)
     return widget
