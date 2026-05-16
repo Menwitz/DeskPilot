@@ -167,7 +167,7 @@ abuse, and hidden automation are not supported.
 ### Goals
 
 - [x] Make each real input action auditable from intent to observed result.
-- [ ] Explain target choice, competing candidates, input sent, and verification
+- [x] Explain target choice, competing candidates, input sent, and verification
       outcome.
 - [ ] Make trace replay useful for debugging without rerunning the task.
 
