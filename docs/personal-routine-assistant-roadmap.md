@@ -138,7 +138,7 @@ abuse, and hidden automation are not supported.
 - [x] Add `desktop-agent proof native-fixture` for real native Windows app proof.
 - [x] Add `desktop-agent proof mixed-fixture` for browser-to-native handoff
       proof.
-- [ ] Add `desktop-agent proof recovery-fixture` for delayed, duplicated,
+- [x] Add `desktop-agent proof recovery-fixture` for delayed, duplicated,
       disabled, occluded, or moving target proof.
 - [ ] Add local Windows video capture support and store recordings in the trace
       directory.

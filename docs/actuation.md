@@ -141,6 +141,17 @@ The command opens Edge, opens Notepad, types native text, switches back to Edge
 with `Alt+Tab`, and writes proof artifacts. See
 [Mixed Fixture Proof](mixed-fixture-proof.md) for the runbook.
 
+For a delayed-control recovery proof, run:
+
+```powershell
+uv run desktop-agent proof recovery-fixture
+```
+
+The command opens Edge, clicks a disabled local fixture target, waits for the
+target to become ready, retries the click, verifies the result text, and writes
+recovery metadata into reports and monitoring logs. See
+[Recovery Fixture Proof](recovery-fixture-proof.md) for the runbook.
+
 For a compact Windows smoke checklist, run:
 
 ```powershell

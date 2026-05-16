@@ -17,9 +17,11 @@ from desktop_agent.mouse_demo import (
     _run_linkedin_sequence,
     _run_mixed_fixture_sequence,
     _run_native_fixture_sequence,
+    _run_recovery_fixture_sequence,
     _run_windows_smoke_sequence,
     _write_browser_fixture_html,
     _write_proof_manifest,
+    _write_recovery_fixture_html,
     _write_report,
     run_browser_fixture,
     run_input_demo,
@@ -27,6 +29,7 @@ from desktop_agent.mouse_demo import (
     run_mixed_fixture,
     run_mouse_demo,
     run_native_fixture,
+    run_recovery_fixture,
     run_windows_smoke_checklist,
 )
 from desktop_agent.screen import ScreenObservation
@@ -432,6 +435,79 @@ def test_mixed_fixture_sequence_switches_between_edge_and_notepad(
     assert observer.observe_count == len(steps)
 
 
+def test_recovery_fixture_sequence_waits_and_retries_delayed_control(
+    tmp_path: Path,
+) -> None:
+    backend = FakeInputBackend(start_position=(0, 0))
+    controller = RealInputController(backend, _instant_demo_profile())
+    observer = FakeScreenObserver(active_window_title="Recovery Fixture - Edge")
+    recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=tmp_path,
+        observer=observer,
+    )
+    fixture_path = tmp_path / "recovery-fixture.html"
+
+    steps = _run_recovery_fixture_sequence(
+        controller,
+        (0, 0, 1280, 720),
+        fixture_path=fixture_path,
+        fixture_url=fixture_path.as_uri(),
+        page_load_seconds=0,
+        recovery_wait_seconds=0.25,
+        result_text="Recovery fixture clicked",
+        evidence_recorder=recorder,
+        launch_edge=lambda initial_url: MouseDemoStep(
+            "open-edge",
+            "launch_application",
+            {"initial_url": initial_url},
+        ),
+    )
+
+    recovery_steps = [
+        step for step in steps if isinstance(step.metadata.get("recovery"), dict)
+    ]
+    typed_text = "".join(
+        event.text or "" for event in backend.events if event.kind == "type_text"
+    )
+    assert [step.step_id for step in steps] == [
+        "write-recovery-fixture",
+        "open-edge",
+        "probe-disabled-recovery-target",
+        "wait-for-recovery-target-ready",
+        "retry-recovery-target",
+        "open-browser-find",
+        "type-recovery-result-search",
+        "confirm-recovery-result-search",
+        "close-browser-find",
+        "final-cursor-readback",
+    ]
+    assert [step.step_id for step in recovery_steps] == [
+        "write-recovery-fixture",
+        "probe-disabled-recovery-target",
+        "wait-for-recovery-target-ready",
+        "retry-recovery-target",
+    ]
+    assert typed_text == "Recovery fixture clicked"
+    assert any(event.kind == "mouse_down" for event in backend.events)
+    assert all("post_action_evidence" in step.metadata for step in steps)
+    assert observer.observe_count == len(steps)
+
+
+def test_recovery_fixture_html_enables_target_after_delay(tmp_path: Path) -> None:
+    fixture_path = _write_recovery_fixture_html(
+        tmp_path,
+        ready_delay_seconds=1.25,
+        result_text="clicked",
+    )
+
+    html = fixture_path.read_text(encoding="utf-8")
+    assert "DeskPilot Recovery Fixture" in html
+    assert "disabled" in html
+    assert "1250" in html
+    assert json.dumps("clicked") in html
+
+
 def test_windows_smoke_sequence_checks_cursor_notepad_edge_and_trace() -> None:
     backend = FakeInputBackend(start_position=(0, 0))
     controller = RealInputController(backend, _instant_demo_profile())
@@ -526,6 +602,16 @@ def test_run_mixed_fixture_requires_windows(
 
     with pytest.raises(MouseDemoError, match="proof mixed-fixture requires Windows"):
         run_mixed_fixture(trace_root=tmp_path)
+
+
+def test_run_recovery_fixture_requires_windows(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("desktop_agent.mouse_demo.sys.platform", "darwin")
+
+    with pytest.raises(MouseDemoError, match="proof recovery-fixture requires Windows"):
+        run_recovery_fixture(trace_root=tmp_path)
 
 
 def test_run_windows_smoke_checklist_requires_windows(

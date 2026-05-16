@@ -86,6 +86,7 @@ def test_windows_proof_docs_cover_manual_evidence_review() -> None:
         "demo-linkedin",
         "mixed-fixture",
         "native-fixture",
+        "recovery-fixture",
         "windows-smoke-checklist",
         "video",
         "trace",

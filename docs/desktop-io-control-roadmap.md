@@ -145,7 +145,7 @@ Acceptance:
 - [ ] Native app proof: interact with a Windows settings or calculator flow.
 - [ ] Mixed proof: switch between Edge and Notepad with real Alt+Tab or taskbar
       selection.
-- [ ] Recovery proof: handle a loading delay, stale observation, or missed
+- [x] Recovery proof: handle a loading delay, stale observation, or missed
       target with reobserve and retry.
 - [ ] Audit proof: replay a trace and explain every input/output transition.
 

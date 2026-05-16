@@ -670,6 +670,89 @@ def test_cli_proof_mixed_fixture_prints_trace_report(
     assert "step switch-back-to-browser: press_chord" in output
 
 
+def test_cli_proof_recovery_fixture_prints_recovery_summary(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+    monkeypatch: MonkeyPatch,
+) -> None:
+    from desktop_agent.mouse_demo import MouseDemoReport, MouseDemoStep
+
+    def fake_run_recovery_fixture(
+        *,
+        trace_root: Path,
+        random_seed: int,
+        movement_smoothness: float,
+        countdown_seconds: float,
+        page_load_seconds: float,
+        ready_delay_seconds: float,
+        recovery_wait_seconds: float,
+        result_text: str,
+    ) -> MouseDemoReport:
+        assert trace_root == tmp_path
+        assert random_seed == 144
+        assert movement_smoothness == 0.65
+        assert countdown_seconds == 0
+        assert page_load_seconds == 0
+        assert ready_delay_seconds == 0.5
+        assert recovery_wait_seconds == 0.75
+        assert result_text == "clicked"
+        return MouseDemoReport(
+            status="passed",
+            trace_dir=tmp_path / "trace",
+            report_path=tmp_path / "trace" / "recovery-fixture-report.json",
+            proof_manifest_path=tmp_path / "trace" / "proof-manifest.json",
+            steps=(
+                MouseDemoStep(
+                    "retry-recovery-target",
+                    "click",
+                    {
+                        "recovery": {
+                            "reason": "disabled_control",
+                            "action": "retry_after_wait",
+                        },
+                    },
+                ),
+            ),
+        )
+
+    monkeypatch.setattr(
+        "desktop_agent.cli.run_recovery_fixture",
+        fake_run_recovery_fixture,
+    )
+
+    status = main(
+        [
+            "proof",
+            "recovery-fixture",
+            "--trace-root",
+            str(tmp_path),
+            "--random-seed",
+            "144",
+            "--movement-smoothness",
+            "0.65",
+            "--countdown-seconds",
+            "0",
+            "--page-load-seconds",
+            "0",
+            "--ready-delay-seconds",
+            "0.5",
+            "--recovery-wait-seconds",
+            "0.75",
+            "--result-text",
+            "clicked",
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "status: passed" in output
+    assert f"manifest: {tmp_path / 'trace' / 'proof-manifest.json'}" in output
+    assert (
+        "recovery retry-recovery-target: disabled_control (retry_after_wait)"
+        in output
+    )
+
+
 def test_cli_windows_smoke_checklist_prints_checks(
     tmp_path: Path,
     capsys: CaptureFixture[str],

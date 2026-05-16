@@ -127,6 +127,26 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Reviewer confirms the proof uses no browser API, app API, accessibility
       write API, or synthetic window switch.
 
+## `desktop-agent proof recovery-fixture`
+
+- [ ] Command recorded:
+      `desktop-agent proof recovery-fixture --trace-root traces
+      --countdown-seconds 5`.
+- [ ] Video shows Microsoft Edge opening the generated recovery fixture.
+- [ ] Video shows the recovery target initially disabled.
+- [ ] Video shows the first probe click before the target is ready.
+- [ ] Video shows the wait interval and target becoming ready.
+- [ ] Video shows the retry click succeeding.
+- [ ] Video shows Edge Find searching for the configured result text.
+- [ ] `recovery-fixture.html` exists in the trace directory.
+- [ ] `recovery-fixture-report.json` exists and has `status: passed`.
+- [ ] `action-log.jsonl` contains recovery reason, policy, action, retry index,
+      probe, wait, retry, browser Find, and cursor-readback monitoring records.
+- [ ] Post-action screenshots show disabled, ready, retried, and verified states
+      where visible.
+- [ ] Reviewer confirms the proof uses no browser API, DOM automation, or
+      synthetic cursor.
+
 ## `desktop-agent windows-smoke-checklist`
 
 - [ ] Command recorded:
@@ -146,8 +166,7 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 
 Use the same global and bundle checks for each fixture command as it lands.
 
-- [ ] `desktop-agent proof recovery-fixture` evidence shows delayed, stale,
-      duplicated, disabled, occluded, or moving-target recovery behavior.
+All current Phase 1 proof commands now have command-specific evidence checks.
 
 ## Review Outcome
 

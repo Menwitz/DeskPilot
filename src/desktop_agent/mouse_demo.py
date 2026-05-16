@@ -1023,6 +1023,112 @@ def run_mixed_fixture(
     )
 
 
+def run_recovery_fixture(
+    *,
+    trace_root: Path = Path("traces"),
+    random_seed: int = 20260515,
+    movement_smoothness: float = 0.85,
+    countdown_seconds: float = 3.0,
+    page_load_seconds: float = 0.5,
+    ready_delay_seconds: float = 1.5,
+    recovery_wait_seconds: float = 2.0,
+    result_text: str = "Recovery fixture clicked",
+) -> MouseDemoReport:
+    """Run a delayed disabled-control proof with visible wait and retry."""
+
+    if sys.platform != "win32":
+        raise MouseDemoError("proof recovery-fixture requires Windows desktop input")
+    if not 0 <= movement_smoothness <= 1:
+        raise MouseDemoError("movement_smoothness must be between 0 and 1")
+    if countdown_seconds < 0:
+        raise MouseDemoError("countdown_seconds must not be negative")
+    if page_load_seconds < 0:
+        raise MouseDemoError("page_load_seconds must not be negative")
+    if ready_delay_seconds < 0:
+        raise MouseDemoError("ready_delay_seconds must not be negative")
+    if recovery_wait_seconds < 0:
+        raise MouseDemoError("recovery_wait_seconds must not be negative")
+    if not result_text:
+        raise MouseDemoError("result_text must not be empty")
+
+    _set_process_dpi_aware()
+    trace_dir = _prepare_trace_dir(trace_root, "recovery-fixture")
+    fixture_path = _write_recovery_fixture_html(
+        trace_dir,
+        ready_delay_seconds=ready_delay_seconds,
+        result_text=result_text,
+    )
+    fixture_url = fixture_path.resolve().as_uri()
+    profile = _demo_actuation_profile(random_seed, movement_smoothness)
+    backend = WindowsInputBackend(move_mode="absolute")
+    controller = RealInputController(backend, profile)
+    evidence_recorder = PostActionEvidenceRecorder(
+        backend=backend,
+        trace_dir=trace_dir,
+    )
+    steps: list[MouseDemoStep] = []
+    status = "passed"
+    reason: str | None = None
+    started_at = _timestamp()
+    screen_bounds: tuple[int, int, int, int] | None = None
+
+    try:
+        _countdown(countdown_seconds)
+        screen_bounds = _windows_virtual_screen_bounds()
+        steps.extend(
+            _run_recovery_fixture_sequence(
+                controller,
+                screen_bounds,
+                fixture_path=fixture_path,
+                fixture_url=fixture_url,
+                page_load_seconds=page_load_seconds,
+                recovery_wait_seconds=recovery_wait_seconds,
+                result_text=result_text,
+                evidence_recorder=evidence_recorder,
+            )
+        )
+    except Exception as exc:  # pragma: no cover - exercised manually on Windows.
+        status = "failed"
+        reason = str(exc)
+
+    report_path = _write_report(
+        trace_dir,
+        tuple(steps),
+        status,
+        reason,
+        report_name="recovery-fixture-report.json",
+    )
+    proof_manifest_path = _write_proof_manifest(
+        trace_dir,
+        proof_name="recovery-fixture",
+        command=_recovery_fixture_command(
+            trace_root,
+            random_seed,
+            movement_smoothness,
+            countdown_seconds,
+            page_load_seconds,
+            ready_delay_seconds,
+            recovery_wait_seconds,
+            result_text,
+        ),
+        status=status,
+        reason=reason,
+        started_at=started_at,
+        completed_at=_timestamp(),
+        report_path=report_path,
+        steps=tuple(steps),
+        monitor_bounds=screen_bounds,
+    )
+    return MouseDemoReport(
+        status=status,
+        reason=reason,
+        trace_dir=trace_dir,
+        report_path=report_path,
+        steps=tuple(steps),
+        proof_manifest_path=proof_manifest_path,
+    )
+
+
 def run_windows_smoke_checklist(
     *,
     trace_root: Path = Path("traces"),
@@ -1439,6 +1545,115 @@ def _run_mixed_fixture_sequence(
     return tuple(steps)
 
 
+def _run_recovery_fixture_sequence(
+    controller: RealInputController,
+    screen_bounds: tuple[int, int, int, int],
+    *,
+    fixture_path: Path,
+    fixture_url: str,
+    page_load_seconds: float,
+    recovery_wait_seconds: float,
+    result_text: str,
+    evidence_recorder: PostActionEvidenceRecorder | None = None,
+    launch_edge: Callable[[str], MouseDemoStep] | None = None,
+) -> tuple[MouseDemoStep, ...]:
+    steps: list[MouseDemoStep] = []
+    edge_launcher = launch_edge or _launch_edge
+    target_point = _screen_point(screen_bounds, 0.50, 0.52)
+
+    _record_step(
+        steps,
+        MouseDemoStep(
+            "write-recovery-fixture",
+            "write_fixture",
+            {
+                "fixture_path": str(fixture_path),
+                "fixture_url": fixture_url,
+                "recovery_reason": "disabled_control",
+                "recovery_policy": "wait_then_retry_same_target",
+                "recovery": {
+                    "reason": "disabled_control",
+                    "policy": "wait_then_retry_same_target",
+                    "action": "prepare_delayed_control_fixture",
+                    "retry_index": 0,
+                    "recovery_actions": [
+                        "probe_disabled_control",
+                        "wait_for_ready_state",
+                        "retry_same_target",
+                        "verify_result_text",
+                    ],
+                },
+            },
+        ),
+        evidence_recorder,
+    )
+    _record_step(steps, edge_launcher(fixture_url), evidence_recorder)
+    controller.pause(page_load_seconds)
+    _record_step(
+        steps,
+        _with_recovery_metadata(
+            controller.click(
+                "probe-disabled-recovery-target",
+                target_point,
+                target_size_pixels=(260.0, 64.0),
+            ),
+            reason="disabled_control",
+            policy="wait_then_retry_same_target",
+            action="probe_before_ready",
+            retry_index=0,
+        ),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        _recovery_wait_step(recovery_wait_seconds),
+        evidence_recorder,
+    )
+    controller.pause(recovery_wait_seconds)
+    _record_step(
+        steps,
+        _with_recovery_metadata(
+            controller.click(
+                "retry-recovery-target",
+                target_point,
+                target_size_pixels=(260.0, 64.0),
+            ),
+            reason="disabled_control",
+            policy="wait_then_retry_same_target",
+            action="retry_after_wait",
+            retry_index=1,
+        ),
+        evidence_recorder,
+    )
+    controller.pause(0.40)
+    _record_step(
+        steps,
+        controller.press_chord("open-browser-find", "ctrl+f"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.type_text("type-recovery-result-search", result_text),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.press_chord("confirm-recovery-result-search", "enter"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.press_chord("close-browser-find", "esc"),
+        evidence_recorder,
+    )
+    _record_step(
+        steps,
+        controller.current_position_step("final-cursor-readback"),
+        evidence_recorder,
+    )
+    return tuple(steps)
+
+
 def _run_windows_smoke_sequence(
     controller: RealInputController,
     *,
@@ -1618,6 +1833,88 @@ def _write_browser_fixture_html(trace_dir: Path, result_text: str) -> Path:
     return fixture_path
 
 
+def _write_recovery_fixture_html(
+    trace_dir: Path,
+    *,
+    ready_delay_seconds: float,
+    result_text: str,
+) -> Path:
+    fixture_path = trace_dir / "recovery-fixture.html"
+    js_result_text = json.dumps(result_text)
+    ready_delay_ms = round(ready_delay_seconds * 1000)
+    # The control starts disabled so the proof can record a visible failed probe
+    # followed by a timed retry after the fixture enables the target.
+    fixture_path.write_text(
+        "\n".join(
+            [
+                "<!doctype html>",
+                '<html lang="en">',
+                "<head>",
+                '  <meta charset="utf-8">',
+                "  <title>DeskPilot Recovery Fixture</title>",
+                "  <style>",
+                "    body {",
+                "      margin: 0;",
+                "      min-height: 100vh;",
+                "      display: grid;",
+                "      place-items: center;",
+                "      font-family: Segoe UI, Arial, sans-serif;",
+                "      background: #f8fafc;",
+                "      color: #172033;",
+                "    }",
+                "    main {",
+                "      width: min(560px, calc(100vw - 96px));",
+                "      padding: 32px;",
+                "      border: 1px solid #cbd5e1;",
+                "      border-radius: 8px;",
+                "      background: #ffffff;",
+                "      text-align: center;",
+                "    }",
+                "    h1 { font-size: 24px; margin: 0 0 16px; }",
+                "    button {",
+                "      min-width: 260px;",
+                "      min-height: 56px;",
+                "      border: 0;",
+                "      border-radius: 6px;",
+                "      background: #2563eb;",
+                "      color: white;",
+                "      font-size: 18px;",
+                "      font-weight: 700;",
+                "    }",
+                "    button:disabled { background: #94a3b8; color: #f8fafc; }",
+                "    #status { margin-top: 18px; font-weight: 700; }",
+                "  </style>",
+                "</head>",
+                "<body>",
+                "  <main>",
+                "    <h1>DeskPilot Recovery Fixture</h1>",
+                '    <button id="recovery-target" type="button" disabled>',
+                "      Waiting for recovery target",
+                "    </button>",
+                '    <p id="status" aria-live="polite">Target disabled</p>',
+                "  </main>",
+                "  <script>",
+                "    const target = document.getElementById('recovery-target');",
+                "    const status = document.getElementById('status');",
+                "    target.addEventListener('click', () => {",
+                f"      status.textContent = {js_result_text};",
+                "    });",
+                "    window.setTimeout(() => {",
+                "      target.disabled = false;",
+                "      target.textContent = 'Ready recovery target';",
+                "      status.textContent = 'Recovery target ready';",
+                f"    }}, {ready_delay_ms});",
+                "  </script>",
+                "</body>",
+                "</html>",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return fixture_path
+
+
 def _launch_notepad() -> MouseDemoStep:
     process = subprocess.Popen(["notepad.exe"])
     return MouseDemoStep(
@@ -1673,6 +1970,52 @@ def _record_step(
         steps.append(step)
         return
     steps.append(evidence_recorder.attach(step))
+
+
+def _with_recovery_metadata(
+    step: MouseDemoStep,
+    *,
+    reason: str,
+    policy: str,
+    action: str,
+    retry_index: int,
+) -> MouseDemoStep:
+    metadata = dict(step.metadata)
+    metadata["recovery"] = {
+        "reason": reason,
+        "policy": policy,
+        "action": action,
+        "retry_index": retry_index,
+        "recovery_actions": [
+            "probe_disabled_control",
+            "wait_for_ready_state",
+            "retry_same_target",
+            "verify_result_text",
+        ],
+    }
+    return MouseDemoStep(step.step_id, step.action, metadata)
+
+
+def _recovery_wait_step(seconds: float) -> MouseDemoStep:
+    return MouseDemoStep(
+        "wait-for-recovery-target-ready",
+        "wait",
+        {
+            "duration_seconds": seconds,
+            "recovery": {
+                "reason": "disabled_control",
+                "policy": "wait_then_retry_same_target",
+                "action": "wait_for_ready_state",
+                "retry_index": 0,
+                "recovery_actions": [
+                    "probe_disabled_control",
+                    "wait_for_ready_state",
+                    "retry_same_target",
+                    "verify_result_text",
+                ],
+            },
+        },
+    )
 
 
 def _smoke_step(
@@ -1831,6 +2174,7 @@ def _write_demo_action_log(
                     "step_id": step.step_id,
                     "action": step.action,
                     "post_action_evidence": step.metadata.get("post_action_evidence"),
+                    "step_metadata": step.metadata,
                 },
             }
             file.write(json.dumps(payload, sort_keys=True) + "\n")
@@ -2052,6 +2396,39 @@ def _mixed_fixture_command(
         browser_find_text,
         "--page-load-seconds",
         str(page_load_seconds),
+    )
+
+
+def _recovery_fixture_command(
+    trace_root: Path,
+    random_seed: int,
+    movement_smoothness: float,
+    countdown_seconds: float,
+    page_load_seconds: float,
+    ready_delay_seconds: float,
+    recovery_wait_seconds: float,
+    result_text: str,
+) -> tuple[str, ...]:
+    return (
+        "desktop-agent",
+        "proof",
+        "recovery-fixture",
+        "--trace-root",
+        str(trace_root),
+        "--random-seed",
+        str(random_seed),
+        "--movement-smoothness",
+        str(movement_smoothness),
+        "--countdown-seconds",
+        str(countdown_seconds),
+        "--page-load-seconds",
+        str(page_load_seconds),
+        "--ready-delay-seconds",
+        str(ready_delay_seconds),
+        "--recovery-wait-seconds",
+        str(recovery_wait_seconds),
+        "--result-text",
+        result_text,
     )
 
 
