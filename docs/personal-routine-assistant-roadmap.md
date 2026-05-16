@@ -486,7 +486,7 @@ abuse, and hidden automation are not supported.
 
 ### Acceptance Criteria
 
-- [ ] A user can run a routine without CLI.
+- [x] A user can run a routine without CLI.
 - [ ] A user can approve or deny a sensitive step in the app.
 - [ ] A user can pause, resume, cancel, and stop a run.
 - [ ] A user can record, review, save, and rerun a simple routine.

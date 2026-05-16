@@ -11,6 +11,7 @@ from desktop_agent.operator_app_state import (
     OperatorAppController,
     OperatorAppStateError,
 )
+from desktop_agent.operator_services import OperatorRunStartResult
 from desktop_agent.routines import RoutineExecutionGate
 
 
@@ -33,6 +34,7 @@ def test_operator_app_controller_transitions_run_state_with_fake_runner() -> Non
     canceled = controller.cancel_run()
 
     assert running.current_page_id == "dashboard"
+    assert running.live_run.run_id == "run-0001"
     assert running.live_run.current_routine_id == "browser.search"
     assert running.live_run.status == "running"
     assert running.live_run.next_action == "observe_screen"
@@ -143,4 +145,24 @@ class _FakeRunnerService:
                 allowed=False,
                 reason="unknown_routine_id",
             ),
+        )
+
+    def start_routine(self, routine_id: str) -> OperatorRunStartResult:
+        gate = self.execution_gate(routine_id)
+        if not gate.allowed:
+            return OperatorRunStartResult(
+                run_id=None,
+                routine_id=routine_id,
+                status="blocked",
+                reason=gate.reason,
+                next_action=None,
+                execution_gate=gate,
+            )
+        return OperatorRunStartResult(
+            run_id="run-0001",
+            routine_id=routine_id,
+            status="running",
+            reason="operator_app_start",
+            next_action="observe_screen",
+            execution_gate=gate,
         )

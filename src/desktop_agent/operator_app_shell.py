@@ -54,6 +54,7 @@ class OperatorAppShell:
 class LiveRunPanelState:
     """Live run panel fields shown by the operator app."""
 
+    run_id: str | None = None
     current_routine_id: str | None = None
     current_step_id: str | None = None
     screenshot_path: Path | None = None
@@ -70,6 +71,7 @@ class LiveRunPanelState:
 
     def metadata(self) -> dict[str, object]:
         return {
+            "run_id": self.run_id,
             "current_routine_id": self.current_routine_id,
             "current_step_id": self.current_step_id,
             "screenshot_path": (
@@ -332,6 +334,7 @@ def render_live_run_panel_text(state: LiveRunPanelState | None = None) -> str:
     return "\n".join(
         [
             "Live Run",
+            f"- Run ID: {active_state.run_id or 'none'}",
             f"- Status: {active_state.status}",
             f"- Current routine: {active_state.current_routine_id or 'none'}",
             f"- Current step: {active_state.current_step_id or 'none'}",

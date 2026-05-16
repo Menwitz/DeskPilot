@@ -97,6 +97,7 @@ def test_operator_app_describe_shell_prints_pages(
 
 def test_live_run_panel_state_tracks_run_status_fields(tmp_path: Path) -> None:
     state = LiveRunPanelState(
+        run_id="run-0001",
         current_routine_id="browser.search",
         current_step_id="type-query",
         screenshot_path=tmp_path / "screen.png",
@@ -109,6 +110,7 @@ def test_live_run_panel_state_tracks_run_status_fields(tmp_path: Path) -> None:
     metadata = state.metadata()
     text = render_live_run_panel_text(state)
 
+    assert metadata["run_id"] == "run-0001"
     assert metadata["current_routine_id"] == "browser.search"
     assert metadata["current_step_id"] == "type-query"
     assert metadata["screenshot_path"] == str(tmp_path / "screen.png")
@@ -123,6 +125,7 @@ def test_live_run_panel_state_tracks_run_status_fields(tmp_path: Path) -> None:
         "emergency_stop",
     ]
     assert "Screenshot preview" in text
+    assert "Run ID: run-0001" in text
     assert "Stop controls: pause, resume, cancel, emergency_stop" in text
 
 

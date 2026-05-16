@@ -75,15 +75,16 @@ class OperatorAppController:
         return self.state
 
     def start_routine(self, routine_id: str) -> OperatorAppState:
-        gate = self._runner.execution_gate(routine_id)
-        if not gate.allowed:
+        run = self._runner.start_routine(routine_id)
+        if run.status != "running":
             self.state = replace(
                 self.state,
                 current_page_id="dashboard",
                 live_run=LiveRunPanelState(
+                    run_id=run.run_id,
                     current_routine_id=routine_id,
-                    status="blocked",
-                    next_action=gate.reason,
+                    status=run.status,
+                    next_action=run.reason,
                 ),
             )
             return self.state
@@ -91,9 +92,10 @@ class OperatorAppController:
             self.state,
             current_page_id="dashboard",
             live_run=LiveRunPanelState(
+                run_id=run.run_id,
                 current_routine_id=routine_id,
-                status="running",
-                next_action="observe_screen",
+                status=run.status,
+                next_action=run.next_action,
             ),
         )
         return self.state

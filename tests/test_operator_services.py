@@ -40,7 +40,10 @@ def test_local_operator_services_expose_catalog_runner_approvals_and_queue(
     approval_rows = services.approvals.routines_requiring_approval()
     gate = services.runner.execution_gate("browser.search")
     unknown_gate = services.runner.execution_gate("browser.unknown")
+    run = services.runner.start_routine("browser.search")
+    blocked_run = services.runner.start_routine("browser.unknown")
     queue_metadata = services.scheduler.queue_metadata()
+    queue_entries = cast(list[dict[str, object]], queue_metadata["run_queue_entries"])
 
     assert [item.routine_id for item in all_routines] == [
         "browser.search",
@@ -51,7 +54,14 @@ def test_local_operator_services_expose_catalog_runner_approvals_and_queue(
     assert gate.allowed is True
     assert gate.reason == "validated_catalog_routine"
     assert unknown_gate.allowed is False
-    assert queue_metadata["run_queue_size"] == 0
+    assert run.run_id == "run-0001"
+    assert run.status == "running"
+    assert run.next_action == "observe_screen"
+    assert blocked_run.status == "blocked"
+    assert blocked_run.reason == "unknown_routine_id"
+    assert queue_metadata["run_queue_size"] == 1
+    assert queue_entries[0]["routine_id"] == "browser.search"
+    assert queue_entries[0]["status"] == "running"
     assert "generate_yaml" in services.recorder.capabilities()
     assert services.routine_packs.list_packs() == ()
 

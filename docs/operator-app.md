@@ -20,9 +20,9 @@ The Phase 8 shell defines these pages:
 - Help: show local guidance, safety boundaries, and diagnostics.
 
 The Dashboard includes the first live run panel. Its state contract tracks the
-current routine, current step, screenshot preview path, selected target, next
-action, elapsed seconds, run status, and stop controls: pause, resume, cancel,
-and emergency stop.
+run ID, current routine, current step, screenshot preview path, selected target,
+next action, elapsed seconds, run status, and stop controls: pause, resume,
+cancel, and emergency stop.
 
 The Approvals page includes the approval dialog contract. It shows routine ID,
 step ID, risk class, checkpoint evidence, content fingerprint, current status,
@@ -74,8 +74,11 @@ project modules:
 
 - Catalog service: list, search, and inspect routine definitions.
 - Recorder service: expose supported recording operations.
-- Runner service: apply the validated routine execution gate before runs.
-- Scheduler service: expose immutable run queue metadata.
+- Runner service: apply the validated routine execution gate, start approved
+  app run requests, and publish the first `observe_screen` action for the live
+  run panel.
+- Scheduler service: expose shared run queue metadata so app-started runs are
+  visible in monitoring without using CLI commands.
 - Approval service: list active routines requiring operator approval.
 - Trace service: list local trace directories and read JSON reports.
 - Routine-pack service: list installed packs, install validated local packs,

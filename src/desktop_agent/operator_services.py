@@ -72,6 +72,28 @@ class TraceSummary:
 
 
 @dataclass(frozen=True)
+class OperatorRunStartResult:
+    """Result of starting a routine through the local operator app boundary."""
+
+    run_id: str | None
+    routine_id: str
+    status: str
+    reason: str
+    next_action: str | None
+    execution_gate: RoutineExecutionGate
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "run_id": self.run_id,
+            "routine_id": self.routine_id,
+            "status": self.status,
+            "reason": self.reason,
+            "next_action": self.next_action,
+            "execution_gate": self.execution_gate.metadata(),
+        }
+
+
+@dataclass(frozen=True)
 class RoutinePackListItem:
     """Small routine-pack row for app install and removal views."""
 
@@ -118,6 +140,10 @@ class RunnerService(Protocol):
 
     def execution_gate(self, routine_id: str) -> RoutineExecutionGate:
         """Return whether a routine can enter the execution pipeline."""
+        ...
+
+    def start_routine(self, routine_id: str) -> OperatorRunStartResult:
+        """Start a local run request without shelling out to the CLI."""
         ...
 
 
@@ -222,6 +248,13 @@ class LocalOperatorServices:
     routine_packs: RoutinePackService
 
 
+class LocalRunQueueStore:
+    """Shared mutable queue store for runner and scheduler app services."""
+
+    def __init__(self, queue: RunQueue | None = None) -> None:
+        self.queue = queue or RunQueue()
+
+
 class LocalCatalogService:
     """Catalog service backed by routine pack YAML files."""
 
@@ -264,8 +297,14 @@ class LocalRecorderService:
 class LocalRunnerService:
     """Runner boundary that applies the catalog execution gate."""
 
-    def __init__(self, catalog_service: LocalCatalogService) -> None:
+    def __init__(
+        self,
+        catalog_service: LocalCatalogService,
+        *,
+        queue_store: LocalRunQueueStore | None = None,
+    ) -> None:
         self._catalog_service = catalog_service
+        self._queue_store = queue_store or LocalRunQueueStore()
 
     def execution_gate(self, routine_id: str) -> RoutineExecutionGate:
         return routine_execution_gate(
@@ -273,15 +312,50 @@ class LocalRunnerService:
             routine_id,
         )
 
+    def start_routine(self, routine_id: str) -> OperatorRunStartResult:
+        gate = self.execution_gate(routine_id)
+        if not gate.allowed:
+            return OperatorRunStartResult(
+                run_id=None,
+                routine_id=routine_id,
+                status="blocked",
+                reason=gate.reason,
+                next_action=None,
+                execution_gate=gate,
+            )
+        queued = self._queue_store.queue.enqueue(
+            routine_id,
+            reason="operator_app_start",
+        )
+        run_id = queued.entries[-1].id
+        self._queue_store.queue = queued.transition(
+            run_id,
+            "running",
+            reason="operator_app_start",
+        )
+        return OperatorRunStartResult(
+            run_id=run_id,
+            routine_id=routine_id,
+            status="running",
+            reason="operator_app_start",
+            next_action="observe_screen",
+            execution_gate=gate,
+        )
+
 
 class LocalSchedulerService:
     """Scheduler boundary backed by the immutable local run queue model."""
 
-    def __init__(self, queue: RunQueue | None = None) -> None:
-        self._queue = queue or RunQueue()
+    def __init__(
+        self,
+        queue_store: LocalRunQueueStore | RunQueue | None = None,
+    ) -> None:
+        if isinstance(queue_store, RunQueue):
+            queue_store = LocalRunQueueStore(queue_store)
+        self._queue_store = queue_store or LocalRunQueueStore()
 
     def queue_metadata(self) -> dict[str, object]:
-        return self._queue.metadata()
+        return self._queue_store.queue.metadata()
 
 
 class LocalApprovalService:
@@ -361,11 +435,12 @@ def default_local_operator_services(
 ) -> LocalOperatorServices:
     """Build the default local service bundle for the native app."""
     catalog = LocalCatalogService(routine_pack_root)
+    queue_store = LocalRunQueueStore()
     return LocalOperatorServices(
         catalog=catalog,
         recorder=LocalRecorderService(),
-        runner=LocalRunnerService(catalog),
-        scheduler=LocalSchedulerService(),
+        runner=LocalRunnerService(catalog, queue_store=queue_store),
+        scheduler=LocalSchedulerService(queue_store),
         approvals=LocalApprovalService(catalog),
         traces=LocalTraceService(trace_root),
         routine_packs=LocalRoutinePackService(routine_pack_root),
