@@ -57,6 +57,7 @@ redaction_policy:
   content_variables: fingerprint_only
   video: full
   reports: full
+  sensitive_zones: []
 ```
 
 ## Allowed Windows
@@ -86,6 +87,10 @@ their paths, approved step IDs, variable names, and fingerprints.
 and content variables represented by fingerprints. A project config supplies
 the global policy, routine definitions can carry a routine-level policy, and
 task `config.redaction_policy` can provide a run-level override.
+Set `screenshots: blur_sensitive_zones` with `sensitive_zones` entries to define
+coordinate blur masks for screenshot evidence. Each zone uses `id`, `x`, `y`,
+`width`, `height`, and an optional `reason`; actual redaction must still be
+requested by policy.
 
 ## Task Overrides
 

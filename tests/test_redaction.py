@@ -1,6 +1,7 @@
 from desktop_agent.redaction import (
     RedactionPolicy,
     redaction_policy_from_mapping,
+    screenshot_blur_masks,
     validate_redaction_policy,
 )
 
@@ -16,6 +17,7 @@ def test_redaction_policy_defaults_keep_full_local_evidence() -> None:
         "content_variables": "fingerprint_only",
         "video": "full",
         "reports": "full",
+        "sensitive_zones": [],
     }
     assert validate_redaction_policy(policy) == []
 
@@ -33,6 +35,38 @@ def test_redaction_policy_parses_partial_mapping_with_defaults() -> None:
     assert policy.screenshots == "full"
 
 
+def test_redaction_policy_builds_screenshot_blur_masks() -> None:
+    policy = redaction_policy_from_mapping(
+        {
+            "screenshots": "blur_sensitive_zones",
+            "sensitive_zones": [
+                {
+                    "id": "account-balance",
+                    "x": 10,
+                    "y": 20,
+                    "width": 200,
+                    "height": 40,
+                    "reason": "financial account balance",
+                },
+            ],
+        },
+    )
+
+    masks = screenshot_blur_masks(policy)
+
+    assert validate_redaction_policy(policy) == []
+    assert len(masks) == 1
+    assert masks[0].metadata()["zone_id"] == "account-balance"
+    assert masks[0].metadata()["bounds"] == {
+        "id": "account-balance",
+        "x": 10,
+        "y": 20,
+        "width": 200,
+        "height": 40,
+        "reason": "financial account balance",
+    }
+
+
 def test_redaction_policy_validation_reports_field_specific_errors() -> None:
     errors = validate_redaction_policy(
         RedactionPolicy(
@@ -43,3 +77,20 @@ def test_redaction_policy_validation_reports_field_specific_errors() -> None:
 
     assert any("redaction_policy.evidence_mode" in error for error in errors)
     assert any("redaction_policy.video" in error for error in errors)
+
+
+def test_redaction_policy_validation_rejects_invalid_sensitive_zones() -> None:
+    policy = redaction_policy_from_mapping(
+        {
+            "sensitive_zones": [
+                {"id": "duplicate", "x": 0, "y": 0, "width": 10, "height": 10},
+                {"id": "duplicate", "x": -1, "y": 0, "width": 0, "height": 10},
+            ],
+        },
+    )
+
+    errors = validate_redaction_policy(policy)
+
+    assert any("id must be unique" in error for error in errors)
+    assert any("x and y must not be negative" in error for error in errors)
+    assert any("width and height" in error for error in errors)

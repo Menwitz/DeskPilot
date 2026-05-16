@@ -327,6 +327,13 @@ def test_yaml_config_loader_loads_global_redaction_policy(tmp_path: Path) -> Non
                 "  content_variables: mask_names",
                 "  video: disabled",
                 "  reports: redacted",
+                "  sensitive_zones:",
+                "    - id: inbox-preview",
+                "      x: 5",
+                "      y: 6",
+                "      width: 100",
+                "      height: 40",
+                "      reason: message preview",
                 "",
             ],
         ),
@@ -342,6 +349,7 @@ def test_yaml_config_loader_loads_global_redaction_policy(tmp_path: Path) -> Non
     assert config.redaction_policy.content_variables == "mask_names"
     assert config.redaction_policy.video == "disabled"
     assert config.redaction_policy.reports == "redacted"
+    assert config.redaction_policy.sensitive_zones[0].id == "inbox-preview"
 
 
 def test_run_level_redaction_policy_overrides_file_config() -> None:

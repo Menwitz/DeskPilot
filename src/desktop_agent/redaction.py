@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 EVIDENCE_MODES: frozenset[str] = frozenset({"full", "redacted", "metadata_only"})
@@ -20,6 +20,44 @@ REPORT_REDACTION_MODES: frozenset[str] = frozenset({"full", "redacted"})
 
 
 @dataclass(frozen=True)
+class SensitiveZone:
+    """Coordinate region that can be blurred in screenshot evidence."""
+
+    id: str
+    x: int
+    y: int
+    width: int
+    height: int
+    reason: str = "sensitive"
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "x": self.x,
+            "y": self.y,
+            "width": self.width,
+            "height": self.height,
+            "reason": self.reason,
+        }
+
+
+@dataclass(frozen=True)
+class ScreenshotBlurMask:
+    """Blur mask derived from a sensitive screenshot zone."""
+
+    zone_id: str
+    bounds: SensitiveZone
+    reason: str
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "zone_id": self.zone_id,
+            "bounds": self.bounds.metadata(),
+            "reason": self.reason,
+        }
+
+
+@dataclass(frozen=True)
 class RedactionPolicy:
     """Resolved redaction policy for global, routine, or run scope."""
 
@@ -30,6 +68,7 @@ class RedactionPolicy:
     content_variables: str = "fingerprint_only"
     video: str = "full"
     reports: str = "full"
+    sensitive_zones: tuple[SensitiveZone, ...] = ()
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -40,6 +79,7 @@ class RedactionPolicy:
             "content_variables": self.content_variables,
             "video": self.video,
             "reports": self.reports,
+            "sensitive_zones": [zone.metadata() for zone in self.sensitive_zones],
         }
 
 
@@ -58,6 +98,21 @@ def redaction_policy_from_mapping(data: Mapping[str, object]) -> RedactionPolicy
         ),
         video=_optional_string(data, "video", defaults.video),
         reports=_optional_string(data, "reports", defaults.reports),
+        sensitive_zones=_sensitive_zones_from_value(data.get("sensitive_zones")),
+    )
+
+
+def screenshot_blur_masks(policy: RedactionPolicy) -> tuple[ScreenshotBlurMask, ...]:
+    """Return screenshot blur masks only when the policy requests zone blurring."""
+    if policy.screenshots != "blur_sensitive_zones":
+        return ()
+    return tuple(
+        ScreenshotBlurMask(
+            zone_id=zone.id,
+            bounds=zone,
+            reason=zone.reason,
+        )
+        for zone in policy.sensitive_zones
     )
 
 
@@ -105,6 +160,59 @@ def validate_redaction_policy(
         f"{prefix}.reports",
         errors,
     )
+    errors.extend(_sensitive_zone_errors(policy.sensitive_zones, prefix))
+    return errors
+
+
+def _sensitive_zones_from_value(value: object) -> tuple[SensitiveZone, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+        raise ValueError("redaction_policy.sensitive_zones must be a list")
+    zones: list[SensitiveZone] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, Mapping):
+            raise ValueError(
+                f"redaction_policy.sensitive_zones[{index}] must be a mapping",
+            )
+        zones.append(_sensitive_zone_from_mapping(item, index))
+    return tuple(zones)
+
+
+def _sensitive_zone_from_mapping(
+    data: Mapping[object, object],
+    index: int,
+) -> SensitiveZone:
+    prefix = f"redaction_policy.sensitive_zones[{index}]"
+    return SensitiveZone(
+        id=_required_zone_string(data, "id", prefix),
+        x=_required_zone_int(data, "x", prefix),
+        y=_required_zone_int(data, "y", prefix),
+        width=_required_zone_int(data, "width", prefix),
+        height=_required_zone_int(data, "height", prefix),
+        reason=_optional_zone_string(data, "reason", "sensitive", prefix),
+    )
+
+
+def _sensitive_zone_errors(
+    zones: Sequence[SensitiveZone],
+    prefix: str,
+) -> list[str]:
+    errors: list[str] = []
+    seen_ids: set[str] = set()
+    for index, zone in enumerate(zones):
+        field_prefix = f"{prefix}.sensitive_zones[{index}]"
+        if not zone.id.strip():
+            errors.append(f"{field_prefix}.id is required")
+        if zone.id in seen_ids:
+            errors.append(f"{field_prefix}.id must be unique")
+        seen_ids.add(zone.id)
+        if zone.x < 0 or zone.y < 0:
+            errors.append(f"{field_prefix}.x and y must not be negative")
+        if zone.width <= 0 or zone.height <= 0:
+            errors.append(f"{field_prefix}.width and height must be greater than zero")
+        if not zone.reason.strip():
+            errors.append(f"{field_prefix}.reason is required")
     return errors
 
 
@@ -117,6 +225,40 @@ def _optional_string(
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"redaction_policy.{key} must be a non-empty string")
     return value.strip()
+
+
+def _required_zone_string(
+    data: Mapping[object, object],
+    key: str,
+    prefix: str,
+) -> str:
+    value = data.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{prefix}.{key} must be a non-empty string")
+    return value.strip()
+
+
+def _optional_zone_string(
+    data: Mapping[object, object],
+    key: str,
+    default: str,
+    prefix: str,
+) -> str:
+    value = data.get(key, default)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{prefix}.{key} must be a non-empty string")
+    return value.strip()
+
+
+def _required_zone_int(
+    data: Mapping[object, object],
+    key: str,
+    prefix: str,
+) -> int:
+    value = data.get(key)
+    if not isinstance(value, int):
+        raise ValueError(f"{prefix}.{key} must be an integer")
+    return value
 
 
 def _validate_choice(

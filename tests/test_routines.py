@@ -120,9 +120,18 @@ def test_routine_definition_schema_loads_redaction_policy() -> None:
             "expected_duration_seconds": 60,
             "redaction_policy": {
                 "evidence_mode": "redacted",
-                "screenshots": "metadata_only",
+                "screenshots": "blur_sensitive_zones",
                 "typed_text": "mask",
                 "reports": "redacted",
+                "sensitive_zones": [
+                    {
+                        "id": "message-body",
+                        "x": 10,
+                        "y": 20,
+                        "width": 300,
+                        "height": 120,
+                    },
+                ],
             },
             "reference": {
                 "type": "task",
@@ -135,8 +144,9 @@ def test_routine_definition_schema_loads_redaction_policy() -> None:
 
     assert isinstance(metadata, dict)
     assert metadata["evidence_mode"] == "redacted"
-    assert metadata["screenshots"] == "metadata_only"
+    assert metadata["screenshots"] == "blur_sensitive_zones"
     assert metadata["typed_text"] == "mask"
+    assert metadata["sensitive_zones"][0]["id"] == "message-body"
 
 
 def test_routine_definition_rejects_invalid_redaction_policy() -> None:

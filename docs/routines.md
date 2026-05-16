@@ -48,6 +48,7 @@ redaction_policy:
   content_variables: fingerprint_only
   video: full
   reports: full
+  sensitive_zones: []
 reference:
   type: task
   path: tasks/browser-search.yaml
@@ -78,6 +79,9 @@ Supported approval policies are `none`, `confirm`, `manifest_required`, and
 Routine-level `redaction_policy` uses the same schema as runtime config and is
 included in compiled routine metadata. It does not remove full local evidence by
 default; redaction modes must be explicit.
+For screenshot redaction, use `screenshots: blur_sensitive_zones` and define
+coordinate `sensitive_zones` with `id`, `x`, `y`, `width`, `height`, and an
+optional `reason`.
 
 `RoutineDefinition.report_metadata()` returns JSON-safe fields for future trace,
 monitoring, search, and catalog quality reports.
