@@ -459,7 +459,7 @@ abuse, and hidden automation are not supported.
 - [x] O1: Build a usable local operator app.
 - [x] KR1: App can list, search, inspect, dry-run, and run routines.
 - [x] KR2: App can start, pause, resume, cancel, and emergency-stop a run.
-- [ ] KR3: App can review and approve high-risk actions.
+- [x] KR3: App can review and approve high-risk actions.
 - [ ] KR4: App can record a routine and review generated YAML before saving.
 - [ ] KR5: App can replay traces with screenshots, video, target reasoning,
       action log, and verification results.
