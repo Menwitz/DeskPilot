@@ -633,7 +633,7 @@ abuse, and hidden automation are not supported.
 - [x] O1: Ship a beta-ready local routine ecosystem.
 - [x] KR1: Routine packs can be imported, validated, listed, run, exported, and
       removed.
-- [ ] KR2: Routine packs include manifest, routines, fixtures, docs, tests,
+- [x] KR2: Routine packs include manifest, routines, fixtures, docs, tests,
       safety metadata, and proof expectations.
 - [ ] KR3: Conflicts and trust warnings are surfaced before installation.
 - [ ] KR4: Optional team/report server remains separate from local execution.
