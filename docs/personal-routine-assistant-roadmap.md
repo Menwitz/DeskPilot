@@ -266,7 +266,7 @@ abuse, and hidden automation are not supported.
 
 ### OKRs
 
-- [ ] O1: Ship a Windows recorder that generates valid editable tasks.
+- [x] O1: Ship a Windows recorder that generates valid editable tasks.
 - [ ] KR1: Recorder captures clicks, typing, hotkeys, scrolls, waits, active
       windows, screenshots, and candidate context.
 - [ ] KR2: Generated YAML includes allowed windows, targets, regions,
