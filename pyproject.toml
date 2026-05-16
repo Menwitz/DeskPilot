@@ -15,6 +15,7 @@ dependencies = [
 
 [project.scripts]
 desktop-agent = "desktop_agent.cli:main"
+deskpilot-app = "desktop_agent.operator_app:main"
 
 [project.optional-dependencies]
 dev = [

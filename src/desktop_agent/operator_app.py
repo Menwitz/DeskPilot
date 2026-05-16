@@ -1,15 +1,44 @@
-"""Native operator app import target for optional PySide6 packaging."""
+"""Native operator app entry point for optional PySide6 packaging."""
 
 from __future__ import annotations
 
+import argparse
 from collections.abc import Sequence
+from importlib.util import find_spec
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Return a clear placeholder until the Phase 8 app shell is implemented."""
-    _ = argv
+    """Run the native operator app entry point."""
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+    if args.check:
+        return _check_app_environment()
+    return _launch_app()
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="deskpilot-app")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="verify the app entry point and optional PySide6 availability",
+    )
+    return parser
+
+
+def _check_app_environment() -> int:
+    pyside_status = "available" if find_spec("PySide6") is not None else "missing"
+    print("deskpilot-app entry point: ok")
+    print(f"PySide6: {pyside_status}")
+    return 0
+
+
+def _launch_app() -> int:
+    if find_spec("PySide6") is None:
+        print('PySide6 is not installed. Install DeskPilot with "deskpilot[app]".')
+        return 2
     print(
-        "DeskPilot native operator app packaging is available; "
-        "the app shell is implemented in the next Phase 8 tasks.",
+        "DeskPilot native operator app entry point is ready; "
+        "the app shell is implemented in the next Phase 8 task.",
     )
     return 2
