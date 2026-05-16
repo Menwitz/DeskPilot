@@ -74,6 +74,8 @@ suite, writes review artifacts, and prints the final `proof promote-suite`
 command that emits `proof-suite-promotion.json` after human review passes.
 That promotion JSON includes SHA-256 digests and byte sizes for the promoted
 evidence artifacts so a copied archive can be checked later.
+Run `proof verify-promotion <trace-root>\proof-suite-promotion.json` before
+trusting copied proof evidence.
 
 Real `run` verification still requires an unlocked Windows desktop with the
 browser or native fixture visible.

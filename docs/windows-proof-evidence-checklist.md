@@ -60,6 +60,9 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Run `desktop-agent proof promote-suite <trace-root> --write-report
       --write-status-json --write-runbook --write-archive` and archive
       `proof-suite-promotion.json` as the final promotion decision.
+- [ ] Run `desktop-agent proof verify-promotion
+      <trace-root>/proof-suite-promotion.json` before copying or trusting an
+      archived proof pack.
 
 ## Required Proof Bundle
 
@@ -115,6 +118,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       proof bundles, preflight, and human review gates all pass.
 - [ ] `proof-suite-promotion.json` includes SHA-256 digests and byte sizes for
       promoted evidence artifacts so archived evidence can be checked later.
+- [ ] `desktop-agent proof verify-promotion` rejects missing or tampered
+      promoted artifacts before release evidence is trusted.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 

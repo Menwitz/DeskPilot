@@ -1963,6 +1963,33 @@ def test_cli_proof_promote_suite_writes_promotion_json(
     assert "proof review status not found" in "\n".join(payload["errors"])
 
 
+def test_cli_proof_verify_promotion_reports_failed_record(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    promotion_path = tmp_path / "promotion.json"
+    write_proof_manifest(trace_dir)
+    main(
+        [
+            "proof",
+            "promote-suite",
+            str(tmp_path),
+            "--allow-missing-video",
+            "--promotion-path",
+            str(promotion_path),
+        ],
+    )
+    capsys.readouterr()
+
+    status = main(["proof", "verify-promotion", str(promotion_path)])
+
+    output = capsys.readouterr().out
+    assert status == 1
+    assert "promotion_verification: failed" in output
+    assert "error: proof suite promotion status is not passed: failed" in output
+
+
 def test_cli_proof_validate_review_writes_status(
     tmp_path: Path,
     capsys: CaptureFixture[str],

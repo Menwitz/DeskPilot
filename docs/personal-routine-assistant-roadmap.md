@@ -192,6 +192,8 @@ abuse, and hidden automation are not supported.
       only after proof bundles, preflight, and human review gates pass.
 - [x] Add SHA-256 artifact digests and byte sizes to proof-suite promotion
       records for later archive integrity checks.
+- [x] Add a proof promotion verifier that rejects missing or tampered promoted
+      evidence artifacts before release evidence is trusted.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

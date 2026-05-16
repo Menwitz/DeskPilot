@@ -123,4 +123,5 @@ Write-Host "Proof collection complete. Review the video, trace artifacts, and $R
 Write-Host "After human review is complete, run:"
 Write-Host "$CommandPrefixText proof validate-review $ReviewPath --write-status-json"
 Write-Host "$CommandPrefixText proof promote-suite $TraceRoot$AllowMissingVideo --write-report --write-status-json --write-runbook --write-archive"
+Write-Host "$CommandPrefixText proof verify-promotion $(Join-Path $TraceRoot 'proof-suite-promotion.json')"
 Write-Host "Final review status path: $ReviewStatusPath"

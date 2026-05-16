@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import cast
 
 from desktop_agent.proof_manifest import (
+    ProofSuiteValidation,
     proof_suite_promotion_metadata,
     proof_suite_status_metadata,
     render_proof_suite_report,
@@ -13,6 +14,7 @@ from desktop_agent.proof_manifest import (
     validate_proof_bundle,
     validate_proof_review,
     validate_proof_suite,
+    verify_proof_suite_promotion,
     write_proof_preflight_report,
     write_proof_review_status,
     write_proof_suite_archive,
@@ -502,6 +504,38 @@ def test_write_proof_suite_promotion_requires_preflight_and_review(
     )
 
 
+def test_verify_proof_suite_promotion_accepts_matching_digests(
+    tmp_path: Path,
+) -> None:
+    result = _write_review_ready_suite(tmp_path)
+    promotion_path = write_proof_suite_promotion(result, require_video=False)
+
+    verification = verify_proof_suite_promotion(promotion_path)
+
+    assert verification.passed
+    assert "proof-preflight.json" in verification.checked_artifacts
+    assert "browser-fixture/proof-manifest.json" in verification.checked_artifacts
+
+
+def test_verify_proof_suite_promotion_rejects_tampered_artifact(
+    tmp_path: Path,
+) -> None:
+    result = _write_review_ready_suite(tmp_path)
+    promotion_path = write_proof_suite_promotion(result, require_video=False)
+    (tmp_path / "browser-fixture" / "action-log.jsonl").write_text(
+        "tampered\n",
+        encoding="utf-8",
+    )
+
+    verification = verify_proof_suite_promotion(promotion_path)
+
+    assert not verification.passed
+    assert any(
+        "browser-fixture/action-log.jsonl sha256 mismatch" in error
+        for error in verification.errors
+    )
+
+
 def test_write_proof_suite_runbook_lists_next_operator_commands(
     tmp_path: Path,
 ) -> None:
@@ -666,6 +700,35 @@ def _write_completed_review_status(root: Path) -> Path:
         encoding="utf-8",
     )
     return write_proof_review_status(validate_proof_review(review_path))
+
+
+def _write_review_ready_suite(root: Path) -> ProofSuiteValidation:
+    for proof_name in (
+        "browser-fixture",
+        "native-fixture",
+        "mixed-fixture",
+        "recovery-fixture",
+    ):
+        _write_proof_bundle(
+            root,
+            proof_name=proof_name,
+            trace_dir_name=proof_name,
+            include_video=False,
+        )
+    write_proof_preflight_report(
+        run_proof_preflight(
+            root,
+            require_windows=False,
+            require_video=False,
+        ),
+    )
+    _write_completed_review_status(root)
+    return validate_proof_suite(
+        root,
+        require_video=False,
+        require_preflight=True,
+        require_review=True,
+    )
 
 
 def _write_proof_bundle(

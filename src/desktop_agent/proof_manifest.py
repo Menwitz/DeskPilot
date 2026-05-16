@@ -223,6 +223,20 @@ class ProofReviewValidation:
         }
 
 
+@dataclass(frozen=True)
+class ProofPromotionVerification:
+    """Validation result for a saved proof-suite promotion digest record."""
+
+    promotion_path: Path
+    checked_artifacts: tuple[str, ...]
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    @property
+    def passed(self) -> bool:
+        return not self.errors
+
+
 def run_proof_preflight(
     trace_root: Path,
     *,
@@ -721,6 +735,78 @@ def write_proof_suite_promotion(
     return promotion_path
 
 
+def verify_proof_suite_promotion(promotion_path: Path) -> ProofPromotionVerification:
+    """Verify a promotion record against the current local evidence artifacts."""
+
+    errors: list[str] = []
+    warnings: list[str] = []
+    checked_artifacts: list[str] = []
+    payload = _load_json_object(promotion_path, errors, "proof suite promotion")
+    if payload is None:
+        return ProofPromotionVerification(
+            promotion_path=promotion_path,
+            checked_artifacts=(),
+            errors=tuple(errors),
+            warnings=(),
+        )
+    if payload.get("status") != "passed":
+        errors.append(
+            "proof suite promotion status is not passed: "
+            f"{payload.get('status', 'missing')}",
+        )
+    if payload.get("promotion_ready") is not True:
+        errors.append("proof suite promotion_ready is not true")
+
+    artifacts = payload.get("artifact_digests")
+    if not isinstance(artifacts, list) or not artifacts:
+        errors.append("proof suite promotion artifact_digests must be a non-empty list")
+        artifacts = []
+    for index, item in enumerate(artifacts):
+        if not isinstance(item, dict):
+            errors.append(f"proof suite promotion artifact #{index} must be an object")
+            continue
+        archive_name = _string_value(item.get("archive_name")) or f"#{index}"
+        artifact_path = _promotion_artifact_path(promotion_path, item)
+        if artifact_path is None:
+            errors.append(f"proof suite promotion artifact {archive_name} missing path")
+            continue
+        if not artifact_path.exists() or not artifact_path.is_file():
+            errors.append(
+                f"proof suite promotion artifact {archive_name} not found: "
+                f"{artifact_path}",
+            )
+            continue
+        checked_artifacts.append(archive_name)
+        expected_size = item.get("size_bytes")
+        if not isinstance(expected_size, int):
+            errors.append(
+                f"proof suite promotion artifact {archive_name} missing size_bytes",
+            )
+        elif artifact_path.stat().st_size != expected_size:
+            errors.append(
+                f"proof suite promotion artifact {archive_name} size mismatch: "
+                f"{artifact_path.stat().st_size} != {expected_size}",
+            )
+        expected_digest = _string_value(item.get("sha256"))
+        if expected_digest is None:
+            errors.append(
+                f"proof suite promotion artifact {archive_name} missing sha256",
+            )
+        else:
+            actual_digest = _sha256_file(artifact_path)
+            if actual_digest != expected_digest:
+                errors.append(
+                    f"proof suite promotion artifact {archive_name} sha256 mismatch: "
+                    f"{actual_digest} != {expected_digest}",
+                )
+    return ProofPromotionVerification(
+        promotion_path=promotion_path,
+        checked_artifacts=tuple(checked_artifacts),
+        errors=tuple(errors),
+        warnings=tuple(warnings),
+    )
+
+
 def write_proof_suite_status(
     validation: ProofSuiteValidation,
     output_path: Path | None = None,
@@ -1056,6 +1142,25 @@ def _proof_suite_artifact_digests(
             },
         )
     return digests
+
+
+def _promotion_artifact_path(
+    promotion_path: Path,
+    item: Mapping[str, object],
+) -> Path | None:
+    path_value = _string_value(item.get("path"))
+    archive_name = _string_value(item.get("archive_name"))
+    candidates: list[Path] = []
+    if path_value is not None:
+        candidates.append(Path(path_value))
+    if archive_name is not None:
+        candidates.append(promotion_path.parent / archive_name)
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    if candidates:
+        return candidates[0]
+    return None
 
 
 def _sha256_file(path: Path) -> str:
