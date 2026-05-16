@@ -43,8 +43,9 @@ remove operations go through manifest validation and local pack operations
 rather than ad hoc file copying.
 
 The Trace Viewer page includes the trace timeline contract. It shows video,
-screenshots, action log, candidate reasoning, state delta, final report, and
-load status so failed runs can be inspected without rerunning desktop input.
+screenshots, action log, candidate reasoning, state delta, verification results,
+final report, and load status so failed runs can be inspected without rerunning
+desktop input.
 The same page includes failure-analysis review state with proposal count,
 rationale, YAML snippets, `review_required`, and `applies_automatically` fields
 so proposed fixes remain manual until approved.

@@ -461,7 +461,7 @@ abuse, and hidden automation are not supported.
 - [x] KR2: App can start, pause, resume, cancel, and emergency-stop a run.
 - [x] KR3: App can review and approve high-risk actions.
 - [x] KR4: App can record a routine and review generated YAML before saving.
-- [ ] KR5: App can replay traces with screenshots, video, target reasoning,
+- [x] KR5: App can replay traces with screenshots, video, target reasoning,
       action log, and verification results.
 
 ### Tasks

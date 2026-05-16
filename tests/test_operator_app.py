@@ -200,6 +200,7 @@ def test_trace_viewer_timeline_tracks_evidence_paths_and_reasoning(
         action_log_path=tmp_path / "action-log.jsonl",
         candidate_reasoning=("selected candidate-1", "rejected candidate-2"),
         state_delta=("visible_text_changed",),
+        verification_results=("click-submit passed",),
         final_report_path=tmp_path / "final-report.json",
         status="loaded",
     )
@@ -218,11 +219,13 @@ def test_trace_viewer_timeline_tracks_evidence_paths_and_reasoning(
         "rejected candidate-2",
     ]
     assert metadata["state_delta"] == ["visible_text_changed"]
+    assert metadata["verification_results"] == ["click-submit passed"]
     assert metadata["final_report_path"] == str(tmp_path / "final-report.json")
     assert metadata["status"] == "loaded"
     assert "Trace Timeline" in text
     assert "proof-video.mp4" in text
     assert "selected candidate-1" in text
+    assert "click-submit passed" in text
 
 
 def test_routine_pack_manager_tracks_install_and_remove_state(tmp_path: Path) -> None:

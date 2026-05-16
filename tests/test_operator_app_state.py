@@ -200,6 +200,7 @@ def test_operator_app_controller_tracks_trace_viewer_state(tmp_path: Path) -> No
         action_log_path=tmp_path / "action-log.jsonl",
         candidate_reasoning=("selected candidate-1",),
         state_delta=("visible text added Success",),
+        verification_results=("visible text verification passed",),
         final_report_path=tmp_path / "final-report.json",
         status="loaded",
     )

@@ -144,6 +144,7 @@ class TraceViewerTimelineState:
     action_log_path: Path | None = None
     candidate_reasoning: tuple[str, ...] = ()
     state_delta: tuple[str, ...] = ()
+    verification_results: tuple[str, ...] = ()
     final_report_path: Path | None = None
     status: str = "empty"
 
@@ -156,6 +157,7 @@ class TraceViewerTimelineState:
             ),
             "candidate_reasoning": list(self.candidate_reasoning),
             "state_delta": list(self.state_delta),
+            "verification_results": list(self.verification_results),
             "final_report_path": (
                 str(self.final_report_path) if self.final_report_path else None
             ),
@@ -412,6 +414,8 @@ def render_trace_viewer_timeline_text(state: TraceViewerTimelineState) -> str:
             "- Candidate reasoning: "
             f"{', '.join(state.candidate_reasoning) or 'none'}",
             f"- State delta: {', '.join(state.state_delta) or 'none'}",
+            "- Verification results: "
+            f"{', '.join(state.verification_results) or 'none'}",
             f"- Final report: {final_report}",
         ],
     ) + "\n"
