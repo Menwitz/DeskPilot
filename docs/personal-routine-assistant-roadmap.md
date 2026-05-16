@@ -766,7 +766,7 @@ abuse, and hidden automation are not supported.
       missing-input prompt.
 - [x] A user can run, pause, resume, stop, approve, and replay routines from the
       native app.
-- [ ] A 300-routine catalog validates and carries safety metadata.
+- [x] A 300-routine catalog validates and carries safety metadata.
 - [x] Optional local Ollama assistance is useful but never required.
 - [x] All high-risk external mutations require approval and checkpoint evidence.
 - [x] Failed runs are diagnosable from local artifacts without rerunning desktop
