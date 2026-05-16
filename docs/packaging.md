@@ -79,6 +79,9 @@ trusting copied proof evidence.
 Run `proof verify-archive <trace-root>\proof-suite-artifacts.zip` to check the
 self-contained archive members against the promotion digest record.
 Both verifier commands support `--write-status-json` for monitoring artifacts.
+For the normal post-review path, run `proof finalize-suite <trace-root>` after
+`proof validate-review`; it writes the report, status JSON, runbook, promotion,
+archive, and both verifier status JSON files in the correct order.
 
 Real `run` verification still requires an unlocked Windows desktop with the
 browser or native fixture visible.

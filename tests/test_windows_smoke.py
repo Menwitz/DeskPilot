@@ -177,35 +177,15 @@ def test_windows_smoke_proof_suite_validates_owned_desktop(tmp_path: Path) -> No
     )
     assert review_exit_code == 0, "proof suite review validation failed"
 
-    promotion_exit_code = main(
+    finalization_exit_code = main(
         [
             "proof",
-            "promote-suite",
+            "finalize-suite",
             str(trace_root),
             "--allow-missing-video",
-            "--write-status-json",
-            "--write-archive",
         ],
     )
-    assert promotion_exit_code == 0, "proof suite review-gated promotion failed"
-    verification_exit_code = main(
-        [
-            "proof",
-            "verify-promotion",
-            str(trace_root / "proof-suite-promotion.json"),
-            "--write-status-json",
-        ],
-    )
-    assert verification_exit_code == 0, "proof promotion digest verification failed"
-    archive_verification_exit_code = main(
-        [
-            "proof",
-            "verify-archive",
-            str(trace_root / "proof-suite-artifacts.zip"),
-            "--write-status-json",
-        ],
-    )
-    assert archive_verification_exit_code == 0, "proof archive verification failed"
+    assert finalization_exit_code == 0, "proof suite finalization failed"
     assert (trace_root / "proof-promotion-verification.json").exists()
     assert (trace_root / "proof-archive-verification.json").exists()
     promotion_payload = json.loads(

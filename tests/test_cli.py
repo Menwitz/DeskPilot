@@ -1963,6 +1963,41 @@ def test_cli_proof_promote_suite_writes_promotion_json(
     assert "proof review status not found" in "\n".join(payload["errors"])
 
 
+def test_cli_proof_finalize_suite_writes_complete_evidence_pack(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "trace"
+    write_proof_manifest(trace_dir)
+
+    status = main(
+        [
+            "proof",
+            "finalize-suite",
+            str(tmp_path),
+            "--allow-missing-video",
+        ],
+    )
+
+    output = capsys.readouterr().out
+    assert status == 1
+    assert "suite: failed" in output
+    assert f"report: {tmp_path / 'proof-suite-report.md'}" in output
+    assert f"promotion_json: {tmp_path / 'proof-suite-promotion.json'}" in output
+    assert "promotion_verification: failed" in output
+    assert "archive_verification: failed" in output
+    for artifact_name in (
+        "proof-suite-report.md",
+        "proof-suite-status.json",
+        "proof-suite-next-actions.md",
+        "proof-suite-promotion.json",
+        "proof-promotion-verification.json",
+        "proof-suite-artifacts.zip",
+        "proof-archive-verification.json",
+    ):
+        assert (tmp_path / artifact_name).exists()
+
+
 def test_cli_proof_verify_promotion_reports_failed_record(
     tmp_path: Path,
     capsys: CaptureFixture[str],

@@ -201,6 +201,9 @@ abuse, and hidden automation are not supported.
       results.
 - [x] Update acceptance documentation and docs tests to require promotion,
       verification, and artifact digest records before proof acceptance.
+- [x] Add a single `proof finalize-suite` command that writes promotion,
+      archive, verification reports, suite report, status JSON, and runbook in
+      one ordered post-review flow.
 - [x] Fix unsupported-platform real `run` behavior so it fails early with a
       platform-unavailable reason before target selection.
 - [x] Add a Windows manual evidence checklist for each proof command.

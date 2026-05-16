@@ -695,6 +695,16 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="write proof-suite-artifacts.zip after promotion JSON is written",
     )
+    proof_finalize_suite_parser = proof_subparsers.add_parser(
+        "finalize-suite",
+        help="write and verify the complete post-review proof-suite evidence pack",
+    )
+    proof_finalize_suite_parser.add_argument("trace_root", type=Path)
+    proof_finalize_suite_parser.add_argument(
+        "--allow-missing-video",
+        action="store_true",
+        help="finalize artifacts with an externally reviewed recording",
+    )
     proof_verify_promotion_parser = proof_subparsers.add_parser(
         "verify-promotion",
         help="verify proof-suite promotion JSON digests against local artifacts",
@@ -2853,6 +2863,8 @@ def _proof(args: argparse.Namespace) -> int:
         return _proof_validate_suite(args)
     if args.proof_command == "promote-suite":
         return _proof_promote_suite(args)
+    if args.proof_command == "finalize-suite":
+        return _proof_finalize_suite(args)
     if args.proof_command == "verify-promotion":
         return _proof_verify_promotion(args)
     if args.proof_command == "verify-archive":
@@ -3021,6 +3033,68 @@ def _proof_promote_suite(args: argparse.Namespace) -> int:
         archive_path = write_proof_suite_archive(result, require_video=require_video)
         print(f"archive: {archive_path}")
     return 0 if result.passed else 1
+
+
+def _proof_finalize_suite(args: argparse.Namespace) -> int:
+    require_video = not args.allow_missing_video
+    result = validate_proof_suite(
+        args.trace_root,
+        require_video=require_video,
+        require_preflight=True,
+        require_review=True,
+    )
+    print(f"trace_root: {args.trace_root}")
+    print(f"suite: {'passed' if result.passed else 'failed'}")
+    for warning in result.warnings:
+        print(f"warning: {warning}")
+    for duplicate in result.duplicate_proofs:
+        print(f"warning: duplicate proof bundle: {duplicate}")
+    for bundle in result.bundle_results:
+        proof_name = bundle.proof_name or str(bundle.trace_dir)
+        print(
+            f"proof {proof_name}: {'passed' if bundle.passed else 'failed'} "
+            f"({bundle.trace_dir})",
+        )
+        for warning in bundle.warnings:
+            print(f"warning: {proof_name}: {warning}")
+    for error in result.errors:
+        print(f"error: {error}")
+
+    report_path = write_proof_suite_report(result)
+    status_path = write_proof_suite_status(result)
+    runbook_path = write_proof_suite_runbook(result, require_video=require_video)
+    promotion_path = write_proof_suite_promotion(result, require_video=require_video)
+    promotion_verification = verify_proof_suite_promotion(promotion_path)
+    promotion_verification_path = write_proof_promotion_verification(
+        promotion_verification,
+    )
+    archive_path = write_proof_suite_archive(result, require_video=require_video)
+    archive_verification = verify_proof_suite_archive(archive_path)
+    archive_verification_path = write_proof_archive_verification(
+        archive_verification,
+    )
+
+    print(f"report: {report_path}")
+    print(f"status_json: {status_path}")
+    print(f"runbook: {runbook_path}")
+    print(f"promotion_json: {promotion_path}")
+    print(
+        "promotion_verification: "
+        f"{'passed' if promotion_verification.passed else 'failed'}",
+    )
+    print(f"promotion_verification_json: {promotion_verification_path}")
+    print(f"archive: {archive_path}")
+    print(
+        "archive_verification: "
+        f"{'passed' if archive_verification.passed else 'failed'}",
+    )
+    print(f"archive_verification_json: {archive_verification_path}")
+    for error in promotion_verification.errors:
+        print(f"error: promotion verification: {error}")
+    for error in archive_verification.errors:
+        print(f"error: archive verification: {error}")
+    passed = result.passed and promotion_verification.passed
+    return 0 if passed and archive_verification.passed else 1
 
 
 def _proof_verify_promotion(args: argparse.Namespace) -> int:
