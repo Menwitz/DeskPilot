@@ -647,7 +647,7 @@ abuse, and hidden automation are not supported.
 - [x] Add conflict detection for duplicate routine IDs, selectors, inputs, and
       pack versions.
 - [x] Add pack-level test runner and proof bundle generator.
-- [ ] Add signed-pack investigation for later releases.
+- [x] Add signed-pack investigation for later releases.
 - [ ] Add optional local report-server design after native app and trace schema
       stabilize.
 - [ ] Add Linux X11 adapter plan after Windows beta proof is complete.

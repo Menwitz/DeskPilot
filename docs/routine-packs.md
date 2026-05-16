@@ -52,6 +52,9 @@ Unverified local packs produce trust warnings in manifest metadata,
 operator app routine-pack service. The warning tells the operator to review the
 manifest, routines, docs, tests, and proof expectations before installing or
 running the pack.
+Future cryptographic signing work is tracked in
+`docs/signed-routine-pack-investigation.md`; signatures are not a current trust
+source and do not bypass local safety gates.
 
 `safety.max_safety_class` records the highest allowed safety class for routines
 in the pack. `external_mutation_allowed` and `approval_required` make the pack's

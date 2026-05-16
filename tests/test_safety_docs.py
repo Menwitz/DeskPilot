@@ -88,6 +88,22 @@ def test_troubleshooting_documents_local_environment_failures() -> None:
         assert phrase in documentation
 
 
+def test_signed_routine_pack_investigation_keeps_safety_boundary() -> None:
+    documentation = Path("docs/signed-routine-pack-investigation.md").read_text(
+        encoding="utf-8",
+    )
+
+    for phrase in (
+        "later-release investigation",
+        "routine-pack.sig",
+        "pack-digest.json",
+        "trusted keyring",
+        "No automatic execution based only on a valid signature",
+        "No signature bypass",
+    ):
+        assert phrase in documentation
+
+
 def test_windows_proof_docs_cover_manual_evidence_review() -> None:
     documentation = "\n".join(
         [
