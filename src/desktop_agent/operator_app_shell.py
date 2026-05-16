@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from importlib import import_module
+from pathlib import Path
 from typing import Any
 
 
@@ -19,12 +20,14 @@ class OperatorAppPage:
     page_id: str
     title: str
     purpose: str
+    panel_ids: tuple[str, ...] = ()
 
     def metadata(self) -> dict[str, object]:
         return {
             "page_id": self.page_id,
             "title": self.title,
             "purpose": self.purpose,
+            "panel_ids": list(self.panel_ids),
         }
 
 
@@ -44,6 +47,39 @@ class OperatorAppShell:
         }
 
 
+@dataclass(frozen=True)
+class LiveRunPanelState:
+    """Live run panel fields shown by the operator app."""
+
+    current_routine_id: str | None = None
+    current_step_id: str | None = None
+    screenshot_path: Path | None = None
+    selected_target: str | None = None
+    next_action: str | None = None
+    elapsed_seconds: float = 0.0
+    status: str = "idle"
+    stop_controls: tuple[str, ...] = (
+        "pause",
+        "resume",
+        "cancel",
+        "emergency_stop",
+    )
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "current_routine_id": self.current_routine_id,
+            "current_step_id": self.current_step_id,
+            "screenshot_path": (
+                str(self.screenshot_path) if self.screenshot_path else None
+            ),
+            "selected_target": self.selected_target,
+            "next_action": self.next_action,
+            "elapsed_seconds": self.elapsed_seconds,
+            "status": self.status,
+            "stop_controls": list(self.stop_controls),
+        }
+
+
 def operator_app_shell_spec() -> OperatorAppShell:
     """Return the Phase 8 native app shell page contract."""
     pages = (
@@ -51,6 +87,7 @@ def operator_app_shell_spec() -> OperatorAppShell:
             page_id="dashboard",
             title="Dashboard",
             purpose="Daily status, recent runs, and next safe action.",
+            panel_ids=("live_run",),
         ),
         OperatorAppPage(
             page_id="routine_library",
@@ -95,6 +132,34 @@ def operator_app_shell_spec() -> OperatorAppShell:
     )
 
 
+def default_live_run_panel_state() -> LiveRunPanelState:
+    """Return an idle live-run panel state for app startup."""
+    return LiveRunPanelState()
+
+
+def render_live_run_panel_text(state: LiveRunPanelState | None = None) -> str:
+    """Render live-run status for CLI diagnostics and tests."""
+    active_state = state or default_live_run_panel_state()
+    screenshot = (
+        str(active_state.screenshot_path)
+        if active_state.screenshot_path is not None
+        else "none"
+    )
+    return "\n".join(
+        [
+            "Live Run",
+            f"- Status: {active_state.status}",
+            f"- Current routine: {active_state.current_routine_id or 'none'}",
+            f"- Current step: {active_state.current_step_id or 'none'}",
+            f"- Screenshot preview: {screenshot}",
+            f"- Selected target: {active_state.selected_target or 'none'}",
+            f"- Next action: {active_state.next_action or 'none'}",
+            f"- Elapsed seconds: {active_state.elapsed_seconds:g}",
+            f"- Stop controls: {', '.join(active_state.stop_controls)}",
+        ],
+    ) + "\n"
+
+
 def render_operator_app_shell_text(shell: OperatorAppShell | None = None) -> str:
     """Render the shell contract for CLI diagnostics and tests."""
     active_shell = shell or operator_app_shell_spec()
@@ -104,6 +169,8 @@ def render_operator_app_shell_text(shell: OperatorAppShell | None = None) -> str
             " (default)" if page.page_id == active_shell.default_page_id else ""
         )
         lines.append(f"- {page.title}{default_marker}: {page.purpose}")
+        for panel_id in page.panel_ids:
+            lines.append(f"  panel: {panel_id}")
     return "\n".join(lines) + "\n"
 
 
@@ -159,5 +226,8 @@ def _page_widget(qt_widgets: Any, page: OperatorAppPage) -> Any:
     body.setWordWrap(True)
     layout.addWidget(heading)
     layout.addWidget(body)
+    if "live_run" in page.panel_ids:
+        for line in render_live_run_panel_text().splitlines():
+            layout.addWidget(qt_widgets.QLabel(line))
     layout.addStretch(1)
     return widget

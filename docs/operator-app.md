@@ -17,6 +17,11 @@ The Phase 8 shell defines these pages:
 - Settings: configure local trace, safety, model, and proof options.
 - Help: show local guidance, safety boundaries, and diagnostics.
 
+The Dashboard includes the first live run panel. Its state contract tracks the
+current routine, current step, screenshot preview path, selected target, next
+action, elapsed seconds, run status, and stop controls: pause, resume, cancel,
+and emergency stop.
+
 `deskpilot-app --describe-shell` prints this shell contract without importing
 PySide6. `deskpilot-app --check` verifies that the entry point is installed and
 reports whether PySide6 is available.

@@ -5,7 +5,10 @@ from pytest import CaptureFixture
 
 from desktop_agent.operator_app import main
 from desktop_agent.operator_app_shell import (
+    LiveRunPanelState,
+    default_live_run_panel_state,
     operator_app_shell_spec,
+    render_live_run_panel_text,
     render_operator_app_shell_text,
 )
 
@@ -43,6 +46,7 @@ def test_operator_app_shell_exposes_required_pages() -> None:
         "settings",
         "help",
     ]
+    assert shell.pages[0].panel_ids == ("live_run",)
     assert shell.metadata()["pages"]
 
 
@@ -55,6 +59,45 @@ def test_operator_app_describe_shell_prints_pages(
     assert status == 0
     assert "DeskPilot Operator" in output
     assert "Dashboard (default)" in output
+    assert "panel: live_run" in output
     assert "Routine Library" in output
     assert "Trace Viewer" in output
     assert output == render_operator_app_shell_text()
+
+
+def test_live_run_panel_state_tracks_run_status_fields(tmp_path: Path) -> None:
+    state = LiveRunPanelState(
+        current_routine_id="browser.search",
+        current_step_id="type-query",
+        screenshot_path=tmp_path / "screen.png",
+        selected_target="Search box",
+        next_action="type_text",
+        elapsed_seconds=12.5,
+        status="running",
+    )
+
+    metadata = state.metadata()
+    text = render_live_run_panel_text(state)
+
+    assert metadata["current_routine_id"] == "browser.search"
+    assert metadata["current_step_id"] == "type-query"
+    assert metadata["screenshot_path"] == str(tmp_path / "screen.png")
+    assert metadata["selected_target"] == "Search box"
+    assert metadata["next_action"] == "type_text"
+    assert metadata["elapsed_seconds"] == 12.5
+    assert metadata["status"] == "running"
+    assert metadata["stop_controls"] == [
+        "pause",
+        "resume",
+        "cancel",
+        "emergency_stop",
+    ]
+    assert "Screenshot preview" in text
+    assert "Stop controls: pause, resume, cancel, emergency_stop" in text
+
+
+def test_live_run_panel_defaults_to_idle() -> None:
+    state = default_live_run_panel_state()
+
+    assert state.status == "idle"
+    assert state.current_routine_id is None

@@ -472,7 +472,7 @@ abuse, and hidden automation are not supported.
       Approvals, Trace Viewer, Settings, and Help pages.
 - [x] Add local service boundary for catalog, recorder, runner, scheduler,
       approvals, and trace APIs.
-- [ ] Add live run panel with current routine, current step, screenshot preview,
+- [x] Add live run panel with current routine, current step, screenshot preview,
       selected target, next action, elapsed time, status, and stop controls.
 - [ ] Add approval dialog with routine ID, step ID, risk class, checkpoint
       evidence, content fingerprint, and approve/deny actions.
