@@ -223,7 +223,7 @@ abuse, and hidden automation are not supported.
 ### OKRs
 
 - [x] O1: Introduce a first-class desktop I/O action schema.
-- [ ] KR1: Support `observe`, `move`, `click`, `double_click`, `drag`, `wheel`,
+- [x] KR1: Support `observe`, `move`, `click`, `double_click`, `drag`, `wheel`,
       `type`, `hotkey`, `wait`, `verify`, and `handoff`.
 - [ ] KR2: Every low-level action carries safety metadata.
 - [ ] KR3: Emergency stop checks run between bounded low-level input events.

@@ -62,6 +62,14 @@ def test_task_compiler_records_dependency_and_state_metadata() -> None:
         "kind": "move",
         "order": 2,
         "source_action": "click_text",
+        "kind_contract": {
+            "kind": "move",
+            "input_channel": "pointer",
+            "emits_desktop_input": True,
+            "requires_target": True,
+            "bounded": True,
+            "supported": True,
+        },
         "metadata": {},
     }
     assert desktop_io_steps[1]["operations"] == ["observe", "type", "verify"]
