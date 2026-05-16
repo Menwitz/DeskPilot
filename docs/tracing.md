@@ -145,3 +145,5 @@ summary without rerunning actions.
 the proof name, original command, status, environment metadata, and artifact
 paths without rerunning desktop input. Add `--open-artifacts` to open existing
 artifact paths with the local OS file manager for manual review.
+When proof video capture is enabled, replay also lists the local `proof-video.mp4`
+and `video-capture.log` paths recorded in the manifest.

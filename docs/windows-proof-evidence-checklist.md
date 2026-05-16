@@ -11,6 +11,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] Close unrelated sensitive windows before starting the countdown.
 - [ ] Start screen recording before running the command.
 - [ ] Run the command from the repository root with an explicit `--trace-root`.
+- [ ] Prefer built-in recording with `--record-video --video-fps 15` when
+      `ffmpeg` is installed on the Windows VM.
 - [ ] Do not touch the mouse or keyboard after the countdown starts.
 - [ ] Stop screen recording only after the command prints status and trace path.
 - [ ] Copy the recording into the generated trace directory.
@@ -28,8 +30,15 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] The manifest `artifacts.action_log_path` exists.
 - [ ] The manifest `artifacts.proof_manifest_path` exists.
 - [ ] The manifest lists any `screenshots/*.png` captured during the run.
-- [ ] The screen recording is stored in the trace directory or clearly linked in
-      the review notes until `video_path` is automated.
+- [ ] `proof-video.mp4` is stored in the trace directory when `--record-video`
+      is used.
+- [ ] `video-capture.log` is stored in the trace directory when `--record-video`
+      is used.
+- [ ] `proof-manifest.json` and the command report link `video_path`,
+      `video_log_path`, capture command, and capture status when recording is
+      enabled.
+- [ ] Any external screen recording is stored in the trace directory or clearly
+      linked in the review notes.
 - [ ] `action-log.jsonl` contains one monitoring event per visible proof step.
 - [ ] The command report contains final status, per-step status, active-window
       metadata, cursor readback, and post-action evidence where available.

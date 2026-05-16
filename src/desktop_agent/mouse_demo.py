@@ -154,6 +154,27 @@ class MouseDemoReport:
     steps: tuple[MouseDemoStep, ...]
     reason: str | None = None
     proof_manifest_path: Path | None = None
+    video_path: Path | None = None
+
+
+@dataclass(frozen=True)
+class VideoCaptureResult:
+    """Video artifact metadata produced by an optional proof recording."""
+
+    video_path: Path
+    log_path: Path
+    command: tuple[str, ...]
+    status: str
+    reason: str | None = None
+
+
+@dataclass
+class _VideoCaptureProcess:
+    process: subprocess.Popen[bytes]
+    video_path: Path
+    log_path: Path
+    log_file: Any
+    command: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -548,6 +569,9 @@ def run_input_demo(
     movement_smoothness: float = 0.85,
     keyboard_text: str = "DeskPilot controlled input",
     countdown_seconds: float = 3.0,
+    record_video: bool = False,
+    video_fps: int = 15,
+    ffmpeg_path: str = "ffmpeg",
 ) -> MouseDemoReport:
     """Move the main Windows cursor globally, drag on the desktop, and type."""
 
@@ -572,8 +596,16 @@ def run_input_demo(
     reason: str | None = None
     started_at = _timestamp()
     screen_bounds: tuple[int, int, int, int] | None = None
+    video_process: _VideoCaptureProcess | None = None
+    video_capture: VideoCaptureResult | None = None
 
     try:
+        video_process = _start_video_capture(
+            trace_dir,
+            enabled=record_video,
+            fps=video_fps,
+            ffmpeg_path=ffmpeg_path,
+        )
         _countdown(countdown_seconds)
         screen_bounds = _windows_virtual_screen_bounds()
         points = _input_demo_points(screen_bounds)
@@ -588,6 +620,8 @@ def run_input_demo(
     except Exception as exc:  # pragma: no cover - exercised manually on Windows.
         status = "failed"
         reason = str(exc)
+    finally:
+        video_capture = _stop_video_capture(video_process)
 
     report_path = _write_report(
         trace_dir,
@@ -595,6 +629,7 @@ def run_input_demo(
         status,
         reason,
         report_name="input-demo-report.json",
+        video_capture=video_capture,
     )
     proof_manifest_path = _write_proof_manifest(
         trace_dir,
@@ -605,6 +640,9 @@ def run_input_demo(
             movement_smoothness,
             keyboard_text,
             countdown_seconds,
+            record_video,
+            video_fps,
+            ffmpeg_path,
         ),
         status=status,
         reason=reason,
@@ -613,6 +651,7 @@ def run_input_demo(
         report_path=report_path,
         steps=tuple(steps),
         monitor_bounds=screen_bounds,
+        video_capture=video_capture,
     )
     return MouseDemoReport(
         status=status,
@@ -621,6 +660,7 @@ def run_input_demo(
         report_path=report_path,
         steps=tuple(steps),
         proof_manifest_path=proof_manifest_path,
+        video_path=_video_capture_path(video_capture),
     )
 
 
@@ -631,6 +671,9 @@ def run_mouse_demo(
     movement_smoothness: float = 0.85,
     keyboard_text: str = "DeskPilot controlled input",
     countdown_seconds: float = 3.0,
+    record_video: bool = False,
+    video_fps: int = 15,
+    ffmpeg_path: str = "ffmpeg",
 ) -> MouseDemoReport:
     """Backward-compatible alias for the global input demo."""
 
@@ -640,6 +683,9 @@ def run_mouse_demo(
         movement_smoothness=movement_smoothness,
         keyboard_text=keyboard_text,
         countdown_seconds=countdown_seconds,
+        record_video=record_video,
+        video_fps=video_fps,
+        ffmpeg_path=ffmpeg_path,
     )
 
 
@@ -652,6 +698,9 @@ def run_linkedin_demo(
     url: str = "https://www.linkedin.com/",
     find_text: str = "LinkedIn",
     page_load_seconds: float = 5.0,
+    record_video: bool = False,
+    video_fps: int = 15,
+    ffmpeg_path: str = "ffmpeg",
 ) -> MouseDemoReport:
     """Open Edge, navigate to LinkedIn, then visibly interact with the page."""
 
@@ -682,8 +731,16 @@ def run_linkedin_demo(
     reason: str | None = None
     started_at = _timestamp()
     screen_bounds: tuple[int, int, int, int] | None = None
+    video_process: _VideoCaptureProcess | None = None
+    video_capture: VideoCaptureResult | None = None
 
     try:
+        video_process = _start_video_capture(
+            trace_dir,
+            enabled=record_video,
+            fps=video_fps,
+            ffmpeg_path=ffmpeg_path,
+        )
         _countdown(countdown_seconds)
         screen_bounds = _windows_virtual_screen_bounds()
         steps.extend(
@@ -699,6 +756,8 @@ def run_linkedin_demo(
     except Exception as exc:  # pragma: no cover - exercised manually on Windows.
         status = "failed"
         reason = str(exc)
+    finally:
+        video_capture = _stop_video_capture(video_process)
 
     report_path = _write_report(
         trace_dir,
@@ -706,6 +765,7 @@ def run_linkedin_demo(
         status,
         reason,
         report_name="linkedin-demo-report.json",
+        video_capture=video_capture,
     )
     proof_manifest_path = _write_proof_manifest(
         trace_dir,
@@ -718,6 +778,9 @@ def run_linkedin_demo(
             url,
             find_text,
             page_load_seconds,
+            record_video,
+            video_fps,
+            ffmpeg_path,
         ),
         status=status,
         reason=reason,
@@ -726,6 +789,7 @@ def run_linkedin_demo(
         report_path=report_path,
         steps=tuple(steps),
         monitor_bounds=screen_bounds,
+        video_capture=video_capture,
     )
     return MouseDemoReport(
         status=status,
@@ -734,6 +798,7 @@ def run_linkedin_demo(
         report_path=report_path,
         steps=tuple(steps),
         proof_manifest_path=proof_manifest_path,
+        video_path=_video_capture_path(video_capture),
     )
 
 
@@ -746,6 +811,9 @@ def run_browser_fixture(
     fixture_text: str = "DeskPilot browser fixture",
     result_text: str = "DeskPilot browser fixture submitted",
     page_load_seconds: float = 1.5,
+    record_video: bool = False,
+    video_fps: int = 15,
+    ffmpeg_path: str = "ffmpeg",
 ) -> MouseDemoReport:
     """Open a generated local browser fixture and submit a form with real input."""
 
@@ -778,8 +846,16 @@ def run_browser_fixture(
     reason: str | None = None
     started_at = _timestamp()
     screen_bounds: tuple[int, int, int, int] | None = None
+    video_process: _VideoCaptureProcess | None = None
+    video_capture: VideoCaptureResult | None = None
 
     try:
+        video_process = _start_video_capture(
+            trace_dir,
+            enabled=record_video,
+            fps=video_fps,
+            ffmpeg_path=ffmpeg_path,
+        )
         _countdown(countdown_seconds)
         screen_bounds = _windows_virtual_screen_bounds()
         steps.extend(
@@ -797,6 +873,8 @@ def run_browser_fixture(
     except Exception as exc:  # pragma: no cover - exercised manually on Windows.
         status = "failed"
         reason = str(exc)
+    finally:
+        video_capture = _stop_video_capture(video_process)
 
     report_path = _write_report(
         trace_dir,
@@ -804,6 +882,7 @@ def run_browser_fixture(
         status,
         reason,
         report_name="browser-fixture-report.json",
+        video_capture=video_capture,
     )
     proof_manifest_path = _write_proof_manifest(
         trace_dir,
@@ -816,6 +895,9 @@ def run_browser_fixture(
             fixture_text,
             result_text,
             page_load_seconds,
+            record_video,
+            video_fps,
+            ffmpeg_path,
         ),
         status=status,
         reason=reason,
@@ -824,6 +906,7 @@ def run_browser_fixture(
         report_path=report_path,
         steps=tuple(steps),
         monitor_bounds=screen_bounds,
+        video_capture=video_capture,
     )
     return MouseDemoReport(
         status=status,
@@ -832,6 +915,7 @@ def run_browser_fixture(
         report_path=report_path,
         steps=tuple(steps),
         proof_manifest_path=proof_manifest_path,
+        video_path=_video_capture_path(video_capture),
     )
 
 
@@ -843,6 +927,9 @@ def run_native_fixture(
     countdown_seconds: float = 3.0,
     initial_text: str = "DeskPilot native fixture",
     replacement_text: str = "DeskPilot native fixture updated",
+    record_video: bool = False,
+    video_fps: int = 15,
+    ffmpeg_path: str = "ffmpeg",
 ) -> MouseDemoReport:
     """Open Notepad and perform a bounded native-app text editing proof."""
 
@@ -871,8 +958,16 @@ def run_native_fixture(
     reason: str | None = None
     started_at = _timestamp()
     screen_bounds: tuple[int, int, int, int] | None = None
+    video_process: _VideoCaptureProcess | None = None
+    video_capture: VideoCaptureResult | None = None
 
     try:
+        video_process = _start_video_capture(
+            trace_dir,
+            enabled=record_video,
+            fps=video_fps,
+            ffmpeg_path=ffmpeg_path,
+        )
         _countdown(countdown_seconds)
         screen_bounds = _windows_virtual_screen_bounds()
         steps.extend(
@@ -886,6 +981,8 @@ def run_native_fixture(
     except Exception as exc:  # pragma: no cover - exercised manually on Windows.
         status = "failed"
         reason = str(exc)
+    finally:
+        video_capture = _stop_video_capture(video_process)
 
     report_path = _write_report(
         trace_dir,
@@ -893,6 +990,7 @@ def run_native_fixture(
         status,
         reason,
         report_name="native-fixture-report.json",
+        video_capture=video_capture,
     )
     proof_manifest_path = _write_proof_manifest(
         trace_dir,
@@ -904,6 +1002,9 @@ def run_native_fixture(
             countdown_seconds,
             initial_text,
             replacement_text,
+            record_video,
+            video_fps,
+            ffmpeg_path,
         ),
         status=status,
         reason=reason,
@@ -912,6 +1013,7 @@ def run_native_fixture(
         report_path=report_path,
         steps=tuple(steps),
         monitor_bounds=screen_bounds,
+        video_capture=video_capture,
     )
     return MouseDemoReport(
         status=status,
@@ -920,6 +1022,7 @@ def run_native_fixture(
         report_path=report_path,
         steps=tuple(steps),
         proof_manifest_path=proof_manifest_path,
+        video_path=_video_capture_path(video_capture),
     )
 
 
@@ -932,6 +1035,9 @@ def run_mixed_fixture(
     native_text: str = "DeskPilot mixed native handoff",
     browser_find_text: str = "DeskPilot Browser Fixture",
     page_load_seconds: float = 1.5,
+    record_video: bool = False,
+    video_fps: int = 15,
+    ffmpeg_path: str = "ffmpeg",
 ) -> MouseDemoReport:
     """Open Edge and Notepad, then switch between them with real keyboard input."""
 
@@ -967,8 +1073,16 @@ def run_mixed_fixture(
     reason: str | None = None
     started_at = _timestamp()
     screen_bounds: tuple[int, int, int, int] | None = None
+    video_process: _VideoCaptureProcess | None = None
+    video_capture: VideoCaptureResult | None = None
 
     try:
+        video_process = _start_video_capture(
+            trace_dir,
+            enabled=record_video,
+            fps=video_fps,
+            ffmpeg_path=ffmpeg_path,
+        )
         _countdown(countdown_seconds)
         screen_bounds = _windows_virtual_screen_bounds()
         steps.extend(
@@ -985,6 +1099,8 @@ def run_mixed_fixture(
     except Exception as exc:  # pragma: no cover - exercised manually on Windows.
         status = "failed"
         reason = str(exc)
+    finally:
+        video_capture = _stop_video_capture(video_process)
 
     report_path = _write_report(
         trace_dir,
@@ -992,6 +1108,7 @@ def run_mixed_fixture(
         status,
         reason,
         report_name="mixed-fixture-report.json",
+        video_capture=video_capture,
     )
     proof_manifest_path = _write_proof_manifest(
         trace_dir,
@@ -1004,6 +1121,9 @@ def run_mixed_fixture(
             native_text,
             browser_find_text,
             page_load_seconds,
+            record_video,
+            video_fps,
+            ffmpeg_path,
         ),
         status=status,
         reason=reason,
@@ -1012,6 +1132,7 @@ def run_mixed_fixture(
         report_path=report_path,
         steps=tuple(steps),
         monitor_bounds=screen_bounds,
+        video_capture=video_capture,
     )
     return MouseDemoReport(
         status=status,
@@ -1020,6 +1141,7 @@ def run_mixed_fixture(
         report_path=report_path,
         steps=tuple(steps),
         proof_manifest_path=proof_manifest_path,
+        video_path=_video_capture_path(video_capture),
     )
 
 
@@ -1033,6 +1155,9 @@ def run_recovery_fixture(
     ready_delay_seconds: float = 1.5,
     recovery_wait_seconds: float = 2.0,
     result_text: str = "Recovery fixture clicked",
+    record_video: bool = False,
+    video_fps: int = 15,
+    ffmpeg_path: str = "ffmpeg",
 ) -> MouseDemoReport:
     """Run a delayed disabled-control proof with visible wait and retry."""
 
@@ -1071,8 +1196,16 @@ def run_recovery_fixture(
     reason: str | None = None
     started_at = _timestamp()
     screen_bounds: tuple[int, int, int, int] | None = None
+    video_process: _VideoCaptureProcess | None = None
+    video_capture: VideoCaptureResult | None = None
 
     try:
+        video_process = _start_video_capture(
+            trace_dir,
+            enabled=record_video,
+            fps=video_fps,
+            ffmpeg_path=ffmpeg_path,
+        )
         _countdown(countdown_seconds)
         screen_bounds = _windows_virtual_screen_bounds()
         steps.extend(
@@ -1090,6 +1223,8 @@ def run_recovery_fixture(
     except Exception as exc:  # pragma: no cover - exercised manually on Windows.
         status = "failed"
         reason = str(exc)
+    finally:
+        video_capture = _stop_video_capture(video_process)
 
     report_path = _write_report(
         trace_dir,
@@ -1097,6 +1232,7 @@ def run_recovery_fixture(
         status,
         reason,
         report_name="recovery-fixture-report.json",
+        video_capture=video_capture,
     )
     proof_manifest_path = _write_proof_manifest(
         trace_dir,
@@ -1110,6 +1246,9 @@ def run_recovery_fixture(
             ready_delay_seconds,
             recovery_wait_seconds,
             result_text,
+            record_video,
+            video_fps,
+            ffmpeg_path,
         ),
         status=status,
         reason=reason,
@@ -1118,6 +1257,7 @@ def run_recovery_fixture(
         report_path=report_path,
         steps=tuple(steps),
         monitor_bounds=screen_bounds,
+        video_capture=video_capture,
     )
     return MouseDemoReport(
         status=status,
@@ -1126,6 +1266,7 @@ def run_recovery_fixture(
         report_path=report_path,
         steps=tuple(steps),
         proof_manifest_path=proof_manifest_path,
+        video_path=_video_capture_path(video_capture),
     )
 
 
@@ -1137,6 +1278,9 @@ def run_windows_smoke_checklist(
     countdown_seconds: float = 3.0,
     keyboard_text: str = "DeskPilot Windows smoke check",
     edge_url: str = "about:blank",
+    record_video: bool = False,
+    video_fps: int = 15,
+    ffmpeg_path: str = "ffmpeg",
 ) -> MouseDemoReport:
     """Run a bounded Windows smoke checklist through real desktop input."""
 
@@ -1165,8 +1309,16 @@ def run_windows_smoke_checklist(
     reason: str | None = None
     started_at = _timestamp()
     screen_bounds: tuple[int, int, int, int] | None = None
+    video_process: _VideoCaptureProcess | None = None
+    video_capture: VideoCaptureResult | None = None
 
     try:
+        video_process = _start_video_capture(
+            trace_dir,
+            enabled=record_video,
+            fps=video_fps,
+            ffmpeg_path=ffmpeg_path,
+        )
         _countdown(countdown_seconds)
         screen_bounds = _windows_virtual_screen_bounds()
         steps.extend(
@@ -1180,6 +1332,8 @@ def run_windows_smoke_checklist(
     except Exception as exc:  # pragma: no cover - exercised manually on Windows.
         status = "failed"
         reason = str(exc)
+    finally:
+        video_capture = _stop_video_capture(video_process)
 
     report_path = _write_report(
         trace_dir,
@@ -1187,6 +1341,7 @@ def run_windows_smoke_checklist(
         status,
         reason,
         report_name="windows-smoke-checklist-report.json",
+        video_capture=video_capture,
     )
     _write_smoke_checklist_markdown(
         trace_dir,
@@ -1204,6 +1359,9 @@ def run_windows_smoke_checklist(
             countdown_seconds,
             keyboard_text,
             edge_url,
+            record_video,
+            video_fps,
+            ffmpeg_path,
         ),
         status=status,
         reason=reason,
@@ -1212,6 +1370,7 @@ def run_windows_smoke_checklist(
         report_path=report_path,
         steps=tuple(steps),
         monitor_bounds=screen_bounds,
+        video_capture=video_capture,
     )
     return MouseDemoReport(
         status=status,
@@ -1220,6 +1379,7 @@ def run_windows_smoke_checklist(
         report_path=report_path,
         steps=tuple(steps),
         proof_manifest_path=proof_manifest_path,
+        video_path=_video_capture_path(video_capture),
     )
 
 
@@ -2084,6 +2244,7 @@ def _write_report(
     reason: str | None,
     *,
     report_name: str,
+    video_capture: VideoCaptureResult | None = None,
 ) -> Path:
     action_log_path = _write_demo_action_log(trace_dir, steps)
     report_path = trace_dir / report_name
@@ -2094,6 +2255,8 @@ def _write_report(
         "trace_dir": str(trace_dir),
         "action_log_path": str(action_log_path),
         "proof_manifest_path": str(trace_dir / "proof-manifest.json"),
+        "video_path": str(video_capture.video_path) if video_capture else None,
+        "video_capture": _video_capture_metadata(video_capture),
         "steps": [
             {
                 "step_id": step.step_id,
@@ -2119,6 +2282,7 @@ def _write_proof_manifest(
     report_path: Path,
     steps: tuple[MouseDemoStep, ...],
     monitor_bounds: tuple[int, int, int, int] | None,
+    video_capture: VideoCaptureResult | None = None,
 ) -> Path:
     manifest_path = trace_dir / "proof-manifest.json"
     # The manifest is the stable index for human review: it ties the visible
@@ -2143,8 +2307,10 @@ def _write_proof_manifest(
             "action_log_path": str(trace_dir / "action-log.jsonl"),
             "proof_manifest_path": str(manifest_path),
             "screenshots": _screenshot_artifacts(trace_dir),
-            "video_path": None,
+            "video_path": str(video_capture.video_path) if video_capture else None,
+            "video_log_path": str(video_capture.log_path) if video_capture else None,
         },
+        "video_capture": _video_capture_metadata(video_capture),
         "step_count": len(steps),
         "steps": [
             {
@@ -2157,6 +2323,108 @@ def _write_proof_manifest(
     }
     manifest_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return manifest_path
+
+
+def _start_video_capture(
+    trace_dir: Path,
+    *,
+    enabled: bool,
+    fps: int,
+    ffmpeg_path: str,
+) -> _VideoCaptureProcess | None:
+    if not enabled:
+        return None
+    if sys.platform != "win32":
+        raise MouseDemoError("video capture requires Windows desktop input")
+    if fps <= 0:
+        raise MouseDemoError("video_fps must be greater than zero")
+    if not ffmpeg_path:
+        raise MouseDemoError("ffmpeg_path must not be empty")
+
+    video_path = trace_dir / "proof-video.mp4"
+    log_path = trace_dir / "video-capture.log"
+    command = (
+        ffmpeg_path,
+        "-y",
+        "-f",
+        "gdigrab",
+        "-framerate",
+        str(fps),
+        "-i",
+        "desktop",
+        str(video_path),
+    )
+    log_file = log_path.open("wb")
+    try:
+        # ffmpeg's gdigrab input records the visible Windows desktop locally; the
+        # process is stopped with "q" so it finalizes the mp4 container.
+        process = subprocess.Popen(
+            list(command),
+            stdin=subprocess.PIPE,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+        )
+    except Exception:
+        log_file.close()
+        raise
+    return _VideoCaptureProcess(
+        process=process,
+        video_path=video_path,
+        log_path=log_path,
+        log_file=log_file,
+        command=command,
+    )
+
+
+def _stop_video_capture(
+    capture: _VideoCaptureProcess | None,
+) -> VideoCaptureResult | None:
+    if capture is None:
+        return None
+    status = "passed"
+    reason: str | None = None
+    try:
+        if capture.process.stdin is not None:
+            try:
+                capture.process.stdin.write(b"q")
+                capture.process.stdin.flush()
+            except BrokenPipeError:
+                pass
+        try:
+            return_code = capture.process.wait(timeout=8)
+        except subprocess.TimeoutExpired:
+            capture.process.terminate()
+            return_code = capture.process.wait(timeout=3)
+        if return_code != 0:
+            status = "failed"
+            reason = f"ffmpeg exited with status {return_code}"
+    finally:
+        capture.log_file.close()
+    return VideoCaptureResult(
+        video_path=capture.video_path,
+        log_path=capture.log_path,
+        command=capture.command,
+        status=status,
+        reason=reason,
+    )
+
+
+def _video_capture_path(capture: VideoCaptureResult | None) -> Path | None:
+    return capture.video_path if capture else None
+
+
+def _video_capture_metadata(
+    capture: VideoCaptureResult | None,
+) -> dict[str, object] | None:
+    if capture is None:
+        return None
+    return {
+        "status": capture.status,
+        "reason": capture.reason,
+        "video_path": str(capture.video_path),
+        "log_path": str(capture.log_path),
+        "command": list(capture.command),
+    }
 
 
 def _write_demo_action_log(
@@ -2266,6 +2534,9 @@ def _input_demo_command(
     movement_smoothness: float,
     keyboard_text: str,
     countdown_seconds: float,
+    record_video: bool,
+    video_fps: int,
+    ffmpeg_path: str,
 ) -> tuple[str, ...]:
     return (
         "desktop-agent",
@@ -2280,6 +2551,7 @@ def _input_demo_command(
         keyboard_text,
         "--countdown-seconds",
         str(countdown_seconds),
+        *_video_command_args(record_video, video_fps, ffmpeg_path),
     )
 
 
@@ -2291,6 +2563,9 @@ def _linkedin_demo_command(
     url: str,
     find_text: str,
     page_load_seconds: float,
+    record_video: bool,
+    video_fps: int,
+    ffmpeg_path: str,
 ) -> tuple[str, ...]:
     return (
         "desktop-agent",
@@ -2309,6 +2584,7 @@ def _linkedin_demo_command(
         find_text,
         "--page-load-seconds",
         str(page_load_seconds),
+        *_video_command_args(record_video, video_fps, ffmpeg_path),
     )
 
 
@@ -2320,6 +2596,9 @@ def _browser_fixture_command(
     fixture_text: str,
     result_text: str,
     page_load_seconds: float,
+    record_video: bool,
+    video_fps: int,
+    ffmpeg_path: str,
 ) -> tuple[str, ...]:
     return (
         "desktop-agent",
@@ -2339,6 +2618,7 @@ def _browser_fixture_command(
         result_text,
         "--page-load-seconds",
         str(page_load_seconds),
+        *_video_command_args(record_video, video_fps, ffmpeg_path),
     )
 
 
@@ -2349,6 +2629,9 @@ def _native_fixture_command(
     countdown_seconds: float,
     initial_text: str,
     replacement_text: str,
+    record_video: bool,
+    video_fps: int,
+    ffmpeg_path: str,
 ) -> tuple[str, ...]:
     return (
         "desktop-agent",
@@ -2366,6 +2649,7 @@ def _native_fixture_command(
         initial_text,
         "--replacement-text",
         replacement_text,
+        *_video_command_args(record_video, video_fps, ffmpeg_path),
     )
 
 
@@ -2377,6 +2661,9 @@ def _mixed_fixture_command(
     native_text: str,
     browser_find_text: str,
     page_load_seconds: float,
+    record_video: bool,
+    video_fps: int,
+    ffmpeg_path: str,
 ) -> tuple[str, ...]:
     return (
         "desktop-agent",
@@ -2396,6 +2683,7 @@ def _mixed_fixture_command(
         browser_find_text,
         "--page-load-seconds",
         str(page_load_seconds),
+        *_video_command_args(record_video, video_fps, ffmpeg_path),
     )
 
 
@@ -2408,6 +2696,9 @@ def _recovery_fixture_command(
     ready_delay_seconds: float,
     recovery_wait_seconds: float,
     result_text: str,
+    record_video: bool,
+    video_fps: int,
+    ffmpeg_path: str,
 ) -> tuple[str, ...]:
     return (
         "desktop-agent",
@@ -2429,6 +2720,7 @@ def _recovery_fixture_command(
         str(recovery_wait_seconds),
         "--result-text",
         result_text,
+        *_video_command_args(record_video, video_fps, ffmpeg_path),
     )
 
 
@@ -2439,6 +2731,9 @@ def _windows_smoke_command(
     countdown_seconds: float,
     keyboard_text: str,
     edge_url: str,
+    record_video: bool,
+    video_fps: int,
+    ffmpeg_path: str,
 ) -> tuple[str, ...]:
     return (
         "desktop-agent",
@@ -2455,6 +2750,23 @@ def _windows_smoke_command(
         keyboard_text,
         "--edge-url",
         edge_url,
+        *_video_command_args(record_video, video_fps, ffmpeg_path),
+    )
+
+
+def _video_command_args(
+    record_video: bool,
+    video_fps: int,
+    ffmpeg_path: str,
+) -> tuple[str, ...]:
+    if not record_video:
+        return ()
+    return (
+        "--record-video",
+        "--video-fps",
+        str(video_fps),
+        "--ffmpeg-path",
+        ffmpeg_path,
     )
 
 

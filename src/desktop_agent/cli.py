@@ -320,6 +320,7 @@ def _add_input_demo_options(parser: argparse.ArgumentParser) -> None:
         help="text typed into the fresh Notepad window",
     )
     parser.add_argument("--countdown-seconds", default=3.0, type=float)
+    _add_video_options(parser)
 
 
 def _add_linkedin_demo_options(parser: argparse.ArgumentParser) -> None:
@@ -334,6 +335,7 @@ def _add_linkedin_demo_options(parser: argparse.ArgumentParser) -> None:
         help="text highlighted through Edge's browser find box after navigation",
     )
     parser.add_argument("--page-load-seconds", default=5.0, type=float)
+    _add_video_options(parser)
 
 
 def _add_browser_fixture_options(parser: argparse.ArgumentParser) -> None:
@@ -352,6 +354,7 @@ def _add_browser_fixture_options(parser: argparse.ArgumentParser) -> None:
         help="result text searched after submitting the generated form",
     )
     parser.add_argument("--page-load-seconds", default=1.5, type=float)
+    _add_video_options(parser)
 
 
 def _add_native_fixture_options(parser: argparse.ArgumentParser) -> None:
@@ -369,6 +372,7 @@ def _add_native_fixture_options(parser: argparse.ArgumentParser) -> None:
         default="DeskPilot native fixture updated",
         help="replacement text typed after selecting the Notepad buffer",
     )
+    _add_video_options(parser)
 
 
 def _add_mixed_fixture_options(parser: argparse.ArgumentParser) -> None:
@@ -387,6 +391,7 @@ def _add_mixed_fixture_options(parser: argparse.ArgumentParser) -> None:
         help="browser fixture text searched after Alt+Tab switches back to Edge",
     )
     parser.add_argument("--page-load-seconds", default=1.5, type=float)
+    _add_video_options(parser)
 
 
 def _add_recovery_fixture_options(parser: argparse.ArgumentParser) -> None:
@@ -402,6 +407,7 @@ def _add_recovery_fixture_options(parser: argparse.ArgumentParser) -> None:
         default="Recovery fixture clicked",
         help="result text searched after the delayed control retry succeeds",
     )
+    _add_video_options(parser)
 
 
 def _add_windows_smoke_checklist_options(parser: argparse.ArgumentParser) -> None:
@@ -415,6 +421,17 @@ def _add_windows_smoke_checklist_options(parser: argparse.ArgumentParser) -> Non
         help="text typed into the disposable Notepad window",
     )
     parser.add_argument("--edge-url", default="about:blank")
+    _add_video_options(parser)
+
+
+def _add_video_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--record-video",
+        action="store_true",
+        help="record the visible Windows desktop into the trace directory",
+    )
+    parser.add_argument("--video-fps", default=15, type=int)
+    parser.add_argument("--ffmpeg-path", default="ffmpeg")
 
 
 def _add_site_catalog_options(parser: argparse.ArgumentParser) -> None:
@@ -957,6 +974,9 @@ def _demo_input(args: argparse.Namespace) -> int:
         movement_smoothness=args.movement_smoothness,
         keyboard_text=args.keyboard_text,
         countdown_seconds=args.countdown_seconds,
+        record_video=args.record_video,
+        video_fps=args.video_fps,
+        ffmpeg_path=args.ffmpeg_path,
     )
     print(f"status: {report.status}")
     if report.reason:
@@ -985,6 +1005,9 @@ def _demo_linkedin(args: argparse.Namespace) -> int:
         url=args.url,
         find_text=args.find_text,
         page_load_seconds=args.page_load_seconds,
+        record_video=args.record_video,
+        video_fps=args.video_fps,
+        ffmpeg_path=args.ffmpeg_path,
     )
     print(f"status: {report.status}")
     if report.reason:
@@ -1012,6 +1035,9 @@ def _windows_smoke_checklist(args: argparse.Namespace) -> int:
         countdown_seconds=args.countdown_seconds,
         keyboard_text=args.keyboard_text,
         edge_url=args.edge_url,
+        record_video=args.record_video,
+        video_fps=args.video_fps,
+        ffmpeg_path=args.ffmpeg_path,
     )
     print(f"status: {report.status}")
     if report.reason:
@@ -1108,6 +1134,9 @@ def _proof_browser_fixture(args: argparse.Namespace) -> int:
         fixture_text=args.fixture_text,
         result_text=args.result_text,
         page_load_seconds=args.page_load_seconds,
+        record_video=args.record_video,
+        video_fps=args.video_fps,
+        ffmpeg_path=args.ffmpeg_path,
     )
     print(f"status: {report.status}")
     if report.reason:
@@ -1137,6 +1166,9 @@ def _proof_native_fixture(args: argparse.Namespace) -> int:
         countdown_seconds=args.countdown_seconds,
         initial_text=args.initial_text,
         replacement_text=args.replacement_text,
+        record_video=args.record_video,
+        video_fps=args.video_fps,
+        ffmpeg_path=args.ffmpeg_path,
     )
     print(f"status: {report.status}")
     if report.reason:
@@ -1159,6 +1191,9 @@ def _proof_mixed_fixture(args: argparse.Namespace) -> int:
         native_text=args.native_text,
         browser_find_text=args.browser_find_text,
         page_load_seconds=args.page_load_seconds,
+        record_video=args.record_video,
+        video_fps=args.video_fps,
+        ffmpeg_path=args.ffmpeg_path,
     )
     print(f"status: {report.status}")
     if report.reason:
@@ -1182,6 +1217,9 @@ def _proof_recovery_fixture(args: argparse.Namespace) -> int:
         ready_delay_seconds=args.ready_delay_seconds,
         recovery_wait_seconds=args.recovery_wait_seconds,
         result_text=args.result_text,
+        record_video=args.record_video,
+        video_fps=args.video_fps,
+        ffmpeg_path=args.ffmpeg_path,
     )
     print(f"status: {report.status}")
     if report.reason:
@@ -1277,6 +1315,7 @@ def _proof_artifact_paths(
         "action_log_path",
         "proof_manifest_path",
         "video_path",
+        "video_log_path",
     ):
         value = artifacts.get(label)
         if isinstance(value, str) and value:

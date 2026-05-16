@@ -92,6 +92,8 @@ def test_windows_proof_docs_cover_manual_evidence_review() -> None:
         "trace",
         "screenshots",
         "action-log.jsonl",
+        "proof-video.mp4",
+        "video-capture.log",
         "candidate rankings",
         "reviewer signoff",
     ):

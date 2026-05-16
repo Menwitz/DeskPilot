@@ -164,6 +164,17 @@ creation, post-action screenshots, and monitoring logs. See
 Use [Windows Proof Evidence Checklist](windows-proof-evidence-checklist.md) when
 recording manual proof bundles for review.
 
+Proof commands can record the visible Windows desktop into the trace directory
+when `ffmpeg` is installed locally:
+
+```powershell
+uv run desktop-agent proof browser-fixture --record-video --video-fps 15
+```
+
+Video capture uses Windows `gdigrab` and writes `proof-video.mp4` plus
+`video-capture.log`. The report and `proof-manifest.json` link the video path,
+log path, capture command, and capture status.
+
 ## Platform Support
 
 `create_platform_actuator()` returns the Windows input backend on Windows and a

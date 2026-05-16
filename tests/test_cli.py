@@ -312,12 +312,18 @@ def test_cli_demo_input_prints_trace_report(
         movement_smoothness: float,
         keyboard_text: str,
         countdown_seconds: float,
+        record_video: bool,
+        video_fps: int,
+        ffmpeg_path: str,
     ) -> MouseDemoReport:
         assert trace_root == tmp_path
         assert random_seed == 7
         assert movement_smoothness == 0.5
         assert keyboard_text == "typed by test"
         assert countdown_seconds == 0
+        assert record_video is True
+        assert video_fps == 24
+        assert ffmpeg_path == "ffmpeg-test"
         return MouseDemoReport(
             status="passed",
             trace_dir=tmp_path / "trace",
@@ -349,6 +355,11 @@ def test_cli_demo_input_prints_trace_report(
             "typed by test",
             "--countdown-seconds",
             "0",
+            "--record-video",
+            "--video-fps",
+            "24",
+            "--ffmpeg-path",
+            "ffmpeg-test",
         ],
     )
 
@@ -373,9 +384,15 @@ def test_cli_demo_mouse_alias_uses_input_demo(
         movement_smoothness: float,
         keyboard_text: str,
         countdown_seconds: float,
+        record_video: bool,
+        video_fps: int,
+        ffmpeg_path: str,
     ) -> MouseDemoReport:
         _ = trace_root, random_seed, movement_smoothness, keyboard_text
         assert countdown_seconds == 0
+        assert record_video is False
+        assert video_fps == 15
+        assert ffmpeg_path == "ffmpeg"
         calls.append("called")
         return MouseDemoReport(
             status="passed",
@@ -410,6 +427,9 @@ def test_cli_demo_linkedin_prints_trace_report(
         url: str,
         find_text: str,
         page_load_seconds: float,
+        record_video: bool,
+        video_fps: int,
+        ffmpeg_path: str,
     ) -> MouseDemoReport:
         assert trace_root == tmp_path
         assert random_seed == 13
@@ -418,6 +438,9 @@ def test_cli_demo_linkedin_prints_trace_report(
         assert url == "https://www.linkedin.com/"
         assert find_text == "LinkedIn"
         assert page_load_seconds == 0
+        assert record_video is False
+        assert video_fps == 15
+        assert ffmpeg_path == "ffmpeg"
         return MouseDemoReport(
             status="passed",
             trace_dir=tmp_path / "trace",
@@ -474,6 +497,9 @@ def test_cli_proof_browser_fixture_prints_trace_report(
         fixture_text: str,
         result_text: str,
         page_load_seconds: float,
+        record_video: bool,
+        video_fps: int,
+        ffmpeg_path: str,
     ) -> MouseDemoReport:
         assert trace_root == tmp_path
         assert random_seed == 34
@@ -482,6 +508,9 @@ def test_cli_proof_browser_fixture_prints_trace_report(
         assert fixture_text == "typed fixture"
         assert result_text == "fixture submitted"
         assert page_load_seconds == 0
+        assert record_video is False
+        assert video_fps == 15
+        assert ffmpeg_path == "ffmpeg"
         return MouseDemoReport(
             status="passed",
             trace_dir=tmp_path / "trace",
@@ -547,6 +576,9 @@ def test_cli_proof_native_fixture_prints_trace_report(
         countdown_seconds: float,
         initial_text: str,
         replacement_text: str,
+        record_video: bool,
+        video_fps: int,
+        ffmpeg_path: str,
     ) -> MouseDemoReport:
         assert trace_root == tmp_path
         assert random_seed == 55
@@ -554,6 +586,9 @@ def test_cli_proof_native_fixture_prints_trace_report(
         assert countdown_seconds == 0
         assert initial_text == "first"
         assert replacement_text == "second"
+        assert record_video is False
+        assert video_fps == 15
+        assert ffmpeg_path == "ffmpeg"
         return MouseDemoReport(
             status="passed",
             trace_dir=tmp_path / "trace",
@@ -615,6 +650,9 @@ def test_cli_proof_mixed_fixture_prints_trace_report(
         native_text: str,
         browser_find_text: str,
         page_load_seconds: float,
+        record_video: bool,
+        video_fps: int,
+        ffmpeg_path: str,
     ) -> MouseDemoReport:
         assert trace_root == tmp_path
         assert random_seed == 89
@@ -623,6 +661,9 @@ def test_cli_proof_mixed_fixture_prints_trace_report(
         assert native_text == "handoff"
         assert browser_find_text == "browser marker"
         assert page_load_seconds == 0
+        assert record_video is False
+        assert video_fps == 15
+        assert ffmpeg_path == "ffmpeg"
         return MouseDemoReport(
             status="passed",
             trace_dir=tmp_path / "trace",
@@ -687,6 +728,9 @@ def test_cli_proof_recovery_fixture_prints_recovery_summary(
         ready_delay_seconds: float,
         recovery_wait_seconds: float,
         result_text: str,
+        record_video: bool,
+        video_fps: int,
+        ffmpeg_path: str,
     ) -> MouseDemoReport:
         assert trace_root == tmp_path
         assert random_seed == 144
@@ -696,6 +740,9 @@ def test_cli_proof_recovery_fixture_prints_recovery_summary(
         assert ready_delay_seconds == 0.5
         assert recovery_wait_seconds == 0.75
         assert result_text == "clicked"
+        assert record_video is False
+        assert video_fps == 15
+        assert ffmpeg_path == "ffmpeg"
         return MouseDemoReport(
             status="passed",
             trace_dir=tmp_path / "trace",
@@ -768,6 +815,9 @@ def test_cli_windows_smoke_checklist_prints_checks(
         countdown_seconds: float,
         keyboard_text: str,
         edge_url: str,
+        record_video: bool,
+        video_fps: int,
+        ffmpeg_path: str,
     ) -> MouseDemoReport:
         assert trace_root == tmp_path
         assert random_seed == 21
@@ -775,6 +825,9 @@ def test_cli_windows_smoke_checklist_prints_checks(
         assert countdown_seconds == 0
         assert keyboard_text == "smoke"
         assert edge_url == "about:blank"
+        assert record_video is False
+        assert video_fps == 15
+        assert ffmpeg_path == "ffmpeg"
         return MouseDemoReport(
             status="passed",
             trace_dir=tmp_path / "trace",

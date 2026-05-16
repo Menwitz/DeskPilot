@@ -12,6 +12,7 @@ from desktop_agent.mouse_demo import (
     MouseDemoStep,
     PostActionEvidenceRecorder,
     RealInputController,
+    VideoCaptureResult,
     _demo_actuation_profile,
     _run_browser_fixture_sequence,
     _run_linkedin_sequence,
@@ -19,6 +20,8 @@ from desktop_agent.mouse_demo import (
     _run_native_fixture_sequence,
     _run_recovery_fixture_sequence,
     _run_windows_smoke_sequence,
+    _start_video_capture,
+    _stop_video_capture,
     _write_browser_fixture_html,
     _write_proof_manifest,
     _write_recovery_fixture_html,
@@ -222,6 +225,134 @@ def test_proof_manifest_links_command_environment_and_artifacts(
             "has_post_action_evidence": True,
         }
     ]
+
+
+def test_proof_manifest_links_video_capture_artifacts(tmp_path: Path) -> None:
+    video_capture = VideoCaptureResult(
+        video_path=tmp_path / "proof-video.mp4",
+        log_path=tmp_path / "video-capture.log",
+        command=("ffmpeg", "-f", "gdigrab"),
+        status="passed",
+    )
+    report_path = _write_report(
+        tmp_path,
+        (),
+        "passed",
+        None,
+        report_name="browser-fixture-report.json",
+        video_capture=video_capture,
+    )
+
+    manifest_path = _write_proof_manifest(
+        tmp_path,
+        proof_name="browser-fixture",
+        command=("desktop-agent", "proof", "browser-fixture"),
+        status="passed",
+        reason=None,
+        started_at="2026-05-16T00:00:00+00:00",
+        completed_at="2026-05-16T00:00:01+00:00",
+        report_path=report_path,
+        steps=(),
+        monitor_bounds=None,
+        video_capture=video_capture,
+    )
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert report["video_path"] == str(video_capture.video_path)
+    assert report["video_capture"]["command"] == ["ffmpeg", "-f", "gdigrab"]
+    assert manifest["artifacts"]["video_path"] == str(video_capture.video_path)
+    assert manifest["artifacts"]["video_log_path"] == str(video_capture.log_path)
+    assert manifest["video_capture"]["status"] == "passed"
+
+
+def test_video_capture_uses_ffmpeg_gdigrab_and_stops_cleanly(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("desktop_agent.mouse_demo.sys.platform", "win32")
+    calls: dict[str, object] = {}
+
+    class FakeStdin:
+        def __init__(self) -> None:
+            self.writes: list[bytes] = []
+
+        def write(self, data: bytes) -> int:
+            self.writes.append(data)
+            return len(data)
+
+        def flush(self) -> None:
+            calls["flushed"] = True
+
+    class FakeProcess:
+        def __init__(self) -> None:
+            self.stdin = FakeStdin()
+
+        def wait(self, timeout: float | None = None) -> int:
+            calls["wait_timeout"] = timeout
+            return 0
+
+        def terminate(self) -> None:
+            calls["terminated"] = True
+
+    def fake_popen(
+        command: list[str],
+        *,
+        stdin: object,
+        stdout: object,
+        stderr: object,
+    ) -> FakeProcess:
+        calls["command"] = command
+        calls["stdin"] = stdin
+        calls["stdout"] = stdout
+        calls["stderr"] = stderr
+        process = FakeProcess()
+        calls["process"] = process
+        return process
+
+    monkeypatch.setattr("desktop_agent.mouse_demo.subprocess.Popen", fake_popen)
+
+    capture = _start_video_capture(
+        tmp_path,
+        enabled=True,
+        fps=12,
+        ffmpeg_path="ffmpeg.exe",
+    )
+    result = _stop_video_capture(capture)
+
+    process = calls["process"]
+    assert calls["command"] == [
+        "ffmpeg.exe",
+        "-y",
+        "-f",
+        "gdigrab",
+        "-framerate",
+        "12",
+        "-i",
+        "desktop",
+        str(tmp_path / "proof-video.mp4"),
+    ]
+    assert isinstance(process, FakeProcess)
+    assert process.stdin.writes == [b"q"]
+    assert result is not None
+    assert result.status == "passed"
+    assert result.video_path == tmp_path / "proof-video.mp4"
+    assert result.log_path == tmp_path / "video-capture.log"
+
+
+def test_video_capture_requires_windows(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("desktop_agent.mouse_demo.sys.platform", "darwin")
+
+    with pytest.raises(MouseDemoError, match="video capture requires Windows"):
+        _start_video_capture(
+            tmp_path,
+            enabled=True,
+            fps=12,
+            ffmpeg_path="ffmpeg",
+        )
 
 
 def test_linkedin_sequence_opens_edge_navigates_and_finds_text() -> None:

@@ -140,7 +140,7 @@ abuse, and hidden automation are not supported.
       proof.
 - [x] Add `desktop-agent proof recovery-fixture` for delayed, duplicated,
       disabled, occluded, or moving target proof.
-- [ ] Add local Windows video capture support and store recordings in the trace
+- [x] Add local Windows video capture support and store recordings in the trace
       directory.
 - [x] Add `proof-manifest.json` with command, executable version, Python version,
       Windows version, monitor geometry, DPI, started-at time, completed-at time,
