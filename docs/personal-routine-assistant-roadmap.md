@@ -530,7 +530,7 @@ abuse, and hidden automation are not supported.
 
 ### Acceptance Criteria
 
-- [ ] Recoverable fixture failures pass after bounded recovery.
+- [x] Recoverable fixture failures pass after bounded recovery.
 - [ ] Non-recoverable failures stop with clear handoff or abort reason.
 - [ ] Recovery reports show chosen policy, rejected policies, attempts, and
       evidence.
