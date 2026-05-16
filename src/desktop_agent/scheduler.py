@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass, replace
+from datetime import datetime, time, timedelta
 from typing import Literal
 
-from desktop_agent.routines import RoutineDefinition
+from desktop_agent.routines import RoutineDefinition, RoutineTimeWindow
 from desktop_agent.screen import ScreenObservation
 from desktop_agent.tracing import TraceEvent
 from desktop_agent.window_allowlist import window_title_matches
@@ -68,6 +70,15 @@ SCHEDULER_TRACE_KINDS: frozenset[str] = frozenset(
         "operator_intervention",
     },
 )
+SCHEDULE_WEEKDAY_INDEX: dict[str, int] = {
+    "mon": 0,
+    "tue": 1,
+    "wed": 2,
+    "thu": 3,
+    "fri": 4,
+    "sat": 5,
+    "sun": 6,
+}
 
 
 class RunQueueError(ValueError):
@@ -194,6 +205,28 @@ class SchedulerApprovalGateDecision:
 
 
 @dataclass(frozen=True)
+class ScheduleTimeDecision:
+    """Selected wall-clock time inside a routine schedule window."""
+
+    selected_time: datetime
+    lower_bound: datetime
+    upper_bound: datetime
+    reason: str
+    random_seed: int | None = None
+    window: RoutineTimeWindow | None = None
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "selected_time": self.selected_time.isoformat(),
+            "schedule_lower_bound": self.lower_bound.isoformat(),
+            "schedule_upper_bound": self.upper_bound.isoformat(),
+            "schedule_time_reason": self.reason,
+            "random_seed": self.random_seed,
+            "schedule_window": self.window.metadata() if self.window else None,
+        }
+
+
+@dataclass(frozen=True)
 class RunQueue:
     """Immutable queue used by scheduler tests and future operator UI state."""
 
@@ -273,6 +306,37 @@ class RunQueue:
             "run_queue_status_counts": self.status_counts(),
             "run_queue_entries": [entry.metadata() for entry in self.entries],
         }
+
+
+def select_schedule_time(
+    routine: RoutineDefinition,
+    *,
+    now: datetime,
+    random_seed: int | None = None,
+) -> ScheduleTimeDecision:
+    """Select a bounded run time from a routine's allowed schedule windows."""
+    window_bounds = _next_schedule_window_bounds(routine, now)
+    if window_bounds is None:
+        return ScheduleTimeDecision(
+            selected_time=now,
+            lower_bound=now,
+            upper_bound=now,
+            reason="no_schedule_window_declared",
+            random_seed=random_seed,
+        )
+    window, lower_bound, upper_bound = window_bounds
+    sampler = random.Random(random_seed) if random_seed is not None else random.Random()
+    fraction = sampler.random()
+    duration_seconds = (upper_bound - lower_bound).total_seconds()
+    selected_time = lower_bound + timedelta(seconds=duration_seconds * fraction)
+    return ScheduleTimeDecision(
+        selected_time=selected_time,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        reason="selected_inside_allowed_time_window",
+        random_seed=random_seed,
+        window=window,
+    )
 
 
 def evaluate_scheduled_approval_gate(
@@ -424,6 +488,49 @@ def _scheduled_external_mutation_requires_approval(
             or (mutation_cap is not None and mutation_cap > 0)
         )
     )
+
+
+def _next_schedule_window_bounds(
+    routine: RoutineDefinition,
+    now: datetime,
+) -> tuple[RoutineTimeWindow, datetime, datetime] | None:
+    if not routine.schedule.allowed_time_windows:
+        return None
+    candidates: list[tuple[RoutineTimeWindow, datetime, datetime]] = []
+    for day_offset in range(8):
+        candidate_day = now + timedelta(days=day_offset)
+        for window in routine.schedule.allowed_time_windows:
+            if not _window_allows_day(window, candidate_day.weekday()):
+                continue
+            start_at = datetime.combine(
+                candidate_day.date(),
+                _parse_schedule_time(window.start),
+                tzinfo=now.tzinfo,
+            )
+            end_at = datetime.combine(
+                candidate_day.date(),
+                _parse_schedule_time(window.end),
+                tzinfo=now.tzinfo,
+            )
+            if end_at <= start_at:
+                end_at += timedelta(days=1)
+            lower_bound = max(now, start_at)
+            if lower_bound <= end_at:
+                candidates.append((window, lower_bound, end_at))
+    if not candidates:
+        return None
+    return min(candidates, key=lambda item: item[1])
+
+
+def _window_allows_day(window: RoutineTimeWindow, weekday: int) -> bool:
+    if not window.days:
+        return True
+    return any(SCHEDULE_WEEKDAY_INDEX[day] == weekday for day in window.days)
+
+
+def _parse_schedule_time(value: str) -> time:
+    hour, minute = value.split(":", maxsplit=1)
+    return time(hour=int(hour), minute=int(minute))
 
 
 def _scheduled_approval_decision(

@@ -388,7 +388,7 @@ abuse, and hidden automation are not supported.
 - [x] Add safety gate that blocks scheduled runs when the active desktop or
       allowed app context is not ready.
 - [x] Add manual approval before scheduled external mutation actions.
-- [ ] Add tests for deterministic seeded schedules and bounded unseeded
+- [x] Add tests for deterministic seeded schedules and bounded unseeded
       schedules.
 
 ### Acceptance Criteria

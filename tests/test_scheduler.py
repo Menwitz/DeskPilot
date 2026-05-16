@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import cast
 
 import pytest
@@ -14,6 +15,7 @@ from desktop_agent.scheduler import (
     scheduler_approval_gate_trace_event,
     scheduler_safety_gate_trace_event,
     scheduler_trace_event,
+    select_schedule_time,
 )
 from desktop_agent.screen import ScreenObservation
 
@@ -376,6 +378,75 @@ def test_scheduler_approval_gate_blocks_non_pending_external_mutation() -> None:
     assert decision.reason == "run_not_pending"
 
 
+def test_seeded_schedule_time_selection_is_deterministic() -> None:
+    routine = _routine(
+        required_app=None,
+        required_site=None,
+        allowed_time_windows=[
+            {
+                "days": ["mon"],
+                "start": "09:00",
+                "end": "10:00",
+                "timezone": "local",
+            },
+        ],
+    )
+    now = datetime(2026, 5, 18, 8, 30, tzinfo=UTC)
+
+    first = select_schedule_time(routine, now=now, random_seed=123)
+    second = select_schedule_time(routine, now=now, random_seed=123)
+
+    assert first.selected_time == second.selected_time
+    assert first.lower_bound == datetime(2026, 5, 18, 9, 0, tzinfo=UTC)
+    assert first.upper_bound == datetime(2026, 5, 18, 10, 0, tzinfo=UTC)
+    assert first.lower_bound <= first.selected_time <= first.upper_bound
+    assert first.metadata()["random_seed"] == 123
+
+
+def test_unseeded_schedule_time_selection_stays_inside_bounds() -> None:
+    routine = _routine(
+        required_app=None,
+        required_site=None,
+        allowed_time_windows=[
+            {
+                "days": ["mon"],
+                "start": "09:00",
+                "end": "10:00",
+                "timezone": "local",
+            },
+        ],
+    )
+    now = datetime(2026, 5, 18, 9, 15, tzinfo=UTC)
+
+    decision = select_schedule_time(routine, now=now)
+
+    assert decision.lower_bound == now
+    assert decision.upper_bound == datetime(2026, 5, 18, 10, 0, tzinfo=UTC)
+    assert decision.lower_bound <= decision.selected_time <= decision.upper_bound
+    assert decision.random_seed is None
+
+
+def test_schedule_time_selection_uses_next_allowed_day() -> None:
+    routine = _routine(
+        required_app=None,
+        required_site=None,
+        allowed_time_windows=[
+            {
+                "days": ["mon"],
+                "start": "09:00",
+                "end": "10:00",
+                "timezone": "local",
+            },
+        ],
+    )
+    now = datetime(2026, 5, 19, 12, 0, tzinfo=UTC)
+
+    decision = select_schedule_time(routine, now=now, random_seed=1)
+
+    assert decision.lower_bound == datetime(2026, 5, 25, 9, 0, tzinfo=UTC)
+    assert decision.upper_bound == datetime(2026, 5, 25, 10, 0, tzinfo=UTC)
+
+
 def _routine(
     *,
     required_app: str | None,
@@ -383,6 +454,7 @@ def _routine(
     approval_policy: str = "none",
     safety_class: str = "low",
     max_external_mutations: int | None = None,
+    allowed_time_windows: list[dict[str, object]] | None = None,
 ) -> RoutineDefinition:
     payload: dict[str, object] = {
         "id": "browser.read-page",
@@ -405,6 +477,11 @@ def _routine(
         payload["required_app"] = required_app
     if required_site is not None:
         payload["required_site"] = required_site
+    schedule: dict[str, object] = {}
     if max_external_mutations is not None:
-        payload["schedule"] = {"max_external_mutations": max_external_mutations}
+        schedule["max_external_mutations"] = max_external_mutations
+    if allowed_time_windows is not None:
+        schedule["allowed_time_windows"] = allowed_time_windows
+    if schedule:
+        payload["schedule"] = schedule
     return routine_definition_from_mapping(payload)

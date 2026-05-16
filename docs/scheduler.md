@@ -76,6 +76,14 @@ routine has no manifest, or when the queued run is no longer pending.
 with approval policy, operator confirmation state, manifest presence, mutation
 limit, and allow/block reason.
 
+## Schedule Time Selection
+
+`select_schedule_time()` chooses a run time inside the next allowed routine
+schedule window. When a `random_seed` is supplied, the selected time is
+reproducible. Without a seed, selection is still bounded by the computed lower
+and upper window times, and the returned decision records those bounds for
+trace and report review.
+
 ## Current Boundary
 
 This model is local and deterministic. It does not schedule wall-clock jobs,
