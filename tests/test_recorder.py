@@ -11,6 +11,7 @@ from desktop_agent.recorder import (
     RecorderCandidateContext,
     RecorderController,
     RecorderEvent,
+    RecorderReviewMetadata,
     RecorderSession,
     capture_image_snippet_for_point,
     capture_ocr_context_for_point,
@@ -89,6 +90,49 @@ def test_recorder_event_model_round_trips_desktop_context(tmp_path: Path) -> Non
     assert payload["events"][0]["selected_point"] == [120, 240]
     assert payload["events"][0]["candidate_context"][0]["control_type"] == "Button"
     assert payload["events"][0]["input_event"]["kind"] == "mouse_down"
+
+
+def test_recorder_review_metadata_flows_to_generated_task(tmp_path: Path) -> None:
+    state_path = tmp_path / "recording.json"
+    controller = RecorderController(state_path)
+    review = RecorderReviewMetadata(
+        routine_name="Daily inbox triage",
+        description="Review unread support messages",
+        inputs=("support inbox",),
+        outputs=("triaged messages", "draft replies"),
+        tags=("email", "support"),
+        risk_class="medium",
+        expected_duration_seconds=420.0,
+    )
+    controller.start(name="Morning inbox", review=review)
+    controller.record_event(
+        RecorderEvent.create(
+            "selected_point",
+            active_window="DeskPilot Fixture",
+            candidate_context=(
+                RecorderCandidateContext(
+                    source="ocr",
+                    label="Inbox",
+                    bounds={"x": 20, "y": 40, "width": 120, "height": 24},
+                ),
+            ),
+        ),
+    )
+    session = controller.stop()
+
+    task = generate_task_from_recorder_session(session)
+    payload = json.loads(state_path.read_text(encoding="utf-8"))
+
+    BasicTaskValidator().validate(task, RuntimeConfig())
+    assert payload["review"]["routine_name"] == "Daily inbox triage"
+    assert payload["review"]["outputs"] == ["triaged messages", "draft replies"]
+    assert task.name == "Daily inbox triage"
+    assert task.metadata["routine_description"] == "Review unread support messages"
+    assert task.metadata["routine_inputs"] == ["support inbox"]
+    assert task.metadata["routine_outputs"] == ["triaged messages", "draft replies"]
+    assert task.metadata["routine_tags"] == ["email", "support"]
+    assert task.metadata["routine_risk_class"] == "medium"
+    assert task.metadata["routine_expected_duration_seconds"] == 420.0
 
 
 def test_recorder_captures_uia_context_around_clicked_point() -> None:
@@ -353,6 +397,60 @@ def test_cli_record_exposes_start_pause_stop_save_discard_controls(
     assert saved_payload["name"] == "Browser fixture"
     assert saved_payload["status"] == "saved"
     assert not state_path.exists()
+
+
+def test_cli_record_review_updates_metadata(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    state_path = tmp_path / "recorder-state.json"
+    assert main(
+        [
+            "record",
+            "start",
+            "--state",
+            str(state_path),
+            "--name",
+            "Morning inbox",
+        ],
+    ) == 0
+
+    assert main(
+        [
+            "record",
+            "review",
+            "--state",
+            str(state_path),
+            "--routine-name",
+            "Daily inbox triage",
+            "--description",
+            "Review unread support messages",
+            "--input",
+            "support inbox",
+            "--output",
+            "triaged messages",
+            "--tag",
+            "email",
+            "--risk-class",
+            "medium",
+            "--expected-duration-seconds",
+            "420",
+        ],
+    ) == 0
+
+    output = capsys.readouterr().out
+    payload = json.loads(state_path.read_text(encoding="utf-8"))
+    assert "recording review updated:" in output
+    assert "routine: Daily inbox triage" in output
+    assert payload["review"] == {
+        "routine_name": "Daily inbox triage",
+        "description": "Review unread support messages",
+        "inputs": ["support inbox"],
+        "outputs": ["triaged messages"],
+        "tags": ["email"],
+        "risk_class": "medium",
+        "expected_duration_seconds": 420.0,
+    }
 
 
 def test_cli_record_save_requires_operator_confirmation(

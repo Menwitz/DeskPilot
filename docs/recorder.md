@@ -13,6 +13,20 @@ Start a session:
 desktop-agent record start --state traces/recorder-session.json --name "Morning inbox"
 ```
 
+Start can also seed operator review metadata:
+
+```bash
+desktop-agent record start \
+  --state traces/recorder-session.json \
+  --name "Morning inbox" \
+  --description "Review unread support messages" \
+  --input "support inbox" \
+  --output "triaged messages" \
+  --tag email \
+  --risk-class medium \
+  --expected-duration-seconds 420
+```
+
 Pause, stop, save, or discard the same session:
 
 ```bash
@@ -25,13 +39,28 @@ desktop-agent record discard --state traces/recorder-session.json
 `record save` requires operator confirmation. Use `--confirm-save` for an
 explicit non-interactive confirmation, or type `SAVE` at the prompt.
 
+Review metadata can be updated before save:
+
+```bash
+desktop-agent record review \
+  --state traces/recorder-session.json \
+  --routine-name "Daily inbox triage" \
+  --description "Review unread support messages" \
+  --input "support inbox" \
+  --output "draft replies" \
+  --tag email \
+  --risk-class medium \
+  --expected-duration-seconds 420
+```
+
 The saved JSON uses `deskpilot_recorder_session_v1` and contains the session
-ID, name, status, timestamps, event count, and recorder events. Recorder events
-are timestamped records with an event type (`observation`, `input_event`, or
-`selected_point`), active-window title, screenshot path, selected point,
-low-level input payload, candidate context, and metadata. Candidate context can
-carry source, label, UIA control type, bounds, confidence, and source-specific
-metadata.
+ID, name, status, timestamps, review metadata, event count, and recorder
+events. Review metadata captures routine name, description, inputs, outputs,
+tags, risk class, and expected duration. Recorder events are timestamped records
+with an event type (`observation`, `input_event`, or `selected_point`),
+active-window title, screenshot path, selected point, low-level input payload,
+candidate context, and metadata. Candidate context can carry source, label, UIA
+control type, bounds, confidence, and source-specific metadata.
 
 For clicked points, the recorder has a UIA capture helper that hit-tests the
 point with the Windows UIA adapter and stores element name, control type,
@@ -55,3 +84,6 @@ tasks infer `allowed_windows` from the active-window titles recorded on events.
 When an observation event carries planner-style `state_delta` metadata, the
 generator adds a visible-text verification suggestion to the previous action
 from newly appeared text such as `visible_text_added`.
+Generated task metadata includes the reviewed routine name, description, inputs,
+outputs, tags, risk class, and expected duration so trace artifacts and final
+reports can surface the operator-reviewed routine contract.

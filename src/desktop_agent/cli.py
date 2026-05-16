@@ -70,7 +70,12 @@ from desktop_agent.platforms.windows.uia import (
     write_uia_tree_snapshot,
 )
 from desktop_agent.preview import build_dry_run_preview, render_dry_run_preview
-from desktop_agent.recorder import RecorderController, RecorderError
+from desktop_agent.recorder import (
+    RECORDER_DEFAULT_RISK_CLASS,
+    RecorderController,
+    RecorderError,
+    RecorderReviewMetadata,
+)
 from desktop_agent.safety import (
     LocalSafetyPolicy,
     NoopEmergencyStopMonitor,
@@ -315,6 +320,7 @@ def _add_record_options(parser: argparse.ArgumentParser) -> None:
     _add_record_state_option(start_parser)
     start_parser.add_argument("--name", default="untitled routine")
     start_parser.add_argument("--overwrite", action="store_true")
+    _add_record_review_options(start_parser, include_routine_name=False)
 
     pause_parser = record_subparsers.add_parser("pause", help="pause recording")
     _add_record_state_option(pause_parser)
@@ -331,6 +337,13 @@ def _add_record_options(parser: argparse.ArgumentParser) -> None:
         help="confirm that the operator reviewed and wants to save this recording",
     )
 
+    review_parser = record_subparsers.add_parser(
+        "review",
+        help="update routine review metadata",
+    )
+    _add_record_state_option(review_parser)
+    _add_record_review_options(review_parser, include_routine_name=True)
+
     discard_parser = record_subparsers.add_parser(
         "discard",
         help="discard recording",
@@ -345,6 +358,21 @@ def _add_record_state_option(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help="local recorder control-state file",
     )
+
+
+def _add_record_review_options(
+    parser: argparse.ArgumentParser,
+    *,
+    include_routine_name: bool,
+) -> None:
+    if include_routine_name:
+        parser.add_argument("--routine-name")
+    parser.add_argument("--description")
+    parser.add_argument("--input", action="append", dest="routine_inputs")
+    parser.add_argument("--output", action="append", dest="routine_outputs")
+    parser.add_argument("--tag", action="append", dest="routine_tags")
+    parser.add_argument("--risk-class")
+    parser.add_argument("--expected-duration-seconds", type=float)
 
 
 def _add_task_options(parser: argparse.ArgumentParser) -> None:
@@ -1023,7 +1051,11 @@ def _run_benchmark(args: argparse.Namespace) -> int:
 def _record(args: argparse.Namespace) -> int:
     controller = RecorderController(args.state)
     if args.record_command == "start":
-        session = controller.start(name=args.name, overwrite=args.overwrite)
+        session = controller.start(
+            name=args.name,
+            overwrite=args.overwrite,
+            review=_record_start_review_metadata(args),
+        )
         print(f"recording started: {session.session_id}")
         print(f"state: {args.state}")
         return 0
@@ -1043,6 +1075,19 @@ def _record(args: argparse.Namespace) -> int:
         print(f"recording saved: {session.session_id}")
         print(f"output: {args.output}")
         return 0
+    if args.record_command == "review":
+        session = controller.update_review(
+            routine_name=args.routine_name,
+            description=args.description,
+            inputs=_record_review_values(args.routine_inputs),
+            outputs=_record_review_values(args.routine_outputs),
+            tags=_record_review_values(args.routine_tags),
+            risk_class=args.risk_class,
+            expected_duration_seconds=args.expected_duration_seconds,
+        )
+        print(f"recording review updated: {session.session_id}")
+        print(f"routine: {session.review.routine_name}")
+        return 0
     if args.record_command == "discard":
         session = controller.discard()
         print(f"recording discarded: {session.session_id}")
@@ -1058,6 +1103,24 @@ def _confirm_record_save(args: argparse.Namespace) -> bool:
         return input("type SAVE to save recording: ").strip() == "SAVE"
     except EOFError:
         return False
+
+
+def _record_start_review_metadata(args: argparse.Namespace) -> RecorderReviewMetadata:
+    return RecorderReviewMetadata(
+        routine_name=args.name,
+        description=args.description or "",
+        inputs=tuple(args.routine_inputs or ()),
+        outputs=tuple(args.routine_outputs or ()),
+        tags=tuple(args.routine_tags or ()),
+        risk_class=args.risk_class or RECORDER_DEFAULT_RISK_CLASS,
+        expected_duration_seconds=args.expected_duration_seconds,
+    )
+
+
+def _record_review_values(values: list[str] | None) -> tuple[str, ...] | None:
+    if values is None:
+        return None
+    return tuple(values)
 
 
 def _demo_input(args: argparse.Namespace) -> int:

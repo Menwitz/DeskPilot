@@ -289,7 +289,7 @@ abuse, and hidden automation are not supported.
 - [x] Infer allowed windows from observed active windows and require operator
       confirmation before save.
 - [x] Infer verification suggestions from post-action state deltas.
-- [ ] Add review metadata for routine name, description, inputs, outputs, tags,
+- [x] Add review metadata for routine name, description, inputs, outputs, tags,
       risk class, and expected duration.
 - [ ] Add tests using fake recorder event streams.
 

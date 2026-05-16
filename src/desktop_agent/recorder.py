@@ -14,6 +14,7 @@ from uuid import uuid4
 from desktop_agent.task_dsl import TaskDefinition, TaskStep, VerificationDefinition
 
 RECORDER_SESSION_FORMAT = "deskpilot_recorder_session_v1"
+RECORDER_DEFAULT_RISK_CLASS = "review_required"
 RecorderStatus = Literal["recording", "paused", "stopped", "saved"]
 RecorderEventType = Literal["observation", "input_event", "selected_point"]
 
@@ -43,6 +44,100 @@ class OcrTextBlockLike(Protocol):
 
     @property
     def confidence(self) -> float: ...
+
+
+@dataclass(frozen=True)
+class RecorderReviewMetadata:
+    """Operator-reviewed routine metadata kept with recorder sessions."""
+
+    routine_name: str = ""
+    description: str = ""
+    inputs: tuple[str, ...] = ()
+    outputs: tuple[str, ...] = ()
+    tags: tuple[str, ...] = ()
+    risk_class: str = RECORDER_DEFAULT_RISK_CLASS
+    expected_duration_seconds: float | None = None
+
+    def to_payload(self) -> dict[str, object]:
+        return {
+            "routine_name": self.routine_name,
+            "description": self.description,
+            "inputs": list(self.inputs),
+            "outputs": list(self.outputs),
+            "tags": list(self.tags),
+            "risk_class": self.risk_class,
+            "expected_duration_seconds": self.expected_duration_seconds,
+        }
+
+    def to_task_metadata(self, fallback_name: str) -> dict[str, object]:
+        reviewed = self.normalized(fallback_name)
+        return {
+            "routine_name": reviewed.routine_name,
+            "routine_description": reviewed.description,
+            "routine_inputs": list(reviewed.inputs),
+            "routine_outputs": list(reviewed.outputs),
+            "routine_tags": list(reviewed.tags),
+            "routine_risk_class": reviewed.risk_class,
+            "routine_expected_duration_seconds": (
+                reviewed.expected_duration_seconds
+            ),
+        }
+
+    def normalized(self, fallback_name: str) -> RecorderReviewMetadata:
+        routine_name = self.routine_name or fallback_name
+        risk_class = self.risk_class or RECORDER_DEFAULT_RISK_CLASS
+        return replace(self, routine_name=routine_name, risk_class=risk_class)
+
+    def with_updates(
+        self,
+        *,
+        routine_name: str | None = None,
+        description: str | None = None,
+        inputs: tuple[str, ...] | None = None,
+        outputs: tuple[str, ...] | None = None,
+        tags: tuple[str, ...] | None = None,
+        risk_class: str | None = None,
+        expected_duration_seconds: float | None = None,
+    ) -> RecorderReviewMetadata:
+        return replace(
+            self,
+            routine_name=(
+                routine_name if routine_name is not None else self.routine_name
+            ),
+            description=description if description is not None else self.description,
+            inputs=inputs if inputs is not None else self.inputs,
+            outputs=outputs if outputs is not None else self.outputs,
+            tags=tags if tags is not None else self.tags,
+            risk_class=risk_class if risk_class is not None else self.risk_class,
+            expected_duration_seconds=(
+                expected_duration_seconds
+                if expected_duration_seconds is not None
+                else self.expected_duration_seconds
+            ),
+        )
+
+    @classmethod
+    def from_payload(
+        cls,
+        payload: dict[str, object],
+        *,
+        fallback_name: str,
+    ) -> RecorderReviewMetadata:
+        return cls(
+            routine_name=_optional_string(payload, "routine_name") or fallback_name,
+            description=_optional_string(payload, "description") or "",
+            inputs=_string_tuple(payload.get("inputs"), "inputs"),
+            outputs=_string_tuple(payload.get("outputs"), "outputs"),
+            tags=_string_tuple(payload.get("tags"), "tags"),
+            risk_class=(
+                _optional_string(payload, "risk_class")
+                or RECORDER_DEFAULT_RISK_CLASS
+            ),
+            expected_duration_seconds=_optional_positive_float(
+                payload.get("expected_duration_seconds"),
+                "expected_duration_seconds",
+            ),
+        )
 
 
 @dataclass(frozen=True)
@@ -186,6 +281,7 @@ class RecorderSession:
     status: RecorderStatus
     created_at: str
     updated_at: str
+    review: RecorderReviewMetadata = field(default_factory=RecorderReviewMetadata)
     events: tuple[RecorderEvent, ...] = field(default_factory=tuple)
 
     def to_payload(self) -> dict[str, object]:
@@ -196,6 +292,7 @@ class RecorderSession:
             "status": self.status,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
+            "review": self.review.normalized(self.name).to_payload(),
             "events": [event.to_payload() for event in self.events],
             "event_count": len(self.events),
         }
@@ -211,12 +308,23 @@ class RecorderSession:
         events = payload.get("events", ())
         if not isinstance(events, list):
             raise RecorderError("recorder session events must be a list")
+        name = _required_string(payload, "name")
+        review_value = payload.get("review")
+        review = (
+            RecorderReviewMetadata(routine_name=name)
+            if review_value is None
+            else RecorderReviewMetadata.from_payload(
+                _object_dict(review_value),
+                fallback_name=name,
+            )
+        )
         return cls(
             session_id=_required_string(payload, "session_id"),
-            name=_required_string(payload, "name"),
+            name=name,
             status=status,
             created_at=_required_string(payload, "created_at"),
             updated_at=_required_string(payload, "updated_at"),
+            review=review,
             events=tuple(
                 RecorderEvent.from_payload(_object_dict(event)) for event in events
             ),
@@ -229,7 +337,13 @@ class RecorderController:
     def __init__(self, state_path: Path) -> None:
         self.state_path = state_path
 
-    def start(self, *, name: str, overwrite: bool = False) -> RecorderSession:
+    def start(
+        self,
+        *,
+        name: str,
+        overwrite: bool = False,
+        review: RecorderReviewMetadata | None = None,
+    ) -> RecorderSession:
         if self.state_path.exists() and not overwrite:
             raise RecorderError(
                 f"recorder session already exists: {self.state_path}",
@@ -241,6 +355,9 @@ class RecorderController:
             status="recording",
             created_at=now,
             updated_at=now,
+            review=(review or RecorderReviewMetadata(routine_name=name)).normalized(
+                name,
+            ),
         )
         self._write(session)
         return session
@@ -275,7 +392,41 @@ class RecorderController:
             status=session.status,
             created_at=session.created_at,
             updated_at=_timestamp(),
+            review=session.review,
             events=(*session.events, event),
+        )
+        self._write(updated)
+        return updated
+
+    def update_review(
+        self,
+        *,
+        routine_name: str | None = None,
+        description: str | None = None,
+        inputs: tuple[str, ...] | None = None,
+        outputs: tuple[str, ...] | None = None,
+        tags: tuple[str, ...] | None = None,
+        risk_class: str | None = None,
+        expected_duration_seconds: float | None = None,
+    ) -> RecorderSession:
+        session = self.load()
+        review = session.review.with_updates(
+            routine_name=routine_name,
+            description=description,
+            inputs=inputs,
+            outputs=outputs,
+            tags=tags,
+            risk_class=risk_class,
+            expected_duration_seconds=expected_duration_seconds,
+        ).normalized(session.name)
+        updated = RecorderSession(
+            session_id=session.session_id,
+            name=session.name,
+            status=session.status,
+            created_at=session.created_at,
+            updated_at=_timestamp(),
+            review=review,
+            events=session.events,
         )
         self._write(updated)
         return updated
@@ -304,6 +455,7 @@ class RecorderController:
             status=status,
             created_at=session.created_at,
             updated_at=_timestamp(),
+            review=session.review,
             events=session.events,
         )
         self._write(updated)
@@ -425,14 +577,16 @@ def generate_task_from_recorder_session(session: RecorderSession) -> TaskDefinit
             steps.append(step)
     if not steps:
         raise RecorderGenerationError("recorder session has no task-generating events")
+    review = session.review.normalized(session.name)
     return TaskDefinition(
-        name=session.name,
+        name=review.routine_name,
         allowed_windows=_allowed_windows_from_events(session.events),
         timeout_seconds=300,
         steps=tuple(steps),
         metadata={
             "recorder_session_id": session.session_id,
             "recorder_event_count": len(session.events),
+            **review.to_task_metadata(session.name),
         },
     )
 
@@ -495,6 +649,32 @@ def _int_dict(value: dict[object, object]) -> dict[str, int]:
         if not isinstance(key, str) or not isinstance(item, int):
             raise RecorderError("recorder bounds must contain integer fields")
         result[key] = item
+    return result
+
+
+def _string_tuple(value: object, field_name: str) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list):
+        raise RecorderError(f"recorder review {field_name} must be a list")
+    result: list[str] = []
+    for item in value:
+        if not isinstance(item, str) or not item:
+            raise RecorderError(
+                f"recorder review {field_name} must contain non-empty strings",
+            )
+        result.append(item)
+    return tuple(result)
+
+
+def _optional_positive_float(value: object, field_name: str) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise RecorderError(f"recorder review {field_name} must be numeric")
+    result = float(value)
+    if result <= 0:
+        raise RecorderError(f"recorder review {field_name} must be positive")
     return result
 
 
