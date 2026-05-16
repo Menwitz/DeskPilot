@@ -482,7 +482,7 @@ abuse, and hidden automation are not supported.
       reasoning, state delta, and final report.
 - [x] Add settings for trace root, screenshots, video capture, Ollama enablement,
       emergency hotkey, default activity profile, and proof mode.
-- [ ] Add UI integration tests around app state transitions with fake services.
+- [x] Add UI integration tests around app state transitions with fake services.
 
 ### Acceptance Criteria
 

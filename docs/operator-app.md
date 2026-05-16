@@ -39,6 +39,14 @@ enablement, emergency hotkey, default activity profile, and proof-mode fields.
 The initial state can be built from `RuntimeConfig` so the app and CLI share
 the same local defaults.
 
+## State Transitions
+
+`desktop_agent.operator_app_state` contains a small controller for UI state
+transitions. Tests can inject fake runner services and verify page selection,
+routine start, blocked runs, pause, resume, cancel, approval request, and
+approval resolution without launching PySide6. The PySide shell should use the
+same controller so UI behavior stays tied to the service boundary.
+
 `deskpilot-app --describe-shell` prints this shell contract without importing
 PySide6. `deskpilot-app --check` verifies that the entry point is installed and
 reports whether PySide6 is available.
