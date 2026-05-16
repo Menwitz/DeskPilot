@@ -42,7 +42,7 @@ abuse, and hidden automation are not supported.
       outputs, safety class, schedule policy, and trace expectations.
 - [x] Define `skill` as a reusable routine fragment or capability that a
       routine can reference.
-- [ ] Define `goal plan` as the planner output that maps a user goal to one or
+- [x] Define `goal plan` as the planner output that maps a user goal to one or
       more known routines.
 - [ ] Define `manual handoff` as a planned pause where the operator must inspect,
       approve, or complete a step.

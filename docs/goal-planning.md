@@ -1,9 +1,11 @@
 # Goal Planning
 
 Goal planning is the layer that maps a user's natural-language goal to known,
-validated routines. It does not execute raw model output or invent desktop
-actions. Execution remains limited to routine IDs that already exist in the
-catalog and compile through the normal task/playbook pipeline.
+validated routines. A goal plan is the planner output that records the user
+goal, candidate routines, selected routine, missing inputs, approvals, and the
+reason execution is ready or blocked. It does not execute raw model output or
+invent desktop actions. Execution remains limited to routine IDs that already
+exist in the catalog and compile through the normal task/playbook pipeline.
 
 ## GoalPlan Schema
 
