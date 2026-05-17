@@ -27,6 +27,7 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
 
     metrics_lines = report.metrics_path.read_text(encoding="utf-8").splitlines()
     report_payload = json.loads(report.report_path.read_text(encoding="utf-8"))
+    summary_markdown = report.summary_report_path.read_text(encoding="utf-8")
     variance_payload = json.loads(
         report.variance_report_path.read_text(encoding="utf-8")
     )
@@ -61,6 +62,10 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert report_payload["pointer_timing_comparison_path"] == str(
         report.pointer_timing_comparison_path
     )
+    assert report.summary_report_path.exists()
+    assert "# Benchmark Summary" in summary_markdown
+    assert "- Acceptance: `passed`" in summary_markdown
+    assert "- Deep-search sources: `uia, ocr, image, unknown`" in summary_markdown
     assert report_payload["observability_contract"]["configured"] is True
     assert report_payload["observability_contract"]["benchmark_task_id"] == (
         "browser-fixture-demo"

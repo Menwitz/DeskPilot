@@ -65,6 +65,8 @@ The harness writes:
 - `benchmark-report.json` with the task path, output paths, iteration count,
   aggregate summary metrics, acceptance status, per-run metrics, and the
   benchmark observability contract when the task is a built-in benchmark.
+- `benchmark-summary.md` with a human-readable acceptance, baseline comparison,
+  summary metric, and observability-contract summary.
 - `baseline-runs.jsonl` with one deterministic baseline metrics record per
   iteration. The baseline preserves safety settings and disables execution
   profile timing.
@@ -86,6 +88,8 @@ For built-in benchmark tasks, `benchmark-report.json` also includes
 deep-search sources, required trace phases, required final-report fields, and
 required metrics. Ad hoc benchmark runs keep the same field with
 `configured: false`.
+`benchmark-summary.md` repeats the same contract in Markdown for review without
+opening the JSON payload.
 
 Summary metrics currently include success rate, median task time, total step
 count, total action count, total retry count, grounding accuracy, ambiguity

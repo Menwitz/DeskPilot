@@ -2168,6 +2168,7 @@ def _run_benchmark(args: argparse.Namespace) -> int:
     for failure in report.acceptance.failures:
         print(f"acceptance failure: {failure}")
     print(f"report: {report.report_path}")
+    print(f"summary: {report.summary_report_path}")
     return (
         0
         if all(run.status == "passed" for run in report.runs)

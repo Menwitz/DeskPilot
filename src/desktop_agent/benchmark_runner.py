@@ -203,6 +203,7 @@ class BenchmarkRunReport:
     metrics_path: Path
     baseline_metrics_path: Path
     report_path: Path
+    summary_report_path: Path
     variance_report_path: Path
     baseline_comparison_path: Path
     pointer_timing_comparison_path: Path
@@ -283,6 +284,7 @@ class BenchmarkRunHarness:
         metrics_path = output_dir / "runs.jsonl"
         baseline_metrics_path = output_dir / "baseline-runs.jsonl"
         report_path = output_dir / "benchmark-report.json"
+        summary_report_path = output_dir / "benchmark-summary.md"
         variance_report_path = output_dir / "variance-report.json"
         baseline_comparison_path = output_dir / "baseline-comparison.json"
         pointer_timing_comparison_path = output_dir / "pointer-timing-comparison.json"
@@ -320,12 +322,22 @@ class BenchmarkRunHarness:
             baseline_comparison,
             pointer_timing_comparison,
         )
+        _write_benchmark_summary(
+            summary_report_path,
+            task_path,
+            report_path,
+            summary,
+            acceptance,
+            baseline_comparison,
+            task_spec,
+        )
         return BenchmarkRunReport(
             task_path=task_path,
             output_dir=output_dir,
             metrics_path=metrics_path,
             baseline_metrics_path=baseline_metrics_path,
             report_path=report_path,
+            summary_report_path=summary_report_path,
             variance_report_path=variance_report_path,
             baseline_comparison_path=baseline_comparison_path,
             pointer_timing_comparison_path=pointer_timing_comparison_path,
@@ -661,6 +673,63 @@ def _observability_contract_to_dict(
         "required_report_fields": list(task_spec.required_report_fields),
         "required_metrics": list(task_spec.required_metrics),
     }
+
+
+def _write_benchmark_summary(
+    path: Path,
+    task_path: Path,
+    report_path: Path,
+    summary: BenchmarkSummaryMetrics,
+    acceptance: BenchmarkAcceptanceResult,
+    baseline_comparison: BenchmarkBaselineComparison,
+    task_spec: BenchmarkTaskSpec | None,
+) -> None:
+    contract = _observability_contract_to_dict(task_spec)
+    lines = [
+        "# Benchmark Summary",
+        "",
+        f"- Task: `{task_path}`",
+        f"- Report: `{report_path}`",
+        f"- Acceptance: `{acceptance.status}`",
+        f"- Baseline status: `{baseline_comparison.status}`",
+        f"- Success rate: `{summary.success_rate}`",
+        f"- Grounding accuracy: `{summary.grounding_accuracy}`",
+        f"- Ambiguity rate: `{summary.ambiguity_rate}`",
+        f"- Recovery rate: `{summary.recovery_rate}`",
+        "",
+        "## Observability Contract",
+        "",
+        *_benchmark_observability_summary_lines(contract),
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _benchmark_observability_summary_lines(
+    contract: dict[str, object],
+) -> list[str]:
+    if contract.get("configured") is not True:
+        return ["- Configured: `false`"]
+    pipeline_modes = _contract_list(contract, "pipeline_modes")
+    deep_search_sources = _contract_list(contract, "deep_search_sources")
+    required_trace_phases = _contract_list(contract, "required_trace_phases")
+    required_report_fields = _contract_list(contract, "required_report_fields")
+    required_metrics = _contract_list(contract, "required_metrics")
+    return [
+        "- Configured: `true`",
+        f"- Benchmark task: `{contract.get('benchmark_task_id', 'unknown')}`",
+        f"- Pipeline modes: `{pipeline_modes}`",
+        f"- Deep-search sources: `{deep_search_sources}`",
+        f"- Required trace phases: `{required_trace_phases}`",
+        f"- Required report fields: `{required_report_fields}`",
+        f"- Required metrics: `{required_metrics}`",
+    ]
+
+
+def _contract_list(contract: dict[str, object], key: str) -> str:
+    value = contract.get(key, [])
+    if not isinstance(value, list):
+        return ""
+    return ", ".join(str(item) for item in value)
 
 
 def _write_variance_report(

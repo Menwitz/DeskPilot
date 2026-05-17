@@ -289,6 +289,8 @@ abuse, and hidden automation are not supported.
 - [x] Add benchmark observability contracts to benchmark reports so
       deep-search sources, trace phases, report fields, and metrics are visible
       in the report artifact.
+- [x] Add benchmark Markdown summaries with acceptance, baseline comparison,
+      summary metrics, and observability-contract details.
 
 ### Acceptance Criteria
 
