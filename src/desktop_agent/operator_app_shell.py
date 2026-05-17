@@ -102,6 +102,7 @@ class TraceHealthPanelState:
     proof_expected_count: int | None = None
     proof_artifact_count: int | None = None
     proof_error_count: int | None = None
+    proof_warning_count: int | None = None
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -118,6 +119,7 @@ class TraceHealthPanelState:
             "proof_expected_count": self.proof_expected_count,
             "proof_artifact_count": self.proof_artifact_count,
             "proof_error_count": self.proof_error_count,
+            "proof_warning_count": self.proof_warning_count,
         }
 
 
@@ -407,7 +409,12 @@ def trace_health_panel_from_metadata(
     schema_version = payload.get("schema_version")
     generated_at = payload.get("generated_at")
     benchmark_status, benchmark_artifacts = _benchmark_trace_health(payload)
-    proof_expected, proof_artifacts, proof_errors = _proof_trace_summary(payload)
+    (
+        proof_expected,
+        proof_artifacts,
+        proof_errors,
+        proof_warnings,
+    ) = _proof_trace_summary(payload)
     return TraceHealthPanelState(
         trace_count=trace_count if isinstance(trace_count, int) else 0,
         artifact_count=artifact_trace_count
@@ -426,6 +433,7 @@ def trace_health_panel_from_metadata(
         proof_expected_count=proof_expected,
         proof_artifact_count=proof_artifacts,
         proof_error_count=proof_errors,
+        proof_warning_count=proof_warnings,
     )
 
 
@@ -450,6 +458,11 @@ def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
     proof_errors = (
         state.proof_error_count if state.proof_error_count is not None else "unknown"
     )
+    proof_warnings = (
+        state.proof_warning_count
+        if state.proof_warning_count is not None
+        else "unknown"
+    )
     return "\n".join(
         [
             "Trace Health",
@@ -464,6 +477,7 @@ def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
             f"- Proof expected: {proof_expected}",
             f"- Proof artifacts: {proof_artifacts}",
             f"- Proof errors: {proof_errors}",
+            f"- Proof warnings: {proof_warnings}",
             f"- By kind: {_render_count_pairs(state.kind_counts)}",
             f"- By status: {_render_count_pairs(state.status_counts)}",
         ],
@@ -499,7 +513,7 @@ def _benchmark_trace_health(
 
 def _proof_trace_summary(
     payload: Mapping[str, object],
-) -> tuple[int | None, int | None, int | None]:
+) -> tuple[int | None, int | None, int | None, int | None]:
     """Extract compact proof finalization counts from trace-health metadata."""
 
     traces: list[object] = []
@@ -511,17 +525,36 @@ def _proof_trace_summary(
         if not isinstance(trace, Mapping) or trace.get("kind") != "proof_suite":
             continue
         summary = trace.get("proof_summary")
-        if not isinstance(summary, Mapping):
-            continue
-        expected = summary.get("expected_count")
-        artifacts = summary.get("artifact_count")
-        errors = summary.get("error_count")
-        return (
-            expected if _is_summary_int(expected) else None,
-            artifacts if _is_summary_int(artifacts) else None,
-            errors if _is_summary_int(errors) else None,
+        expected: object = None
+        artifacts: object = None
+        errors: object = None
+        if isinstance(summary, Mapping):
+            expected = summary.get("expected_count")
+            artifacts = summary.get("artifact_count")
+            errors = summary.get("error_count")
+        warnings = trace.get("proof_warnings")
+        warning_count = (
+            len([warning for warning in warnings if isinstance(warning, str)])
+            if isinstance(warnings, list)
+            else None
         )
-    return None, None, None
+        return (
+            _summary_int_or_none(expected),
+            _summary_int_or_none(artifacts),
+            _summary_int_or_none(errors),
+            warning_count,
+        )
+    return None, None, None, None
+
+
+def _summary_int_or_none(value: object) -> int | None:
+    """Return an integer summary count while rejecting JSON booleans."""
+
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    return None
 
 
 def render_approval_dialog_text(state: ApprovalDialogState) -> str:

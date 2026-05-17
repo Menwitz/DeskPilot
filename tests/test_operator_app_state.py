@@ -335,6 +335,7 @@ def test_operator_app_controller_refreshes_trace_health(
     assert trace_health["proof_expected_count"] is None
     assert trace_health["proof_artifact_count"] is None
     assert trace_health["proof_error_count"] is None
+    assert trace_health["proof_warning_count"] is None
 
 
 def test_operator_app_controller_refreshes_benchmark_trace_health(
@@ -377,6 +378,7 @@ def test_operator_app_controller_refreshes_proof_trace_summary(
             '{"status":"passed",'
             '"summary":{"expected_count":4,"artifact_count":7,"error_count":0},'
             '"gates":{"suite_validation":"passed"},'
+            '"warnings":["browser-fixture: video_path is external"],'
             '"checked_artifacts":{"promotion":[],"archive":[]}}'
         ),
         encoding="utf-8",
@@ -394,6 +396,7 @@ def test_operator_app_controller_refreshes_proof_trace_summary(
     assert trace_health["proof_expected_count"] == 4
     assert trace_health["proof_artifact_count"] == 7
     assert trace_health["proof_error_count"] == 0
+    assert trace_health["proof_warning_count"] == 1
 
 
 class _FakeRunnerService:

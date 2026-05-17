@@ -169,6 +169,10 @@ def test_trace_health_panel_tracks_counts() -> None:
                         "artifact_count": 7,
                         "error_count": 0,
                     },
+                    "proof_warnings": [
+                        "browser-fixture: video_path is external",
+                        "native-fixture: video_path is external",
+                    ],
                 },
             ],
         },
@@ -195,6 +199,7 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert metadata["proof_expected_count"] == 4
     assert metadata["proof_artifact_count"] == 7
     assert metadata["proof_error_count"] == 0
+    assert metadata["proof_warning_count"] == 2
     assert "Trace Health" in text
     assert "Schema version: trace_health_v1" in text
     assert "Generated at: 2026-05-17T00:00:00+00:00" in text
@@ -207,6 +212,7 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert "Proof expected: 4" in text
     assert "Proof artifacts: 7" in text
     assert "Proof errors: 0" in text
+    assert "Proof warnings: 2" in text
     assert "passed=2" in text
 
 

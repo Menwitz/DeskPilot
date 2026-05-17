@@ -732,6 +732,7 @@ abuse, and hidden automation are not supported.
 - [x] Add controller-level coverage for native dashboard benchmark trace-health
       refreshes.
 - [x] Render compact proof-finalization counts in native dashboard panel state.
+- [x] Render proof-finalization warning counts in native dashboard panel state.
 - [x] Add settings for trace root, screenshots, video capture, Ollama enablement,
       emergency hotkey, default activity profile, and proof mode.
 - [x] Add UI integration tests around app state transitions with fake services.
