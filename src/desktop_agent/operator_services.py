@@ -100,6 +100,7 @@ class TraceSummary:
     kind: str
     replay_summary_path: Path | None = None
     report_artifacts: tuple[tuple[str, str], ...] = ()
+    trace_health_summary: tuple[tuple[str, object], ...] = ()
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -111,6 +112,7 @@ class TraceSummary:
                 str(self.replay_summary_path) if self.replay_summary_path else None
             ),
             "report_artifacts": dict(self.report_artifacts),
+            "trace_health_summary": dict(self.trace_health_summary),
         }
 
 
@@ -1342,6 +1344,7 @@ def _trace_summary(trace_dir: Path) -> TraceSummary:
                 kind=kind,
                 replay_summary_path=replay_summary_path,
                 report_artifacts=_report_artifact_pairs(payload),
+                trace_health_summary=_report_trace_health_pairs(payload),
             )
     return TraceSummary(
         trace_dir=trace_dir,
@@ -1423,4 +1426,26 @@ def _report_artifact_pairs(
         (key, value)
         for key, value in artifacts.items()
         if isinstance(key, str) and isinstance(value, str)
+    )
+
+
+def _report_trace_health_pairs(
+    payload: Mapping[str, object],
+) -> tuple[tuple[str, object], ...]:
+    """Return stable scalar trace-health fields for trace list metadata."""
+
+    summary = payload.get("trace_health_summary")
+    if not isinstance(summary, dict):
+        return ()
+    allowed_keys = (
+        "schema_version",
+        "generated_at",
+        "trace_count",
+        "artifact_trace_count",
+        "health_status",
+    )
+    return tuple(
+        (key, value)
+        for key in allowed_keys
+        if isinstance((value := summary.get(key)), str | int)
     )

@@ -109,7 +109,8 @@ project modules:
   kind, status, attention state, attention trace count, and artifact trace
   count for dashboard monitoring, including trace-health schema/timestamp
   metadata and any local `replay-summary.md` artifact path. Benchmark trace
-  summaries also expose the report artifact manifest from `benchmark-report.json`.
+  summaries also expose the report artifact manifest and compact trace-health
+  summary from `benchmark-report.json`.
 - Trace health panel state: renders the trace-health schema version and
   generation timestamp beside trace, attention, and artifact counts so
   dashboard screenshots identify the monitoring contract in use.

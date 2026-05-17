@@ -273,6 +273,7 @@ def test_local_trace_service_lists_and_reads_reports(tmp_path: Path) -> None:
     assert traces[0].metadata()["report_path"] == str(report_path)
     assert traces[0].metadata()["replay_summary_path"] == str(replay_summary_path)
     assert traces[0].metadata()["report_artifacts"] == {}
+    assert traces[0].metadata()["trace_health_summary"] == {}
     assert report["selected_routine_id"] == "browser.search"
 
 
@@ -336,6 +337,10 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
         json.dumps(
             {
                 "acceptance": {"status": "passed"},
+                "trace_health_summary": {
+                    "health_status": "ok",
+                    "artifact_trace_count": 1,
+                },
                 "report_artifacts": {
                     "metrics": str(benchmark_trace / "runs.jsonl"),
                     "summary": str(benchmark_trace / "benchmark-summary.md"),
@@ -372,6 +377,7 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
             "kind": "run",
             "replay_summary_path": None,
             "report_artifacts": {},
+            "trace_health_summary": {},
         },
     ]
     latest = cast(list[dict[str, object]], health["latest"])
@@ -382,6 +388,14 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
     assert latest[0]["report_artifacts"] == {
         "metrics": str(benchmark_trace / "runs.jsonl"),
         "summary": str(benchmark_trace / "benchmark-summary.md"),
+    }
+    assert latest[0]["trace_health_summary"] == {
+        "artifact_trace_count": 1,
+        "health_status": "ok",
+    }
+    assert artifact_traces[0]["trace_health_summary"] == {
+        "artifact_trace_count": 1,
+        "health_status": "ok",
     }
 
 

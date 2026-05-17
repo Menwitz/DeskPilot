@@ -330,6 +330,8 @@ abuse, and hidden automation are not supported.
 - [x] Render benchmark report artifact manifests in native trace-viewer state.
 - [x] Render compact benchmark trace-health summaries in native trace-viewer
       state.
+- [x] Expose compact benchmark trace-health summaries in local trace-service
+      metadata.
 - [x] Add `desktop-agent replay` support for benchmark reports with acceptance,
       baseline, monitoring coverage, pipeline, deep-search, and per-run trace
       details.
