@@ -13,7 +13,8 @@ DeskPilot packages the Windows executable with PyInstaller.
 - `scripts/build-windows-installer.ps1` builds both executables and writes a
   local installer bundle plus `dist/DeskPilot-Windows.zip`.
 - `scripts/verify-windows-package.ps1` runs packaged `--help`, dry-run,
-  routine listing, trace replay, and native app smoke checks.
+  routine listing, trace replay, trace-health report, and native app smoke
+  checks.
 - `scripts/run-windows-proof-suite.ps1` runs the browser, native, mixed, and
   recovery proof pack on an owned unlocked Windows desktop, then writes suite
   reports, status JSON, archive, and review template artifacts.
@@ -60,8 +61,9 @@ wants `bin\` added to their user PATH.
 `dist\package-smoke`, runs `deskpilot.exe dry-run` with a package-smoke trace
 root and verifies that `final-report.json` was written, runs
 `deskpilot.exe replay` against a replay fixture, runs
-`deskpilot.exe trace-health` against the smoke trace root, lists routines from
-`routine_packs\`, and runs `deskpilot-app.exe --check` plus
+`deskpilot.exe trace-health --output` against the smoke trace root, verifies
+the persisted `trace-health.json` report, lists routines from `routine_packs\`,
+and runs `deskpilot-app.exe --check` plus
 `deskpilot-app.exe --describe-shell` when the app executable exists. The app
 check must report bundled PySide6 availability for packaged Windows builds.
 

@@ -83,12 +83,18 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "Packaged dry-run did not write final-report.json" in script
     assert "& $ExePath list-routines --routine-pack-root $RoutinePackRoot" in script
     assert "& $ExePath replay $TraceDir" in script
-    assert "& $ExePath trace-health --trace-root $SmokeRoot" in script
+    assert "$TraceHealthReport = Join-Path $SmokeRoot \"trace-health.json\"" in script
+    assert (
+        "& $ExePath trace-health --trace-root $SmokeRoot --output $TraceHealthReport"
+        in script
+    )
+    assert "Packaged trace-health did not write" in script
+    assert "$TraceHealth.trace_count -lt 2" in script
     assert "& $AppExePath --check" in script
     assert "PySide6: available" in script
     assert "& $AppExePath --describe-shell" in script
     assert "final-report.json" in script
-    assert "trace health" in script
+    assert "trace health report" in script
 
 
 def test_windows_proof_suite_runner_collects_reviewable_evidence() -> None:

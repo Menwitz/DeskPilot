@@ -42,7 +42,17 @@ $SmokeConfig | Set-Content -Encoding UTF8 $SmokeConfigPath
 & $ExePath dry-run examples/browser-task.yaml --config $SmokeConfigPath
 & $ExePath list-routines --routine-pack-root $RoutinePackRoot
 & $ExePath replay $TraceDir
-& $ExePath trace-health --trace-root $SmokeRoot
+
+# Persist trace health so package smoke runs leave a reviewable monitoring artifact.
+$TraceHealthReport = Join-Path $SmokeRoot "trace-health.json"
+& $ExePath trace-health --trace-root $SmokeRoot --output $TraceHealthReport
+if (-not (Test-Path $TraceHealthReport)) {
+    throw "Packaged trace-health did not write $TraceHealthReport"
+}
+$TraceHealth = Get-Content $TraceHealthReport -Raw | ConvertFrom-Json
+if ($TraceHealth.trace_count -lt 2) {
+    throw "Packaged trace-health report did not include smoke traces from $SmokeRoot"
+}
 
 $DryRunReport = Get-ChildItem -Path $SmokeTraceRoot -Directory |
     Sort-Object LastWriteTime -Descending |
@@ -63,4 +73,4 @@ if (Test-Path $AppExePath) {
     Write-Host "Operator app executable not found; skipping app smoke: $AppExePath"
 }
 
-Write-Host "Packaged help, dry-run report, routine listing, trace replay, trace health, and app checks passed"
+Write-Host "Packaged help, dry-run report, routine listing, trace replay, trace health report, and app checks passed"

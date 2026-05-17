@@ -745,6 +745,8 @@ abuse, and hidden automation are not supported.
 - [x] Add packaged-app smoke tests for help, dry-run, routine listing, and trace
       replay.
 - [x] Add packaged-app smoke coverage for `trace-health` monitoring output.
+- [x] Add packaged-app smoke coverage for persisted `trace-health --output`
+      reports.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 
