@@ -301,6 +301,8 @@ abuse, and hidden automation are not supported.
       contract.
 - [x] Add `benchmark-run --fail-on-monitoring-gap` for CI/local gates that
       require configured benchmark monitoring coverage to pass.
+- [x] List observed trace phases and report fields in benchmark Markdown
+      summaries for review without opening JSON.
 
 ### Acceptance Criteria
 

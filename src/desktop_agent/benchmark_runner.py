@@ -804,8 +804,12 @@ def _benchmark_monitoring_coverage_lines(
         return ["- Configured: `false`"]
     return [
         f"- Passed: `{coverage.get('passed', False)}`",
+        "- Observed trace phases: "
+        f"`{_contract_list(coverage, 'observed_trace_phases')}`",
         "- Missing trace phases: "
         f"`{_contract_list(coverage, 'missing_trace_phases')}`",
+        "- Observed report fields: "
+        f"`{_contract_list(coverage, 'observed_report_fields')}`",
         "- Missing report fields: "
         f"`{_contract_list(coverage, 'missing_report_fields')}`",
     ]

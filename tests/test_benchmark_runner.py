@@ -76,6 +76,10 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert "- Trace health status: `ok`" in summary_markdown
     assert "- Attention traces: `0`" in summary_markdown
     assert "## Monitoring Coverage" in summary_markdown
+    assert "- Observed trace phases: `" in summary_markdown
+    assert "select_target" in summary_markdown
+    assert "- Observed report fields: `" in summary_markdown
+    assert "trace_dir" in summary_markdown
     assert "- Missing report fields: ``" in summary_markdown
     assert "- Acceptance: `passed`" in summary_markdown
     assert "- Deep-search sources: `uia, ocr, image, unknown`" in summary_markdown

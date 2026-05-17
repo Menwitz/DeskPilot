@@ -94,8 +94,9 @@ The report also stores `monitoring_coverage`, which compares required trace
 phases and final-report fields with the phases and fields observed across the
 generated run traces.
 `benchmark-summary.md` repeats the same contract in Markdown for review without
-opening the JSON payload. It also links `trace-health.json` and shows the
-trace-health status plus attention-trace count.
+opening the JSON payload. It also links `trace-health.json`, shows the
+trace-health status plus attention-trace count, and lists observed and missing
+monitoring phases and report fields.
 
 Summary metrics currently include success rate, median task time, total step
 count, total action count, total retry count, grounding accuracy, ambiguity
