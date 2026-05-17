@@ -662,6 +662,12 @@ def test_write_proof_finalization_status_records_monitoring_rollup(
         archive_verification.checked_artifacts,
     )
     assert summary["error_count"] == 0
+    assert summary["warning_count"] == 4
+    warnings = cast(list[str], payload["warnings"])
+    assert any(
+        warning.startswith("browser-fixture: video_path is not present")
+        for warning in warnings
+    )
     artifacts = cast(dict[str, str], payload["artifacts"])
     assert artifacts["archive"] == str(archive_path)
     checked_artifacts = cast(dict[str, list[str]], payload["checked_artifacts"])

@@ -1003,6 +1003,11 @@ def proof_finalization_status_metadata(
         f"archive verification: {warning}"
         for warning in archive_verification.warnings
     ]
+    bundle_warnings = [
+        f"{bundle.proof_name or bundle.trace_dir}: {warning}"
+        for bundle in validation.bundle_results
+        for warning in bundle.warnings
+    ]
     errors = [
         *validation.errors,
         *promotion_errors,
@@ -1010,6 +1015,7 @@ def proof_finalization_status_metadata(
     ]
     warnings = [
         *validation.warnings,
+        *bundle_warnings,
         *promotion_warnings,
         *archive_warnings,
     ]

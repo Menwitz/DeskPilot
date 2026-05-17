@@ -213,6 +213,7 @@ abuse, and hidden automation are not supported.
       rollup for suite, promotion, and archive verification gates.
 - [x] Add compact summary counts to `proof-finalization-status.json` for final
       proof monitoring.
+- [x] Include per-bundle warnings in proof-finalization monitoring rollups.
 - [x] Surface proof-suite finalization rollups through the local trace service
       for operator UI and monitoring discovery.
 - [x] Expose compact proof-finalization summary counts through local trace
