@@ -137,9 +137,15 @@ def _goal_plan_report_payload(
         "trace_schema_version": TRACE_SCHEMA_V2.version,
         "trace_schema": TRACE_SCHEMA_V2.to_dict(),
         "status": plan.execution_status,
+        "normalized_intent": plan.normalized_intent,
         "selected_routine_id": plan.selected_routine_id,
+        "candidate_count": len(plan.candidate_routines),
+        "candidate_routines": [
+            candidate.metadata() for candidate in plan.candidate_routines
+        ],
         "expected_evidence": list(plan.expected_evidence),
         "abort_conditions": list(plan.abort_conditions),
+        "explanation": plan.explanation,
         "trace_dir": str(trace_dir),
         "goal_plan_path": str(goal_plan_path),
         # Goal planning traces are dry-run artifacts; replay must never move I/O.
@@ -160,9 +166,20 @@ def _goal_plan_report_markdown(
         f"- Status: `{plan.execution_status}`",
         f"- Selected routine: `{plan.selected_routine_id or 'none'}`",
         f"- Candidates: `{len(plan.candidate_routines)}`",
+        f"- Normalized intent: `{plan.normalized_intent}`",
         f"- Expected evidence: `{_joined_or_none(plan.expected_evidence)}`",
         f"- Abort conditions: `{_joined_or_none(plan.abort_conditions)}`",
     ]
+    if plan.candidate_routines:
+        lines.extend(["", "## Candidate Ranking", ""])
+        for candidate in plan.candidate_routines:
+            lines.append(
+                "- "
+                f"`{candidate.routine_id}` score `{candidate.score:g}` "
+                f"matched `{_joined_or_none(candidate.matched_fields)}` "
+                f"safety `{candidate.safety_class}` approval "
+                f"`{candidate.approval_policy}`",
+            )
     if model_disclosure is not None:
         lines.extend(
             [

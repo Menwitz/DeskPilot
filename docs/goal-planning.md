@@ -95,7 +95,10 @@ disabled and no model request is made.
 Every `plan-goal` run writes a local goal trace under `trace_root`, or under
 `--trace-root` when supplied. The trace includes `goal-plan.json`,
 `goal-plan-report.json`, `goal-plan-report.md`, `trace-schema.json`, and
-`action-log.jsonl`.
+`action-log.jsonl`. The JSON and Markdown reports include the normalized
+intent, selected routine, ranked candidate routines, expected evidence, abort
+conditions, and optional model disclosure so monitoring can explain why a
+routine was chosen.
 Goal traces are replayable through the shared replay command without desktop
 input:
 

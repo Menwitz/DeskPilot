@@ -556,6 +556,8 @@ abuse, and hidden automation are not supported.
 - [x] Add model disclosure fields to traces: provider, model, prompt class,
       input artifact references, output hash, and whether the output affected
       routine selection.
+- [x] Add ranked candidate routine details to goal-plan JSON and Markdown
+      reports for monitoring and planner review.
 - [x] Add safety rule that only validated routine IDs can be executed.
 
 ### Acceptance Criteria

@@ -21,6 +21,7 @@ def test_goal_plan_trace_writes_model_disclosure_fields(tmp_path: Path) -> None:
                 routine_id="browser.search-web",
                 routine_name="Browser web search",
                 score=10,
+                matched_fields=("tags", "outputs"),
                 safety_class="low",
                 approval_policy="none",
             ),
@@ -62,10 +63,18 @@ def test_goal_plan_trace_writes_model_disclosure_fields(tmp_path: Path) -> None:
     assert report["trace_dir"] == str(trace_dir)
     assert report["replayable"] is True
     assert report["desktop_input_required"] is False
+    assert report["normalized_intent"] == "browser search"
+    assert report["candidate_count"] == 1
+    assert report["candidate_routines"][0]["routine_id"] == "browser.search-web"
+    assert report["candidate_routines"][0]["matched_fields"] == ["tags", "outputs"]
     assert report["expected_evidence"] == ["search results"]
     assert report["abort_conditions"] == ["browser signed out"]
+    assert report["explanation"] == "Model-assisted ranking kept the search routine."
     assert report["replay_command"] == f"desktop-agent replay {trace_dir}"
     assert report["model_disclosure"]["provider"] == "ollama"
+    assert "## Candidate Ranking" in (
+        trace_dir / "goal-plan-report.md"
+    ).read_text(encoding="utf-8")
     assert metadata["provider"] == "ollama"
     assert metadata["model"] == "llama3.1"
     assert metadata["model_name"] == "llama3.1"
