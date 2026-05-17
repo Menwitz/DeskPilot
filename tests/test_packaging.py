@@ -90,6 +90,7 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "& $ExePath list-routines --routine-pack-root $RoutinePackRoot" in script
     assert "& $ExePath replay $TraceDir" in script
     assert "& $ExePath replay $BenchmarkTraceDir --write-summary" in script
+    assert "& $ExePath replay $ProofTraceDir --write-summary" in script
     assert "Packaged benchmark replay did not write replay-summary.md" in script
     assert (
         "Packaged benchmark replay summary did not include artifact manifest"
@@ -102,6 +103,18 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "Packaged benchmark replay summary did not include report artifact" in script
     assert (
         "Packaged benchmark replay summary did not include metrics artifact"
+        in script
+    )
+    assert (
+        "Packaged proof finalization replay did not write replay-summary.md"
+        in script
+    )
+    assert (
+        "Packaged proof finalization replay summary did not include summary counts"
+        in script
+    )
+    assert (
+        "Packaged proof finalization replay summary did not include proof gates"
         in script
     )
     assert "$TraceHealthReport = Join-Path $SmokeRoot \"trace-health.json\"" in script

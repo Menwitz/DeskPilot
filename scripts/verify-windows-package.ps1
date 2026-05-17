@@ -138,6 +138,7 @@ $SmokeConfig | Set-Content -Encoding UTF8 $SmokeConfigPath
 & $ExePath list-routines --routine-pack-root $RoutinePackRoot
 & $ExePath replay $TraceDir
 & $ExePath replay $BenchmarkTraceDir --write-summary
+& $ExePath replay $ProofTraceDir --write-summary
 if (-not (Test-Path (Join-Path $BenchmarkTraceDir "replay-summary.md"))) {
     throw "Packaged benchmark replay did not write replay-summary.md"
 }
@@ -153,6 +154,16 @@ if ($BenchmarkReplaySummary -notmatch "benchmark-report.json") {
 }
 if ($BenchmarkReplaySummary -notmatch "runs.jsonl") {
     throw "Packaged benchmark replay summary did not include metrics artifact"
+}
+if (-not (Test-Path (Join-Path $ProofTraceDir "replay-summary.md"))) {
+    throw "Packaged proof finalization replay did not write replay-summary.md"
+}
+$ProofReplaySummary = Get-Content (Join-Path $ProofTraceDir "replay-summary.md") -Raw
+if ($ProofReplaySummary -notmatch "expected_count") {
+    throw "Packaged proof finalization replay summary did not include summary counts"
+}
+if ($ProofReplaySummary -notmatch "suite_validation") {
+    throw "Packaged proof finalization replay summary did not include proof gates"
 }
 
 # Persist trace health so package smoke runs leave a reviewable monitoring artifact.
