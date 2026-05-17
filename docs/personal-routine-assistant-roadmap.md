@@ -355,6 +355,7 @@ abuse, and hidden automation are not supported.
 - [x] Render benchmark report artifact manifests in native trace-viewer state.
 - [x] Render compact benchmark trace-health summaries in native trace-viewer
       state.
+- [x] Render benchmark warning-trace counts in native trace-viewer state.
 - [x] Expose compact benchmark trace-health summaries in local trace-service
       metadata.
 - [x] Expose benchmark warning-trace summary counts in local trace-service

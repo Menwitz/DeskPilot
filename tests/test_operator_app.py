@@ -441,6 +441,7 @@ def test_trace_viewer_timeline_loads_benchmark_report(
             "trace_health_summary": {
                 "health_status": "ok",
                 "artifact_trace_count": 2,
+                "warning_trace_count": 1,
             },
             "report_artifacts": {
                 "metrics": str(tmp_path / "runs.jsonl"),
@@ -462,12 +463,14 @@ def test_trace_viewer_timeline_loads_benchmark_report(
         "monitoring coverage: passed",
         "trace health: ok",
         "trace health artifacts: 2",
+        "trace health warnings: 1",
         f"artifact metrics: {tmp_path / 'runs.jsonl'}",
         f"artifact summary: {tmp_path / 'benchmark-summary.md'}",
     ]
     assert "Trace kind: benchmark" in text
     assert "schema: benchmark_report_v1" in text
     assert "trace health artifacts: 2" in text
+    assert "trace health warnings: 1" in text
     assert "artifact metrics:" in text
     assert "monitoring coverage: passed" in text
 
