@@ -2820,7 +2820,7 @@ def _trace_health_summary_text(value: object) -> str:
     parts: list[str] = []
     if isinstance(status, str):
         parts.append(f"status={status}")
-    if isinstance(artifact_count, int):
+    if _is_summary_int(artifact_count):
         parts.append(f"artifacts={artifact_count}")
     return "; ".join(parts)
 
@@ -2839,9 +2839,15 @@ def _proof_summary_text(value: object) -> str:
     parts = [
         f"{label}={count}"
         for key, label in labels
-        if isinstance((count := value.get(key)), int)
+        if _is_summary_int(count := value.get(key))
     ]
     return "; ".join(parts)
+
+
+def _is_summary_int(value: object) -> bool:
+    """Return true for integer counts while excluding JSON booleans."""
+
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 def _trace_health_exit_code(

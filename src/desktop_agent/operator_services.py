@@ -1454,7 +1454,8 @@ def _report_trace_health_pairs(
     return tuple(
         (key, value)
         for key in allowed_keys
-        if isinstance((value := summary.get(key)), str | int)
+        if isinstance((value := summary.get(key)), str)
+        or _is_summary_int(value)
     )
 
 
@@ -1469,5 +1470,11 @@ def _report_proof_summary_pairs(
     return tuple(
         (key, value)
         for key, value in summary.items()
-        if isinstance(key, str) and isinstance(value, int)
+        if isinstance(key, str) and _is_summary_int(value)
     )
+
+
+def _is_summary_int(value: object) -> bool:
+    """Return true for integer counts while excluding JSON booleans."""
+
+    return isinstance(value, int) and not isinstance(value, bool)

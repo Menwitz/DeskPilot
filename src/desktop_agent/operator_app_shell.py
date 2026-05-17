@@ -492,7 +492,7 @@ def _benchmark_trace_health(
         artifact_count = summary.get("artifact_trace_count")
         return (
             status if isinstance(status, str) else None,
-            artifact_count if isinstance(artifact_count, int) else None,
+            artifact_count if _is_summary_int(artifact_count) else None,
         )
     return None, None
 
@@ -517,9 +517,9 @@ def _proof_trace_summary(
         artifacts = summary.get("artifact_count")
         errors = summary.get("error_count")
         return (
-            expected if isinstance(expected, int) else None,
-            artifacts if isinstance(artifacts, int) else None,
-            errors if isinstance(errors, int) else None,
+            expected if _is_summary_int(expected) else None,
+            artifacts if _is_summary_int(artifacts) else None,
+            errors if _is_summary_int(errors) else None,
         )
     return None, None, None
 
@@ -668,8 +668,14 @@ def _proof_summary_lines(report: Mapping[str, object]) -> tuple[str, ...]:
     return tuple(
         f"{name}: {value}"
         for name, value in summary.items()
-        if isinstance(name, str) and isinstance(value, int)
+        if isinstance(name, str) and _is_summary_int(value)
     )
+
+
+def _is_summary_int(value: object) -> bool:
+    """Return true for integer counts while excluding JSON booleans."""
+
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 def _candidate_ranking_lines(candidates: object) -> tuple[str, ...]:

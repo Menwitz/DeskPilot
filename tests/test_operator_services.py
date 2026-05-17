@@ -294,6 +294,7 @@ def test_local_trace_service_lists_proof_suite_finalization_rollups(
                     "reported_count": 4,
                     "artifact_count": 7,
                     "error_count": 0,
+                    "warning_count": False,
                 },
                 "gates": {
                     "suite_validation": "passed",

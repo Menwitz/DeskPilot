@@ -365,6 +365,7 @@ abuse, and hidden automation are not supported.
       Markdown rows.
 - [x] Add CLI JSON coverage for proof-finalization summary metadata in latest
       traces.
+- [x] Reject JSON booleans as compact trace-health and proof-summary counts.
 - [x] Add CLI JSON coverage for benchmark trace-health metadata in artifact
       traces.
 - [x] Add schema version and generation timestamp metadata to trace-health
