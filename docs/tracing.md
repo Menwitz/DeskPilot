@@ -279,7 +279,9 @@ rows with report paths when benchmark reports expose monitoring metadata.
 Benchmark trace summaries include the
 `report_artifacts` manifest from `benchmark-report.json`, and Markdown
 trace-health latest rows render those artifact links plus compact trace-health
-status and artifact-count metadata.
+status and artifact-count metadata. Proof-suite finalization rows render
+compact proof summary counts when `proof-finalization-status.json` includes
+them.
 Add `--markdown-output traces/trace-health.md` to write the same health status,
 counts, attention trace links, artifact-trace links, and latest trace links as
 a human-readable local report.

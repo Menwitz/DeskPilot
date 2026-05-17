@@ -1380,7 +1380,17 @@ def test_cli_trace_health_summarizes_trace_counts(
     replay_summary_path = run_trace / "replay-summary.md"
     replay_summary_path.write_text("# Replay Summary\n", encoding="utf-8")
     (proof_trace / "proof-finalization-status.json").write_text(
-        json.dumps({"status": "passed"}),
+        json.dumps(
+            {
+                "status": "passed",
+                "summary": {
+                    "expected_count": 4,
+                    "reported_count": 4,
+                    "artifact_count": 7,
+                    "error_count": 0,
+                },
+            },
+        ),
         encoding="utf-8",
     )
     (benchmark_trace / "benchmark-report.json").write_text(
@@ -1424,6 +1434,7 @@ def test_cli_trace_health_summarizes_trace_counts(
     assert f"artifacts metrics={benchmark_trace / 'runs.jsonl'}" in output
     assert "trace_health status=ok; artifacts=1" in output
     assert "latest_traces:" in output
+    assert "proof_summary expected=4; reported=4; artifacts=7; errors=0" in output
 
 
 def test_cli_trace_health_console_shows_latest_benchmark_health_without_artifacts(
@@ -1545,8 +1556,10 @@ def test_cli_trace_health_writes_markdown_summary(
     trace_root = tmp_path / "traces"
     trace_dir = trace_root / "20260516T000000Z-run"
     benchmark_trace = trace_root / "20260516T010000Z-benchmark"
+    proof_trace = trace_root / "20260516T020000Z-proof"
     trace_dir.mkdir(parents=True)
     benchmark_trace.mkdir()
+    proof_trace.mkdir()
     (trace_dir / "final-report.json").write_text(
         json.dumps({"status": "failed"}),
         encoding="utf-8",
@@ -1564,6 +1577,20 @@ def test_cli_trace_health_writes_markdown_summary(
                 "report_artifacts": {
                     "metrics": str(benchmark_trace / "runs.jsonl"),
                     "summary": str(benchmark_trace / "benchmark-summary.md"),
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+    (proof_trace / "proof-finalization-status.json").write_text(
+        json.dumps(
+            {
+                "status": "passed",
+                "summary": {
+                    "expected_count": 4,
+                    "reported_count": 4,
+                    "artifact_count": 7,
+                    "error_count": 0,
                 },
             },
         ),
@@ -1594,6 +1621,7 @@ def test_cli_trace_health_writes_markdown_summary(
     assert f"summary `{replay_summary_path}`" in summary
     assert "artifacts `metrics=" in summary
     assert "trace_health `status=ok; artifacts=1`" in summary
+    assert "proof_summary `expected=4; reported=4; artifacts=7; errors=0`" in summary
     assert str(benchmark_trace / "benchmark-summary.md") in summary
     assert "## Artifact Traces" in summary
     assert "## Latest Traces" in summary

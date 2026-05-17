@@ -2755,6 +2755,9 @@ def _trace_health_console_trace_line(trace: dict[object, object]) -> str:
     trace_health = _trace_health_summary_text(trace.get("trace_health_summary"))
     if trace_health:
         line += f" trace_health {trace_health}"
+    proof_summary = _proof_summary_text(trace.get("proof_summary"))
+    if proof_summary:
+        line += f" proof_summary {proof_summary}"
     return line
 
 
@@ -2801,6 +2804,9 @@ def _trace_health_trace_line(trace: dict[object, object]) -> str:
     trace_health = _trace_health_summary_text(trace.get("trace_health_summary"))
     if trace_health:
         line += f" trace_health `{trace_health}`"
+    proof_summary = _proof_summary_text(trace.get("proof_summary"))
+    if proof_summary:
+        line += f" proof_summary `{proof_summary}`"
     return line
 
 
@@ -2816,6 +2822,25 @@ def _trace_health_summary_text(value: object) -> str:
         parts.append(f"status={status}")
     if isinstance(artifact_count, int):
         parts.append(f"artifacts={artifact_count}")
+    return "; ".join(parts)
+
+
+def _proof_summary_text(value: object) -> str:
+    """Render compact proof counts when scanning trace-health rows."""
+
+    if not isinstance(value, dict):
+        return ""
+    labels = (
+        ("expected_count", "expected"),
+        ("reported_count", "reported"),
+        ("artifact_count", "artifacts"),
+        ("error_count", "errors"),
+    )
+    parts = [
+        f"{label}={count}"
+        for key, label in labels
+        if isinstance((count := value.get(key)), int)
+    ]
     return "; ".join(parts)
 
 
