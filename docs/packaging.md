@@ -70,8 +70,8 @@ trace root, verifies the persisted `trace-health.json` and `trace-health.md`
 reports are healthy, schema-versioned, and include the benchmark replay in
 artifact-trace counts plus latest-trace links with artifact manifests and
 compact trace-health summary status in console, JSON, and Markdown output. The
-console smoke also checks `artifact_traces` and `latest_traces` sections before
-listing routines from `routine_packs\` and running
+console smoke also checks `artifact_traces` and `latest_traces` sections plus
+benchmark report paths before listing routines from `routine_packs\` and running
 `deskpilot-app.exe --check` plus `deskpilot-app.exe --describe-shell` when the
 app executable exists. The app check must report bundled PySide6 availability
 for packaged Windows builds.

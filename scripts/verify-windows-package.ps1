@@ -158,6 +158,9 @@ if ($TraceHealthConsoleText -notmatch "latest_traces:") {
 if ($TraceHealthConsoleText -notmatch "benchmark-replay") {
     throw "Packaged trace-health console output did not include benchmark replay"
 }
+if ($TraceHealthConsoleText -notmatch "benchmark-report.json") {
+    throw "Packaged trace-health console output did not include benchmark report path"
+}
 if ($TraceHealthConsoleText -notmatch 'trace_health status=ok; artifacts=1') {
     throw "Packaged trace-health console output did not include benchmark trace-health summary"
 }

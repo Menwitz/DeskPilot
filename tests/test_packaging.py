@@ -125,6 +125,10 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         in script
     )
     assert (
+        "Packaged trace-health console output did not include benchmark report path"
+        in script
+    )
+    assert (
         "Packaged trace-health console output did not include benchmark "
         "trace-health summary" in script
     )
