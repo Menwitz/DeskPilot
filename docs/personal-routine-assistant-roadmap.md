@@ -238,6 +238,8 @@ abuse, and hidden automation are not supported.
       unknown reports stand out in CLI, JSON, and native dashboard monitoring.
 - [x] Add `trace-health --fail-on-attention` so monitoring and package smoke
       pipelines can fail on unhealthy local trace reports.
+- [x] Add `trace-health --fail-on-warning` so strict monitoring pipelines can
+      fail on non-blocking warning traces.
 - [x] Add attention trace summaries to trace-health JSON, CLI output, and the
       native dashboard attention count.
 - [x] Add warning trace counts and sections to trace-health JSON, CLI output,

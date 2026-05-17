@@ -1848,6 +1848,36 @@ def test_cli_trace_health_can_fail_on_attention(
     assert "health_status: attention" in output
 
 
+def test_cli_trace_health_can_fail_on_warning(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_root = tmp_path / "traces"
+    benchmark_trace = trace_root / "20260516T020000Z-benchmark"
+    benchmark_trace.mkdir(parents=True)
+    (benchmark_trace / "benchmark-report.json").write_text(
+        json.dumps(
+            {
+                "acceptance": {"status": "passed"},
+                "trace_health_summary": {
+                    "health_status": "ok",
+                    "warning_trace_count": 2,
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    status = main(
+        ["trace-health", "--trace-root", str(trace_root), "--fail-on-warning"],
+    )
+
+    output = capsys.readouterr().out
+    assert status == 1
+    assert "health_status: ok" in output
+    assert "warning_trace_count: 1" in output
+
+
 def test_cli_replay_summarizes_goal_plan_trace(
     tmp_path: Path,
     capsys: CaptureFixture[str],

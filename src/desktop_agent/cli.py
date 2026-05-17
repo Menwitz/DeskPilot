@@ -538,6 +538,11 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="return a nonzero exit code when trace health needs review",
     )
+    trace_health_parser.add_argument(
+        "--fail-on-warning",
+        action="store_true",
+        help="return a nonzero exit code when non-blocking warning traces exist",
+    )
 
     analyze_failed_run_parser = subparsers.add_parser(
         "analyze-failed-run",
@@ -2654,7 +2659,11 @@ def _replay_benchmark(args: argparse.Namespace) -> int:
 
 def _trace_health(args: argparse.Namespace) -> int:
     health = LocalTraceService(args.trace_root).trace_health(limit=args.limit)
-    exit_code = _trace_health_exit_code(health, args.fail_on_attention)
+    exit_code = _trace_health_exit_code(
+        health,
+        args.fail_on_attention,
+        args.fail_on_warning,
+    )
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
@@ -2900,8 +2909,17 @@ def _is_summary_int(value: object) -> bool:
 def _trace_health_exit_code(
     health: dict[str, object],
     fail_on_attention: bool,
+    fail_on_warning: bool,
 ) -> int:
     if fail_on_attention and health.get("health_status") == "attention":
+        return 1
+    warning_count = health.get("warning_trace_count")
+    if (
+        fail_on_warning
+        and isinstance(warning_count, int)
+        and not isinstance(warning_count, bool)
+        and warning_count > 0
+    ):
         return 1
     return 0
 

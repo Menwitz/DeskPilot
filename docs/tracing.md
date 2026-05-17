@@ -292,6 +292,8 @@ counts, attention trace links, artifact-trace links, and latest trace links as
 a human-readable local report.
 Add `--fail-on-attention` when a local monitor or CI smoke step should return
 nonzero if failed, error, invalid, blocked, or unknown trace statuses are found.
+Add `--fail-on-warning` when warning traces should also make that monitoring
+step return nonzero while keeping the underlying `health_status` unchanged.
 
 `desktop-agent analyze-failed-run <trace-dir>` reads `final-report.json` and
 writes `failed-run-analysis.json` plus `failed-run-analysis.md`. The analysis
