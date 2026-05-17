@@ -407,6 +407,17 @@ def test_write_proof_suite_status_records_monitoring_payload(
     assert payload["status"] == "failed"
     assert payload["preflight_report_path"] is None
     assert payload["review_status_path"] is None
+    assert payload["summary"] == {
+        "artifact_count": 5,
+        "duplicate_count": 0,
+        "error_count": 3,
+        "expected_count": 4,
+        "failed_count": 0,
+        "missing_count": 3,
+        "passed_count": 1,
+        "reported_count": 1,
+        "warning_count": 2,
+    }
     assert payload["missing_proofs"] == [
         "native-fixture",
         "mixed-fixture",

@@ -204,6 +204,8 @@ abuse, and hidden automation are not supported.
 - [x] Add a single `proof finalize-suite` command that writes promotion,
       archive, verification reports, suite report, status JSON, and runbook in
       one ordered post-review flow.
+- [x] Add compact summary counts to `proof-suite-status.json` for monitoring
+      pipelines.
 - [x] Add `proof-finalization-status.json` as a unified post-review monitoring
       rollup for suite, promotion, and archive verification gates.
 - [x] Surface proof-suite finalization rollups through the local trace service

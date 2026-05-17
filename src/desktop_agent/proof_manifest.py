@@ -684,6 +684,7 @@ def proof_suite_status_metadata(validation: ProofSuiteValidation) -> dict[str, o
         "schema_version": 1,
         "trace_root": str(validation.trace_root),
         "status": "passed" if validation.passed else "failed",
+        "summary": _proof_suite_status_summary(validation, proofs),
         "preflight_report_path": str(validation.preflight_report_path)
         if validation.preflight_report_path is not None
         else None,
@@ -698,6 +699,27 @@ def proof_suite_status_metadata(validation: ProofSuiteValidation) -> dict[str, o
         "warnings": list(validation.warnings),
         "errors": list(validation.errors),
         "proofs": proofs,
+    }
+
+
+def _proof_suite_status_summary(
+    validation: ProofSuiteValidation,
+    proofs: list[dict[str, object]],
+) -> dict[str, int]:
+    """Summarize proof-suite status for monitors that only need counts."""
+
+    return {
+        "expected_count": len(validation.expected_proofs),
+        "reported_count": len(validation.bundle_results),
+        "passed_count": sum(1 for proof in proofs if proof.get("status") == "passed"),
+        "failed_count": sum(1 for proof in proofs if proof.get("status") == "failed"),
+        "missing_count": len(validation.missing_proofs),
+        "duplicate_count": len(validation.duplicate_proofs),
+        "artifact_count": sum(
+            len(bundle.artifact_paths) for bundle in validation.bundle_results
+        ),
+        "error_count": len(validation.errors),
+        "warning_count": len(validation.warnings),
     }
 
 

@@ -103,8 +103,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
 - [ ] `proof-suite-report.md` summarizes every required proof, missing bundle,
       duplicate bundle, warning, and blocking validation error.
 - [ ] `proof-suite-status.json` records the suite status, expected proofs,
-      missing proofs, duplicate proofs, warnings, errors, and per-proof artifact
-      paths for monitoring.
+      summary counts, missing proofs, duplicate proofs, warnings, errors, and
+      per-proof artifact paths for monitoring.
 - [ ] `proof-suite-next-actions.md` lists missing proof commands, invalid bundle
       revalidation commands, duplicate review items, and final promotion
       commands.
