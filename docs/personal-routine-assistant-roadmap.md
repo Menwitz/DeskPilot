@@ -314,6 +314,7 @@ abuse, and hidden automation are not supported.
       details.
 - [x] Print replay-summary artifact links in trace-health CLI and Markdown
       monitoring reports for attention traces.
+- [x] Add latest-trace links to trace-health Markdown monitoring reports.
 
 ### Acceptance Criteria
 

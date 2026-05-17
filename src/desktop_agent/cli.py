@@ -2705,6 +2705,10 @@ def _render_trace_health_markdown(
         "## Attention Traces",
         "",
         *_trace_health_attention_lines(health.get("attention_traces")),
+        "",
+        "## Latest Traces",
+        "",
+        *_trace_health_latest_lines(health.get("latest")),
     ]
     return "\n".join(lines) + "\n"
 
@@ -2723,16 +2727,29 @@ def _trace_health_attention_lines(value: object) -> list[str]:
     for trace in value:
         if not isinstance(trace, dict):
             continue
-        trace_dir = trace.get("trace_dir", "unknown")
-        report_path = trace.get("report_path", "none")
-        kind = trace.get("kind", "unknown")
-        status = trace.get("status", "unknown")
-        line = f"- `{status}` `{kind}` trace `{trace_dir}` report `{report_path}`"
-        replay_summary_path = trace.get("replay_summary_path")
-        if isinstance(replay_summary_path, str):
-            line += f" summary `{replay_summary_path}`"
-        lines.append(line)
+        lines.append(_trace_health_trace_line(trace))
     return lines or ["- None"]
+
+
+def _trace_health_latest_lines(value: object) -> list[str]:
+    if not isinstance(value, list) or not value:
+        return ["- None"]
+    lines = [
+        _trace_health_trace_line(trace) for trace in value if isinstance(trace, dict)
+    ]
+    return lines or ["- None"]
+
+
+def _trace_health_trace_line(trace: dict[object, object]) -> str:
+    trace_dir = trace.get("trace_dir", "unknown")
+    report_path = trace.get("report_path", "none")
+    kind = trace.get("kind", "unknown")
+    status = trace.get("status", "unknown")
+    line = f"- `{status}` `{kind}` trace `{trace_dir}` report `{report_path}`"
+    replay_summary_path = trace.get("replay_summary_path")
+    if isinstance(replay_summary_path, str):
+        line += f" summary `{replay_summary_path}`"
+    return line
 
 
 def _trace_health_exit_code(

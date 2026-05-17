@@ -1487,6 +1487,7 @@ def test_cli_trace_health_writes_markdown_summary(
     assert "- Health status: `attention`" in summary
     assert f"`{trace_dir}`" in summary
     assert f"summary `{replay_summary_path}`" in summary
+    assert "## Latest Traces" in summary
 
 
 def test_cli_trace_health_json_output_stays_parseable_with_report_file(

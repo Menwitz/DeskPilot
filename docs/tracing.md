@@ -271,7 +271,8 @@ summaries also include `replay_summary_path` when a local `replay-summary.md`
 artifact exists, and the CLI plus Markdown trace-health output print that path
 for attention traces.
 Add `--markdown-output traces/trace-health.md` to write the same health status,
-counts, and attention trace links as a human-readable local report.
+counts, attention trace links, and latest trace links as a human-readable local
+report.
 Add `--fail-on-attention` when a local monitor or CI smoke step should return
 nonzero if failed, error, invalid, blocked, or unknown trace statuses are found.
 
