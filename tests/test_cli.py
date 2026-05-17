@@ -1478,6 +1478,10 @@ def test_cli_trace_health_writes_markdown_summary(
         json.dumps(
             {
                 "acceptance": {"status": "passed"},
+                "trace_health_summary": {
+                    "health_status": "ok",
+                    "artifact_trace_count": 1,
+                },
                 "report_artifacts": {
                     "metrics": str(benchmark_trace / "runs.jsonl"),
                     "summary": str(benchmark_trace / "benchmark-summary.md"),
@@ -1510,6 +1514,7 @@ def test_cli_trace_health_writes_markdown_summary(
     assert f"`{trace_dir}`" in summary
     assert f"summary `{replay_summary_path}`" in summary
     assert "artifacts `metrics=" in summary
+    assert "trace_health `status=ok; artifacts=1`" in summary
     assert str(benchmark_trace / "benchmark-summary.md") in summary
     assert "## Artifact Traces" in summary
     assert "## Latest Traces" in summary

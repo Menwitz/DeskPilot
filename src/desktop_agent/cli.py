@@ -2765,7 +2765,25 @@ def _trace_health_trace_line(trace: dict[object, object]) -> str:
     if artifacts:
         rendered = "; ".join(f"{name}={path}" for name, path in artifacts.items())
         line += f" artifacts `{rendered}`"
+    trace_health = _trace_health_summary_text(trace.get("trace_health_summary"))
+    if trace_health:
+        line += f" trace_health `{trace_health}`"
     return line
+
+
+def _trace_health_summary_text(value: object) -> str:
+    """Render only the compact fields needed when scanning trace-health rows."""
+
+    if not isinstance(value, dict):
+        return ""
+    status = value.get("health_status")
+    artifact_count = value.get("artifact_trace_count")
+    parts: list[str] = []
+    if isinstance(status, str):
+        parts.append(f"status={status}")
+    if isinstance(artifact_count, int):
+        parts.append(f"artifacts={artifact_count}")
+    return "; ".join(parts)
 
 
 def _trace_health_exit_code(
