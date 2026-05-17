@@ -308,6 +308,36 @@ def test_local_trace_service_lists_proof_suite_finalization_rollups(
     }
 
 
+def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None:
+    trace_root = tmp_path / "traces"
+    run_trace = trace_root / "20260516T000000Z-run"
+    goal_trace = trace_root / "20260516T010000Z-goal"
+    proof_trace = trace_root / "20260516T020000Z-proof"
+    for trace_dir in (run_trace, goal_trace, proof_trace):
+        trace_dir.mkdir(parents=True)
+    (run_trace / "final-report.json").write_text(
+        json.dumps({"status": "failed"}),
+        encoding="utf-8",
+    )
+    (goal_trace / "goal-plan-report.json").write_text(
+        json.dumps({"status": "ready"}),
+        encoding="utf-8",
+    )
+    (proof_trace / "proof-finalization-status.json").write_text(
+        json.dumps({"status": "passed"}),
+        encoding="utf-8",
+    )
+    service = LocalTraceService(trace_root)
+
+    health = service.trace_health()
+
+    assert health["trace_count"] == 3
+    assert health["by_kind"] == {"proof_suite": 1, "goal_plan": 1, "run": 1}
+    assert health["by_status"] == {"passed": 1, "ready": 1, "failed": 1}
+    latest = cast(list[dict[str, object]], health["latest"])
+    assert latest[0]["kind"] == "proof_suite"
+
+
 def test_local_trace_service_inspects_failed_trace_for_app_review(
     tmp_path: Path,
 ) -> None:

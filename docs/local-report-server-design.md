@@ -40,6 +40,8 @@ become part of the local execution path.
   pack-level test result, and proof checklist status.
 - Trace review: final report, replay summary, screenshots, video paths,
   target reasoning, state deltas, and redaction mode.
+- Trace health: local counts by report kind and status for run, goal-plan, and
+  proof-suite finalization reports.
 - Goal planning review: selected routine, candidates, missing inputs, approval
   needs, schedule eligibility, and local model disclosure.
 

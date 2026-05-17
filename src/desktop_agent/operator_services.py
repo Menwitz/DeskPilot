@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -431,6 +432,10 @@ class TraceService(Protocol):
 
     def trace_summary(self, trace_dir: Path) -> TraceSummary:
         """Return one local trace summary for app state hydration."""
+        ...
+
+    def trace_health(self, *, limit: int = 50) -> dict[str, object]:
+        """Return aggregate local trace status for dashboard monitoring."""
         ...
 
     def inspect_failed_trace(self, trace_dir: Path) -> OperatorFailedTraceInspection:
@@ -946,6 +951,17 @@ class LocalTraceService:
             raise OperatorServiceError(f"trace directory not found: {trace_dir}")
         return _trace_summary(trace_dir)
 
+    def trace_health(self, *, limit: int = 50) -> dict[str, object]:
+        summaries = self.list_traces(limit=limit)
+        return {
+            "trace_count": len(summaries),
+            "by_kind": _count_trace_values(summary.kind for summary in summaries),
+            "by_status": _count_trace_values(
+                summary.status or "unknown" for summary in summaries
+            ),
+            "latest": [summary.metadata() for summary in summaries],
+        }
+
     def inspect_failed_trace(self, trace_dir: Path) -> OperatorFailedTraceInspection:
         report = self.read_report(trace_dir)
         if report.get("status") == "passed":
@@ -1259,6 +1275,13 @@ def _routine_list_item(routine: RoutineDefinition) -> RoutineListItem:
         approval_policy=routine.approval_policy,
         quarantine_status=routine_quarantine_status(routine),
     )
+
+
+def _count_trace_values(values: Iterable[str]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for value in values:
+        counts[value] = counts.get(value, 0) + 1
+    return counts
 
 
 def _trace_summary(trace_dir: Path) -> TraceSummary:
