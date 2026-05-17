@@ -1420,6 +1420,7 @@ def test_cli_trace_health_summarizes_trace_counts(
     assert "health_status: attention" in output
     assert "trace_count: 3" in output
     assert "artifact_trace_count: 1" in output
+    assert "warning_trace_count: 1" in output
     assert "- benchmark: 1" in output
     assert "- proof_suite: 1" in output
     assert "- run: 1" in output
@@ -1429,6 +1430,7 @@ def test_cli_trace_health_summarizes_trace_counts(
     assert f"- {run_trace} (run/failed)" in output
     assert f"report {run_trace / 'final-report.json'}" in output
     assert f"summary {replay_summary_path}" in output
+    assert "warning_traces:" in output
     assert "artifact_traces:" in output
     assert f"- {benchmark_trace} (benchmark/passed)" in output
     assert f"report {benchmark_trace / 'benchmark-report.json'}" in output
@@ -1570,6 +1572,7 @@ def test_cli_trace_health_writes_json(
     assert isinstance(payload["generated_at"], str)
     assert payload["trace_count"] == 3
     assert payload["artifact_trace_count"] == 1
+    assert payload["warning_trace_count"] == 1
     assert payload["by_kind"] == {"benchmark": 1, "goal_plan": 1, "proof_suite": 1}
     assert payload["by_status"] == {"passed": 2, "ready": 1}
     assert payload["health_status"] == "ok"
@@ -1579,6 +1582,10 @@ def test_cli_trace_health_writes_json(
         "artifact_trace_count": 1,
         "health_status": "ok",
     }
+    warning_traces = payload["warning_traces"]
+    assert warning_traces[0]["proof_warnings"] == [
+        "browser-fixture: video_path is external",
+    ]
     latest = payload["latest"]
     proof_latest = next(item for item in latest if item["kind"] == "proof_suite")
     assert proof_latest["proof_summary"] == {
@@ -1694,12 +1701,14 @@ def test_cli_trace_health_writes_markdown_summary(
     assert "- Generated at: `" in summary
     assert "- Health status: `attention`" in summary
     assert "- Artifact traces: `1`" in summary
+    assert "- Warning traces: `1`" in summary
     assert f"`{trace_dir}`" in summary
     assert f"summary `{replay_summary_path}`" in summary
     assert "artifacts `metrics=" in summary
     assert "trace_health `status=ok; artifacts=1`" in summary
     assert "proof_summary `expected=4; reported=4; artifacts=7; errors=0`" in summary
     assert "proof_warnings `browser-fixture: video_path is external`" in summary
+    assert "## Warning Traces" in summary
     assert str(benchmark_trace / "benchmark-summary.md") in summary
     assert "## Artifact Traces" in summary
     assert "## Latest Traces" in summary

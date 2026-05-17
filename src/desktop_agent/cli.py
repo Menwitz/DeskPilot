@@ -2668,6 +2668,7 @@ def _trace_health(args: argparse.Namespace) -> int:
     print(f"health_status: {health.get('health_status', 'unknown')}")
     print(f"trace_count: {health['trace_count']}")
     print(f"artifact_trace_count: {health.get('artifact_trace_count', 0)}")
+    print(f"warning_trace_count: {health.get('warning_trace_count', 0)}")
     print("by_kind:")
     for name, count in _int_mapping(health.get("by_kind")).items():
         print(f"- {name}: {count}")
@@ -2682,6 +2683,12 @@ def _trace_health(args: argparse.Namespace) -> int:
     if isinstance(attention_traces, list) and attention_traces:
         print("attention_traces:")
         for trace in attention_traces:
+            if isinstance(trace, dict):
+                print(_trace_health_console_trace_line(trace))
+    warning_traces = health.get("warning_traces")
+    if isinstance(warning_traces, list) and warning_traces:
+        print("warning_traces:")
+        for trace in warning_traces:
             if isinstance(trace, dict):
                 print(_trace_health_console_trace_line(trace))
     artifact_traces = health.get("artifact_traces")
@@ -2716,6 +2723,7 @@ def _render_trace_health_markdown(
         f"- Health status: `{health.get('health_status', 'unknown')}`",
         f"- Trace count: `{health.get('trace_count', 0)}`",
         f"- Artifact traces: `{health.get('artifact_trace_count', 0)}`",
+        f"- Warning traces: `{health.get('warning_trace_count', 0)}`",
         "",
         "## Counts By Kind",
         "",
@@ -2728,6 +2736,10 @@ def _render_trace_health_markdown(
         "## Attention Traces",
         "",
         *_trace_health_attention_lines(health.get("attention_traces")),
+        "",
+        "## Warning Traces",
+        "",
+        *_trace_health_latest_lines(health.get("warning_traces")),
         "",
         "## Artifact Traces",
         "",

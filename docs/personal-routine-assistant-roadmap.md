@@ -240,6 +240,8 @@ abuse, and hidden automation are not supported.
       pipelines can fail on unhealthy local trace reports.
 - [x] Add attention trace summaries to trace-health JSON, CLI output, and the
       native dashboard attention count.
+- [x] Add warning trace counts and sections to trace-health JSON, CLI output,
+      and Markdown reports.
 - [x] Add `trace-health --markdown-output` so monitoring runs can persist a
       human-readable local health report.
 - [x] Add proof-suite gate details to native trace-viewer state so local proof

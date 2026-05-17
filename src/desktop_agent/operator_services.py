@@ -973,6 +973,7 @@ class LocalTraceService:
             for summary in summaries
             if _trace_status_needs_attention(summary.status or "unknown")
         ]
+        warning_traces = [summary for summary in summaries if summary.proof_warnings]
         artifact_traces = [
             summary for summary in summaries if summary.report_artifacts
         ]
@@ -981,11 +982,13 @@ class LocalTraceService:
             "generated_at": datetime.now(UTC).isoformat(),
             "trace_count": len(summaries),
             "artifact_trace_count": len(artifact_traces),
+            "warning_trace_count": len(warning_traces),
             "by_kind": _count_trace_values(summary.kind for summary in summaries),
             "by_status": status_counts,
             "health_status": _trace_health_status(len(summaries), status_counts),
             "attention_statuses": list(_trace_attention_statuses(status_counts)),
             "attention_traces": [summary.metadata() for summary in attention_traces],
+            "warning_traces": [summary.metadata() for summary in warning_traces],
             "artifact_traces": [summary.metadata() for summary in artifact_traces],
             "latest": [summary.metadata() for summary in summaries],
         }

@@ -349,7 +349,12 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
         encoding="utf-8",
     )
     (proof_trace / "proof-finalization-status.json").write_text(
-        json.dumps({"status": "passed"}),
+        json.dumps(
+            {
+                "status": "passed",
+                "warnings": ["browser-fixture: video_path is external"],
+            },
+        ),
         encoding="utf-8",
     )
     (benchmark_trace / "benchmark-report.json").write_text(
@@ -378,6 +383,7 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
     assert isinstance(health["generated_at"], str)
     assert health["trace_count"] == 4
     assert health["artifact_trace_count"] == 1
+    assert health["warning_trace_count"] == 1
     assert health["by_kind"] == {
         "benchmark": 1,
         "proof_suite": 1,
@@ -403,8 +409,13 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
     ]
     latest = cast(list[dict[str, object]], health["latest"])
     artifact_traces = cast(list[dict[str, object]], health["artifact_traces"])
+    warning_traces = cast(list[dict[str, object]], health["warning_traces"])
     assert latest[0]["kind"] == "benchmark"
     assert artifact_traces[0]["kind"] == "benchmark"
+    assert warning_traces[0]["kind"] == "proof_suite"
+    assert warning_traces[0]["proof_warnings"] == [
+        "browser-fixture: video_path is external",
+    ]
     assert latest[0]["replay_summary_path"] == str(replay_summary_path)
     assert latest[0]["report_artifacts"] == {
         "metrics": str(benchmark_trace / "runs.jsonl"),
