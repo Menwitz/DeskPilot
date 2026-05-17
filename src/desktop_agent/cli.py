@@ -2680,6 +2680,12 @@ def _trace_health(args: argparse.Namespace) -> int:
         for trace in artifact_traces:
             if isinstance(trace, dict):
                 print(_trace_health_console_trace_line(trace))
+    latest_traces = health.get("latest")
+    if isinstance(latest_traces, list) and latest_traces:
+        print("latest_traces:")
+        for trace in latest_traces:
+            if isinstance(trace, dict):
+                print(_trace_health_console_trace_line(trace))
     if args.output is not None:
         print(f"report: {args.output}")
     if args.markdown_output is not None:
