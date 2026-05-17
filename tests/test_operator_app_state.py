@@ -261,6 +261,8 @@ def test_operator_app_controller_loads_benchmark_trace_report_state(
             '"baseline_comparison":{"status":"neutral"},'
             '"observability_contract":{"configured":true},'
             '"monitoring_coverage":{"configured":true,"passed":true},'
+            '"trace_health_summary":{"health_status":"ok",'
+            '"artifact_trace_count":1},'
             '"report_artifacts":{"metrics":"runs.jsonl"}}'
         ),
         encoding="utf-8",
@@ -281,6 +283,8 @@ def test_operator_app_controller_loads_benchmark_trace_report_state(
         "acceptance: passed",
         "baseline: neutral",
         "monitoring coverage: passed",
+        "trace health: ok",
+        "trace health artifacts: 1",
         "artifact metrics: runs.jsonl",
     )
     assert state.trace_viewer.final_report_path == trace_dir / "benchmark-report.json"

@@ -602,6 +602,14 @@ def _benchmark_verification_lines(report: Mapping[str, object]) -> tuple[str, ..
         passed = coverage.get("passed")
         if isinstance(passed, bool):
             lines.append(f"monitoring coverage: {'passed' if passed else 'failed'}")
+    trace_health = report.get("trace_health_summary")
+    if isinstance(trace_health, Mapping):
+        status = trace_health.get("health_status")
+        if isinstance(status, str):
+            lines.append(f"trace health: {status}")
+        artifact_count = trace_health.get("artifact_trace_count")
+        if isinstance(artifact_count, int):
+            lines.append(f"trace health artifacts: {artifact_count}")
     artifacts = report.get("report_artifacts")
     if isinstance(artifacts, Mapping):
         for name, path in artifacts.items():
