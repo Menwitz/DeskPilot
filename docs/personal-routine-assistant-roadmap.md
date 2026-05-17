@@ -312,6 +312,8 @@ abuse, and hidden automation are not supported.
 - [x] Add `desktop-agent replay` support for benchmark reports with acceptance,
       baseline, monitoring coverage, pipeline, deep-search, and per-run trace
       details.
+- [x] Print replay-summary artifact links in trace-health CLI and Markdown
+      monitoring reports for attention traces.
 
 ### Acceptance Criteria
 

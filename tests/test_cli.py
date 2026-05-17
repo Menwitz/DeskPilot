@@ -1375,6 +1375,8 @@ def test_cli_trace_health_summarizes_trace_counts(
         json.dumps({"status": "failed"}),
         encoding="utf-8",
     )
+    replay_summary_path = run_trace / "replay-summary.md"
+    replay_summary_path.write_text("# Replay Summary\n", encoding="utf-8")
     (proof_trace / "proof-finalization-status.json").write_text(
         json.dumps({"status": "passed"}),
         encoding="utf-8",
@@ -1393,6 +1395,7 @@ def test_cli_trace_health_summarizes_trace_counts(
     assert "- failed: 1" in output
     assert "attention_statuses: failed" in output
     assert f"- {run_trace} (run/failed)" in output
+    assert f"summary {replay_summary_path}" in output
 
 
 def test_cli_trace_health_writes_json(
@@ -1462,6 +1465,8 @@ def test_cli_trace_health_writes_markdown_summary(
         json.dumps({"status": "failed"}),
         encoding="utf-8",
     )
+    replay_summary_path = trace_dir / "replay-summary.md"
+    replay_summary_path.write_text("# Replay Summary\n", encoding="utf-8")
     output_path = tmp_path / "reports" / "trace-health.md"
 
     status = main(
@@ -1481,6 +1486,7 @@ def test_cli_trace_health_writes_markdown_summary(
     assert "# Trace Health" in summary
     assert "- Health status: `attention`" in summary
     assert f"`{trace_dir}`" in summary
+    assert f"summary `{replay_summary_path}`" in summary
 
 
 def test_cli_trace_health_json_output_stays_parseable_with_report_file(

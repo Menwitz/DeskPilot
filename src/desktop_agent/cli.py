@@ -2671,7 +2671,11 @@ def _trace_health(args: argparse.Namespace) -> int:
                 trace_dir = trace.get("trace_dir", "unknown")
                 kind = trace.get("kind", "unknown")
                 status = trace.get("status", "unknown")
-                print(f"- {trace_dir} ({kind}/{status})")
+                line = f"- {trace_dir} ({kind}/{status})"
+                replay_summary_path = trace.get("replay_summary_path")
+                if isinstance(replay_summary_path, str):
+                    line += f" summary {replay_summary_path}"
+                print(line)
     if args.output is not None:
         print(f"report: {args.output}")
     if args.markdown_output is not None:
@@ -2723,9 +2727,11 @@ def _trace_health_attention_lines(value: object) -> list[str]:
         report_path = trace.get("report_path", "none")
         kind = trace.get("kind", "unknown")
         status = trace.get("status", "unknown")
-        lines.append(
-            f"- `{status}` `{kind}` trace `{trace_dir}` report `{report_path}`",
-        )
+        line = f"- `{status}` `{kind}` trace `{trace_dir}` report `{report_path}`"
+        replay_summary_path = trace.get("replay_summary_path")
+        if isinstance(replay_summary_path, str):
+            line += f" summary `{replay_summary_path}`"
+        lines.append(line)
     return lines or ["- None"]
 
 
