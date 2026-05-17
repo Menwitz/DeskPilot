@@ -246,6 +246,8 @@ abuse, and hidden automation are not supported.
       trace-health warning traces.
 - [x] Reject JSON booleans as benchmark warning-trace counts in local
       trace-health warning detection.
+- [x] Run the benchmark warning-trace validation gate with ruff, mypy, package
+      build, and full pytest.
 - [x] Add `trace-health --markdown-output` so monitoring runs can persist a
       human-readable local health report.
 - [x] Add proof-suite gate details to native trace-viewer state so local proof
