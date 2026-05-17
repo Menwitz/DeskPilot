@@ -1475,8 +1475,10 @@ def test_cli_trace_health_writes_json(
     trace_root = tmp_path / "traces"
     trace_dir = trace_root / "20260516T000000Z-goal"
     benchmark_trace = trace_root / "20260516T010000Z-benchmark"
+    proof_trace = trace_root / "20260516T020000Z-proof"
     trace_dir.mkdir(parents=True)
     benchmark_trace.mkdir()
+    proof_trace.mkdir()
     (trace_dir / "goal-plan-report.json").write_text(
         json.dumps({"status": "ready"}),
         encoding="utf-8",
@@ -1496,6 +1498,20 @@ def test_cli_trace_health_writes_json(
         ),
         encoding="utf-8",
     )
+    (proof_trace / "proof-finalization-status.json").write_text(
+        json.dumps(
+            {
+                "status": "passed",
+                "summary": {
+                    "expected_count": 4,
+                    "reported_count": 4,
+                    "artifact_count": 7,
+                    "error_count": 0,
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
 
     status = main(["trace-health", "--trace-root", str(trace_root), "--json"])
 
@@ -1503,16 +1519,24 @@ def test_cli_trace_health_writes_json(
     assert status == 0
     assert payload["schema_version"] == "trace_health_v1"
     assert isinstance(payload["generated_at"], str)
-    assert payload["trace_count"] == 2
+    assert payload["trace_count"] == 3
     assert payload["artifact_trace_count"] == 1
-    assert payload["by_kind"] == {"benchmark": 1, "goal_plan": 1}
-    assert payload["by_status"] == {"passed": 1, "ready": 1}
+    assert payload["by_kind"] == {"benchmark": 1, "goal_plan": 1, "proof_suite": 1}
+    assert payload["by_status"] == {"passed": 2, "ready": 1}
     assert payload["health_status"] == "ok"
     assert payload["attention_traces"] == []
     artifact_traces = payload["artifact_traces"]
     assert artifact_traces[0]["trace_health_summary"] == {
         "artifact_trace_count": 1,
         "health_status": "ok",
+    }
+    latest = payload["latest"]
+    proof_latest = next(item for item in latest if item["kind"] == "proof_suite")
+    assert proof_latest["proof_summary"] == {
+        "artifact_count": 7,
+        "error_count": 0,
+        "expected_count": 4,
+        "reported_count": 4,
     }
 
 

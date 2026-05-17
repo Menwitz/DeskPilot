@@ -361,6 +361,8 @@ abuse, and hidden automation are not supported.
 - [x] Print report paths in plain trace-health CLI trace rows.
 - [x] Render compact proof-finalization summary counts in trace-health CLI and
       Markdown rows.
+- [x] Add CLI JSON coverage for proof-finalization summary metadata in latest
+      traces.
 - [x] Add CLI JSON coverage for benchmark trace-health metadata in artifact
       traces.
 - [x] Add schema version and generation timestamp metadata to trace-health
