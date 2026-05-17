@@ -291,6 +291,8 @@ abuse, and hidden automation are not supported.
       in the report artifact.
 - [x] Add benchmark Markdown summaries with acceptance, baseline comparison,
       summary metrics, and observability-contract details.
+- [x] Add schema version and generation timestamp metadata to benchmark JSON
+      and Markdown reports.
 - [x] Add benchmark `trace-health.json` rollups for generated per-iteration
       trace directories.
 - [x] Include benchmark trace-health path, health status, and attention count

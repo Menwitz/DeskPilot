@@ -2162,6 +2162,8 @@ def _run_benchmark(args: argparse.Namespace) -> int:
         ),
     )
     print(f"benchmark: {args.task_yaml}")
+    print(f"schema: {report.schema_version}")
+    print(f"generated_at: {report.generated_at}")
     print(f"iterations: {len(report.runs)}")
     print(f"metrics: {report.metrics_path}")
     print(f"baseline metrics: {report.baseline_metrics_path}")
@@ -2995,6 +2997,8 @@ def _proof_suite_replay_summary_markdown(
 
 def _benchmark_replay_lines(payload: dict[str, object]) -> list[str]:
     lines = [
+        f"schema: {payload.get('schema_version', 'unknown')}",
+        f"generated_at: {payload.get('generated_at', 'unknown')}",
         f"iterations: {payload.get('iterations', 'unknown')}",
         f"trace_health: {payload.get('trace_health_path', 'unknown')}",
         f"acceptance: {_benchmark_acceptance_status(payload)}",

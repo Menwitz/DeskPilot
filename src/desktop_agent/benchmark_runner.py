@@ -7,6 +7,7 @@ import statistics
 import time
 from collections.abc import Iterable
 from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
@@ -60,6 +61,7 @@ DEFAULT_POINTER_TIMING_PROFILE = ActuationProfile(
     random_seed=1,
 )
 DEFAULT_BASELINE_POINTER_DURATION_SECONDS = 0.2
+BENCHMARK_REPORT_SCHEMA_VERSION = "benchmark_report_v1"
 TARGET_GROUNDING_ACTIONS: frozenset[str] = frozenset(
     {
         "click_text",
@@ -201,6 +203,8 @@ class PointerTimingComparisonReport:
 class BenchmarkRunReport:
     """Machine-readable report for one repeated benchmark invocation."""
 
+    schema_version: str
+    generated_at: str
     task_path: Path
     output_dir: Path
     metrics_path: Path
@@ -295,6 +299,7 @@ class BenchmarkRunHarness:
         variance_report_path = output_dir / "variance-report.json"
         baseline_comparison_path = output_dir / "baseline-comparison.json"
         pointer_timing_comparison_path = output_dir / "pointer-timing-comparison.json"
+        generated_at = datetime.now(UTC).isoformat()
         baseline_comparison = compare_benchmark_to_baseline(
             baseline_summary,
             summary,
@@ -324,6 +329,7 @@ class BenchmarkRunHarness:
             variance_report_path,
             baseline_comparison_path,
             pointer_timing_comparison_path,
+            generated_at,
             task_spec,
             monitoring_coverage,
             runs,
@@ -339,6 +345,7 @@ class BenchmarkRunHarness:
             task_path,
             report_path,
             trace_health_path,
+            generated_at,
             summary,
             trace_health,
             acceptance,
@@ -348,6 +355,8 @@ class BenchmarkRunHarness:
             monitoring_coverage,
         )
         return BenchmarkRunReport(
+            schema_version=BENCHMARK_REPORT_SCHEMA_VERSION,
+            generated_at=generated_at,
             task_path=task_path,
             output_dir=output_dir,
             metrics_path=metrics_path,
@@ -659,6 +668,7 @@ def _write_report(
     variance_report_path: Path,
     baseline_comparison_path: Path,
     pointer_timing_comparison_path: Path,
+    generated_at: str,
     task_spec: BenchmarkTaskSpec | None,
     monitoring_coverage: dict[str, object],
     runs: tuple[BenchmarkRunMetrics, ...],
@@ -670,6 +680,8 @@ def _write_report(
     pointer_timing_comparison: PointerTimingComparisonReport,
 ) -> None:
     payload = {
+        "schema_version": BENCHMARK_REPORT_SCHEMA_VERSION,
+        "generated_at": generated_at,
         "task_path": str(task_path),
         "output_dir": str(output_dir),
         "metrics_path": str(metrics_path),
@@ -762,6 +774,7 @@ def _write_benchmark_summary(
     task_path: Path,
     report_path: Path,
     trace_health_path: Path,
+    generated_at: str,
     summary: BenchmarkSummaryMetrics,
     trace_health: dict[str, object],
     acceptance: BenchmarkAcceptanceResult,
@@ -774,6 +787,8 @@ def _write_benchmark_summary(
     lines = [
         "# Benchmark Summary",
         "",
+        f"- Schema version: `{BENCHMARK_REPORT_SCHEMA_VERSION}`",
+        f"- Generated at: `{generated_at}`",
         f"- Task: `{task_path}`",
         f"- Report: `{report_path}`",
         f"- Trace health: `{trace_health_path}`",

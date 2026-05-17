@@ -1678,6 +1678,8 @@ def test_cli_replay_summarizes_benchmark_report(
         json.dumps(
             {
                 "task_path": "tasks/demo.yaml",
+                "schema_version": "benchmark_report_v1",
+                "generated_at": "2026-05-17T00:00:00+00:00",
                 "trace_health_path": str(trace_dir / "trace-health.json"),
                 "iterations": 1,
                 "summary": {
@@ -1729,6 +1731,8 @@ def test_cli_replay_summarizes_benchmark_report(
     assert status == 0
     assert f"trace: {trace_dir}" in output
     assert "benchmark: tasks/demo.yaml" in output
+    assert "schema: benchmark_report_v1" in output
+    assert "generated_at: 2026-05-17T00:00:00+00:00" in output
     assert "status: passed" in output
     assert "baseline: neutral" in output
     assert "monitoring coverage: passed" in output
@@ -2460,6 +2464,8 @@ def test_cli_benchmark_run_writes_metrics_and_report(
     report = json.loads((output_dir / "benchmark-report.json").read_text())
     metrics = (output_dir / "runs.jsonl").read_text().splitlines()
     assert status == 0
+    assert report["schema_version"] == "benchmark_report_v1"
+    assert isinstance(report["generated_at"], str)
     assert report["iterations"] == 2
     assert report["summary"]["success_rate"] == 1.0
     assert report["summary"]["step_count"] > 0
@@ -2477,6 +2483,8 @@ def test_cli_benchmark_run_writes_metrics_and_report(
     assert (output_dir / "pointer-timing-comparison.json").exists()
     assert len(metrics) == 2
     assert "metrics:" in output
+    assert "schema: benchmark_report_v1" in output
+    assert "generated_at:" in output
     assert "baseline metrics:" in output
     assert "trace health:" in output
     assert "monitoring coverage: not_configured" in output

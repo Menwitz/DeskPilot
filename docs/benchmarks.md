@@ -63,10 +63,11 @@ The harness writes:
 
 - `runs.jsonl` with one per-run metrics record per line.
 - `benchmark-report.json` with the task path, output paths, iteration count,
-  aggregate summary metrics, acceptance status, per-run metrics, and the
-  benchmark observability contract when the task is a built-in benchmark.
+  schema version, generation timestamp, aggregate summary metrics, acceptance
+  status, per-run metrics, and the benchmark observability contract when the
+  task is a built-in benchmark.
 - `benchmark-summary.md` with a human-readable acceptance, baseline comparison,
-  summary metric, and observability-contract summary.
+  summary metric, schema/timestamp, and observability-contract summary.
 - `trace-health.json` with local trace-health counts for the generated
   per-iteration trace directories.
 - `baseline-runs.jsonl` with one deterministic baseline metrics record per

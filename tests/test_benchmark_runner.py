@@ -54,6 +54,10 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert report.acceptance.status == "passed"
     assert len(report.pointer_timing_comparison.samples) == 3
     assert len(metrics_lines) == 2
+    assert report.schema_version == "benchmark_report_v1"
+    assert isinstance(report.generated_at, str)
+    assert report_payload["schema_version"] == "benchmark_report_v1"
+    assert report_payload["generated_at"] == report.generated_at
     assert report_payload["iterations"] == 2
     assert report_payload["baseline_metrics_path"] == str(
         report.baseline_metrics_path
@@ -72,6 +76,8 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert trace_health_payload["by_kind"] == {"run": 2}
     assert report.summary_report_path.exists()
     assert "# Benchmark Summary" in summary_markdown
+    assert "- Schema version: `benchmark_report_v1`" in summary_markdown
+    assert f"- Generated at: `{report.generated_at}`" in summary_markdown
     assert f"- Trace health: `{report.trace_health_path}`" in summary_markdown
     assert "- Trace health status: `ok`" in summary_markdown
     assert "- Attention traces: `0`" in summary_markdown

@@ -247,9 +247,9 @@ For goal-plan traces it reads `goal-plan-report.json` and prints ranked routine
 candidates; for finalized proof-suite roots it reads
 `proof-finalization-status.json` and prints suite, promotion, and archive gates.
 For benchmark output roots it reads `benchmark-report.json` and prints
-acceptance status, baseline comparison status, monitoring coverage, pipeline
-modes, deep-search sources, required/observed trace coverage, and per-run trace
-links.
+schema and generation metadata, acceptance status, baseline comparison status,
+monitoring coverage, pipeline modes, deep-search sources, required/observed
+trace coverage, and per-run trace links.
 Add `--write-summary` to write `replay-summary.md` in the trace directory with
 the timeline, screenshot paths from pre/post action evidence, and state-delta
 changes. The summary also includes step-level `success_evidence` and
