@@ -878,6 +878,8 @@ abuse, and hidden automation are not supported.
 - [x] Verify packaged trace-health console output renders latest trace rows.
 - [x] Verify packaged trace-health console output renders benchmark report
       paths.
+- [x] Verify packaged trace-health output renders seeded proof-finalization
+      summaries.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 

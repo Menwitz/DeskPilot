@@ -18,8 +18,10 @@ if (Test-Path $SmokeRoot) {
 $SmokeTraceRoot = Join-Path $SmokeRoot "dry-run-traces"
 $TraceDir = Join-Path $SmokeTraceRoot "trace-replay"
 $BenchmarkTraceDir = Join-Path $SmokeTraceRoot "benchmark-replay"
+$ProofTraceDir = Join-Path $SmokeTraceRoot "proof-finalization"
 New-Item -ItemType Directory -Force -Path $TraceDir | Out-Null
 New-Item -ItemType Directory -Force -Path $BenchmarkTraceDir | Out-Null
+New-Item -ItemType Directory -Force -Path $ProofTraceDir | Out-Null
 @'
 {
   "task_name": "packaged smoke replay",
@@ -94,6 +96,35 @@ New-Item -ItemType Directory -Force -Path $BenchmarkTraceDir | Out-Null
 }
 '@ | Set-Content -Encoding UTF8 (Join-Path $BenchmarkTraceDir "benchmark-report.json")
 
+# Proof finalization is seeded locally so trace-health package smoke covers the
+# final post-review monitoring shape without requiring a real Windows proof run.
+@'
+{
+  "schema_version": 1,
+  "status": "passed",
+  "summary": {
+    "expected_count": 4,
+    "reported_count": 4,
+    "artifact_count": 7,
+    "error_count": 0
+  },
+  "gates": {
+    "suite_validation": "passed",
+    "promotion_verification": "passed",
+    "archive_verification": "passed"
+  },
+  "checked_artifacts": {
+    "promotion": [],
+    "archive": []
+  },
+  "artifacts": {
+    "promotion": "proof-suite-promotion.json"
+  },
+  "errors": [],
+  "warnings": []
+}
+'@ | Set-Content -Encoding UTF8 (Join-Path $ProofTraceDir "proof-finalization-status.json")
+
 $SmokeConfigPath = Join-Path $SmokeRoot "default-config.yaml"
 $SmokeTraceRootYaml = $SmokeTraceRoot -replace "\\", "/"
 $SmokeConfig = Get-Content "packaging/default-config.yaml" -Raw
@@ -139,7 +170,7 @@ $TraceHealth = Get-Content $TraceHealthReport -Raw | ConvertFrom-Json
 if ($TraceHealth.schema_version -ne "trace_health_v1") {
     throw "Packaged trace-health report had schema $($TraceHealth.schema_version)"
 }
-if ($TraceHealth.trace_count -lt 3) {
+if ($TraceHealth.trace_count -lt 4) {
     throw "Packaged trace-health report did not include smoke traces from $SmokeTraceRoot"
 }
 if ($TraceHealth.artifact_trace_count -lt 1) {
@@ -164,6 +195,9 @@ if ($TraceHealthConsoleText -notmatch "benchmark-report.json") {
 if ($TraceHealthConsoleText -notmatch 'trace_health status=ok; artifacts=1') {
     throw "Packaged trace-health console output did not include benchmark trace-health summary"
 }
+if ($TraceHealthConsoleText -notmatch 'proof_summary expected=4; reported=4; artifacts=7; errors=0') {
+    throw "Packaged trace-health console output did not include proof summary"
+}
 $BenchmarkArtifactTrace = $TraceHealth.artifact_traces |
     Where-Object { $_.kind -eq "benchmark" } |
     Select-Object -First 1
@@ -184,6 +218,15 @@ if (-not $BenchmarkLatestTrace) {
 }
 if ($BenchmarkLatestTrace.report_path -notmatch "benchmark-report.json") {
     throw "Packaged trace-health report latest trace did not include benchmark report path"
+}
+$ProofLatestTrace = $TraceHealth.latest |
+    Where-Object { $_.kind -eq "proof_suite" } |
+    Select-Object -First 1
+if (-not $ProofLatestTrace) {
+    throw "Packaged trace-health report did not include proof latest trace metadata"
+}
+if ($ProofLatestTrace.proof_summary.artifact_count -lt 1) {
+    throw "Packaged trace-health report latest trace did not include proof summary"
 }
 $TraceHealthMarkdown = Get-Content $TraceHealthSummary -Raw
 if ($TraceHealthMarkdown -notmatch "trace_health_v1") {
@@ -206,6 +249,9 @@ if ($TraceHealthMarkdown -notmatch "runs.jsonl") {
 }
 if ($TraceHealthMarkdown -notmatch 'trace_health `status=ok; artifacts=1`') {
     throw "Packaged trace-health summary did not include benchmark trace-health summary"
+}
+if ($TraceHealthMarkdown -notmatch 'proof_summary `expected=4; reported=4; artifacts=7; errors=0`') {
+    throw "Packaged trace-health summary did not include proof summary"
 }
 
 $DryRunReport = Get-ChildItem -Path $SmokeTraceRoot -Directory |

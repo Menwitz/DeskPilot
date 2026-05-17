@@ -81,6 +81,7 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         "$BenchmarkTraceDir = Join-Path $SmokeTraceRoot \"benchmark-replay\""
         in script
     )
+    assert "$ProofTraceDir = Join-Path $SmokeTraceRoot \"proof-finalization\"" in script
     assert (
         "& $ExePath dry-run examples/browser-task.yaml --config $SmokeConfigPath"
         in script
@@ -132,9 +133,13 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         "Packaged trace-health console output did not include benchmark "
         "trace-health summary" in script
     )
+    assert (
+        "Packaged trace-health console output did not include proof summary"
+        in script
+    )
     assert "Packaged trace-health did not write" in script
     assert "$TraceHealth.schema_version -ne \"trace_health_v1\"" in script
-    assert "$TraceHealth.trace_count -lt 3" in script
+    assert "$TraceHealth.trace_count -lt 4" in script
     assert "$TraceHealth.artifact_trace_count -lt 1" in script
     assert "$TraceHealth.health_status -ne \"ok\"" in script
     assert (
@@ -157,6 +162,14 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         "Packaged trace-health report latest trace did not include benchmark "
         "report path" in script
     )
+    assert (
+        "Packaged trace-health report did not include proof latest trace metadata"
+        in script
+    )
+    assert (
+        "Packaged trace-health report latest trace did not include proof summary"
+        in script
+    )
     assert "Packaged trace-health summary did not include schema version" in script
     assert (
         "Packaged trace-health summary did not include artifact trace section"
@@ -173,12 +186,15 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         "Packaged trace-health summary did not include benchmark trace-health summary"
         in script
     )
+    assert "Packaged trace-health summary did not include proof summary" in script
     assert "trace_health `status=ok; artifacts=1`" in script
+    assert "proof_summary `expected=4; reported=4; artifacts=7; errors=0`" in script
     assert "& $AppExePath --check" in script
     assert "PySide6: available" in script
     assert "& $AppExePath --describe-shell" in script
     assert "final-report.json" in script
     assert "benchmark-report.json" in script
+    assert "proof-finalization-status.json" in script
     assert '"schema_version": "benchmark_report_v1"' in script
     assert '"trace_health_summary": {' in script
     assert '"report_artifacts": {' in script
