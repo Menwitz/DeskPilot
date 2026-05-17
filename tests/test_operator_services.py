@@ -260,6 +260,8 @@ def test_local_trace_service_lists_and_reads_reports(tmp_path: Path) -> None:
         json.dumps({"status": "ready", "selected_routine_id": "browser.search"}),
         encoding="utf-8",
     )
+    replay_summary_path = trace_dir / "replay-summary.md"
+    replay_summary_path.write_text("# Replay Summary\n", encoding="utf-8")
     service = LocalTraceService(trace_root)
 
     traces = service.list_traces()
@@ -269,6 +271,7 @@ def test_local_trace_service_lists_and_reads_reports(tmp_path: Path) -> None:
     assert traces[0].kind == "goal_plan"
     assert traces[0].status == "ready"
     assert traces[0].metadata()["report_path"] == str(report_path)
+    assert traces[0].metadata()["replay_summary_path"] == str(replay_summary_path)
     assert report["selected_routine_id"] == "browser.search"
 
 
@@ -332,6 +335,8 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
         json.dumps({"acceptance": {"status": "passed"}}),
         encoding="utf-8",
     )
+    replay_summary_path = benchmark_trace / "replay-summary.md"
+    replay_summary_path.write_text("# Benchmark Replay Summary\n", encoding="utf-8")
     service = LocalTraceService(trace_root)
 
     health = service.trace_health()
@@ -353,10 +358,12 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
             "report_path": str(run_trace / "final-report.json"),
             "status": "failed",
             "kind": "run",
+            "replay_summary_path": None,
         },
     ]
     latest = cast(list[dict[str, object]], health["latest"])
     assert latest[0]["kind"] == "benchmark"
+    assert latest[0]["replay_summary_path"] == str(replay_summary_path)
 
 
 def test_local_trace_service_inspects_failed_trace_for_app_review(

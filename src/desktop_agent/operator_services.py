@@ -98,6 +98,7 @@ class TraceSummary:
     report_path: Path | None
     status: str | None
     kind: str
+    replay_summary_path: Path | None = None
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -105,6 +106,9 @@ class TraceSummary:
             "report_path": str(self.report_path) if self.report_path else None,
             "status": self.status,
             "kind": self.kind,
+            "replay_summary_path": (
+                str(self.replay_summary_path) if self.replay_summary_path else None
+            ),
         }
 
 
@@ -1317,6 +1321,7 @@ def _trace_status_needs_attention(status: str) -> bool:
 
 
 def _trace_summary(trace_dir: Path) -> TraceSummary:
+    replay_summary_path = _existing_replay_summary_path(trace_dir)
     for report_name, kind in _TRACE_REPORT_NAMES:
         report_path = trace_dir / report_name
         if report_path.exists():
@@ -1325,13 +1330,20 @@ def _trace_summary(trace_dir: Path) -> TraceSummary:
                 report_path=report_path,
                 status=_report_status(report_path),
                 kind=kind,
+                replay_summary_path=replay_summary_path,
             )
     return TraceSummary(
         trace_dir=trace_dir,
         report_path=None,
         status=None,
         kind="unknown",
+        replay_summary_path=replay_summary_path,
     )
+
+
+def _existing_replay_summary_path(trace_dir: Path) -> Path | None:
+    path = trace_dir / "replay-summary.md"
+    return path if path.exists() else None
 
 
 _TRACE_REPORT_NAMES: tuple[tuple[str, str], ...] = (

@@ -652,6 +652,8 @@ abuse, and hidden automation are not supported.
       and verification suggestions.
 - [x] Add trace viewer timeline with video, screenshots, action log, candidate
       reasoning, state delta, and final report.
+- [x] Expose local `replay-summary.md` artifacts through trace service metadata
+      and trace-health latest entries.
 - [x] Add settings for trace root, screenshots, video capture, Ollama enablement,
       emergency hotkey, default activity profile, and proof mode.
 - [x] Add UI integration tests around app state transitions with fake services.

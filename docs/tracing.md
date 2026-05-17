@@ -266,7 +266,9 @@ to persist the monitoring payload as a local report artifact. When `--json` and
 `--output` are combined, stdout remains a parseable JSON payload and the report
 path notice is written to stderr.
 The JSON payload includes `attention_traces`, a list of trace summaries that
-need review, so monitors can link directly to the relevant local reports.
+need review, so monitors can link directly to the relevant local reports. Trace
+summaries also include `replay_summary_path` when a local `replay-summary.md`
+artifact exists.
 Add `--markdown-output traces/trace-health.md` to write the same health status,
 counts, and attention trace links as a human-readable local report.
 Add `--fail-on-attention` when a local monitor or CI smoke step should return
