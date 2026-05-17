@@ -1565,6 +1565,45 @@ def test_cli_trace_health_writes_markdown_summary(
     assert "## Latest Traces" in summary
 
 
+def test_cli_trace_health_markdown_shows_latest_benchmark_health_without_artifacts(
+    tmp_path: Path,
+) -> None:
+    trace_root = tmp_path / "traces"
+    benchmark_trace = trace_root / "20260516T010000Z-benchmark"
+    benchmark_trace.mkdir(parents=True)
+    (benchmark_trace / "benchmark-report.json").write_text(
+        json.dumps(
+            {
+                "acceptance": {"status": "passed"},
+                "trace_health_summary": {
+                    "health_status": "ok",
+                    "artifact_trace_count": 0,
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "reports" / "trace-health.md"
+
+    status = main(
+        [
+            "trace-health",
+            "--trace-root",
+            str(trace_root),
+            "--markdown-output",
+            str(output_path),
+        ],
+    )
+
+    summary = output_path.read_text(encoding="utf-8")
+    assert status == 0
+    assert "## Artifact Traces" in summary
+    assert "- None" in summary
+    assert "## Latest Traces" in summary
+    assert f"`{benchmark_trace}`" in summary
+    assert "trace_health `status=ok; artifacts=0`" in summary
+
+
 def test_cli_trace_health_json_output_stays_parseable_with_report_file(
     tmp_path: Path,
     capsys: CaptureFixture[str],

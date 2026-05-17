@@ -342,6 +342,8 @@ abuse, and hidden automation are not supported.
 - [x] Add latest-trace links to trace-health Markdown monitoring reports.
 - [x] Render compact benchmark trace-health summaries in trace-health Markdown
       rows.
+- [x] Cover trace-health Markdown latest rows for benchmark health without
+      artifact manifests.
 - [x] Print benchmark artifact trace rows in plain trace-health CLI monitoring
       output.
 - [x] Add CLI JSON coverage for benchmark trace-health metadata in artifact
