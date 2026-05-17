@@ -155,6 +155,10 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         "Packaged trace-health console output did not include proof summary"
         in script
     )
+    assert (
+        "Packaged trace-health console output did not include proof warnings"
+        in script
+    )
     assert "Packaged trace-health did not write" in script
     assert "$TraceHealth.schema_version -ne \"trace_health_v1\"" in script
     assert "$TraceHealth.trace_count -lt 4" in script
@@ -188,6 +192,10 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         "Packaged trace-health report latest trace did not include proof summary"
         in script
     )
+    assert (
+        "Packaged trace-health report latest trace did not include proof warnings"
+        in script
+    )
     assert "Packaged trace-health summary did not include schema version" in script
     assert (
         "Packaged trace-health summary did not include artifact trace section"
@@ -205,8 +213,10 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         in script
     )
     assert "Packaged trace-health summary did not include proof summary" in script
+    assert "Packaged trace-health summary did not include proof warnings" in script
     assert "trace_health `status=ok; artifacts=1`" in script
     assert "proof_summary `expected=4; reported=4; artifacts=7; errors=0`" in script
+    assert "proof_warnings `packaged-smoke: video_path is external`" in script
     assert "& $AppExePath --check" in script
     assert "PySide6: available" in script
     assert "& $AppExePath --describe-shell" in script

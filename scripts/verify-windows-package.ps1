@@ -212,6 +212,9 @@ if ($TraceHealthConsoleText -notmatch 'trace_health status=ok; artifacts=1') {
 if ($TraceHealthConsoleText -notmatch 'proof_summary expected=4; reported=4; artifacts=7; errors=0') {
     throw "Packaged trace-health console output did not include proof summary"
 }
+if ($TraceHealthConsoleText -notmatch 'proof_warnings packaged-smoke: video_path is external') {
+    throw "Packaged trace-health console output did not include proof warnings"
+}
 $BenchmarkArtifactTrace = $TraceHealth.artifact_traces |
     Where-Object { $_.kind -eq "benchmark" } |
     Select-Object -First 1
@@ -242,6 +245,9 @@ if (-not $ProofLatestTrace) {
 if ($ProofLatestTrace.proof_summary.artifact_count -lt 1) {
     throw "Packaged trace-health report latest trace did not include proof summary"
 }
+if (($ProofLatestTrace.proof_warnings -join "`n") -notmatch "packaged-smoke: video_path is external") {
+    throw "Packaged trace-health report latest trace did not include proof warnings"
+}
 $TraceHealthMarkdown = Get-Content $TraceHealthSummary -Raw
 if ($TraceHealthMarkdown -notmatch "trace_health_v1") {
     throw "Packaged trace-health summary did not include schema version"
@@ -266,6 +272,9 @@ if ($TraceHealthMarkdown -notmatch 'trace_health `status=ok; artifacts=1`') {
 }
 if ($TraceHealthMarkdown -notmatch 'proof_summary `expected=4; reported=4; artifacts=7; errors=0`') {
     throw "Packaged trace-health summary did not include proof summary"
+}
+if ($TraceHealthMarkdown -notmatch 'proof_warnings `packaged-smoke: video_path is external`') {
+    throw "Packaged trace-health summary did not include proof warnings"
 }
 
 $DryRunReport = Get-ChildItem -Path $SmokeTraceRoot -Directory |

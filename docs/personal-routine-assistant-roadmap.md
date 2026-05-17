@@ -894,6 +894,8 @@ abuse, and hidden automation are not supported.
       paths.
 - [x] Verify packaged trace-health output renders seeded proof-finalization
       summaries.
+- [x] Verify packaged trace-health output renders seeded proof-finalization
+      warnings.
 - [x] Verify packaged replay renders seeded proof-finalization summaries.
 - [x] Verify packaged replay renders seeded proof-finalization warnings.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
