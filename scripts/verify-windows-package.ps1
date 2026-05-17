@@ -166,6 +166,9 @@ if ($TraceHealthMarkdown -notmatch "artifacts") {
 if ($TraceHealthMarkdown -notmatch "runs.jsonl") {
     throw "Packaged trace-health summary did not include benchmark metrics artifact"
 }
+if ($TraceHealthMarkdown -notmatch 'trace_health `status=ok; artifacts=1`') {
+    throw "Packaged trace-health summary did not include benchmark trace-health summary"
+}
 
 $DryRunReport = Get-ChildItem -Path $SmokeTraceRoot -Directory |
     Sort-Object LastWriteTime -Descending |
