@@ -747,6 +747,8 @@ abuse, and hidden automation are not supported.
       or latest trace metadata.
 - [x] Add controller-level coverage for native dashboard benchmark trace-health
       refreshes.
+- [x] Add controller-level coverage for benchmark warning traces in the native
+      dashboard warning count.
 - [x] Render compact proof-finalization counts in native dashboard panel state.
 - [x] Render proof-finalization warning counts in native dashboard panel state.
 - [x] Add settings for trace root, screenshots, video capture, Ollama enablement,

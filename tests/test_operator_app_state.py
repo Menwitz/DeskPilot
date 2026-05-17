@@ -366,6 +366,7 @@ def test_operator_app_controller_refreshes_benchmark_trace_health(
     trace_health = metadata["trace_health"]
     assert isinstance(trace_health, dict)
     assert trace_health["status"] == "ok"
+    assert trace_health["warning_trace_count"] == 1
     assert trace_health["benchmark_health_status"] == "ok"
     assert trace_health["benchmark_artifact_count"] == 0
     assert trace_health["benchmark_warning_trace_count"] == 1
