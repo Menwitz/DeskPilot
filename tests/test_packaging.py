@@ -101,6 +101,8 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "Packaged trace-health did not write" in script
     assert "$TraceHealth.trace_count -lt 3" in script
     assert "$TraceHealth.health_status -ne \"ok\"" in script
+    assert "Packaged trace-health summary did not include latest trace links" in script
+    assert "Packaged trace-health summary did not include benchmark replay" in script
     assert "& $AppExePath --check" in script
     assert "PySide6: available" in script
     assert "& $AppExePath --describe-shell" in script

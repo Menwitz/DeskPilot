@@ -792,6 +792,8 @@ abuse, and hidden automation are not supported.
       and dry-run trace directories.
 - [x] Add packaged-app smoke coverage for benchmark replay summaries and
       benchmark trace-health inclusion.
+- [x] Verify packaged trace-health Markdown includes latest-trace links for the
+      benchmark replay fixture.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 

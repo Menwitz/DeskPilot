@@ -116,6 +116,13 @@ if ($TraceHealth.trace_count -lt 3) {
 if ($TraceHealth.health_status -ne "ok") {
     throw "Packaged trace-health reported $($TraceHealth.health_status)"
 }
+$TraceHealthMarkdown = Get-Content $TraceHealthSummary -Raw
+if ($TraceHealthMarkdown -notmatch "Latest Traces") {
+    throw "Packaged trace-health summary did not include latest trace links"
+}
+if ($TraceHealthMarkdown -notmatch "benchmark-replay") {
+    throw "Packaged trace-health summary did not include benchmark replay"
+}
 
 $DryRunReport = Get-ChildItem -Path $SmokeTraceRoot -Directory |
     Sort-Object LastWriteTime -Descending |
