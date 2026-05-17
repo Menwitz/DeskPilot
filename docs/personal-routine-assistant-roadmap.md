@@ -892,6 +892,8 @@ abuse, and hidden automation are not supported.
       count and section output.
 - [x] Keep the packaged benchmark replay fixture aligned with compact
       trace-health summary metadata.
+- [x] Keep the packaged benchmark replay fixture aligned with warning-trace
+      summary metadata.
 - [x] Verify packaged trace-health Markdown renders compact benchmark
       trace-health summaries.
 - [x] Verify packaged trace-health JSON carries compact benchmark trace-health

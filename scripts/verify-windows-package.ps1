@@ -44,7 +44,8 @@ New-Item -ItemType Directory -Force -Path $ProofTraceDir | Out-Null
   "trace_health_path": "trace-health.json",
   "trace_health_summary": {
     "health_status": "ok",
-    "artifact_trace_count": 1
+    "artifact_trace_count": 1,
+    "warning_trace_count": 0
   },
   "report_artifacts": {
     "report": "benchmark-report.json",
@@ -148,6 +149,9 @@ if ($BenchmarkReplaySummary -notmatch "Report Artifacts") {
 }
 if ($BenchmarkReplaySummary -notmatch "Trace health artifacts") {
     throw "Packaged benchmark replay summary did not include trace-health summary"
+}
+if ($BenchmarkReplaySummary -notmatch "Trace health warning traces") {
+    throw "Packaged benchmark replay summary did not include trace-health warnings"
 }
 if ($BenchmarkReplaySummary -notmatch "benchmark-report.json") {
     throw "Packaged benchmark replay summary did not include report artifact"
