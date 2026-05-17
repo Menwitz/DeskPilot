@@ -1681,6 +1681,10 @@ def test_cli_replay_summarizes_benchmark_report(
                 "schema_version": "benchmark_report_v1",
                 "generated_at": "2026-05-17T00:00:00+00:00",
                 "trace_health_path": str(trace_dir / "trace-health.json"),
+                "report_artifacts": {
+                    "metrics": str(trace_dir / "runs.jsonl"),
+                    "summary": str(trace_dir / "benchmark-summary.md"),
+                },
                 "iterations": 1,
                 "summary": {
                     "success_rate": 1.0,
@@ -1740,6 +1744,8 @@ def test_cli_replay_summarizes_benchmark_report(
     assert "deep_search_sources: trace_events, final_report" in output
     assert "observed_trace_phases: observe_screen" in output
     assert "missing_trace_phases: none" in output
+    assert "artifacts:" in output
+    assert f"- metrics: {trace_dir / 'runs.jsonl'}" in output
     assert "run 1: passed" in output
     assert f"summary: {summary_path}" in output
     assert "# DeskPilot Benchmark Replay Summary" in summary
@@ -1748,6 +1754,8 @@ def test_cli_replay_summarizes_benchmark_report(
     assert "- Pipeline modes: `dry-run, replay`" in summary
     assert "- Deep-search sources: `trace_events, final_report`" in summary
     assert "- Monitoring coverage: `passed`" in summary
+    assert "## Report Artifacts" in summary
+    assert f"- `summary`: `{trace_dir / 'benchmark-summary.md'}`" in summary
     assert "- Observed trace phases: `observe_screen`" in summary
     assert "- Missing trace phases: `none`" in summary
     assert "run 1: passed" in summary
@@ -2468,6 +2476,10 @@ def test_cli_benchmark_run_writes_metrics_and_report(
     assert status == 0
     assert report["schema_version"] == "benchmark_report_v1"
     assert isinstance(report["generated_at"], str)
+    assert report["report_artifacts"]["metrics"] == str(output_dir / "runs.jsonl")
+    assert report["report_artifacts"]["summary"] == str(
+        output_dir / "benchmark-summary.md"
+    )
     assert report["iterations"] == 2
     assert report["summary"]["success_rate"] == 1.0
     assert report["summary"]["step_count"] > 0

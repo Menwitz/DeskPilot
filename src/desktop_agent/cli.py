@@ -3039,6 +3039,11 @@ def _benchmark_replay_lines(payload: dict[str, object]) -> list[str]:
                 f"{_string_list_value(coverage.get('missing_report_fields'))}",
             ],
         )
+    artifacts = _string_mapping(payload.get("report_artifacts"))
+    if artifacts:
+        lines.append("artifacts:")
+        for name, path in artifacts.items():
+            lines.append(f"- {name}: {path}")
     runs = payload.get("runs")
     if isinstance(runs, list) and runs:
         lines.append("runs:")
@@ -3122,6 +3127,10 @@ def _benchmark_replay_summary_markdown(
         "",
         *_benchmark_monitoring_summary_lines(payload.get("monitoring_coverage")),
         "",
+        "## Report Artifacts",
+        "",
+        *_benchmark_replay_artifact_lines(payload.get("report_artifacts")),
+        "",
         "## Runs",
         "",
         *_benchmark_run_summary_lines(payload.get("runs")),
@@ -3159,6 +3168,13 @@ def _benchmark_monitoring_summary_lines(value: object) -> list[str]:
         "- Missing report fields: "
         f"`{_string_list_value(value.get('missing_report_fields'))}`",
     ]
+
+
+def _benchmark_replay_artifact_lines(value: object) -> list[str]:
+    artifacts = _string_mapping(value)
+    if not artifacts:
+        return ["- None"]
+    return [f"- `{name}`: `{path}`" for name, path in artifacts.items()]
 
 
 def _benchmark_run_summary_lines(value: object) -> list[str]:

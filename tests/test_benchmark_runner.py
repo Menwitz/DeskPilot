@@ -70,6 +70,15 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
         report.pointer_timing_comparison_path
     )
     assert report_payload["trace_health_path"] == str(report.trace_health_path)
+    assert report_payload["report_artifacts"] == {
+        "metrics": str(report.metrics_path),
+        "baseline_metrics": str(report.baseline_metrics_path),
+        "summary": str(report.summary_report_path),
+        "trace_health": str(report.trace_health_path),
+        "variance": str(report.variance_report_path),
+        "baseline_comparison": str(report.baseline_comparison_path),
+        "pointer_timing_comparison": str(report.pointer_timing_comparison_path),
+    }
     assert report.trace_health_path.exists()
     assert trace_health_payload["trace_count"] == 2
     assert trace_health_payload["health_status"] == "ok"
@@ -80,6 +89,8 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert f"- Generated at: `{report.generated_at}`" in summary_markdown
     assert f"- Trace health: `{report.trace_health_path}`" in summary_markdown
     assert "- Trace health status: `ok`" in summary_markdown
+    assert "## Report Artifacts" in summary_markdown
+    assert f"- `metrics`: `{report.metrics_path}`" in summary_markdown
     assert "- Attention traces: `0`" in summary_markdown
     assert "## Monitoring Coverage" in summary_markdown
     assert "- Observed trace phases: `" in summary_markdown

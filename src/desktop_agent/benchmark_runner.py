@@ -326,6 +326,8 @@ class BenchmarkRunHarness:
             output_dir,
             metrics_path,
             baseline_metrics_path,
+            summary_report_path,
+            trace_health_path,
             variance_report_path,
             baseline_comparison_path,
             pointer_timing_comparison_path,
@@ -344,7 +346,12 @@ class BenchmarkRunHarness:
             summary_report_path,
             task_path,
             report_path,
+            metrics_path,
+            baseline_metrics_path,
             trace_health_path,
+            variance_report_path,
+            baseline_comparison_path,
+            pointer_timing_comparison_path,
             generated_at,
             summary,
             trace_health,
@@ -665,6 +672,8 @@ def _write_report(
     output_dir: Path,
     metrics_path: Path,
     baseline_metrics_path: Path,
+    summary_report_path: Path,
+    trace_health_path: Path,
     variance_report_path: Path,
     baseline_comparison_path: Path,
     pointer_timing_comparison_path: Path,
@@ -686,10 +695,19 @@ def _write_report(
         "output_dir": str(output_dir),
         "metrics_path": str(metrics_path),
         "baseline_metrics_path": str(baseline_metrics_path),
-        "trace_health_path": str(output_dir / "trace-health.json"),
+        "trace_health_path": str(trace_health_path),
         "variance_report_path": str(variance_report_path),
         "baseline_comparison_path": str(baseline_comparison_path),
         "pointer_timing_comparison_path": str(pointer_timing_comparison_path),
+        "report_artifacts": _benchmark_report_artifacts_to_dict(
+            metrics_path,
+            baseline_metrics_path,
+            summary_report_path,
+            trace_health_path,
+            variance_report_path,
+            baseline_comparison_path,
+            pointer_timing_comparison_path,
+        ),
         "observability_contract": _observability_contract_to_dict(task_spec),
         "monitoring_coverage": monitoring_coverage,
         "iterations": len(runs),
@@ -707,6 +725,26 @@ def _write_report(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def _benchmark_report_artifacts_to_dict(
+    metrics_path: Path,
+    baseline_metrics_path: Path,
+    summary_report_path: Path,
+    trace_health_path: Path,
+    variance_report_path: Path,
+    baseline_comparison_path: Path,
+    pointer_timing_comparison_path: Path,
+) -> dict[str, str]:
+    return {
+        "metrics": str(metrics_path),
+        "baseline_metrics": str(baseline_metrics_path),
+        "summary": str(summary_report_path),
+        "trace_health": str(trace_health_path),
+        "variance": str(variance_report_path),
+        "baseline_comparison": str(baseline_comparison_path),
+        "pointer_timing_comparison": str(pointer_timing_comparison_path),
+    }
 
 
 def _write_benchmark_trace_health(
@@ -773,7 +811,12 @@ def _write_benchmark_summary(
     path: Path,
     task_path: Path,
     report_path: Path,
+    metrics_path: Path,
+    baseline_metrics_path: Path,
     trace_health_path: Path,
+    variance_report_path: Path,
+    baseline_comparison_path: Path,
+    pointer_timing_comparison_path: Path,
     generated_at: str,
     summary: BenchmarkSummaryMetrics,
     trace_health: dict[str, object],
@@ -808,6 +851,20 @@ def _write_benchmark_summary(
         "## Monitoring Coverage",
         "",
         *_benchmark_monitoring_coverage_lines(monitoring_coverage),
+        "",
+        "## Report Artifacts",
+        "",
+        *_benchmark_report_artifact_lines(
+            _benchmark_report_artifacts_to_dict(
+                metrics_path,
+                baseline_metrics_path,
+                path,
+                trace_health_path,
+                variance_report_path,
+                baseline_comparison_path,
+                pointer_timing_comparison_path,
+            ),
+        ),
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -828,6 +885,10 @@ def _benchmark_monitoring_coverage_lines(
         "- Missing report fields: "
         f"`{_contract_list(coverage, 'missing_report_fields')}`",
     ]
+
+
+def _benchmark_report_artifact_lines(artifacts: dict[str, str]) -> list[str]:
+    return [f"- `{name}`: `{path}`" for name, path in artifacts.items()]
 
 
 def _trace_health_attention_traces(health: dict[str, object]) -> list[object]:
