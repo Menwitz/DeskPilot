@@ -2369,6 +2369,7 @@ def test_cli_benchmark_run_writes_metrics_and_report(
     assert report["summary"]["success_rate"] == 1.0
     assert report["summary"]["step_count"] > 0
     assert report["summary"]["action_count"] > 0
+    assert report["observability_contract"]["configured"] is False
     assert report["acceptance"]["configured"] is False
     assert report["acceptance"]["status"] == "not_configured"
     assert report["baseline_comparison"]["safety_not_reduced"] is True

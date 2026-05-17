@@ -21,6 +21,7 @@ from desktop_agent.actuation import (
 )
 from desktop_agent.benchmarks import (
     BenchmarkAcceptanceThresholds,
+    BenchmarkTaskSpec,
     benchmark_task_by_path,
 )
 from desktop_agent.config import (
@@ -310,6 +311,7 @@ class BenchmarkRunHarness:
             variance_report_path,
             baseline_comparison_path,
             pointer_timing_comparison_path,
+            task_spec,
             runs,
             baseline_runs,
             summary,
@@ -610,6 +612,7 @@ def _write_report(
     variance_report_path: Path,
     baseline_comparison_path: Path,
     pointer_timing_comparison_path: Path,
+    task_spec: BenchmarkTaskSpec | None,
     runs: tuple[BenchmarkRunMetrics, ...],
     baseline_runs: tuple[BenchmarkRunMetrics, ...],
     summary: BenchmarkSummaryMetrics,
@@ -626,6 +629,7 @@ def _write_report(
         "variance_report_path": str(variance_report_path),
         "baseline_comparison_path": str(baseline_comparison_path),
         "pointer_timing_comparison_path": str(pointer_timing_comparison_path),
+        "observability_contract": _observability_contract_to_dict(task_spec),
         "iterations": len(runs),
         "summary": _summary_to_dict(summary),
         "baseline_summary": _summary_to_dict(baseline_summary),
@@ -641,6 +645,22 @@ def _write_report(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def _observability_contract_to_dict(
+    task_spec: BenchmarkTaskSpec | None,
+) -> dict[str, object]:
+    if task_spec is None:
+        return {"configured": False}
+    return {
+        "configured": True,
+        "benchmark_task_id": task_spec.id,
+        "pipeline_modes": list(task_spec.pipeline_modes),
+        "deep_search_sources": list(task_spec.deep_search_sources),
+        "required_trace_phases": list(task_spec.required_trace_phases),
+        "required_report_fields": list(task_spec.required_report_fields),
+        "required_metrics": list(task_spec.required_metrics),
+    }
 
 
 def _write_variance_report(

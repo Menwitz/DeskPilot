@@ -286,6 +286,9 @@ abuse, and hidden automation are not supported.
 - [x] Add trace replay timeline output for each step.
 - [x] Add trace replay Markdown or HTML summary with screenshots and state
       deltas.
+- [x] Add benchmark observability contracts to benchmark reports so
+      deep-search sources, trace phases, report fields, and metrics are visible
+      in the report artifact.
 
 ### Acceptance Criteria
 

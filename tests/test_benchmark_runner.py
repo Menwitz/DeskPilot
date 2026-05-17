@@ -61,6 +61,22 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert report_payload["pointer_timing_comparison_path"] == str(
         report.pointer_timing_comparison_path
     )
+    assert report_payload["observability_contract"]["configured"] is True
+    assert report_payload["observability_contract"]["benchmark_task_id"] == (
+        "browser-fixture-demo"
+    )
+    assert report_payload["observability_contract"]["deep_search_sources"] == [
+        "uia",
+        "ocr",
+        "image",
+        "unknown",
+    ]
+    assert "select_target" in report_payload["observability_contract"][
+        "required_trace_phases"
+    ]
+    assert "grounding_accuracy" in report_payload["observability_contract"][
+        "required_metrics"
+    ]
     assert report_payload["summary"]["success_rate"] == 1.0
     assert report_payload["summary"]["median_task_time_seconds"] >= 0
     assert report_payload["summary"]["step_count"] > 0
