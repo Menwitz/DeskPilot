@@ -242,6 +242,8 @@ abuse, and hidden automation are not supported.
       native dashboard attention count.
 - [x] Add warning trace counts and sections to trace-health JSON, CLI output,
       and Markdown reports.
+- [x] Count benchmark reports with nonzero embedded warning counts as
+      trace-health warning traces.
 - [x] Add `trace-health --markdown-output` so monitoring runs can persist a
       human-readable local health report.
 - [x] Add proof-suite gate details to native trace-viewer state so local proof

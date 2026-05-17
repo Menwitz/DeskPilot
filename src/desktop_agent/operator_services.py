@@ -973,7 +973,9 @@ class LocalTraceService:
             for summary in summaries
             if _trace_status_needs_attention(summary.status or "unknown")
         ]
-        warning_traces = [summary for summary in summaries if summary.proof_warnings]
+        warning_traces = [
+            summary for summary in summaries if _trace_summary_has_warnings(summary)
+        ]
         artifact_traces = [
             summary for summary in summaries if summary.report_artifacts
         ]
@@ -1336,6 +1338,18 @@ def _trace_attention_statuses(status_counts: Mapping[str, int]) -> tuple[str, ..
 
 def _trace_status_needs_attention(status: str) -> bool:
     return status in _TRACE_ATTENTION_STATUSES
+
+
+def _trace_summary_has_warnings(summary: TraceSummary) -> bool:
+    """Return true when a trace carries non-blocking warning evidence."""
+
+    if summary.proof_warnings:
+        return True
+    trace_health = dict(summary.trace_health_summary)
+    warning_count = trace_health.get("warning_trace_count")
+    if isinstance(warning_count, bool):
+        return False
+    return isinstance(warning_count, int) and warning_count > 0
 
 
 def _trace_summary(trace_dir: Path) -> TraceSummary:

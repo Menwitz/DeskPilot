@@ -276,10 +276,10 @@ summaries also include `replay_summary_path` when a local `replay-summary.md`
 artifact exists, and the CLI plus Markdown trace-health output print that path
 for attention traces. The payload also includes `warning_trace_count` and
 `warning_traces` when proof-suite finalization reports contain non-blocking
-warning strings; CLI and Markdown output render those warning trace rows without
-turning them into attention failures. Plain CLI output also prints artifact and
-latest trace rows with report paths when benchmark reports expose monitoring
-metadata.
+warning strings or benchmark reports carry a nonzero embedded warning-trace
+count; CLI and Markdown output render those warning trace rows without turning
+them into attention failures. Plain CLI output also prints artifact and latest
+trace rows with report paths when benchmark reports expose monitoring metadata.
 Benchmark trace summaries include the
 `report_artifacts` manifest from `benchmark-report.json`, and Markdown
 trace-health latest rows render those artifact links plus compact trace-health

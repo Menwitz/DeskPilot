@@ -1474,6 +1474,37 @@ def test_cli_trace_health_console_shows_latest_benchmark_health_without_artifact
     assert "trace_health status=ok; artifacts=0; warnings=0" in output
 
 
+def test_cli_trace_health_console_shows_benchmark_warning_traces(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_root = tmp_path / "traces"
+    benchmark_trace = trace_root / "20260516T020000Z-benchmark"
+    benchmark_trace.mkdir(parents=True)
+    (benchmark_trace / "benchmark-report.json").write_text(
+        json.dumps(
+            {
+                "acceptance": {"status": "passed"},
+                "trace_health_summary": {
+                    "health_status": "ok",
+                    "artifact_trace_count": 0,
+                    "warning_trace_count": 2,
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    status = main(["trace-health", "--trace-root", str(trace_root)])
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "warning_trace_count: 1" in output
+    assert "warning_traces:" in output
+    assert f"- {benchmark_trace} (benchmark/passed)" in output
+    assert "trace_health status=ok; artifacts=0; warnings=2" in output
+
+
 def test_cli_trace_health_console_skips_boolean_summary_counts(
     tmp_path: Path,
     capsys: CaptureFixture[str],
