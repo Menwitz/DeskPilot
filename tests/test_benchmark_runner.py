@@ -89,7 +89,10 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert "- Schema version: `benchmark_report_v1`" in summary_markdown
     assert f"- Generated at: `{report.generated_at}`" in summary_markdown
     assert f"- Trace health: `{report.trace_health_path}`" in summary_markdown
+    assert "- Trace health schema: `trace_health_v1`" in summary_markdown
+    assert "- Trace health generated at: `" in summary_markdown
     assert "- Trace health status: `ok`" in summary_markdown
+    assert "- Artifact traces: `0`" in summary_markdown
     assert "## Report Artifacts" in summary_markdown
     assert f"- `report`: `{report.report_path}`" in summary_markdown
     assert f"- `metrics`: `{report.metrics_path}`" in summary_markdown

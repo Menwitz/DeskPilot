@@ -100,8 +100,9 @@ metrics, baseline metrics, summary, trace-health, variance, baseline
 comparison, and pointer-timing comparison artifacts.
 `benchmark-summary.md` repeats the same contract in Markdown for review without
 opening the JSON payload. It also links `trace-health.json`, shows the
-trace-health status plus attention-trace count, and lists observed and missing
-monitoring phases and report fields.
+trace-health schema, generation time, status, attention-trace count, and
+artifact-trace count, and lists observed and missing monitoring phases and
+report fields.
 
 Summary metrics currently include success rate, median task time, total step
 count, total action count, total retry count, grounding accuracy, ambiguity

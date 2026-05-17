@@ -838,8 +838,12 @@ def _write_benchmark_summary(
         f"- Task: `{task_path}`",
         f"- Report: `{report_path}`",
         f"- Trace health: `{trace_health_path}`",
+        f"- Trace health schema: `{trace_health.get('schema_version', 'unknown')}`",
+        "- Trace health generated at: "
+        f"`{trace_health.get('generated_at', 'unknown')}`",
         f"- Trace health status: `{trace_health.get('health_status', 'unknown')}`",
         f"- Attention traces: `{len(_trace_health_attention_traces(trace_health))}`",
+        f"- Artifact traces: `{trace_health.get('artifact_trace_count', 0)}`",
         f"- Acceptance: `{acceptance.status}`",
         f"- Baseline status: `{baseline_comparison.status}`",
         f"- Success rate: `{summary.success_rate}`",
