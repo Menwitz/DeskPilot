@@ -2557,7 +2557,7 @@ def _trace_health(args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps(health, indent=2, sort_keys=True))
         if args.output is not None:
-            print(f"report: {args.output}")
+            print(f"report: {args.output}", file=sys.stderr)
         return 0
     print(f"trace_root: {args.trace_root}")
     print(f"trace_count: {health['trace_count']}")
