@@ -763,6 +763,7 @@ def _benchmark_trace_health_summary_to_dict(
         "trace_count": trace_health.get("trace_count"),
         "attention_count": len(_trace_health_attention_traces(trace_health)),
         "artifact_trace_count": trace_health.get("artifact_trace_count", 0),
+        "warning_trace_count": trace_health.get("warning_trace_count", 0),
     }
 
 
@@ -860,6 +861,7 @@ def _write_benchmark_summary(
         f"- Trace health status: `{trace_health.get('health_status', 'unknown')}`",
         f"- Attention traces: `{len(_trace_health_attention_traces(trace_health))}`",
         f"- Artifact traces: `{trace_health.get('artifact_trace_count', 0)}`",
+        f"- Warning traces: `{trace_health.get('warning_trace_count', 0)}`",
         f"- Acceptance: `{acceptance.status}`",
         f"- Baseline status: `{baseline_comparison.status}`",
         f"- Success rate: `{summary.success_rate}`",

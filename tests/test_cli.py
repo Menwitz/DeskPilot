@@ -1958,6 +1958,7 @@ def test_cli_replay_summarizes_benchmark_report(
                 "trace_health_summary": {
                     "health_status": "ok",
                     "artifact_trace_count": 2,
+                    "warning_trace_count": 1,
                 },
                 "report_artifacts": {
                     "metrics": str(trace_dir / "runs.jsonl"),
@@ -2020,6 +2021,7 @@ def test_cli_replay_summarizes_benchmark_report(
     assert "monitoring coverage: passed" in output
     assert "trace_health_status: ok" in output
     assert "trace_health_artifact_traces: 2" in output
+    assert "trace_health_warning_traces: 1" in output
     assert "pipeline_modes: dry-run, replay" in output
     assert "deep_search_sources: trace_events, final_report" in output
     assert "observed_trace_phases: observe_screen" in output
@@ -2036,6 +2038,7 @@ def test_cli_replay_summarizes_benchmark_report(
     assert "- Monitoring coverage: `passed`" in summary
     assert "- Trace health status: `ok`" in summary
     assert "- Trace health artifacts: `2`" in summary
+    assert "- Trace health warning traces: `1`" in summary
     assert "## Report Artifacts" in summary
     assert f"- `summary`: `{trace_dir / 'benchmark-summary.md'}`" in summary
     assert "- Observed trace phases: `observe_screen`" in summary

@@ -3145,6 +3145,8 @@ def _benchmark_replay_lines(payload: dict[str, object]) -> list[str]:
                 f"{trace_health_summary.get('health_status', 'unknown')}",
                 "trace_health_artifact_traces: "
                 f"{trace_health_summary.get('artifact_trace_count', 0)}",
+                "trace_health_warning_traces: "
+                f"{trace_health_summary.get('warning_trace_count', 0)}",
             ],
         )
     summary = payload.get("summary")
@@ -3305,6 +3307,7 @@ def _benchmark_replay_trace_health_summary_lines(value: object) -> list[str]:
     return [
         f"- Trace health status: `{value.get('health_status', 'unknown')}`",
         f"- Trace health artifacts: `{value.get('artifact_trace_count', 0)}`",
+        f"- Trace health warning traces: `{value.get('warning_trace_count', 0)}`",
     ]
 
 

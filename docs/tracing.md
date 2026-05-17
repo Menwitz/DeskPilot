@@ -249,9 +249,9 @@ candidates; for finalized proof-suite roots it reads
 promotion, archive gates, warnings, and errors.
 For benchmark output roots it reads `benchmark-report.json` and prints
 schema and generation metadata, acceptance status, baseline comparison status,
-monitoring coverage, compact trace-health status, pipeline modes, deep-search
-sources, required/observed trace coverage, report-artifact links, and per-run
-trace links.
+monitoring coverage, compact trace-health status, warning-trace counts,
+pipeline modes, deep-search sources, required/observed trace coverage,
+report-artifact links, and per-run trace links.
 Add `--write-summary` to write `replay-summary.md` in the trace directory with
 the timeline, screenshot paths from pre/post action evidence, and state-delta
 changes. The summary also includes step-level `success_evidence` and

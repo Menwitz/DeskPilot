@@ -332,6 +332,8 @@ abuse, and hidden automation are not supported.
       count in benchmark Markdown summaries.
 - [x] Embed compact trace-health summaries in benchmark JSON reports and replay
       output.
+- [x] Embed warning-trace counts in benchmark JSON reports, Markdown summaries,
+      and replay output.
 - [x] Add benchmark monitoring coverage for observed trace phases against the
       declared deep-search and trace contract.
 - [x] Add benchmark report-field coverage against the declared final-report
