@@ -560,6 +560,8 @@ abuse, and hidden automation are not supported.
       routine selection.
 - [x] Add ranked candidate routine details to goal-plan JSON and Markdown
       reports for monitoring and planner review.
+- [x] Add ranked candidate routine details to goal-plan replay output and
+      replay summaries.
 - [x] Add safety rule that only validated routine IDs can be executed.
 
 ### Acceptance Criteria

@@ -2455,6 +2455,13 @@ def _replay_goal_plan(args: argparse.Namespace) -> int:
     print(f"status: {plan.execution_status}")
     print(f"selected: {plan.selected_routine_id or 'none'}")
     print(f"candidates: {len(plan.candidate_routines)}")
+    for candidate in plan.candidate_routines:
+        matched = ", ".join(candidate.matched_fields) or "none"
+        print(
+            f"candidate: {candidate.routine_id} score={candidate.score:g} "
+            f"matched={matched} safety={candidate.safety_class} "
+            f"approval={candidate.approval_policy}",
+        )
     if plan.expected_evidence:
         print(f"expected_evidence: {', '.join(plan.expected_evidence)}")
     if plan.abort_conditions:
@@ -2649,9 +2656,11 @@ def _goal_plan_replay_summary_markdown(
     if plan.candidate_routines:
         lines.extend(["", "## Candidates", ""])
         for candidate in plan.candidate_routines:
+            matched = ", ".join(candidate.matched_fields) or "none"
             lines.append(
                 "- "
                 f"`{candidate.routine_id}` score `{candidate.score:g}` "
+                f"matched `{matched}` "
                 f"safety `{candidate.safety_class}` "
                 f"approval `{candidate.approval_policy}`",
             )

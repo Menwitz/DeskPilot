@@ -106,9 +106,10 @@ input:
 desktop-agent replay <goal-trace-dir> --write-summary
 ```
 
-Replay prints the selected routine, candidate count, planning timeline, and
-model-assistance disclosure when present. `--write-summary` writes
-`replay-summary.md` next to the source artifacts for trace review.
+Replay prints the selected routine, candidate count, ranked candidate details,
+planning timeline, and model-assistance disclosure when present.
+`--write-summary` writes `replay-summary.md` next to the source artifacts for
+trace review.
 
 ## Optional Ollama Ranking
 

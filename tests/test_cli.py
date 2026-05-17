@@ -1371,6 +1371,7 @@ def test_cli_replay_summarizes_goal_plan_trace(
                 routine_id="browser.search-web",
                 routine_name="Browser web search",
                 score=10,
+                matched_fields=("tags", "outputs"),
                 safety_class="low",
                 approval_policy="none",
             ),
@@ -1404,6 +1405,11 @@ def test_cli_replay_summarizes_goal_plan_trace(
     assert "goal plan: Search the web" in output
     assert "status: ready" in output
     assert "selected: browser.search-web" in output
+    assert (
+        "candidate: browser.search-web score=10 matched=tags, outputs "
+        "safety=low approval=none"
+        in output
+    )
     assert "expected_evidence: search results" in output
     assert "abort_conditions: browser signed out" in output
     assert (
@@ -1421,7 +1427,10 @@ def test_cli_replay_summarizes_goal_plan_trace(
     assert "- Desktop input required: `False`" in summary
     assert "- Expected evidence: `search results`" in summary
     assert "- Abort conditions: `browser signed out`" in summary
-    assert "`browser.search-web` score `10` safety `low` approval `none`" in summary
+    assert (
+        "`browser.search-web` score `10` matched `tags, outputs` safety `low` "
+        "approval `none`"
+    ) in summary
 
 
 def test_cli_analyze_failed_run_writes_review_artifacts(
