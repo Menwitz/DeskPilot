@@ -41,6 +41,7 @@ New-Item -ItemType Directory -Force -Path $BenchmarkTraceDir | Out-Null
   "task_path": "examples/browser-task.yaml",
   "trace_health_path": "trace-health.json",
   "report_artifacts": {
+    "report": "benchmark-report.json",
     "metrics": "runs.jsonl",
     "summary": "benchmark-summary.md",
     "trace_health": "trace-health.json"
@@ -108,6 +109,9 @@ if (-not (Test-Path (Join-Path $BenchmarkTraceDir "replay-summary.md"))) {
 $BenchmarkReplaySummary = Get-Content (Join-Path $BenchmarkTraceDir "replay-summary.md") -Raw
 if ($BenchmarkReplaySummary -notmatch "Report Artifacts") {
     throw "Packaged benchmark replay summary did not include artifact manifest"
+}
+if ($BenchmarkReplaySummary -notmatch "benchmark-report.json") {
+    throw "Packaged benchmark replay summary did not include report artifact"
 }
 if ($BenchmarkReplaySummary -notmatch "runs.jsonl") {
     throw "Packaged benchmark replay summary did not include metrics artifact"

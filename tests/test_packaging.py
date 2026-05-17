@@ -94,6 +94,7 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         "Packaged benchmark replay summary did not include artifact manifest"
         in script
     )
+    assert "Packaged benchmark replay summary did not include report artifact" in script
     assert (
         "Packaged benchmark replay summary did not include metrics artifact"
         in script
@@ -125,6 +126,7 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "benchmark-report.json" in script
     assert '"schema_version": "benchmark_report_v1"' in script
     assert '"report_artifacts": {' in script
+    assert '"report": "benchmark-report.json"' in script
     assert "trace health report" in script
 
 
