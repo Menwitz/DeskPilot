@@ -223,6 +223,8 @@ abuse, and hidden automation are not supported.
       unknown reports stand out in CLI, JSON, and native dashboard monitoring.
 - [x] Add `trace-health --fail-on-attention` so monitoring and package smoke
       pipelines can fail on unhealthy local trace reports.
+- [x] Add attention trace summaries to trace-health JSON, CLI output, and the
+      native dashboard attention count.
 - [x] Add proof-suite gate details to native trace-viewer state so local proof
       reports can show suite, promotion, and archive status in the app.
 - [x] Add an operator controller path that hydrates trace-viewer state directly

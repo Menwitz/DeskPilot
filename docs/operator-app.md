@@ -25,7 +25,8 @@ next action, elapsed seconds, run status, and stop controls: pause, resume,
 cancel, normal stop, and emergency stop. Emergency stop is represented as the
 terminal `emergency_stopped` run-queue state. The dashboard also includes trace
 health state with local trace counts by report kind and status, plus an
-attention status when failed or unknown local reports need review.
+attention status and attention trace count when failed or unknown local reports
+need review.
 
 The Approvals page includes the approval dialog contract. It shows routine ID,
 step ID, risk class, checkpoint evidence, content fingerprint, current status,
@@ -105,7 +106,7 @@ project modules:
 - Trace service: list local trace directories, read run, goal-plan, and
   proof-suite finalization JSON reports, and inspect failed traces with local
   review-only analysis artifacts. It also exposes trace health counts by kind,
-  status, and attention state for dashboard monitoring.
+  status, attention state, and attention trace count for dashboard monitoring.
 - Routine-pack service: list installed packs, install validated local packs,
   and remove installed packs.
 

@@ -2578,6 +2578,15 @@ def _trace_health(args: argparse.Namespace) -> int:
     if isinstance(attention_statuses, list) and attention_statuses:
         rendered_attention = ", ".join(str(status) for status in attention_statuses)
         print(f"attention_statuses: {rendered_attention}")
+    attention_traces = health.get("attention_traces")
+    if isinstance(attention_traces, list) and attention_traces:
+        print("attention_traces:")
+        for trace in attention_traces:
+            if isinstance(trace, dict):
+                trace_dir = trace.get("trace_dir", "unknown")
+                kind = trace.get("kind", "unknown")
+                status = trace.get("status", "unknown")
+                print(f"- {trace_dir} ({kind}/{status})")
     if args.output is not None:
         print(f"report: {args.output}")
     return exit_code

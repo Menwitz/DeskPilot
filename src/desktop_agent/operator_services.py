@@ -956,12 +956,18 @@ class LocalTraceService:
         status_counts = _count_trace_values(
             summary.status or "unknown" for summary in summaries
         )
+        attention_traces = [
+            summary
+            for summary in summaries
+            if _trace_status_needs_attention(summary.status or "unknown")
+        ]
         return {
             "trace_count": len(summaries),
             "by_kind": _count_trace_values(summary.kind for summary in summaries),
             "by_status": status_counts,
             "health_status": _trace_health_status(len(summaries), status_counts),
             "attention_statuses": list(_trace_attention_statuses(status_counts)),
+            "attention_traces": [summary.metadata() for summary in attention_traces],
             "latest": [summary.metadata() for summary in summaries],
         }
 
@@ -1302,8 +1308,12 @@ def _trace_attention_statuses(status_counts: Mapping[str, int]) -> tuple[str, ..
     return tuple(
         status
         for status in sorted(status_counts)
-        if status in _TRACE_ATTENTION_STATUSES and status_counts[status] > 0
+        if _trace_status_needs_attention(status) and status_counts[status] > 0
     )
+
+
+def _trace_status_needs_attention(status: str) -> bool:
+    return status in _TRACE_ATTENTION_STATUSES
 
 
 def _trace_summary(trace_dir: Path) -> TraceSummary:

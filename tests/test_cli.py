@@ -1389,6 +1389,7 @@ def test_cli_trace_health_summarizes_trace_counts(
     assert "- passed: 1" in output
     assert "- failed: 1" in output
     assert "attention_statuses: failed" in output
+    assert f"- {run_trace} (run/failed)" in output
 
 
 def test_cli_trace_health_writes_json(
@@ -1411,6 +1412,7 @@ def test_cli_trace_health_writes_json(
     assert payload["by_kind"] == {"goal_plan": 1}
     assert payload["by_status"] == {"ready": 1}
     assert payload["health_status"] == "ok"
+    assert payload["attention_traces"] == []
 
 
 def test_cli_trace_health_writes_report_file(

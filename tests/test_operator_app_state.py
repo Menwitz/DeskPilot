@@ -268,9 +268,11 @@ def test_operator_app_controller_refreshes_trace_health(
     assert state.current_page_id == "dashboard"
     assert state.trace_health is not None
     assert state.trace_health.trace_count == 1
+    assert state.trace_health.attention_count == 1
     assert state.trace_health.status == "attention"
     trace_health = metadata["trace_health"]
     assert isinstance(trace_health, dict)
+    assert trace_health["attention_count"] == 1
     assert trace_health["kind_counts"] == {"run": 1}
     assert trace_health["status_counts"] == {"failed": 1}
     assert trace_health["status"] == "attention"

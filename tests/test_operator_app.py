@@ -148,6 +148,7 @@ def test_trace_health_panel_tracks_counts() -> None:
             "by_kind": {"run": 1, "goal_plan": 1, "proof_suite": 1},
             "by_status": {"passed": 2, "failed": 1},
             "health_status": "attention",
+            "attention_traces": [{"trace_dir": "traces/failed-run"}],
         },
     )
     empty = TraceHealthPanelState()
@@ -156,6 +157,7 @@ def test_trace_health_panel_tracks_counts() -> None:
 
     assert empty.status == "empty"
     assert metadata["trace_count"] == 3
+    assert metadata["attention_count"] == 1
     assert metadata["kind_counts"] == {
         "goal_plan": 1,
         "proof_suite": 1,
@@ -166,6 +168,7 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert "Trace Health" in text
     assert "proof_suite=1" in text
     assert "Status: attention" in text
+    assert "Attention traces: 1" in text
     assert "passed=2" in text
 
 

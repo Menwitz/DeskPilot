@@ -90,6 +90,7 @@ class TraceHealthPanelState:
     """Dashboard trace health fields for local monitoring."""
 
     trace_count: int = 0
+    attention_count: int = 0
     kind_counts: tuple[tuple[str, int], ...] = ()
     status_counts: tuple[tuple[str, int], ...] = ()
     status: str = "empty"
@@ -97,6 +98,7 @@ class TraceHealthPanelState:
     def metadata(self) -> dict[str, object]:
         return {
             "trace_count": self.trace_count,
+            "attention_count": self.attention_count,
             "kind_counts": dict(self.kind_counts),
             "status_counts": dict(self.status_counts),
             "status": self.status,
@@ -384,8 +386,12 @@ def trace_health_panel_from_metadata(
 
     trace_count = payload.get("trace_count")
     health_status = payload.get("health_status")
+    attention_traces = payload.get("attention_traces")
     return TraceHealthPanelState(
         trace_count=trace_count if isinstance(trace_count, int) else 0,
+        attention_count=len(attention_traces)
+        if isinstance(attention_traces, list)
+        else 0,
         kind_counts=_count_pairs(payload.get("by_kind")),
         status_counts=_count_pairs(payload.get("by_status")),
         status=health_status if isinstance(health_status, str) else "loaded",
@@ -400,6 +406,7 @@ def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
             "Trace Health",
             f"- Status: {state.status}",
             f"- Trace count: {state.trace_count}",
+            f"- Attention traces: {state.attention_count}",
             f"- By kind: {_render_count_pairs(state.kind_counts)}",
             f"- By status: {_render_count_pairs(state.status_counts)}",
         ],

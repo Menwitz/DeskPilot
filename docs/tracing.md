@@ -260,6 +260,8 @@ used by the operator app trace service. Add `--output traces/trace-health.json`
 to persist the monitoring payload as a local report artifact. When `--json` and
 `--output` are combined, stdout remains a parseable JSON payload and the report
 path notice is written to stderr.
+The JSON payload includes `attention_traces`, a list of trace summaries that
+need review, so monitors can link directly to the relevant local reports.
 Add `--fail-on-attention` when a local monitor or CI smoke step should return
 nonzero if failed, error, invalid, blocked, or unknown trace statuses are found.
 
