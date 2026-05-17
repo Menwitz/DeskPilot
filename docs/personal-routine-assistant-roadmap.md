@@ -344,6 +344,8 @@ abuse, and hidden automation are not supported.
       rows.
 - [x] Print benchmark artifact trace rows in plain trace-health CLI monitoring
       output.
+- [x] Add CLI JSON coverage for benchmark trace-health metadata in artifact
+      traces.
 - [x] Add schema version and generation timestamp metadata to trace-health
       monitoring reports.
 

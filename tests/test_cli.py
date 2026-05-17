@@ -1429,9 +1429,26 @@ def test_cli_trace_health_writes_json(
 ) -> None:
     trace_root = tmp_path / "traces"
     trace_dir = trace_root / "20260516T000000Z-goal"
+    benchmark_trace = trace_root / "20260516T010000Z-benchmark"
     trace_dir.mkdir(parents=True)
+    benchmark_trace.mkdir()
     (trace_dir / "goal-plan-report.json").write_text(
         json.dumps({"status": "ready"}),
+        encoding="utf-8",
+    )
+    (benchmark_trace / "benchmark-report.json").write_text(
+        json.dumps(
+            {
+                "acceptance": {"status": "passed"},
+                "trace_health_summary": {
+                    "health_status": "ok",
+                    "artifact_trace_count": 1,
+                },
+                "report_artifacts": {
+                    "metrics": str(benchmark_trace / "runs.jsonl"),
+                },
+            },
+        ),
         encoding="utf-8",
     )
 
@@ -1441,11 +1458,17 @@ def test_cli_trace_health_writes_json(
     assert status == 0
     assert payload["schema_version"] == "trace_health_v1"
     assert isinstance(payload["generated_at"], str)
-    assert payload["trace_count"] == 1
-    assert payload["by_kind"] == {"goal_plan": 1}
-    assert payload["by_status"] == {"ready": 1}
+    assert payload["trace_count"] == 2
+    assert payload["artifact_trace_count"] == 1
+    assert payload["by_kind"] == {"benchmark": 1, "goal_plan": 1}
+    assert payload["by_status"] == {"passed": 1, "ready": 1}
     assert payload["health_status"] == "ok"
     assert payload["attention_traces"] == []
+    artifact_traces = payload["artifact_traces"]
+    assert artifact_traces[0]["trace_health_summary"] == {
+        "artifact_trace_count": 1,
+        "health_status": "ok",
+    }
 
 
 def test_cli_trace_health_writes_report_file(
