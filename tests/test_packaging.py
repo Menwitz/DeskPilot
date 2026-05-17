@@ -136,6 +136,19 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     )
     assert "$TraceHealthConsoleText = $TraceHealthConsole -join \"`n\"" in script
     assert (
+        "$TraceHealthWarningGate = & $ExePath trace-health --trace-root "
+        "$SmokeTraceRoot --fail-on-warning"
+        in script
+    )
+    assert (
+        "Packaged trace-health warning gate did not fail on seeded warnings"
+        in script
+    )
+    assert (
+        "Packaged trace-health warning gate did not report warning trace count"
+        in script
+    )
+    assert (
         "Packaged trace-health console output did not include artifact traces"
         in script
     )

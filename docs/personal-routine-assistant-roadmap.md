@@ -929,6 +929,8 @@ abuse, and hidden automation are not supported.
       warnings.
 - [x] Verify packaged trace-health output renders warning-trace counts and
       warning sections.
+- [x] Verify packaged trace-health `--fail-on-warning` fails on seeded warning
+      traces.
 - [x] Verify packaged replay renders seeded proof-finalization summaries.
 - [x] Verify packaged replay renders seeded proof-finalization warnings.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,

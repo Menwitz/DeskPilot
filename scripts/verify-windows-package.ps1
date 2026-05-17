@@ -178,6 +178,14 @@ $TraceHealthReport = Join-Path $SmokeRoot "trace-health.json"
 $TraceHealthSummary = Join-Path $SmokeRoot "trace-health.md"
 $TraceHealthConsole = & $ExePath trace-health --trace-root $SmokeTraceRoot --output $TraceHealthReport --markdown-output $TraceHealthSummary --fail-on-attention
 $TraceHealthConsole | Write-Host
+$TraceHealthWarningGate = & $ExePath trace-health --trace-root $SmokeTraceRoot --fail-on-warning
+$TraceHealthWarningGateExitCode = $LASTEXITCODE
+if ($TraceHealthWarningGateExitCode -eq 0) {
+    throw "Packaged trace-health warning gate did not fail on seeded warnings"
+}
+if (($TraceHealthWarningGate -join "`n") -notmatch "warning_trace_count: 1") {
+    throw "Packaged trace-health warning gate did not report warning trace count"
+}
 if (-not (Test-Path $TraceHealthReport)) {
     throw "Packaged trace-health did not write $TraceHealthReport"
 }
