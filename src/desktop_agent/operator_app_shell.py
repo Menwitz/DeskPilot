@@ -97,6 +97,8 @@ class TraceHealthPanelState:
     status: str = "empty"
     schema_version: str | None = None
     generated_at: str | None = None
+    benchmark_health_status: str | None = None
+    benchmark_artifact_count: int | None = None
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -108,6 +110,8 @@ class TraceHealthPanelState:
             "status": self.status,
             "schema_version": self.schema_version,
             "generated_at": self.generated_at,
+            "benchmark_health_status": self.benchmark_health_status,
+            "benchmark_artifact_count": self.benchmark_artifact_count,
         }
 
 
@@ -396,6 +400,7 @@ def trace_health_panel_from_metadata(
     attention_traces = payload.get("attention_traces")
     schema_version = payload.get("schema_version")
     generated_at = payload.get("generated_at")
+    benchmark_status, benchmark_artifacts = _benchmark_trace_health(payload)
     return TraceHealthPanelState(
         trace_count=trace_count if isinstance(trace_count, int) else 0,
         artifact_count=artifact_trace_count
@@ -409,12 +414,19 @@ def trace_health_panel_from_metadata(
         status=health_status if isinstance(health_status, str) else "loaded",
         schema_version=schema_version if isinstance(schema_version, str) else None,
         generated_at=generated_at if isinstance(generated_at, str) else None,
+        benchmark_health_status=benchmark_status,
+        benchmark_artifact_count=benchmark_artifacts,
     )
 
 
 def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
     """Render trace health counts for diagnostics and app tests."""
 
+    benchmark_artifacts = (
+        state.benchmark_artifact_count
+        if state.benchmark_artifact_count is not None
+        else "unknown"
+    )
     return "\n".join(
         [
             "Trace Health",
@@ -424,10 +436,37 @@ def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
             f"- Trace count: {state.trace_count}",
             f"- Attention traces: {state.attention_count}",
             f"- Artifact traces: {state.artifact_count}",
+            f"- Benchmark health: {state.benchmark_health_status or 'unknown'}",
+            f"- Benchmark health artifacts: {benchmark_artifacts}",
             f"- By kind: {_render_count_pairs(state.kind_counts)}",
             f"- By status: {_render_count_pairs(state.status_counts)}",
         ],
     ) + "\n"
+
+
+def _benchmark_trace_health(
+    payload: Mapping[str, object],
+) -> tuple[str | None, int | None]:
+    """Extract the compact benchmark health signal from trace-health metadata."""
+
+    traces = payload.get("artifact_traces")
+    if not isinstance(traces, list):
+        traces = payload.get("latest")
+    if not isinstance(traces, list):
+        return None, None
+    for trace in traces:
+        if not isinstance(trace, Mapping) or trace.get("kind") != "benchmark":
+            continue
+        summary = trace.get("trace_health_summary")
+        if not isinstance(summary, Mapping):
+            continue
+        status = summary.get("health_status")
+        artifact_count = summary.get("artifact_trace_count")
+        return (
+            status if isinstance(status, str) else None,
+            artifact_count if isinstance(artifact_count, int) else None,
+        )
+    return None, None
 
 
 def render_approval_dialog_text(state: ApprovalDialogState) -> str:

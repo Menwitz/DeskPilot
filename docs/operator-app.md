@@ -112,8 +112,9 @@ project modules:
   summaries also expose the report artifact manifest and compact trace-health
   summary from `benchmark-report.json`.
 - Trace health panel state: renders the trace-health schema version and
-  generation timestamp beside trace, attention, and artifact counts so
-  dashboard screenshots identify the monitoring contract in use.
+  generation timestamp beside trace, attention, artifact, and benchmark
+  health counts so dashboard screenshots identify the monitoring contract in
+  use.
 - Trace viewer state: benchmark reports render with benchmark kind, acceptance
   status, baseline comparison status, monitoring coverage status, and
   schema/timestamp metadata, compact trace-health status, plus benchmark report

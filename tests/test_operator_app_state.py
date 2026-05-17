@@ -322,6 +322,8 @@ def test_operator_app_controller_refreshes_trace_health(
     assert trace_health["status"] == "attention"
     assert trace_health["schema_version"] == "trace_health_v1"
     assert isinstance(trace_health["generated_at"], str)
+    assert trace_health["benchmark_health_status"] is None
+    assert trace_health["benchmark_artifact_count"] is None
 
 
 class _FakeRunnerService:

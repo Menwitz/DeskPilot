@@ -152,6 +152,15 @@ def test_trace_health_panel_tracks_counts() -> None:
             "by_status": {"passed": 2, "failed": 1},
             "health_status": "attention",
             "attention_traces": [{"trace_dir": "traces/failed-run"}],
+            "artifact_traces": [
+                {
+                    "kind": "benchmark",
+                    "trace_health_summary": {
+                        "health_status": "ok",
+                        "artifact_trace_count": 1,
+                    },
+                },
+            ],
         },
     )
     empty = TraceHealthPanelState()
@@ -171,6 +180,8 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert metadata["status"] == "attention"
     assert metadata["schema_version"] == "trace_health_v1"
     assert metadata["generated_at"] == "2026-05-17T00:00:00+00:00"
+    assert metadata["benchmark_health_status"] == "ok"
+    assert metadata["benchmark_artifact_count"] == 1
     assert "Trace Health" in text
     assert "Schema version: trace_health_v1" in text
     assert "Generated at: 2026-05-17T00:00:00+00:00" in text
@@ -178,6 +189,8 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert "Status: attention" in text
     assert "Attention traces: 1" in text
     assert "Artifact traces: 1" in text
+    assert "Benchmark health: ok" in text
+    assert "Benchmark health artifacts: 1" in text
     assert "passed=2" in text
 
 
