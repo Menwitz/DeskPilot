@@ -87,11 +87,12 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "$TraceHealthReport = Join-Path $SmokeRoot \"trace-health.json\"" in script
     assert (
         "& $ExePath trace-health --trace-root $SmokeTraceRoot "
-        "--output $TraceHealthReport"
+        "--output $TraceHealthReport --fail-on-attention"
         in script
     )
     assert "Packaged trace-health did not write" in script
     assert "$TraceHealth.trace_count -lt 2" in script
+    assert "$TraceHealth.health_status -ne \"ok\"" in script
     assert "& $AppExePath --check" in script
     assert "PySide6: available" in script
     assert "& $AppExePath --describe-shell" in script

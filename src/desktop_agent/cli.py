@@ -532,6 +532,11 @@ def _build_parser() -> argparse.ArgumentParser:
     trace_health_parser.add_argument("--limit", default=50, type=int)
     trace_health_parser.add_argument("--json", action="store_true")
     trace_health_parser.add_argument("--output", type=Path)
+    trace_health_parser.add_argument(
+        "--fail-on-attention",
+        action="store_true",
+        help="return a nonzero exit code when trace health needs review",
+    )
 
     analyze_failed_run_parser = subparsers.add_parser(
         "analyze-failed-run",
@@ -2548,6 +2553,7 @@ def _replay_proof_suite(args: argparse.Namespace) -> int:
 
 def _trace_health(args: argparse.Namespace) -> int:
     health = LocalTraceService(args.trace_root).trace_health(limit=args.limit)
+    exit_code = _trace_health_exit_code(health, args.fail_on_attention)
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
@@ -2558,7 +2564,7 @@ def _trace_health(args: argparse.Namespace) -> int:
         print(json.dumps(health, indent=2, sort_keys=True))
         if args.output is not None:
             print(f"report: {args.output}", file=sys.stderr)
-        return 0
+        return exit_code
     print(f"trace_root: {args.trace_root}")
     print(f"health_status: {health.get('health_status', 'unknown')}")
     print(f"trace_count: {health['trace_count']}")
@@ -2574,6 +2580,15 @@ def _trace_health(args: argparse.Namespace) -> int:
         print(f"attention_statuses: {rendered_attention}")
     if args.output is not None:
         print(f"report: {args.output}")
+    return exit_code
+
+
+def _trace_health_exit_code(
+    health: dict[str, object],
+    fail_on_attention: bool,
+) -> int:
+    if fail_on_attention and health.get("health_status") == "attention":
+        return 1
     return 0
 
 

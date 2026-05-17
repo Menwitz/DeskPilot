@@ -1478,6 +1478,27 @@ def test_cli_trace_health_json_output_stays_parseable_with_report_file(
     assert output_path.exists()
 
 
+def test_cli_trace_health_can_fail_on_attention(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_root = tmp_path / "traces"
+    trace_dir = trace_root / "20260516T000000Z-run"
+    trace_dir.mkdir(parents=True)
+    (trace_dir / "final-report.json").write_text(
+        json.dumps({"status": "failed"}),
+        encoding="utf-8",
+    )
+
+    status = main(
+        ["trace-health", "--trace-root", str(trace_root), "--fail-on-attention"],
+    )
+
+    output = capsys.readouterr().out
+    assert status == 1
+    assert "health_status: attention" in output
+
+
 def test_cli_replay_summarizes_goal_plan_trace(
     tmp_path: Path,
     capsys: CaptureFixture[str],
