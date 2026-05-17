@@ -110,6 +110,9 @@ if (-not (Test-Path $TraceHealthSummary)) {
     throw "Packaged trace-health did not write $TraceHealthSummary"
 }
 $TraceHealth = Get-Content $TraceHealthReport -Raw | ConvertFrom-Json
+if ($TraceHealth.schema_version -ne "trace_health_v1") {
+    throw "Packaged trace-health report had schema $($TraceHealth.schema_version)"
+}
 if ($TraceHealth.trace_count -lt 3) {
     throw "Packaged trace-health report did not include smoke traces from $SmokeTraceRoot"
 }
@@ -117,6 +120,9 @@ if ($TraceHealth.health_status -ne "ok") {
     throw "Packaged trace-health reported $($TraceHealth.health_status)"
 }
 $TraceHealthMarkdown = Get-Content $TraceHealthSummary -Raw
+if ($TraceHealthMarkdown -notmatch "trace_health_v1") {
+    throw "Packaged trace-health summary did not include schema version"
+}
 if ($TraceHealthMarkdown -notmatch "Latest Traces") {
     throw "Packaged trace-health summary did not include latest trace links"
 }

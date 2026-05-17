@@ -64,10 +64,11 @@ runs `deskpilot.exe replay` against run and benchmark replay fixtures in the
 same trace root, writes a benchmark `replay-summary.md`, runs `deskpilot.exe
 trace-health --output --markdown-output --fail-on-attention` against the smoke
 trace root, verifies the persisted `trace-health.json` and `trace-health.md`
-reports are healthy and include the benchmark replay in latest-trace links,
-lists routines from `routine_packs\`, and runs `deskpilot-app.exe --check` plus
-`deskpilot-app.exe --describe-shell` when the app executable exists. The app
-check must report bundled PySide6 availability for packaged Windows builds.
+reports are healthy, schema-versioned, and include the benchmark replay in
+latest-trace links, lists routines from `routine_packs\`, and runs
+`deskpilot-app.exe --check` plus `deskpilot-app.exe --describe-shell` when the
+app executable exists. The app check must report bundled PySide6 availability
+for packaged Windows builds.
 
 `scripts\run-windows-proof-suite.ps1` is the real desktop evidence collector.
 Run it only from an owned, unlocked Windows desktop or VM. From source, pass

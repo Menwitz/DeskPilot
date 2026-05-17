@@ -796,6 +796,8 @@ abuse, and hidden automation are not supported.
       benchmark trace-health inclusion.
 - [x] Verify packaged trace-health Markdown includes latest-trace links for the
       benchmark replay fixture.
+- [x] Verify packaged trace-health JSON and Markdown keep the trace-health
+      schema version.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 
