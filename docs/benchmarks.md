@@ -135,6 +135,8 @@ the harness, but their report is marked `not_configured` until a task spec adds
 thresholds.
 Use `--fail-on-monitoring-gap` when a CI or local quality gate should fail if a
 configured benchmark misses required trace phases or final-report fields.
+When that gate fails, the CLI prints each missing trace phase and report field
+as `monitoring gap:` lines.
 
 ## Baseline Comparison
 

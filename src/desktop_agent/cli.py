@@ -2173,6 +2173,8 @@ def _run_benchmark(args: argparse.Namespace) -> int:
     print(f"acceptance: {report.acceptance.status}")
     monitoring_status = _benchmark_monitoring_status(report.monitoring_coverage)
     print(f"monitoring coverage: {monitoring_status}")
+    for failure in _benchmark_monitoring_failures(report.monitoring_coverage):
+        print(f"monitoring gap: {failure}")
     for failure in report.acceptance.failures:
         print(f"acceptance failure: {failure}")
     print(f"report: {report.report_path}")
@@ -2206,6 +2208,25 @@ def _benchmark_monitoring_status(coverage: Mapping[str, object]) -> str:
     if coverage.get("configured") is not True:
         return "not_configured"
     return "passed" if coverage.get("passed") is True else "failed"
+
+
+def _benchmark_monitoring_failures(coverage: Mapping[str, object]) -> tuple[str, ...]:
+    if coverage.get("configured") is not True or coverage.get("passed") is True:
+        return ()
+    failures: list[str] = []
+    missing_phases = _string_sequence(coverage.get("missing_trace_phases"))
+    missing_fields = _string_sequence(coverage.get("missing_report_fields"))
+    if missing_phases:
+        failures.append(f"missing trace phases: {', '.join(missing_phases)}")
+    if missing_fields:
+        failures.append(f"missing report fields: {', '.join(missing_fields)}")
+    return tuple(failures)
+
+
+def _string_sequence(value: object) -> tuple[str, ...]:
+    if not isinstance(value, list):
+        return ()
+    return tuple(item for item in value if isinstance(item, str))
 
 
 def _record(args: argparse.Namespace) -> int:

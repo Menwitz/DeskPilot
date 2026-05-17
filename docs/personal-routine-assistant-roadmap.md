@@ -303,6 +303,8 @@ abuse, and hidden automation are not supported.
       require configured benchmark monitoring coverage to pass.
 - [x] List observed trace phases and report fields in benchmark Markdown
       summaries for review without opening JSON.
+- [x] Print benchmark monitoring-gap details for missing trace phases and
+      report fields when coverage fails.
 
 ### Acceptance Criteria
 

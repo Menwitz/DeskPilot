@@ -7,6 +7,7 @@ from pytest import CaptureFixture, MonkeyPatch
 from desktop_agent.actuation import ActuationProfile, DryRunActuator
 from desktop_agent.cli import (
     _benchmark_exit_code,
+    _benchmark_monitoring_failures,
     _benchmark_monitoring_status,
     _perception_engine_for_mode,
     _screen_observer_for_mode,
@@ -2429,3 +2430,17 @@ def test_cli_benchmark_exit_code_can_fail_on_monitoring_gap() -> None:
         == 0
     )
     assert _benchmark_monitoring_status(missing) == "failed"
+
+
+def test_cli_benchmark_monitoring_failures_explain_gaps() -> None:
+    coverage = {
+        "configured": True,
+        "passed": False,
+        "missing_trace_phases": ["select_target", "verify_result"],
+        "missing_report_fields": ["trace_dir"],
+    }
+
+    assert _benchmark_monitoring_failures(coverage) == (
+        "missing trace phases: select_target, verify_result",
+        "missing report fields: trace_dir",
+    )
