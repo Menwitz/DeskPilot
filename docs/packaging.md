@@ -62,11 +62,12 @@ wants `bin\` added to their user PATH.
 package-smoke trace root and verifies that `final-report.json` was written,
 runs `deskpilot.exe replay` against run and benchmark replay fixtures in the
 same trace root, writes a benchmark `replay-summary.md` from a
-schema-versioned benchmark report, runs `deskpilot.exe trace-health --output
---markdown-output --fail-on-attention` against the smoke trace root, verifies
-the persisted `trace-health.json` and `trace-health.md` reports are healthy,
-schema-versioned, and include the benchmark replay in latest-trace links, lists
-routines from `routine_packs\`, and runs
+schema-versioned benchmark report with an artifact manifest, verifies the
+benchmark replay summary renders that manifest, runs `deskpilot.exe
+trace-health --output --markdown-output --fail-on-attention` against the smoke
+trace root, verifies the persisted `trace-health.json` and `trace-health.md`
+reports are healthy, schema-versioned, and include the benchmark replay in
+latest-trace links, lists routines from `routine_packs\`, and runs
 `deskpilot-app.exe --check` plus `deskpilot-app.exe --describe-shell` when the
 app executable exists. The app check must report bundled PySide6 availability
 for packaged Windows builds.

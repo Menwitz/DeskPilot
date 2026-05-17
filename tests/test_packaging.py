@@ -90,6 +90,14 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "& $ExePath replay $TraceDir" in script
     assert "& $ExePath replay $BenchmarkTraceDir --write-summary" in script
     assert "Packaged benchmark replay did not write replay-summary.md" in script
+    assert (
+        "Packaged benchmark replay summary did not include artifact manifest"
+        in script
+    )
+    assert (
+        "Packaged benchmark replay summary did not include metrics artifact"
+        in script
+    )
     assert "$TraceHealthReport = Join-Path $SmokeRoot \"trace-health.json\"" in script
     assert "$TraceHealthSummary = Join-Path $SmokeRoot \"trace-health.md\"" in script
     assert (
@@ -111,6 +119,7 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "final-report.json" in script
     assert "benchmark-report.json" in script
     assert '"schema_version": "benchmark_report_v1"' in script
+    assert '"report_artifacts": {' in script
     assert "trace health report" in script
 
 

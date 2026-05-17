@@ -810,6 +810,8 @@ abuse, and hidden automation are not supported.
       schema version.
 - [x] Keep the packaged benchmark replay fixture on the current benchmark
       report schema.
+- [x] Verify packaged benchmark replay summaries include report artifact
+      manifests.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 

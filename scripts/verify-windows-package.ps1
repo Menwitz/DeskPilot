@@ -40,6 +40,11 @@ New-Item -ItemType Directory -Force -Path $BenchmarkTraceDir | Out-Null
   "generated_at": "2026-05-17T00:00:00+00:00",
   "task_path": "examples/browser-task.yaml",
   "trace_health_path": "trace-health.json",
+  "report_artifacts": {
+    "metrics": "runs.jsonl",
+    "summary": "benchmark-summary.md",
+    "trace_health": "trace-health.json"
+  },
   "iterations": 1,
   "summary": {
     "success_rate": 1.0,
@@ -99,6 +104,13 @@ $SmokeConfig | Set-Content -Encoding UTF8 $SmokeConfigPath
 & $ExePath replay $BenchmarkTraceDir --write-summary
 if (-not (Test-Path (Join-Path $BenchmarkTraceDir "replay-summary.md"))) {
     throw "Packaged benchmark replay did not write replay-summary.md"
+}
+$BenchmarkReplaySummary = Get-Content (Join-Path $BenchmarkTraceDir "replay-summary.md") -Raw
+if ($BenchmarkReplaySummary -notmatch "Report Artifacts") {
+    throw "Packaged benchmark replay summary did not include artifact manifest"
+}
+if ($BenchmarkReplaySummary -notmatch "runs.jsonl") {
+    throw "Packaged benchmark replay summary did not include metrics artifact"
 }
 
 # Persist trace health so package smoke runs leave a reviewable monitoring artifact.
