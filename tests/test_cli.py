@@ -1587,6 +1587,9 @@ def test_cli_trace_health_writes_json(
         "expected_count": 4,
         "reported_count": 4,
     }
+    assert proof_latest["proof_warnings"] == [
+        "browser-fixture: video_path is external",
+    ]
 
 
 def test_cli_trace_health_writes_report_file(

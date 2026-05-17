@@ -372,6 +372,8 @@ abuse, and hidden automation are not supported.
 - [x] Render proof-finalization warnings in trace-health CLI and Markdown rows.
 - [x] Add CLI JSON coverage for proof-finalization summary metadata in latest
       traces.
+- [x] Add CLI JSON coverage for proof-finalization warning metadata in latest
+      traces.
 - [x] Reject JSON booleans as compact trace-health and proof-summary counts.
 - [x] Add CLI regression coverage for boolean summary-count filtering.
 - [x] Add CLI JSON coverage for benchmark trace-health metadata in artifact
