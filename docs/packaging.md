@@ -13,8 +13,8 @@ DeskPilot packages the Windows executable with PyInstaller.
 - `scripts/build-windows-installer.ps1` builds both executables and writes a
   local installer bundle plus `dist/DeskPilot-Windows.zip`.
 - `scripts/verify-windows-package.ps1` runs packaged `--help`, dry-run,
-  routine listing, trace replay, trace-health report, and native app smoke
-  checks.
+  routine listing, trace replay, benchmark replay, trace-health report, and
+  native app smoke checks.
 - `scripts/run-windows-proof-suite.ps1` runs the browser, native, mixed, and
   recovery proof pack on an owned unlocked Windows desktop, then writes suite
   reports, status JSON, archive, and review template artifacts.
@@ -60,13 +60,14 @@ wants `bin\` added to their user PATH.
 `scripts\verify-windows-package.ps1` creates local smoke traces under
 `dist\package-smoke\dry-run-traces`, runs `deskpilot.exe dry-run` with that
 package-smoke trace root and verifies that `final-report.json` was written,
-runs `deskpilot.exe replay` against a replay fixture in the same trace root,
-runs `deskpilot.exe trace-health --output --markdown-output
---fail-on-attention` against the smoke trace root, verifies the persisted
-`trace-health.json` and `trace-health.md` reports are healthy, lists routines
-from `routine_packs\`, and runs `deskpilot-app.exe --check` plus
-`deskpilot-app.exe --describe-shell` when the app executable exists. The app
-check must report bundled PySide6 availability for packaged Windows builds.
+runs `deskpilot.exe replay` against run and benchmark replay fixtures in the
+same trace root, writes a benchmark `replay-summary.md`, runs `deskpilot.exe
+trace-health --output --markdown-output --fail-on-attention` against the smoke
+trace root, verifies the persisted `trace-health.json` and `trace-health.md`
+reports are healthy, lists routines from `routine_packs\`, and runs
+`deskpilot-app.exe --check` plus `deskpilot-app.exe --describe-shell` when the
+app executable exists. The app check must report bundled PySide6 availability
+for packaged Windows builds.
 
 `scripts\run-windows-proof-suite.ps1` is the real desktop evidence collector.
 Run it only from an owned, unlocked Windows desktop or VM. From source, pass

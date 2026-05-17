@@ -78,12 +78,18 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "$SmokeTraceRoot = Join-Path $SmokeRoot \"dry-run-traces\"" in script
     assert "$TraceDir = Join-Path $SmokeTraceRoot \"trace-replay\"" in script
     assert (
+        "$BenchmarkTraceDir = Join-Path $SmokeTraceRoot \"benchmark-replay\""
+        in script
+    )
+    assert (
         "& $ExePath dry-run examples/browser-task.yaml --config $SmokeConfigPath"
         in script
     )
     assert "Packaged dry-run did not write final-report.json" in script
     assert "& $ExePath list-routines --routine-pack-root $RoutinePackRoot" in script
     assert "& $ExePath replay $TraceDir" in script
+    assert "& $ExePath replay $BenchmarkTraceDir --write-summary" in script
+    assert "Packaged benchmark replay did not write replay-summary.md" in script
     assert "$TraceHealthReport = Join-Path $SmokeRoot \"trace-health.json\"" in script
     assert "$TraceHealthSummary = Join-Path $SmokeRoot \"trace-health.md\"" in script
     assert (
@@ -93,12 +99,13 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         in script
     )
     assert "Packaged trace-health did not write" in script
-    assert "$TraceHealth.trace_count -lt 2" in script
+    assert "$TraceHealth.trace_count -lt 3" in script
     assert "$TraceHealth.health_status -ne \"ok\"" in script
     assert "& $AppExePath --check" in script
     assert "PySide6: available" in script
     assert "& $AppExePath --describe-shell" in script
     assert "final-report.json" in script
+    assert "benchmark-report.json" in script
     assert "trace health report" in script
 
 

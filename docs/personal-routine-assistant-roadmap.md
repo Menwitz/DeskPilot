@@ -785,6 +785,8 @@ abuse, and hidden automation are not supported.
       reports.
 - [x] Keep packaged smoke trace-health scans limited to report-bearing replay
       and dry-run trace directories.
+- [x] Add packaged-app smoke coverage for benchmark replay summaries and
+      benchmark trace-health inclusion.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 

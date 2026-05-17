@@ -17,7 +17,9 @@ if (Test-Path $SmokeRoot) {
 }
 $SmokeTraceRoot = Join-Path $SmokeRoot "dry-run-traces"
 $TraceDir = Join-Path $SmokeTraceRoot "trace-replay"
+$BenchmarkTraceDir = Join-Path $SmokeTraceRoot "benchmark-replay"
 New-Item -ItemType Directory -Force -Path $TraceDir | Out-Null
+New-Item -ItemType Directory -Force -Path $BenchmarkTraceDir | Out-Null
 @'
 {
   "task_name": "packaged smoke replay",
@@ -29,6 +31,56 @@ New-Item -ItemType Directory -Force -Path $TraceDir | Out-Null
   "events": []
 }
 '@ | Set-Content -Encoding UTF8 (Join-Path $TraceDir "final-report.json")
+
+# Benchmark replay is seeded locally so packaged verification covers monitoring
+# reports without requiring live desktop input or long repeated runs.
+@'
+{
+  "task_path": "examples/browser-task.yaml",
+  "trace_health_path": "trace-health.json",
+  "iterations": 1,
+  "summary": {
+    "success_rate": 1.0,
+    "grounding_accuracy": 1.0,
+    "ambiguity_rate": 0.0,
+    "recovery_rate": 0.0,
+    "operator_intervention_rate": 0.0
+  },
+  "acceptance": {
+    "status": "passed"
+  },
+  "baseline_comparison": {
+    "status": "neutral"
+  },
+  "observability_contract": {
+    "configured": true,
+    "benchmark_task_id": "packaging-smoke",
+    "pipeline_modes": ["packaged-cli", "replay"],
+    "deep_search_sources": ["benchmark-report", "trace-health"],
+    "required_trace_phases": ["observe_screen"],
+    "required_report_fields": ["status"],
+    "required_metrics": ["success_rate"]
+  },
+  "monitoring_coverage": {
+    "configured": true,
+    "passed": true,
+    "observed_trace_phases": ["observe_screen"],
+    "missing_trace_phases": [],
+    "observed_report_fields": ["status"],
+    "missing_report_fields": []
+  },
+  "runs": [
+    {
+      "iteration": 1,
+      "status": "passed",
+      "trace_dir": "dry-run-traces/trace-replay",
+      "task_time_seconds": 0.1,
+      "step_count": 0,
+      "action_count": 0
+    }
+  ]
+}
+'@ | Set-Content -Encoding UTF8 (Join-Path $BenchmarkTraceDir "benchmark-report.json")
 
 $SmokeConfigPath = Join-Path $SmokeRoot "default-config.yaml"
 $SmokeTraceRootYaml = $SmokeTraceRoot -replace "\\", "/"
@@ -42,6 +94,10 @@ $SmokeConfig | Set-Content -Encoding UTF8 $SmokeConfigPath
 & $ExePath dry-run examples/browser-task.yaml --config $SmokeConfigPath
 & $ExePath list-routines --routine-pack-root $RoutinePackRoot
 & $ExePath replay $TraceDir
+& $ExePath replay $BenchmarkTraceDir --write-summary
+if (-not (Test-Path (Join-Path $BenchmarkTraceDir "replay-summary.md"))) {
+    throw "Packaged benchmark replay did not write replay-summary.md"
+}
 
 # Persist trace health so package smoke runs leave a reviewable monitoring artifact.
 $TraceHealthReport = Join-Path $SmokeRoot "trace-health.json"
@@ -54,7 +110,7 @@ if (-not (Test-Path $TraceHealthSummary)) {
     throw "Packaged trace-health did not write $TraceHealthSummary"
 }
 $TraceHealth = Get-Content $TraceHealthReport -Raw | ConvertFrom-Json
-if ($TraceHealth.trace_count -lt 2) {
+if ($TraceHealth.trace_count -lt 3) {
     throw "Packaged trace-health report did not include smoke traces from $SmokeTraceRoot"
 }
 if ($TraceHealth.health_status -ne "ok") {
@@ -80,4 +136,4 @@ if (Test-Path $AppExePath) {
     Write-Host "Operator app executable not found; skipping app smoke: $AppExePath"
 }
 
-Write-Host "Packaged help, dry-run report, routine listing, trace replay, trace health report, and app checks passed"
+Write-Host "Packaged help, dry-run report, routine listing, trace replay, benchmark replay, trace health report, and app checks passed"
