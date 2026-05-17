@@ -110,6 +110,7 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "& $AppExePath --describe-shell" in script
     assert "final-report.json" in script
     assert "benchmark-report.json" in script
+    assert '"schema_version": "benchmark_report_v1"' in script
     assert "trace health report" in script
 
 

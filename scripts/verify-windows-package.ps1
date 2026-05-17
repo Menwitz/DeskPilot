@@ -36,6 +36,8 @@ New-Item -ItemType Directory -Force -Path $BenchmarkTraceDir | Out-Null
 # reports without requiring live desktop input or long repeated runs.
 @'
 {
+  "schema_version": "benchmark_report_v1",
+  "generated_at": "2026-05-17T00:00:00+00:00",
   "task_path": "examples/browser-task.yaml",
   "trace_health_path": "trace-health.json",
   "iterations": 1,

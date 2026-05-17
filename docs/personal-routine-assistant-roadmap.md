@@ -800,6 +800,8 @@ abuse, and hidden automation are not supported.
       benchmark replay fixture.
 - [x] Verify packaged trace-health JSON and Markdown keep the trace-health
       schema version.
+- [x] Keep the packaged benchmark replay fixture on the current benchmark
+      report schema.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 
