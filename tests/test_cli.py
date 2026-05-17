@@ -1410,6 +1410,38 @@ def test_cli_trace_health_writes_json(
     assert payload["by_status"] == {"ready": 1}
 
 
+def test_cli_trace_health_writes_report_file(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_root = tmp_path / "traces"
+    trace_dir = trace_root / "20260516T000000Z-run"
+    trace_dir.mkdir(parents=True)
+    (trace_dir / "final-report.json").write_text(
+        json.dumps({"status": "passed"}),
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "reports" / "trace-health.json"
+
+    status = main(
+        [
+            "trace-health",
+            "--trace-root",
+            str(trace_root),
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert status == 0
+    assert f"report: {output_path}" in output
+    assert payload["trace_count"] == 1
+    assert payload["by_kind"] == {"run": 1}
+    assert payload["by_status"] == {"passed": 1}
+
+
 def test_cli_replay_summarizes_goal_plan_trace(
     tmp_path: Path,
     capsys: CaptureFixture[str],

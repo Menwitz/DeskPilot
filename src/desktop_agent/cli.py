@@ -531,6 +531,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     trace_health_parser.add_argument("--limit", default=50, type=int)
     trace_health_parser.add_argument("--json", action="store_true")
+    trace_health_parser.add_argument("--output", type=Path)
 
     analyze_failed_run_parser = subparsers.add_parser(
         "analyze-failed-run",
@@ -2547,8 +2548,16 @@ def _replay_proof_suite(args: argparse.Namespace) -> int:
 
 def _trace_health(args: argparse.Namespace) -> int:
     health = LocalTraceService(args.trace_root).trace_health(limit=args.limit)
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(
+            json.dumps(health, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
     if args.json:
         print(json.dumps(health, indent=2, sort_keys=True))
+        if args.output is not None:
+            print(f"report: {args.output}")
         return 0
     print(f"trace_root: {args.trace_root}")
     print(f"trace_count: {health['trace_count']}")
@@ -2558,6 +2567,8 @@ def _trace_health(args: argparse.Namespace) -> int:
     print("by_status:")
     for name, count in _int_mapping(health.get("by_status")).items():
         print(f"- {name}: {count}")
+    if args.output is not None:
+        print(f"report: {args.output}")
     return 0
 
 

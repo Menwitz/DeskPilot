@@ -254,7 +254,9 @@ access.
 
 `desktop-agent trace-health --trace-root traces` prints local trace counts by
 report kind and status. Add `--json` when a dashboard, CI step, or monitoring
-script needs the same payload used by the operator app trace service.
+script needs the same payload used by the operator app trace service. Add
+`--output traces/trace-health.json` to persist the monitoring payload as a local
+report artifact.
 
 `desktop-agent analyze-failed-run <trace-dir>` reads `final-report.json` and
 writes `failed-run-analysis.json` plus `failed-run-analysis.md`. The analysis
