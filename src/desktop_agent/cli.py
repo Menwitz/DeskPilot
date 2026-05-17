@@ -2607,6 +2607,11 @@ def _replay_proof_suite(args: argparse.Namespace) -> int:
         print("errors:")
         for error in errors:
             print(f"- {error}")
+    warnings = _string_list(payload.get("warnings"))
+    if warnings:
+        print("warnings:")
+        for warning in warnings:
+            print(f"- {warning}")
     if args.write_summary:
         summary_path = _write_proof_suite_replay_summary(args.trace_dir, payload)
         print(f"summary: {summary_path}")
@@ -3088,6 +3093,10 @@ def _proof_suite_replay_summary_markdown(
     if errors:
         lines.extend(["", "## Errors", ""])
         lines.extend(f"- {error}" for error in errors)
+    warnings = _string_list(payload.get("warnings"))
+    if warnings:
+        lines.extend(["", "## Warnings", ""])
+        lines.extend(f"- {warning}" for warning in warnings)
     return "\n".join(lines) + "\n"
 
 

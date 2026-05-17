@@ -1896,6 +1896,7 @@ def test_cli_replay_summarizes_proof_suite_finalization(
                     "promotion": str(trace_dir / "proof-suite-promotion.json"),
                 },
                 "errors": [],
+                "warnings": ["browser-fixture: video_path is not present"],
             },
         ),
         encoding="utf-8",
@@ -1913,11 +1914,15 @@ def test_cli_replay_summarizes_proof_suite_finalization(
     assert "- expected_count: 4" in output
     assert "- artifact_count: 7" in output
     assert "- suite_validation: passed" in output
+    assert "warnings:" in output
+    assert "- browser-fixture: video_path is not present" in output
     assert f"summary: {summary_path}" in output
     assert "# DeskPilot Proof Suite Replay Summary" in summary
     assert "- `expected_count`: `4`" in summary
     assert "- `promotion_checked_count`: `12`" in summary
     assert "- `promotion`: `" in summary
+    assert "## Warnings" in summary
+    assert "- browser-fixture: video_path is not present" in summary
 
 
 def test_cli_replay_summarizes_benchmark_report(

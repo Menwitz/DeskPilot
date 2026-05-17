@@ -222,6 +222,8 @@ abuse, and hidden automation are not supported.
       with gate, artifact, error, and summary output.
 - [x] Render proof-finalization summary counts in CLI replay output and replay
       Markdown.
+- [x] Render proof-finalization warnings in CLI replay output and replay
+      Markdown.
 - [x] Add local trace health counts by report kind and status for operator
       dashboard monitoring.
 - [x] Add native dashboard trace-health state and controller refresh support.
