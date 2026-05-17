@@ -206,6 +206,8 @@ abuse, and hidden automation are not supported.
       one ordered post-review flow.
 - [x] Add compact summary counts to `proof-suite-status.json` for monitoring
       pipelines.
+- [x] Render compact proof-suite summary counts in the human Markdown proof
+      report.
 - [x] Add `proof-finalization-status.json` as a unified post-review monitoring
       rollup for suite, promotion, and archive verification gates.
 - [x] Surface proof-suite finalization rollups through the local trace service

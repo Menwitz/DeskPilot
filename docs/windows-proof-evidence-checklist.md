@@ -100,8 +100,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       before a proof bundle is promoted.
 - [ ] `desktop-agent proof validate-suite <trace-root> --require-preflight`
       reports `suite: passed` before the four-workflow proof pack is promoted.
-- [ ] `proof-suite-report.md` summarizes every required proof, missing bundle,
-      duplicate bundle, warning, and blocking validation error.
+- [ ] `proof-suite-report.md` summarizes count rollups, every required proof,
+      missing bundle, duplicate bundle, warning, and blocking validation error.
 - [ ] `proof-suite-status.json` records the suite status, expected proofs,
       summary counts, missing proofs, duplicate proofs, warnings, errors, and
       per-proof artifact paths for monitoring.

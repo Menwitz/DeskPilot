@@ -551,6 +551,7 @@ def validate_proof_suite(
 def render_proof_suite_report(validation: ProofSuiteValidation) -> str:
     """Render a reviewer-facing Markdown report for a proof suite validation."""
 
+    summary = _proof_suite_status_summary(validation)
     bundles_by_name = {
         bundle.proof_name: bundle
         for bundle in validation.bundle_results
@@ -562,6 +563,11 @@ def render_proof_suite_report(validation: ProofSuiteValidation) -> str:
         f"- Trace root: `{validation.trace_root}`",
         f"- Status: `{'passed' if validation.passed else 'failed'}`",
         f"- Expected proofs: `{', '.join(validation.expected_proofs)}`",
+        f"- Reported proofs: `{summary['reported_count']}`",
+        f"- Passed proofs: `{summary['passed_count']}`",
+        f"- Failed proofs: `{summary['failed_count']}`",
+        f"- Missing proofs: `{summary['missing_count']}`",
+        f"- Artifact references: `{summary['artifact_count']}`",
         "",
         "## Proofs",
         "",
@@ -684,7 +690,7 @@ def proof_suite_status_metadata(validation: ProofSuiteValidation) -> dict[str, o
         "schema_version": 1,
         "trace_root": str(validation.trace_root),
         "status": "passed" if validation.passed else "failed",
-        "summary": _proof_suite_status_summary(validation, proofs),
+        "summary": _proof_suite_status_summary(validation),
         "preflight_report_path": str(validation.preflight_report_path)
         if validation.preflight_report_path is not None
         else None,
@@ -704,15 +710,16 @@ def proof_suite_status_metadata(validation: ProofSuiteValidation) -> dict[str, o
 
 def _proof_suite_status_summary(
     validation: ProofSuiteValidation,
-    proofs: list[dict[str, object]],
 ) -> dict[str, int]:
     """Summarize proof-suite status for monitors that only need counts."""
 
     return {
         "expected_count": len(validation.expected_proofs),
         "reported_count": len(validation.bundle_results),
-        "passed_count": sum(1 for proof in proofs if proof.get("status") == "passed"),
-        "failed_count": sum(1 for proof in proofs if proof.get("status") == "failed"),
+        "passed_count": sum(1 for bundle in validation.bundle_results if bundle.passed),
+        "failed_count": sum(
+            1 for bundle in validation.bundle_results if not bundle.passed
+        ),
         "missing_count": len(validation.missing_proofs),
         "duplicate_count": len(validation.duplicate_proofs),
         "artifact_count": sum(

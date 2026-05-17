@@ -380,6 +380,10 @@ def test_write_proof_suite_report_summarizes_bundle_status(tmp_path: Path) -> No
     assert report_path.read_text(encoding="utf-8") == report
     assert "# DeskPilot Windows Proof Suite Report" in report
     assert "- Status: `failed`" in report
+    assert "- Reported proofs: `1`" in report
+    assert "- Passed proofs: `1`" in report
+    assert "- Missing proofs: `3`" in report
+    assert "- Artifact references: `5`" in report
     assert "### browser-fixture" in report
     assert "- Status: `passed`" in report
     assert "### native-fixture" in report
