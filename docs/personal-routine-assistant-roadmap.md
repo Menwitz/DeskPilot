@@ -237,6 +237,7 @@ abuse, and hidden automation are not supported.
       human-readable local health report.
 - [x] Add proof-suite gate details to native trace-viewer state so local proof
       reports can show suite, promotion, and archive status in the app.
+- [x] Render proof-finalization summary counts in native trace-viewer state.
 - [x] Add an operator controller path that hydrates trace-viewer state directly
       from local trace reports, including proof-suite finalization reports.
 - [x] Surface goal-plan candidate rankings as native trace-viewer candidate

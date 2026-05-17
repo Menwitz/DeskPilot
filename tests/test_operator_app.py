@@ -318,6 +318,12 @@ def test_trace_viewer_timeline_loads_proof_suite_status(
     state = trace_viewer_timeline_from_report(
         {
             "status": "passed",
+            "summary": {
+                "expected_count": 4,
+                "reported_count": 4,
+                "artifact_count": 7,
+                "error_count": 0,
+            },
             "gates": {
                 "suite_validation": "passed",
                 "promotion_verification": "passed",
@@ -336,11 +342,18 @@ def test_trace_viewer_timeline_loads_proof_suite_status(
         "promotion_verification: passed",
         "archive_verification: passed",
     ]
+    assert metadata["verification_results"] == [
+        "expected_count: 4",
+        "reported_count: 4",
+        "artifact_count: 7",
+        "error_count: 0",
+    ]
     assert metadata["final_report_path"] == str(
         tmp_path / "proof-finalization-status.json",
     )
     assert "Trace kind: proof_suite" in text
     assert "suite_validation: passed" in text
+    assert "artifact_count: 7" in text
 
 
 def test_trace_viewer_timeline_loads_goal_candidate_reasoning(

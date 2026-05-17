@@ -118,7 +118,8 @@ project modules:
 - Trace viewer state: benchmark reports render with benchmark kind, acceptance
   status, baseline comparison status, monitoring coverage status, and
   schema/timestamp metadata, compact trace-health status, plus benchmark report
-  artifact links.
+  artifact links. Proof-suite finalization reports render gate status and
+  compact finalization summary counts.
 - Routine-pack service: list installed packs, install validated local packs,
   and remove installed packs.
 

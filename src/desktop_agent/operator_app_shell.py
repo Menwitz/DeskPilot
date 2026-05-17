@@ -547,13 +547,18 @@ def trace_viewer_timeline_from_report(
     """Create trace-viewer state from a local report JSON payload."""
 
     gates = report.get("gates")
+    trace_kind = _trace_kind_from_report(report, report_path)
     return TraceViewerTimelineState(
-        trace_kind=_trace_kind_from_report(report, report_path),
+        trace_kind=trace_kind,
         candidate_reasoning=_candidate_ranking_lines(
             report.get("candidate_routines"),
         ),
         proof_gates=_proof_gate_lines(gates),
-        verification_results=_benchmark_verification_lines(report),
+        verification_results=(
+            _proof_summary_lines(report)
+            if trace_kind == "proof_suite"
+            else _benchmark_verification_lines(report)
+        ),
         final_report_path=report_path,
         status=_timeline_status_from_report(report),
     )
@@ -599,6 +604,19 @@ def _proof_gate_lines(gates: object) -> tuple[str, ...]:
         if isinstance(name, str) and isinstance(status, str):
             lines.append(f"{name}: {status}")
     return tuple(lines)
+
+
+def _proof_summary_lines(report: Mapping[str, object]) -> tuple[str, ...]:
+    """Render compact proof finalization counts for trace viewer diagnostics."""
+
+    summary = report.get("summary")
+    if not isinstance(summary, Mapping):
+        return ()
+    return tuple(
+        f"{name}: {value}"
+        for name, value in summary.items()
+        if isinstance(name, str) and isinstance(value, int)
+    )
 
 
 def _candidate_ranking_lines(candidates: object) -> tuple[str, ...]:
