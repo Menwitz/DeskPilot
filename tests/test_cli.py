@@ -1448,6 +1448,38 @@ def test_cli_trace_health_writes_report_file(
     assert payload["health_status"] == "ok"
 
 
+def test_cli_trace_health_writes_markdown_summary(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_root = tmp_path / "traces"
+    trace_dir = trace_root / "20260516T000000Z-run"
+    trace_dir.mkdir(parents=True)
+    (trace_dir / "final-report.json").write_text(
+        json.dumps({"status": "failed"}),
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "reports" / "trace-health.md"
+
+    status = main(
+        [
+            "trace-health",
+            "--trace-root",
+            str(trace_root),
+            "--markdown-output",
+            str(output_path),
+        ],
+    )
+
+    output = capsys.readouterr().out
+    summary = output_path.read_text(encoding="utf-8")
+    assert status == 0
+    assert f"summary: {output_path}" in output
+    assert "# Trace Health" in summary
+    assert "- Health status: `attention`" in summary
+    assert f"`{trace_dir}`" in summary
+
+
 def test_cli_trace_health_json_output_stays_parseable_with_report_file(
     tmp_path: Path,
     capsys: CaptureFixture[str],
@@ -1460,6 +1492,7 @@ def test_cli_trace_health_json_output_stays_parseable_with_report_file(
         encoding="utf-8",
     )
     output_path = tmp_path / "reports" / "trace-health.json"
+    summary_path = tmp_path / "reports" / "trace-health.md"
 
     status = main(
         [
@@ -1469,6 +1502,8 @@ def test_cli_trace_health_json_output_stays_parseable_with_report_file(
             "--json",
             "--output",
             str(output_path),
+            "--markdown-output",
+            str(summary_path),
         ],
     )
 
@@ -1476,8 +1511,10 @@ def test_cli_trace_health_json_output_stays_parseable_with_report_file(
     payload = json.loads(captured.out)
     assert status == 0
     assert f"report: {output_path}" in captured.err
+    assert f"summary: {summary_path}" in captured.err
     assert payload["trace_count"] == 1
     assert output_path.exists()
+    assert summary_path.exists()
 
 
 def test_cli_trace_health_can_fail_on_attention(

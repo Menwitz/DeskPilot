@@ -45,9 +45,13 @@ $SmokeConfig | Set-Content -Encoding UTF8 $SmokeConfigPath
 
 # Persist trace health so package smoke runs leave a reviewable monitoring artifact.
 $TraceHealthReport = Join-Path $SmokeRoot "trace-health.json"
-& $ExePath trace-health --trace-root $SmokeTraceRoot --output $TraceHealthReport --fail-on-attention
+$TraceHealthSummary = Join-Path $SmokeRoot "trace-health.md"
+& $ExePath trace-health --trace-root $SmokeTraceRoot --output $TraceHealthReport --markdown-output $TraceHealthSummary --fail-on-attention
 if (-not (Test-Path $TraceHealthReport)) {
     throw "Packaged trace-health did not write $TraceHealthReport"
+}
+if (-not (Test-Path $TraceHealthSummary)) {
+    throw "Packaged trace-health did not write $TraceHealthSummary"
 }
 $TraceHealth = Get-Content $TraceHealthReport -Raw | ConvertFrom-Json
 if ($TraceHealth.trace_count -lt 2) {

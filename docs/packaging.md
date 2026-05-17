@@ -61,9 +61,10 @@ wants `bin\` added to their user PATH.
 `dist\package-smoke\dry-run-traces`, runs `deskpilot.exe dry-run` with that
 package-smoke trace root and verifies that `final-report.json` was written,
 runs `deskpilot.exe replay` against a replay fixture in the same trace root,
-runs `deskpilot.exe trace-health --output --fail-on-attention` against the
-smoke trace root, verifies the persisted `trace-health.json` report is healthy,
-lists routines from `routine_packs\`, and runs `deskpilot-app.exe --check` plus
+runs `deskpilot.exe trace-health --output --markdown-output
+--fail-on-attention` against the smoke trace root, verifies the persisted
+`trace-health.json` and `trace-health.md` reports are healthy, lists routines
+from `routine_packs\`, and runs `deskpilot-app.exe --check` plus
 `deskpilot-app.exe --describe-shell` when the app executable exists. The app
 check must report bundled PySide6 availability for packaged Windows builds.
 

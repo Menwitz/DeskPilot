@@ -532,6 +532,7 @@ def _build_parser() -> argparse.ArgumentParser:
     trace_health_parser.add_argument("--limit", default=50, type=int)
     trace_health_parser.add_argument("--json", action="store_true")
     trace_health_parser.add_argument("--output", type=Path)
+    trace_health_parser.add_argument("--markdown-output", type=Path)
     trace_health_parser.add_argument(
         "--fail-on-attention",
         action="store_true",
@@ -2560,10 +2561,18 @@ def _trace_health(args: argparse.Namespace) -> int:
             json.dumps(health, indent=2, sort_keys=True),
             encoding="utf-8",
         )
+    if args.markdown_output is not None:
+        args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+        args.markdown_output.write_text(
+            _render_trace_health_markdown(args.trace_root, health),
+            encoding="utf-8",
+        )
     if args.json:
         print(json.dumps(health, indent=2, sort_keys=True))
         if args.output is not None:
             print(f"report: {args.output}", file=sys.stderr)
+        if args.markdown_output is not None:
+            print(f"summary: {args.markdown_output}", file=sys.stderr)
         return exit_code
     print(f"trace_root: {args.trace_root}")
     print(f"health_status: {health.get('health_status', 'unknown')}")
@@ -2589,7 +2598,59 @@ def _trace_health(args: argparse.Namespace) -> int:
                 print(f"- {trace_dir} ({kind}/{status})")
     if args.output is not None:
         print(f"report: {args.output}")
+    if args.markdown_output is not None:
+        print(f"summary: {args.markdown_output}")
     return exit_code
+
+
+def _render_trace_health_markdown(
+    trace_root: Path,
+    health: dict[str, object],
+) -> str:
+    lines = [
+        "# Trace Health",
+        "",
+        f"- Trace root: `{trace_root}`",
+        f"- Health status: `{health.get('health_status', 'unknown')}`",
+        f"- Trace count: `{health.get('trace_count', 0)}`",
+        "",
+        "## Counts By Kind",
+        "",
+        *_trace_health_count_lines(health.get("by_kind")),
+        "",
+        "## Counts By Status",
+        "",
+        *_trace_health_count_lines(health.get("by_status")),
+        "",
+        "## Attention Traces",
+        "",
+        *_trace_health_attention_lines(health.get("attention_traces")),
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def _trace_health_count_lines(value: object) -> list[str]:
+    counts = _int_mapping(value)
+    if not counts:
+        return ["- None"]
+    return [f"- `{name}`: `{count}`" for name, count in counts.items()]
+
+
+def _trace_health_attention_lines(value: object) -> list[str]:
+    if not isinstance(value, list) or not value:
+        return ["- None"]
+    lines: list[str] = []
+    for trace in value:
+        if not isinstance(trace, dict):
+            continue
+        trace_dir = trace.get("trace_dir", "unknown")
+        report_path = trace.get("report_path", "none")
+        kind = trace.get("kind", "unknown")
+        status = trace.get("status", "unknown")
+        lines.append(
+            f"- `{status}` `{kind}` trace `{trace_dir}` report `{report_path}`",
+        )
+    return lines or ["- None"]
 
 
 def _trace_health_exit_code(

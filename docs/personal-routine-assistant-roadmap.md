@@ -225,6 +225,8 @@ abuse, and hidden automation are not supported.
       pipelines can fail on unhealthy local trace reports.
 - [x] Add attention trace summaries to trace-health JSON, CLI output, and the
       native dashboard attention count.
+- [x] Add `trace-health --markdown-output` so monitoring runs can persist a
+      human-readable local health report.
 - [x] Add proof-suite gate details to native trace-viewer state so local proof
       reports can show suite, promotion, and archive status in the app.
 - [x] Add an operator controller path that hydrates trace-viewer state directly

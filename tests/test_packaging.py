@@ -85,9 +85,11 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "& $ExePath list-routines --routine-pack-root $RoutinePackRoot" in script
     assert "& $ExePath replay $TraceDir" in script
     assert "$TraceHealthReport = Join-Path $SmokeRoot \"trace-health.json\"" in script
+    assert "$TraceHealthSummary = Join-Path $SmokeRoot \"trace-health.md\"" in script
     assert (
         "& $ExePath trace-health --trace-root $SmokeTraceRoot "
-        "--output $TraceHealthReport --fail-on-attention"
+        "--output $TraceHealthReport --markdown-output $TraceHealthSummary "
+        "--fail-on-attention"
         in script
     )
     assert "Packaged trace-health did not write" in script
