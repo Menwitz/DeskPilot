@@ -161,6 +161,16 @@ def test_trace_health_panel_tracks_counts() -> None:
                     },
                 },
             ],
+            "latest": [
+                {
+                    "kind": "proof_suite",
+                    "proof_summary": {
+                        "expected_count": 4,
+                        "artifact_count": 7,
+                        "error_count": 0,
+                    },
+                },
+            ],
         },
     )
     empty = TraceHealthPanelState()
@@ -182,6 +192,9 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert metadata["generated_at"] == "2026-05-17T00:00:00+00:00"
     assert metadata["benchmark_health_status"] == "ok"
     assert metadata["benchmark_artifact_count"] == 1
+    assert metadata["proof_expected_count"] == 4
+    assert metadata["proof_artifact_count"] == 7
+    assert metadata["proof_error_count"] == 0
     assert "Trace Health" in text
     assert "Schema version: trace_health_v1" in text
     assert "Generated at: 2026-05-17T00:00:00+00:00" in text
@@ -191,6 +204,9 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert "Artifact traces: 1" in text
     assert "Benchmark health: ok" in text
     assert "Benchmark health artifacts: 1" in text
+    assert "Proof expected: 4" in text
+    assert "Proof artifacts: 7" in text
+    assert "Proof errors: 0" in text
     assert "passed=2" in text
 
 

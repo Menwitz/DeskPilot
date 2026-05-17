@@ -99,6 +99,9 @@ class TraceHealthPanelState:
     generated_at: str | None = None
     benchmark_health_status: str | None = None
     benchmark_artifact_count: int | None = None
+    proof_expected_count: int | None = None
+    proof_artifact_count: int | None = None
+    proof_error_count: int | None = None
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -112,6 +115,9 @@ class TraceHealthPanelState:
             "generated_at": self.generated_at,
             "benchmark_health_status": self.benchmark_health_status,
             "benchmark_artifact_count": self.benchmark_artifact_count,
+            "proof_expected_count": self.proof_expected_count,
+            "proof_artifact_count": self.proof_artifact_count,
+            "proof_error_count": self.proof_error_count,
         }
 
 
@@ -401,6 +407,7 @@ def trace_health_panel_from_metadata(
     schema_version = payload.get("schema_version")
     generated_at = payload.get("generated_at")
     benchmark_status, benchmark_artifacts = _benchmark_trace_health(payload)
+    proof_expected, proof_artifacts, proof_errors = _proof_trace_summary(payload)
     return TraceHealthPanelState(
         trace_count=trace_count if isinstance(trace_count, int) else 0,
         artifact_count=artifact_trace_count
@@ -416,6 +423,9 @@ def trace_health_panel_from_metadata(
         generated_at=generated_at if isinstance(generated_at, str) else None,
         benchmark_health_status=benchmark_status,
         benchmark_artifact_count=benchmark_artifacts,
+        proof_expected_count=proof_expected,
+        proof_artifact_count=proof_artifacts,
+        proof_error_count=proof_errors,
     )
 
 
@@ -426,6 +436,19 @@ def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
         state.benchmark_artifact_count
         if state.benchmark_artifact_count is not None
         else "unknown"
+    )
+    proof_expected = (
+        state.proof_expected_count
+        if state.proof_expected_count is not None
+        else "unknown"
+    )
+    proof_artifacts = (
+        state.proof_artifact_count
+        if state.proof_artifact_count is not None
+        else "unknown"
+    )
+    proof_errors = (
+        state.proof_error_count if state.proof_error_count is not None else "unknown"
     )
     return "\n".join(
         [
@@ -438,6 +461,9 @@ def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
             f"- Artifact traces: {state.artifact_count}",
             f"- Benchmark health: {state.benchmark_health_status or 'unknown'}",
             f"- Benchmark health artifacts: {benchmark_artifacts}",
+            f"- Proof expected: {proof_expected}",
+            f"- Proof artifacts: {proof_artifacts}",
+            f"- Proof errors: {proof_errors}",
             f"- By kind: {_render_count_pairs(state.kind_counts)}",
             f"- By status: {_render_count_pairs(state.status_counts)}",
         ],
@@ -469,6 +495,33 @@ def _benchmark_trace_health(
             artifact_count if isinstance(artifact_count, int) else None,
         )
     return None, None
+
+
+def _proof_trace_summary(
+    payload: Mapping[str, object],
+) -> tuple[int | None, int | None, int | None]:
+    """Extract compact proof finalization counts from trace-health metadata."""
+
+    traces: list[object] = []
+    for key in ("latest", "artifact_traces"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            traces.extend(value)
+    for trace in traces:
+        if not isinstance(trace, Mapping) or trace.get("kind") != "proof_suite":
+            continue
+        summary = trace.get("proof_summary")
+        if not isinstance(summary, Mapping):
+            continue
+        expected = summary.get("expected_count")
+        artifacts = summary.get("artifact_count")
+        errors = summary.get("error_count")
+        return (
+            expected if isinstance(expected, int) else None,
+            artifacts if isinstance(artifacts, int) else None,
+            errors if isinstance(errors, int) else None,
+        )
+    return None, None, None
 
 
 def render_approval_dialog_text(state: ApprovalDialogState) -> str:

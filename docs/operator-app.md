@@ -115,8 +115,8 @@ project modules:
   from `proof-finalization-status.json`.
 - Trace health panel state: renders the trace-health schema version and
   generation timestamp beside trace, attention, artifact, and benchmark
-  health counts from artifact or latest trace metadata so dashboard screenshots
-  identify the monitoring contract in use.
+  health counts plus proof-finalization counts from artifact or latest trace
+  metadata so dashboard screenshots identify the monitoring contract in use.
 - Trace viewer state: benchmark reports render with benchmark kind, acceptance
   status, baseline comparison status, monitoring coverage status, and
   schema/timestamp metadata, compact trace-health status, plus benchmark report

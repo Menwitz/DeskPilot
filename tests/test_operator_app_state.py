@@ -324,6 +324,9 @@ def test_operator_app_controller_refreshes_trace_health(
     assert isinstance(trace_health["generated_at"], str)
     assert trace_health["benchmark_health_status"] is None
     assert trace_health["benchmark_artifact_count"] is None
+    assert trace_health["proof_expected_count"] is None
+    assert trace_health["proof_artifact_count"] is None
+    assert trace_health["proof_error_count"] is None
 
 
 def test_operator_app_controller_refreshes_benchmark_trace_health(
@@ -353,6 +356,36 @@ def test_operator_app_controller_refreshes_benchmark_trace_health(
     assert trace_health["status"] == "ok"
     assert trace_health["benchmark_health_status"] == "ok"
     assert trace_health["benchmark_artifact_count"] == 0
+
+
+def test_operator_app_controller_refreshes_proof_trace_summary(
+    tmp_path: Path,
+) -> None:
+    trace_root = tmp_path / "traces"
+    trace_dir = trace_root / "proof"
+    trace_dir.mkdir(parents=True)
+    (trace_dir / "proof-finalization-status.json").write_text(
+        (
+            '{"status":"passed",'
+            '"summary":{"expected_count":4,"artifact_count":7,"error_count":0},'
+            '"gates":{"suite_validation":"passed"},'
+            '"checked_artifacts":{"promotion":[],"archive":[]}}'
+        ),
+        encoding="utf-8",
+    )
+    controller = OperatorAppController(
+        _FakeRunnerService({}),
+        traces=LocalTraceService(trace_root),
+    )
+
+    state = controller.refresh_trace_health()
+    metadata = state.metadata()
+
+    trace_health = metadata["trace_health"]
+    assert isinstance(trace_health, dict)
+    assert trace_health["proof_expected_count"] == 4
+    assert trace_health["proof_artifact_count"] == 7
+    assert trace_health["proof_error_count"] == 0
 
 
 class _FakeRunnerService:
