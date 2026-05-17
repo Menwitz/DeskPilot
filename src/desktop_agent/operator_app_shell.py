@@ -438,6 +438,9 @@ def trace_viewer_timeline_from_report(
     gates = report.get("gates")
     return TraceViewerTimelineState(
         trace_kind=_trace_kind_from_report(report, report_path),
+        candidate_reasoning=_candidate_ranking_lines(
+            report.get("candidate_routines"),
+        ),
         proof_gates=_proof_gate_lines(gates),
         final_report_path=report_path,
         status=status if isinstance(status, str) else "loaded",
@@ -468,6 +471,30 @@ def _proof_gate_lines(gates: object) -> tuple[str, ...]:
         if isinstance(name, str) and isinstance(status, str):
             lines.append(f"{name}: {status}")
     return tuple(lines)
+
+
+def _candidate_ranking_lines(candidates: object) -> tuple[str, ...]:
+    if not isinstance(candidates, list):
+        return ()
+    lines: list[str] = []
+    for candidate in candidates:
+        if not isinstance(candidate, Mapping):
+            continue
+        routine_id = candidate.get("routine_id")
+        score = candidate.get("score")
+        matched_fields = candidate.get("matched_fields")
+        if not isinstance(routine_id, str):
+            continue
+        matched = _joined_string_values(matched_fields)
+        lines.append(f"{routine_id}: score {score} matched {matched}")
+    return tuple(lines)
+
+
+def _joined_string_values(value: object) -> str:
+    if not isinstance(value, list):
+        return "none"
+    items = [item for item in value if isinstance(item, str)]
+    return ", ".join(items) or "none"
 
 
 def render_routine_pack_manager_text(state: RoutinePackManagerState) -> str:

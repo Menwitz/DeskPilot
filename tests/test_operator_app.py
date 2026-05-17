@@ -263,6 +263,33 @@ def test_trace_viewer_timeline_loads_proof_suite_status(
     assert "suite_validation: passed" in text
 
 
+def test_trace_viewer_timeline_loads_goal_candidate_reasoning(
+    tmp_path: Path,
+) -> None:
+    state = trace_viewer_timeline_from_report(
+        {
+            "status": "ready",
+            "selected_routine_id": "browser.search-web",
+            "candidate_routines": [
+                {
+                    "routine_id": "browser.search-web",
+                    "score": 12.5,
+                    "matched_fields": ["tags", "outputs"],
+                },
+            ],
+        },
+        report_path=tmp_path / "goal-plan-report.json",
+    )
+    metadata = state.metadata()
+    text = render_trace_viewer_timeline_text(state)
+
+    assert metadata["trace_kind"] == "goal_plan"
+    assert metadata["candidate_reasoning"] == [
+        "browser.search-web: score 12.5 matched tags, outputs",
+    ]
+    assert "browser.search-web: score 12.5 matched tags, outputs" in text
+
+
 def test_routine_pack_manager_tracks_install_and_remove_state(tmp_path: Path) -> None:
     state = RoutinePackManagerState(
         installed_pack_ids=("browser", "native"),

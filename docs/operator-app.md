@@ -47,7 +47,8 @@ screenshots, action log, candidate reasoning, state delta, verification results,
 report kind, final report, and load status so failed runs can be inspected
 without rerunning desktop input. Proof-suite finalization reports surface their
 suite, promotion, and archive gate statuses as proof-gate lines in the same
-timeline state.
+timeline state. Goal-plan reports surface ranked candidate routines as
+candidate-reasoning lines for planner review.
 The same page includes failure-analysis review state with proposal count,
 rationale, YAML snippets, `review_required`, and `applies_automatically` fields
 so proposed fixes remain manual until approved.
