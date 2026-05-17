@@ -243,6 +243,9 @@ summary and per-step timeline without rerunning actions. Timeline rows group
 trace events by `step_id` and include compact markers for observations,
 selected candidates, verification outcomes, recovery reasons, manual handoff,
 state-delta changes, and scroll movement.
+For goal-plan traces it reads `goal-plan-report.json` and prints ranked routine
+candidates; for finalized proof-suite roots it reads
+`proof-finalization-status.json` and prints suite, promotion, and archive gates.
 Add `--write-summary` to write `replay-summary.md` in the trace directory with
 the timeline, screenshot paths from pre/post action evidence, and state-delta
 changes. The summary also includes step-level `success_evidence` and

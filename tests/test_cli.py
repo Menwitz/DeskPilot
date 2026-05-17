@@ -1433,6 +1433,46 @@ def test_cli_replay_summarizes_goal_plan_trace(
     ) in summary
 
 
+def test_cli_replay_summarizes_proof_suite_finalization(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "proof-suite"
+    trace_dir.mkdir()
+    status_path = trace_dir / "proof-finalization-status.json"
+    status_path.write_text(
+        json.dumps(
+            {
+                "status": "passed",
+                "gates": {
+                    "suite_validation": "passed",
+                    "promotion_verification": "passed",
+                    "archive_verification": "passed",
+                },
+                "artifacts": {
+                    "promotion": str(trace_dir / "proof-suite-promotion.json"),
+                },
+                "errors": [],
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    status = main(["replay", str(trace_dir), "--write-summary"])
+
+    output = capsys.readouterr().out
+    summary_path = trace_dir / "replay-summary.md"
+    summary = summary_path.read_text(encoding="utf-8")
+    assert status == 0
+    assert f"trace: {trace_dir}" in output
+    assert "proof suite: finalization" in output
+    assert "status: passed" in output
+    assert "- suite_validation: passed" in output
+    assert f"summary: {summary_path}" in output
+    assert "# DeskPilot Proof Suite Replay Summary" in summary
+    assert "- `promotion`: `" in summary
+
+
 def test_cli_analyze_failed_run_writes_review_artifacts(
     tmp_path: Path,
     capsys: CaptureFixture[str],

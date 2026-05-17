@@ -94,6 +94,7 @@ from desktop_agent.platforms.windows.uia import (
 )
 from desktop_agent.preview import build_dry_run_preview, render_dry_run_preview
 from desktop_agent.proof_manifest import (
+    PROOF_FINALIZATION_STATUS_NAME,
     run_proof_preflight,
     validate_proof_bundle,
     validate_proof_review,
@@ -2397,6 +2398,9 @@ def _replay(args: argparse.Namespace) -> int:
         goal_report_path = args.trace_dir / "goal-plan-report.json"
         if goal_report_path.exists():
             return _replay_goal_plan(args)
+        proof_suite_status_path = args.trace_dir / PROOF_FINALIZATION_STATUS_NAME
+        if proof_suite_status_path.exists():
+            return _replay_proof_suite(args)
         print(f"error: final report not found: {report_path}")
         if (args.trace_dir / "proof-manifest.json").exists():
             print(f"hint: use desktop-agent proof replay {args.trace_dir}")
@@ -2490,6 +2494,39 @@ def _replay_goal_plan(args: argparse.Namespace) -> int:
                 sort_keys=True,
             ),
         )
+    return 0
+
+
+def _replay_proof_suite(args: argparse.Namespace) -> int:
+    status_path = args.trace_dir / PROOF_FINALIZATION_STATUS_NAME
+    payload = json.loads(status_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        print("error: proof finalization status must contain a JSON object")
+        return 1
+
+    print(f"trace: {args.trace_dir}")
+    print("proof suite: finalization")
+    print(f"status: {payload.get('status', 'unknown')}")
+    gates = _string_mapping(payload.get("gates"))
+    if gates:
+        print("gates:")
+        for name, status in gates.items():
+            print(f"- {name}: {status}")
+    artifacts = _string_mapping(payload.get("artifacts"))
+    if artifacts:
+        print("artifacts:")
+        for name, path in artifacts.items():
+            print(f"- {name}: {path}")
+    errors = _string_list(payload.get("errors"))
+    if errors:
+        print("errors:")
+        for error in errors:
+            print(f"- {error}")
+    if args.write_summary:
+        summary_path = _write_proof_suite_replay_summary(args.trace_dir, payload)
+        print(f"summary: {summary_path}")
+    if args.verbose:
+        print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
 
 
@@ -2682,6 +2719,59 @@ def _goal_plan_replay_summary_markdown(
         lines.extend(["", "## Timeline", ""])
         lines.extend(timeline[1:])
     return "\n".join(lines) + "\n"
+
+
+def _write_proof_suite_replay_summary(
+    trace_dir: Path,
+    payload: dict[str, object],
+) -> Path:
+    summary_path = trace_dir / "replay-summary.md"
+    summary_path.write_text(
+        _proof_suite_replay_summary_markdown(trace_dir, payload),
+        encoding="utf-8",
+    )
+    return summary_path
+
+
+def _proof_suite_replay_summary_markdown(
+    trace_dir: Path,
+    payload: dict[str, object],
+) -> str:
+    lines = [
+        "# DeskPilot Proof Suite Replay Summary",
+        "",
+        f"- Trace: `{trace_dir}`",
+        f"- Status: `{payload.get('status', 'unknown')}`",
+    ]
+    gates = _string_mapping(payload.get("gates"))
+    if gates:
+        lines.extend(["", "## Gates", ""])
+        lines.extend(f"- `{name}`: `{status}`" for name, status in gates.items())
+    artifacts = _string_mapping(payload.get("artifacts"))
+    if artifacts:
+        lines.extend(["", "## Artifacts", ""])
+        lines.extend(f"- `{name}`: `{path}`" for name, path in artifacts.items())
+    errors = _string_list(payload.get("errors"))
+    if errors:
+        lines.extend(["", "## Errors", ""])
+        lines.extend(f"- {error}" for error in errors)
+    return "\n".join(lines) + "\n"
+
+
+def _string_mapping(value: object) -> dict[str, str]:
+    if not isinstance(value, dict):
+        return {}
+    return {
+        key: item
+        for key, item in value.items()
+        if isinstance(key, str) and isinstance(item, str)
+    }
+
+
+def _string_list(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, str)]
 
 
 def _replay_event_suffix(event: dict[str, object]) -> str:
