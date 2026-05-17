@@ -227,6 +227,7 @@ def test_operator_app_controller_loads_trace_report_state(
     (trace_dir / "proof-finalization-status.json").write_text(
         (
             '{"status":"passed","gates":{"suite_validation":"passed"},'
+            '"summary":{"expected_count":4,"artifact_count":7,"error_count":0},'
             '"checked_artifacts":{"promotion":[],"archive":[]}}'
         ),
         encoding="utf-8",
@@ -242,6 +243,11 @@ def test_operator_app_controller_loads_trace_report_state(
     assert state.trace_viewer is not None
     assert state.trace_viewer.trace_kind == "proof_suite"
     assert state.trace_viewer.proof_gates == ("suite_validation: passed",)
+    assert state.trace_viewer.verification_results == (
+        "expected_count: 4",
+        "artifact_count: 7",
+        "error_count: 0",
+    )
     assert state.trace_viewer.final_report_path == (
         trace_dir / "proof-finalization-status.json"
     )
