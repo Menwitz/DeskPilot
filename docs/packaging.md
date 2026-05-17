@@ -69,7 +69,7 @@ trace-health --output --markdown-output --fail-on-attention` against the smoke
 trace root, verifies the persisted `trace-health.json` and `trace-health.md`
 reports are healthy, schema-versioned, and include the benchmark replay in
 artifact-trace counts plus latest-trace links with artifact manifests and
-compact trace-health summary status, lists
+compact trace-health summary status in both JSON and Markdown output, lists
 routines from `routine_packs\`, and runs
 `deskpilot-app.exe --check` plus `deskpilot-app.exe --describe-shell` when the
 app executable exists. The app check must report bundled PySide6 availability

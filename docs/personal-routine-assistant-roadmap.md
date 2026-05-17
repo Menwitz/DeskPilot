@@ -842,6 +842,8 @@ abuse, and hidden automation are not supported.
       trace-health summary metadata.
 - [x] Verify packaged trace-health Markdown renders compact benchmark
       trace-health summaries.
+- [x] Verify packaged trace-health JSON carries compact benchmark trace-health
+      summaries.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 

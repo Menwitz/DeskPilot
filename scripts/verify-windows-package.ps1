@@ -147,6 +147,18 @@ if ($TraceHealth.artifact_trace_count -lt 1) {
 if ($TraceHealth.health_status -ne "ok") {
     throw "Packaged trace-health reported $($TraceHealth.health_status)"
 }
+$BenchmarkArtifactTrace = $TraceHealth.artifact_traces |
+    Where-Object { $_.kind -eq "benchmark" } |
+    Select-Object -First 1
+if (-not $BenchmarkArtifactTrace) {
+    throw "Packaged trace-health report did not include benchmark artifact trace metadata"
+}
+if ($BenchmarkArtifactTrace.trace_health_summary.health_status -ne "ok") {
+    throw "Packaged trace-health report did not include benchmark trace-health status"
+}
+if ($BenchmarkArtifactTrace.trace_health_summary.artifact_trace_count -lt 1) {
+    throw "Packaged trace-health report did not include benchmark trace-health artifact count"
+}
 $TraceHealthMarkdown = Get-Content $TraceHealthSummary -Raw
 if ($TraceHealthMarkdown -notmatch "trace_health_v1") {
     throw "Packaged trace-health summary did not include schema version"
