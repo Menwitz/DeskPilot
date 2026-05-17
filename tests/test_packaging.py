@@ -149,6 +149,14 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         "Packaged trace-health report did not include benchmark trace-health "
         "artifact count" in script
     )
+    assert (
+        "Packaged trace-health report did not include benchmark latest trace metadata"
+        in script
+    )
+    assert (
+        "Packaged trace-health report latest trace did not include benchmark "
+        "report path" in script
+    )
     assert "Packaged trace-health summary did not include schema version" in script
     assert (
         "Packaged trace-health summary did not include artifact trace section"

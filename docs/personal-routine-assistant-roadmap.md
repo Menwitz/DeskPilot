@@ -858,6 +858,8 @@ abuse, and hidden automation are not supported.
       trace-health summaries.
 - [x] Verify packaged trace-health JSON carries compact benchmark trace-health
       summaries.
+- [x] Verify packaged trace-health JSON latest entries carry benchmark report
+      paths.
 - [x] Verify packaged trace-health console output renders benchmark artifact
       trace summaries.
 - [x] Verify packaged trace-health console output renders latest trace rows.
