@@ -90,6 +90,8 @@ For built-in benchmark tasks, `benchmark-report.json` also includes
 deep-search sources, required trace phases, required final-report fields, and
 required metrics. Ad hoc benchmark runs keep the same field with
 `configured: false`.
+The report also stores `monitoring_coverage`, which compares required trace
+phases with the phases observed across the generated run traces.
 `benchmark-summary.md` repeats the same contract in Markdown for review without
 opening the JSON payload. It also links `trace-health.json` and shows the
 trace-health status plus attention-trace count.

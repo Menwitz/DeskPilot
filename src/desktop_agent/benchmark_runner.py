@@ -91,6 +91,7 @@ class BenchmarkRunMetrics:
     operator_intervention_count: int
     trace_dir: Path | None
     abort_reason: str | None
+    observed_trace_phases: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -339,6 +340,7 @@ class BenchmarkRunHarness:
             acceptance,
             baseline_comparison,
             task_spec,
+            runs,
         )
         return BenchmarkRunReport(
             task_path=task_path,
@@ -444,7 +446,12 @@ def _metrics_from_report(
         ),
         trace_dir=report.trace_dir,
         abort_reason=report.abort_reason,
+        observed_trace_phases=_observed_trace_phases(report),
     )
+
+
+def _observed_trace_phases(report: RunReport) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(event.phase for event in report.events))
 
 
 def evaluate_benchmark_acceptance(
@@ -653,6 +660,7 @@ def _write_report(
         "baseline_comparison_path": str(baseline_comparison_path),
         "pointer_timing_comparison_path": str(pointer_timing_comparison_path),
         "observability_contract": _observability_contract_to_dict(task_spec),
+        "monitoring_coverage": _monitoring_coverage_to_dict(task_spec, runs),
         "iterations": len(runs),
         "summary": _summary_to_dict(summary),
         "baseline_summary": _summary_to_dict(baseline_summary),
@@ -698,6 +706,27 @@ def _observability_contract_to_dict(
     }
 
 
+def _monitoring_coverage_to_dict(
+    task_spec: BenchmarkTaskSpec | None,
+    runs: tuple[BenchmarkRunMetrics, ...],
+) -> dict[str, object]:
+    if task_spec is None:
+        return {"configured": False}
+    observed = sorted(
+        phase for run in runs for phase in run.observed_trace_phases
+    )
+    observed = list(dict.fromkeys(observed))
+    required = list(task_spec.required_trace_phases)
+    missing = [phase for phase in required if phase not in observed]
+    return {
+        "configured": True,
+        "passed": not missing,
+        "required_trace_phases": required,
+        "observed_trace_phases": observed,
+        "missing_trace_phases": missing,
+    }
+
+
 def _write_benchmark_summary(
     path: Path,
     task_path: Path,
@@ -708,8 +737,10 @@ def _write_benchmark_summary(
     acceptance: BenchmarkAcceptanceResult,
     baseline_comparison: BenchmarkBaselineComparison,
     task_spec: BenchmarkTaskSpec | None,
+    runs: tuple[BenchmarkRunMetrics, ...],
 ) -> None:
     contract = _observability_contract_to_dict(task_spec)
+    coverage = _monitoring_coverage_to_dict(task_spec, runs)
     lines = [
         "# Benchmark Summary",
         "",
@@ -728,8 +759,24 @@ def _write_benchmark_summary(
         "## Observability Contract",
         "",
         *_benchmark_observability_summary_lines(contract),
+        "",
+        "## Monitoring Coverage",
+        "",
+        *_benchmark_monitoring_coverage_lines(coverage),
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _benchmark_monitoring_coverage_lines(
+    coverage: dict[str, object],
+) -> list[str]:
+    if coverage.get("configured") is not True:
+        return ["- Configured: `false`"]
+    return [
+        f"- Passed: `{coverage.get('passed', False)}`",
+        "- Missing trace phases: "
+        f"`{_contract_list(coverage, 'missing_trace_phases')}`",
+    ]
 
 
 def _trace_health_attention_traces(health: dict[str, object]) -> list[object]:
@@ -1001,6 +1048,7 @@ def _metrics_to_dict(metrics: BenchmarkRunMetrics) -> dict[str, object]:
         "operator_intervention_count": metrics.operator_intervention_count,
         "trace_dir": str(metrics.trace_dir) if metrics.trace_dir else None,
         "abort_reason": metrics.abort_reason,
+        "observed_trace_phases": list(metrics.observed_trace_phases),
     }
 
 

@@ -75,6 +75,7 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert f"- Trace health: `{report.trace_health_path}`" in summary_markdown
     assert "- Trace health status: `ok`" in summary_markdown
     assert "- Attention traces: `0`" in summary_markdown
+    assert "## Monitoring Coverage" in summary_markdown
     assert "- Acceptance: `passed`" in summary_markdown
     assert "- Deep-search sources: `uia, ocr, image, unknown`" in summary_markdown
     assert report_payload["observability_contract"]["configured"] is True
@@ -87,6 +88,11 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
         "image",
         "unknown",
     ]
+    assert report_payload["monitoring_coverage"]["configured"] is True
+    assert "select_target" in report_payload["monitoring_coverage"][
+        "observed_trace_phases"
+    ]
+    assert "select_target" in report_payload["runs"][0]["observed_trace_phases"]
     assert "select_target" in report_payload["observability_contract"][
         "required_trace_phases"
     ]

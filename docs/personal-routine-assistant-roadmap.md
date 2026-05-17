@@ -295,6 +295,8 @@ abuse, and hidden automation are not supported.
       trace directories.
 - [x] Include benchmark trace-health path, health status, and attention count
       in benchmark Markdown summaries.
+- [x] Add benchmark monitoring coverage for observed trace phases against the
+      declared deep-search and trace contract.
 
 ### Acceptance Criteria
 
