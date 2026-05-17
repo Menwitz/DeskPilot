@@ -816,6 +816,8 @@ abuse, and hidden automation are not supported.
       report schema.
 - [x] Verify packaged benchmark replay summaries include report artifact
       manifests.
+- [x] Verify packaged trace-health Markdown renders benchmark artifact
+      manifests.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 

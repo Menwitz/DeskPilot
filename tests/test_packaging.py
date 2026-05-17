@@ -113,6 +113,11 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "Packaged trace-health summary did not include schema version" in script
     assert "Packaged trace-health summary did not include latest trace links" in script
     assert "Packaged trace-health summary did not include benchmark replay" in script
+    assert "Packaged trace-health summary did not include benchmark artifacts" in script
+    assert (
+        "Packaged trace-health summary did not include benchmark metrics artifact"
+        in script
+    )
     assert "& $AppExePath --check" in script
     assert "PySide6: available" in script
     assert "& $AppExePath --describe-shell" in script
