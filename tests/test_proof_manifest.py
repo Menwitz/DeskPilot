@@ -651,6 +651,17 @@ def test_write_proof_finalization_status_records_monitoring_rollup(
         "promotion_verification": "passed",
         "archive_verification": "passed",
     }
+    summary = cast(dict[str, int], payload["summary"])
+    assert summary["expected_count"] == 4
+    assert summary["reported_count"] == 4
+    assert summary["artifact_count"] == len(artifact_paths)
+    assert summary["promotion_checked_count"] == len(
+        promotion_verification.checked_artifacts,
+    )
+    assert summary["archive_checked_count"] == len(
+        archive_verification.checked_artifacts,
+    )
+    assert summary["error_count"] == 0
     artifacts = cast(dict[str, str], payload["artifacts"])
     assert artifacts["archive"] == str(archive_path)
     checked_artifacts = cast(dict[str, list[str]], payload["checked_artifacts"])

@@ -210,6 +210,8 @@ abuse, and hidden automation are not supported.
       report.
 - [x] Add `proof-finalization-status.json` as a unified post-review monitoring
       rollup for suite, promotion, and archive verification gates.
+- [x] Add compact summary counts to `proof-finalization-status.json` for final
+      proof monitoring.
 - [x] Surface proof-suite finalization rollups through the local trace service
       for operator UI and monitoring discovery.
 - [x] Add `desktop-agent replay` support for proof-suite finalization rollups

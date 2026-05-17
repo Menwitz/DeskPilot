@@ -133,6 +133,8 @@ screenshots, manifest, action log, and report without rerunning desktop input.
       promoted artifact digest no longer matches the archive member.
 - [ ] `proof-archive-verification.json` records checked archive members,
       errors, and warnings for monitoring.
+- [ ] `proof-finalization-status.json` records gate statuses, summary counts,
+      artifact paths, checked artifacts, errors, and warnings for monitoring.
 - [ ] If the command uses target selection or deep search, the trace includes
       candidate rankings, rejected candidates, and diagnostic bundle metadata.
 

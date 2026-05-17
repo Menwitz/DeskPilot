@@ -1009,6 +1009,14 @@ def proof_finalization_status_metadata(
         "schema_version": 1,
         "trace_root": str(validation.trace_root),
         "status": "passed" if not errors else "failed",
+        "summary": _proof_finalization_summary(
+            validation,
+            promotion_verification,
+            archive_verification,
+            artifact_paths=artifact_paths,
+            errors=errors,
+            warnings=warnings,
+        ),
         "gates": {
             "suite_validation": "passed" if validation.passed else "failed",
             "promotion_verification": "passed"
@@ -1027,6 +1035,28 @@ def proof_finalization_status_metadata(
         },
         "errors": errors,
         "warnings": warnings,
+    }
+
+
+def _proof_finalization_summary(
+    validation: ProofSuiteValidation,
+    promotion_verification: ProofPromotionVerification,
+    archive_verification: ProofArchiveVerification,
+    *,
+    artifact_paths: Mapping[str, Path],
+    errors: list[str],
+    warnings: list[str],
+) -> dict[str, int]:
+    """Summarize final proof gates for monitoring dashboards."""
+
+    return {
+        "expected_count": len(validation.expected_proofs),
+        "reported_count": len(validation.bundle_results),
+        "artifact_count": len(artifact_paths),
+        "promotion_checked_count": len(promotion_verification.checked_artifacts),
+        "archive_checked_count": len(archive_verification.checked_artifacts),
+        "error_count": len(errors),
+        "warning_count": len(warnings),
     }
 
 
