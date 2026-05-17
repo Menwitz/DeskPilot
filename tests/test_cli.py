@@ -1382,11 +1382,13 @@ def test_cli_trace_health_summarizes_trace_counts(
     output = capsys.readouterr().out
     assert status == 0
     assert f"trace_root: {trace_root}" in output
+    assert "health_status: attention" in output
     assert "trace_count: 2" in output
     assert "- proof_suite: 1" in output
     assert "- run: 1" in output
     assert "- passed: 1" in output
     assert "- failed: 1" in output
+    assert "attention_statuses: failed" in output
 
 
 def test_cli_trace_health_writes_json(
@@ -1408,6 +1410,7 @@ def test_cli_trace_health_writes_json(
     assert payload["trace_count"] == 1
     assert payload["by_kind"] == {"goal_plan": 1}
     assert payload["by_status"] == {"ready": 1}
+    assert payload["health_status"] == "ok"
 
 
 def test_cli_trace_health_writes_report_file(
@@ -1440,6 +1443,7 @@ def test_cli_trace_health_writes_report_file(
     assert payload["trace_count"] == 1
     assert payload["by_kind"] == {"run": 1}
     assert payload["by_status"] == {"passed": 1}
+    assert payload["health_status"] == "ok"
 
 
 def test_cli_trace_health_json_output_stays_parseable_with_report_file(

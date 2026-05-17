@@ -334,6 +334,8 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
     assert health["trace_count"] == 3
     assert health["by_kind"] == {"proof_suite": 1, "goal_plan": 1, "run": 1}
     assert health["by_status"] == {"passed": 1, "ready": 1, "failed": 1}
+    assert health["health_status"] == "attention"
+    assert health["attention_statuses"] == ["failed"]
     latest = cast(list[dict[str, object]], health["latest"])
     assert latest[0]["kind"] == "proof_suite"
 

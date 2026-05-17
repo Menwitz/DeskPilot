@@ -219,6 +219,8 @@ abuse, and hidden automation are not supported.
       local report artifact.
 - [x] Keep `trace-health --json --output` stdout parseable for monitoring
       pipelines.
+- [x] Add trace-health attention status so failed, invalid, blocked, error, or
+      unknown reports stand out in CLI, JSON, and native dashboard monitoring.
 - [x] Add proof-suite gate details to native trace-viewer state so local proof
       reports can show suite, promotion, and archive status in the app.
 - [x] Add an operator controller path that hydrates trace-viewer state directly

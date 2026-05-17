@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -953,12 +953,15 @@ class LocalTraceService:
 
     def trace_health(self, *, limit: int = 50) -> dict[str, object]:
         summaries = self.list_traces(limit=limit)
+        status_counts = _count_trace_values(
+            summary.status or "unknown" for summary in summaries
+        )
         return {
             "trace_count": len(summaries),
             "by_kind": _count_trace_values(summary.kind for summary in summaries),
-            "by_status": _count_trace_values(
-                summary.status or "unknown" for summary in summaries
-            ),
+            "by_status": status_counts,
+            "health_status": _trace_health_status(len(summaries), status_counts),
+            "attention_statuses": list(_trace_attention_statuses(status_counts)),
             "latest": [summary.metadata() for summary in summaries],
         }
 
@@ -1284,6 +1287,25 @@ def _count_trace_values(values: Iterable[str]) -> dict[str, int]:
     return counts
 
 
+def _trace_health_status(
+    trace_count: int,
+    status_counts: Mapping[str, int],
+) -> str:
+    if trace_count == 0:
+        return "empty"
+    if _trace_attention_statuses(status_counts):
+        return "attention"
+    return "ok"
+
+
+def _trace_attention_statuses(status_counts: Mapping[str, int]) -> tuple[str, ...]:
+    return tuple(
+        status
+        for status in sorted(status_counts)
+        if status in _TRACE_ATTENTION_STATUSES and status_counts[status] > 0
+    )
+
+
 def _trace_summary(trace_dir: Path) -> TraceSummary:
     for report_name, kind in _TRACE_REPORT_NAMES:
         report_path = trace_dir / report_name
@@ -1306,6 +1328,18 @@ _TRACE_REPORT_NAMES: tuple[tuple[str, str], ...] = (
     ("final-report.json", "run"),
     ("goal-plan-report.json", "goal_plan"),
     (PROOF_FINALIZATION_STATUS_NAME, "proof_suite"),
+)
+
+_TRACE_ATTENTION_STATUSES = frozenset(
+    {
+        "blocked",
+        "error",
+        "failed",
+        "invalid",
+        "preflight_failed",
+        "review_failed",
+        "unknown",
+    },
 )
 
 

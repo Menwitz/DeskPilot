@@ -2560,6 +2560,7 @@ def _trace_health(args: argparse.Namespace) -> int:
             print(f"report: {args.output}", file=sys.stderr)
         return 0
     print(f"trace_root: {args.trace_root}")
+    print(f"health_status: {health.get('health_status', 'unknown')}")
     print(f"trace_count: {health['trace_count']}")
     print("by_kind:")
     for name, count in _int_mapping(health.get("by_kind")).items():
@@ -2567,6 +2568,10 @@ def _trace_health(args: argparse.Namespace) -> int:
     print("by_status:")
     for name, count in _int_mapping(health.get("by_status")).items():
         print(f"- {name}: {count}")
+    attention_statuses = health.get("attention_statuses")
+    if isinstance(attention_statuses, list) and attention_statuses:
+        rendered_attention = ", ".join(str(status) for status in attention_statuses)
+        print(f"attention_statuses: {rendered_attention}")
     if args.output is not None:
         print(f"report: {args.output}")
     return 0

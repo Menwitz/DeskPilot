@@ -383,11 +383,12 @@ def trace_health_panel_from_metadata(
     """Create dashboard trace-health state from trace service metadata."""
 
     trace_count = payload.get("trace_count")
+    health_status = payload.get("health_status")
     return TraceHealthPanelState(
         trace_count=trace_count if isinstance(trace_count, int) else 0,
         kind_counts=_count_pairs(payload.get("by_kind")),
         status_counts=_count_pairs(payload.get("by_status")),
-        status="loaded",
+        status=health_status if isinstance(health_status, str) else "loaded",
     )
 
 
