@@ -99,6 +99,7 @@ class TraceSummary:
     status: str | None
     kind: str
     replay_summary_path: Path | None = None
+    report_artifacts: tuple[tuple[str, str], ...] = ()
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -109,6 +110,7 @@ class TraceSummary:
             "replay_summary_path": (
                 str(self.replay_summary_path) if self.replay_summary_path else None
             ),
+            "report_artifacts": dict(self.report_artifacts),
         }
 
 
@@ -1327,12 +1329,14 @@ def _trace_summary(trace_dir: Path) -> TraceSummary:
     for report_name, kind in _TRACE_REPORT_NAMES:
         report_path = trace_dir / report_name
         if report_path.exists():
+            payload = _read_report_payload(report_path)
             return TraceSummary(
                 trace_dir=trace_dir,
                 report_path=report_path,
-                status=_report_status(report_path),
+                status=_report_status_from_payload(payload),
                 kind=kind,
                 replay_summary_path=replay_summary_path,
+                report_artifacts=_report_artifact_pairs(payload),
             )
     return TraceSummary(
         trace_dir=trace_dir,
@@ -1382,15 +1386,36 @@ def _routine_pack_list_item(manifest: RoutinePackManifest) -> RoutinePackListIte
 
 
 def _report_status(report_path: Path) -> str | None:
+    return _report_status_from_payload(_read_report_payload(report_path))
+
+
+def _read_report_payload(report_path: Path) -> dict[str, object]:
     loaded = json.loads(report_path.read_text(encoding="utf-8"))
     if not isinstance(loaded, dict):
-        return None
-    status = loaded.get("status")
+        return {}
+    return cast(dict[str, object], loaded)
+
+
+def _report_status_from_payload(payload: Mapping[str, object]) -> str | None:
+    status = payload.get("status")
     if isinstance(status, str):
         return status
-    acceptance = loaded.get("acceptance")
+    acceptance = payload.get("acceptance")
     if isinstance(acceptance, dict):
         acceptance_status = acceptance.get("status")
         if isinstance(acceptance_status, str):
             return acceptance_status
     return None
+
+
+def _report_artifact_pairs(
+    payload: Mapping[str, object],
+) -> tuple[tuple[str, str], ...]:
+    artifacts = payload.get("report_artifacts")
+    if not isinstance(artifacts, dict):
+        return ()
+    return tuple(
+        (key, value)
+        for key, value in artifacts.items()
+        if isinstance(key, str) and isinstance(value, str)
+    )
