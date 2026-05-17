@@ -966,6 +966,8 @@ class LocalTraceService:
             if _trace_status_needs_attention(summary.status or "unknown")
         ]
         return {
+            "schema_version": TRACE_HEALTH_SCHEMA_VERSION,
+            "generated_at": datetime.now(UTC).isoformat(),
             "trace_count": len(summaries),
             "by_kind": _count_trace_values(summary.kind for summary in summaries),
             "by_status": status_counts,
@@ -1352,6 +1354,8 @@ _TRACE_REPORT_NAMES: tuple[tuple[str, str], ...] = (
     ("benchmark-report.json", "benchmark"),
     (PROOF_FINALIZATION_STATUS_NAME, "proof_suite"),
 )
+
+TRACE_HEALTH_SCHEMA_VERSION = "trace_health_v1"
 
 _TRACE_ATTENTION_STATUSES = frozenset(
     {

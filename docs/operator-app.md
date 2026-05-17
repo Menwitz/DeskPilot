@@ -107,7 +107,8 @@ project modules:
   and proof-suite finalization JSON reports, and inspect failed traces with
   local review-only analysis artifacts. It also exposes trace health counts by
   kind, status, attention state, and attention trace count for dashboard
-  monitoring, plus any local `replay-summary.md` artifact path.
+  monitoring, including trace-health schema/timestamp metadata and any local
+  `replay-summary.md` artifact path.
 - Trace viewer state: benchmark reports render with benchmark kind, acceptance
   status, baseline comparison status, and monitoring coverage status.
 - Routine-pack service: list installed packs, install validated local packs,

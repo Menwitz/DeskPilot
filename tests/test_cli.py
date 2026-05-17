@@ -1387,6 +1387,8 @@ def test_cli_trace_health_summarizes_trace_counts(
     output = capsys.readouterr().out
     assert status == 0
     assert f"trace_root: {trace_root}" in output
+    assert "schema_version: trace_health_v1" in output
+    assert "generated_at: " in output
     assert "health_status: attention" in output
     assert "trace_count: 2" in output
     assert "- proof_suite: 1" in output
@@ -1414,6 +1416,8 @@ def test_cli_trace_health_writes_json(
 
     payload = json.loads(capsys.readouterr().out)
     assert status == 0
+    assert payload["schema_version"] == "trace_health_v1"
+    assert isinstance(payload["generated_at"], str)
     assert payload["trace_count"] == 1
     assert payload["by_kind"] == {"goal_plan": 1}
     assert payload["by_status"] == {"ready": 1}
@@ -1484,6 +1488,8 @@ def test_cli_trace_health_writes_markdown_summary(
     assert status == 0
     assert f"summary: {output_path}" in output
     assert "# Trace Health" in summary
+    assert "- Schema version: `trace_health_v1`" in summary
+    assert "- Generated at: `" in summary
     assert "- Health status: `attention`" in summary
     assert f"`{trace_dir}`" in summary
     assert f"summary `{replay_summary_path}`" in summary

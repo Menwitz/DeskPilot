@@ -341,6 +341,8 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
 
     health = service.trace_health()
 
+    assert health["schema_version"] == "trace_health_v1"
+    assert isinstance(health["generated_at"], str)
     assert health["trace_count"] == 4
     assert health["by_kind"] == {
         "benchmark": 1,

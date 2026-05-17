@@ -2651,6 +2651,8 @@ def _trace_health(args: argparse.Namespace) -> int:
             print(f"summary: {args.markdown_output}", file=sys.stderr)
         return exit_code
     print(f"trace_root: {args.trace_root}")
+    print(f"schema_version: {health.get('schema_version', 'unknown')}")
+    print(f"generated_at: {health.get('generated_at', 'unknown')}")
     print(f"health_status: {health.get('health_status', 'unknown')}")
     print(f"trace_count: {health['trace_count']}")
     print("by_kind:")
@@ -2691,6 +2693,8 @@ def _render_trace_health_markdown(
         "# Trace Health",
         "",
         f"- Trace root: `{trace_root}`",
+        f"- Schema version: `{health.get('schema_version', 'unknown')}`",
+        f"- Generated at: `{health.get('generated_at', 'unknown')}`",
         f"- Health status: `{health.get('health_status', 'unknown')}`",
         f"- Trace count: `{health.get('trace_count', 0)}`",
         "",

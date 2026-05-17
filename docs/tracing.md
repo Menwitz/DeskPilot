@@ -265,6 +265,8 @@ used by the operator app trace service. Add `--output traces/trace-health.json`
 to persist the monitoring payload as a local report artifact. When `--json` and
 `--output` are combined, stdout remains a parseable JSON payload and the report
 path notice is written to stderr.
+The payload includes `schema_version` and `generated_at` fields so archived
+monitoring reports can be compared safely over time.
 The JSON payload includes `attention_traces`, a list of trace summaries that
 need review, so monitors can link directly to the relevant local reports. Trace
 summaries also include `replay_summary_path` when a local `replay-summary.md`
