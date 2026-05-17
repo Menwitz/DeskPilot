@@ -2763,6 +2763,9 @@ def _trace_health_console_trace_line(trace: dict[object, object]) -> str:
     proof_summary = _proof_summary_text(trace.get("proof_summary"))
     if proof_summary:
         line += f" proof_summary {proof_summary}"
+    proof_warnings = _proof_warnings_text(trace.get("proof_warnings"))
+    if proof_warnings:
+        line += f" proof_warnings {proof_warnings}"
     return line
 
 
@@ -2812,6 +2815,9 @@ def _trace_health_trace_line(trace: dict[object, object]) -> str:
     proof_summary = _proof_summary_text(trace.get("proof_summary"))
     if proof_summary:
         line += f" proof_summary `{proof_summary}`"
+    proof_warnings = _proof_warnings_text(trace.get("proof_warnings"))
+    if proof_warnings:
+        line += f" proof_warnings `{proof_warnings}`"
     return line
 
 
@@ -2847,6 +2853,15 @@ def _proof_summary_text(value: object) -> str:
         if _is_summary_int(count := value.get(key))
     ]
     return "; ".join(parts)
+
+
+def _proof_warnings_text(value: object) -> str:
+    """Render compact proof warnings when scanning trace-health rows."""
+
+    if not isinstance(value, list):
+        return ""
+    warnings = [item for item in value if isinstance(item, str)]
+    return "; ".join(warnings)
 
 
 def _is_summary_int(value: object) -> bool:

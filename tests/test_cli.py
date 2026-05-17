@@ -1389,6 +1389,7 @@ def test_cli_trace_health_summarizes_trace_counts(
                     "artifact_count": 7,
                     "error_count": 0,
                 },
+                "warnings": ["browser-fixture: video_path is external"],
             },
         ),
         encoding="utf-8",
@@ -1435,6 +1436,7 @@ def test_cli_trace_health_summarizes_trace_counts(
     assert "trace_health status=ok; artifacts=1" in output
     assert "latest_traces:" in output
     assert "proof_summary expected=4; reported=4; artifacts=7; errors=0" in output
+    assert "proof_warnings browser-fixture: video_path is external" in output
 
 
 def test_cli_trace_health_console_shows_latest_benchmark_health_without_artifacts(
@@ -1554,6 +1556,7 @@ def test_cli_trace_health_writes_json(
                     "artifact_count": 7,
                     "error_count": 0,
                 },
+                "warnings": ["browser-fixture: video_path is external"],
             },
         ),
         encoding="utf-8",
@@ -1662,6 +1665,7 @@ def test_cli_trace_health_writes_markdown_summary(
                     "artifact_count": 7,
                     "error_count": 0,
                 },
+                "warnings": ["browser-fixture: video_path is external"],
             },
         ),
         encoding="utf-8",
@@ -1692,6 +1696,7 @@ def test_cli_trace_health_writes_markdown_summary(
     assert "artifacts `metrics=" in summary
     assert "trace_health `status=ok; artifacts=1`" in summary
     assert "proof_summary `expected=4; reported=4; artifacts=7; errors=0`" in summary
+    assert "proof_warnings `browser-fixture: video_path is external`" in summary
     assert str(benchmark_trace / "benchmark-summary.md") in summary
     assert "## Artifact Traces" in summary
     assert "## Latest Traces" in summary

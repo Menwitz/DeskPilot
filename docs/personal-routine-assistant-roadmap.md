@@ -369,6 +369,7 @@ abuse, and hidden automation are not supported.
 - [x] Print report paths in plain trace-health CLI trace rows.
 - [x] Render compact proof-finalization summary counts in trace-health CLI and
       Markdown rows.
+- [x] Render proof-finalization warnings in trace-health CLI and Markdown rows.
 - [x] Add CLI JSON coverage for proof-finalization summary metadata in latest
       traces.
 - [x] Reject JSON booleans as compact trace-health and proof-summary counts.

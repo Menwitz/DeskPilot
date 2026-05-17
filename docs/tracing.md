@@ -281,7 +281,8 @@ Benchmark trace summaries include the
 trace-health latest rows render those artifact links plus compact trace-health
 status and artifact-count metadata. Proof-suite finalization rows render
 compact proof summary counts when `proof-finalization-status.json` includes
-them.
+them, and they render proof warning strings when finalization reports include
+non-blocking evidence issues.
 Add `--markdown-output traces/trace-health.md` to write the same health status,
 counts, attention trace links, artifact-trace links, and latest trace links as
 a human-readable local report.
