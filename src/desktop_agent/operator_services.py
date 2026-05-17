@@ -102,6 +102,7 @@ class TraceSummary:
     report_artifacts: tuple[tuple[str, str], ...] = ()
     trace_health_summary: tuple[tuple[str, object], ...] = ()
     proof_summary: tuple[tuple[str, int], ...] = ()
+    proof_warnings: tuple[str, ...] = ()
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -115,6 +116,7 @@ class TraceSummary:
             "report_artifacts": dict(self.report_artifacts),
             "trace_health_summary": dict(self.trace_health_summary),
             "proof_summary": dict(self.proof_summary),
+            "proof_warnings": list(self.proof_warnings),
         }
 
 
@@ -1352,6 +1354,11 @@ def _trace_summary(trace_dir: Path) -> TraceSummary:
                     if kind == "proof_suite"
                     else ()
                 ),
+                proof_warnings=(
+                    _report_proof_warnings(payload)
+                    if kind == "proof_suite"
+                    else ()
+                ),
             )
     return TraceSummary(
         trace_dir=trace_dir,
@@ -1478,3 +1485,12 @@ def _is_summary_int(value: object) -> bool:
     """Return true for integer counts while excluding JSON booleans."""
 
     return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _report_proof_warnings(payload: Mapping[str, object]) -> tuple[str, ...]:
+    """Return proof finalization warnings for trace-health metadata."""
+
+    warnings = payload.get("warnings")
+    if not isinstance(warnings, list):
+        return ()
+    return tuple(warning for warning in warnings if isinstance(warning, str))

@@ -275,6 +275,7 @@ def test_local_trace_service_lists_and_reads_reports(tmp_path: Path) -> None:
     assert traces[0].metadata()["report_artifacts"] == {}
     assert traces[0].metadata()["trace_health_summary"] == {}
     assert traces[0].metadata()["proof_summary"] == {}
+    assert traces[0].metadata()["proof_warnings"] == []
     assert report["selected_routine_id"] == "browser.search"
 
 
@@ -301,6 +302,7 @@ def test_local_trace_service_lists_proof_suite_finalization_rollups(
                     "promotion_verification": "passed",
                     "archive_verification": "passed",
                 },
+                "warnings": ["browser-fixture: video_path is not present"],
             },
         ),
         encoding="utf-8",
@@ -320,6 +322,9 @@ def test_local_trace_service_lists_proof_suite_finalization_rollups(
         "expected_count": 4,
         "reported_count": 4,
     }
+    assert traces[0].metadata()["proof_warnings"] == [
+        "browser-fixture: video_path is not present",
+    ]
     assert report["gates"] == {
         "suite_validation": "passed",
         "promotion_verification": "passed",
@@ -393,6 +398,7 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
             "report_artifacts": {},
             "trace_health_summary": {},
             "proof_summary": {},
+            "proof_warnings": [],
         },
     ]
     latest = cast(list[dict[str, object]], health["latest"])

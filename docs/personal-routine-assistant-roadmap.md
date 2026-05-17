@@ -218,6 +218,7 @@ abuse, and hidden automation are not supported.
       for operator UI and monitoring discovery.
 - [x] Expose compact proof-finalization summary counts through local trace
       service metadata.
+- [x] Expose proof-finalization warnings through local trace service metadata.
 - [x] Add `desktop-agent replay` support for proof-suite finalization rollups
       with gate, artifact, error, and summary output.
 - [x] Render proof-finalization summary counts in CLI replay output and replay
