@@ -697,6 +697,8 @@ abuse, and hidden automation are not supported.
       state.
 - [x] Let the native dashboard read benchmark trace-health status from artifact
       or latest trace metadata.
+- [x] Add controller-level coverage for native dashboard benchmark trace-health
+      refreshes.
 - [x] Add settings for trace root, screenshots, video capture, Ollama enablement,
       emergency hotkey, default activity profile, and proof mode.
 - [x] Add UI integration tests around app state transitions with fake services.
