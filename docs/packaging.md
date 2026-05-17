@@ -59,7 +59,8 @@ wants `bin\` added to their user PATH.
 `scripts\verify-windows-package.ps1` creates a local smoke trace under
 `dist\package-smoke`, runs `deskpilot.exe dry-run` with a package-smoke trace
 root and verifies that `final-report.json` was written, runs
-`deskpilot.exe replay` against a replay fixture, lists routines from
+`deskpilot.exe replay` against a replay fixture, runs
+`deskpilot.exe trace-health` against the smoke trace root, lists routines from
 `routine_packs\`, and runs `deskpilot-app.exe --check` plus
 `deskpilot-app.exe --describe-shell` when the app executable exists. The app
 check must report bundled PySide6 availability for packaged Windows builds.
