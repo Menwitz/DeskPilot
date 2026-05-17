@@ -325,6 +325,32 @@ def test_trace_viewer_timeline_loads_goal_candidate_reasoning(
     assert "browser.search-web: score 12.5 matched tags, outputs" in text
 
 
+def test_trace_viewer_timeline_loads_benchmark_report(
+    tmp_path: Path,
+) -> None:
+    state = trace_viewer_timeline_from_report(
+        {
+            "acceptance": {"status": "passed"},
+            "baseline_comparison": {"status": "neutral"},
+            "observability_contract": {"configured": True},
+            "monitoring_coverage": {"configured": True, "passed": True},
+        },
+        report_path=tmp_path / "benchmark-report.json",
+    )
+    metadata = state.metadata()
+    text = render_trace_viewer_timeline_text(state)
+
+    assert metadata["trace_kind"] == "benchmark"
+    assert metadata["status"] == "passed"
+    assert metadata["verification_results"] == [
+        "acceptance: passed",
+        "baseline: neutral",
+        "monitoring coverage: passed",
+    ]
+    assert "Trace kind: benchmark" in text
+    assert "monitoring coverage: passed" in text
+
+
 def test_routine_pack_manager_tracks_install_and_remove_state(tmp_path: Path) -> None:
     state = RoutinePackManagerState(
         installed_pack_ids=("browser", "native"),

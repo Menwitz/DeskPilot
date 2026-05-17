@@ -307,6 +307,8 @@ abuse, and hidden automation are not supported.
       report fields when coverage fails.
 - [x] Surface benchmark reports through local trace service and `trace-health`
       monitoring alongside run, goal-plan, and proof-suite reports.
+- [x] Render benchmark reports in native trace-viewer state with acceptance,
+      baseline, and monitoring coverage status.
 
 ### Acceptance Criteria
 

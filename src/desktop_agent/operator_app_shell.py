@@ -488,7 +488,6 @@ def trace_viewer_timeline_from_report(
 ) -> TraceViewerTimelineState:
     """Create trace-viewer state from a local report JSON payload."""
 
-    status = report.get("status")
     gates = report.get("gates")
     return TraceViewerTimelineState(
         trace_kind=_trace_kind_from_report(report, report_path),
@@ -496,8 +495,9 @@ def trace_viewer_timeline_from_report(
             report.get("candidate_routines"),
         ),
         proof_gates=_proof_gate_lines(gates),
+        verification_results=_benchmark_verification_lines(report),
         final_report_path=report_path,
-        status=status if isinstance(status, str) else "loaded",
+        status=_timeline_status_from_report(report),
     )
 
 
@@ -510,11 +510,27 @@ def _trace_kind_from_report(
             return "proof_suite"
         if report_path.name == "goal-plan-report.json":
             return "goal_plan"
+        if report_path.name == "benchmark-report.json":
+            return "benchmark"
     if "gates" in report and "checked_artifacts" in report:
         return "proof_suite"
     if "selected_routine_id" in report:
         return "goal_plan"
+    if "observability_contract" in report and "monitoring_coverage" in report:
+        return "benchmark"
     return "run"
+
+
+def _timeline_status_from_report(report: Mapping[str, object]) -> str:
+    status = report.get("status")
+    if isinstance(status, str):
+        return status
+    acceptance = report.get("acceptance")
+    if isinstance(acceptance, Mapping):
+        acceptance_status = acceptance.get("status")
+        if isinstance(acceptance_status, str):
+            return acceptance_status
+    return "loaded"
 
 
 def _proof_gate_lines(gates: object) -> tuple[str, ...]:
@@ -541,6 +557,28 @@ def _candidate_ranking_lines(candidates: object) -> tuple[str, ...]:
             continue
         matched = _joined_string_values(matched_fields)
         lines.append(f"{routine_id}: score {score} matched {matched}")
+    return tuple(lines)
+
+
+def _benchmark_verification_lines(report: Mapping[str, object]) -> tuple[str, ...]:
+    if _trace_kind_from_report(report, None) != "benchmark":
+        return ()
+    lines: list[str] = []
+    acceptance = report.get("acceptance")
+    if isinstance(acceptance, Mapping):
+        status = acceptance.get("status")
+        if isinstance(status, str):
+            lines.append(f"acceptance: {status}")
+    baseline = report.get("baseline_comparison")
+    if isinstance(baseline, Mapping):
+        status = baseline.get("status")
+        if isinstance(status, str):
+            lines.append(f"baseline: {status}")
+    coverage = report.get("monitoring_coverage")
+    if isinstance(coverage, Mapping):
+        passed = coverage.get("passed")
+        if isinstance(passed, bool):
+            lines.append(f"monitoring coverage: {'passed' if passed else 'failed'}")
     return tuple(lines)
 
 

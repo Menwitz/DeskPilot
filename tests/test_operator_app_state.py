@@ -247,6 +247,39 @@ def test_operator_app_controller_loads_trace_report_state(
     )
 
 
+def test_operator_app_controller_loads_benchmark_trace_report_state(
+    tmp_path: Path,
+) -> None:
+    trace_root = tmp_path / "traces"
+    trace_dir = trace_root / "benchmark"
+    trace_dir.mkdir(parents=True)
+    (trace_dir / "benchmark-report.json").write_text(
+        (
+            '{"acceptance":{"status":"passed"},'
+            '"baseline_comparison":{"status":"neutral"},'
+            '"observability_contract":{"configured":true},'
+            '"monitoring_coverage":{"configured":true,"passed":true}}'
+        ),
+        encoding="utf-8",
+    )
+    controller = OperatorAppController(
+        _FakeRunnerService({}),
+        traces=LocalTraceService(trace_root),
+    )
+
+    state = controller.view_trace_report(trace_dir)
+
+    assert state.current_page_id == "trace_viewer"
+    assert state.trace_viewer is not None
+    assert state.trace_viewer.trace_kind == "benchmark"
+    assert state.trace_viewer.verification_results == (
+        "acceptance: passed",
+        "baseline: neutral",
+        "monitoring coverage: passed",
+    )
+    assert state.trace_viewer.final_report_path == trace_dir / "benchmark-report.json"
+
+
 def test_operator_app_controller_refreshes_trace_health(
     tmp_path: Path,
 ) -> None:
