@@ -1416,9 +1416,11 @@ def test_cli_trace_health_summarizes_trace_counts(
     assert "- failed: 1" in output
     assert "attention_statuses: failed" in output
     assert f"- {run_trace} (run/failed)" in output
+    assert f"report {run_trace / 'final-report.json'}" in output
     assert f"summary {replay_summary_path}" in output
     assert "artifact_traces:" in output
     assert f"- {benchmark_trace} (benchmark/passed)" in output
+    assert f"report {benchmark_trace / 'benchmark-report.json'}" in output
     assert f"artifacts metrics={benchmark_trace / 'runs.jsonl'}" in output
     assert "trace_health status=ok; artifacts=1" in output
     assert "latest_traces:" in output
@@ -1451,6 +1453,7 @@ def test_cli_trace_health_console_shows_latest_benchmark_health_without_artifact
     assert "artifact_traces:" not in output
     assert "latest_traces:" in output
     assert f"- {benchmark_trace} (benchmark/passed)" in output
+    assert f"report {benchmark_trace / 'benchmark-report.json'}" in output
     assert "trace_health status=ok; artifacts=0" in output
 
 

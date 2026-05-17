@@ -2737,6 +2737,9 @@ def _trace_health_console_trace_line(trace: dict[object, object]) -> str:
     kind = trace.get("kind", "unknown")
     status = trace.get("status", "unknown")
     line = f"- {trace_dir} ({kind}/{status})"
+    report_path = trace.get("report_path")
+    if isinstance(report_path, str):
+        line += f" report {report_path}"
     replay_summary_path = trace.get("replay_summary_path")
     if isinstance(replay_summary_path, str):
         line += f" summary {replay_summary_path}"
