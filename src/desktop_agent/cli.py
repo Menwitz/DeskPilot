@@ -8,7 +8,7 @@ import os
 import shlex
 import subprocess
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import replace
 from pathlib import Path
 
@@ -790,6 +790,11 @@ def _build_parser() -> argparse.ArgumentParser:
     benchmark_parser.add_argument("--config", type=Path)
     benchmark_parser.add_argument("--confidence-threshold", type=float)
     benchmark_parser.add_argument("--allowed-window", action="append", default=[])
+    benchmark_parser.add_argument(
+        "--fail-on-monitoring-gap",
+        action="store_true",
+        help="return nonzero when a configured benchmark misses trace coverage",
+    )
 
     record_parser = subparsers.add_parser(
         "record",
@@ -2166,16 +2171,41 @@ def _run_benchmark(args: argparse.Namespace) -> int:
     print(f"baseline status: {report.baseline_comparison.status}")
     print(f"pointer timing: {report.pointer_timing_comparison_path}")
     print(f"acceptance: {report.acceptance.status}")
+    monitoring_status = _benchmark_monitoring_status(report.monitoring_coverage)
+    print(f"monitoring coverage: {monitoring_status}")
     for failure in report.acceptance.failures:
         print(f"acceptance failure: {failure}")
     print(f"report: {report.report_path}")
     print(f"summary: {report.summary_report_path}")
-    return (
-        0
-        if all(run.status == "passed" for run in report.runs)
-        and report.acceptance.passed
-        else 1
+    return _benchmark_exit_code(
+        tuple(run.status for run in report.runs),
+        acceptance_passed=report.acceptance.passed,
+        monitoring_coverage=report.monitoring_coverage,
+        fail_on_monitoring_gap=args.fail_on_monitoring_gap,
     )
+
+
+def _benchmark_exit_code(
+    run_statuses: Sequence[str],
+    *,
+    acceptance_passed: bool,
+    monitoring_coverage: Mapping[str, object],
+    fail_on_monitoring_gap: bool,
+) -> int:
+    monitoring_failed = (
+        fail_on_monitoring_gap
+        and monitoring_coverage.get("configured") is True
+        and monitoring_coverage.get("passed") is not True
+    )
+    if all(status == "passed" for status in run_statuses) and acceptance_passed:
+        return 1 if monitoring_failed else 0
+    return 1
+
+
+def _benchmark_monitoring_status(coverage: Mapping[str, object]) -> str:
+    if coverage.get("configured") is not True:
+        return "not_configured"
+    return "passed" if coverage.get("passed") is True else "failed"
 
 
 def _record(args: argparse.Namespace) -> int:

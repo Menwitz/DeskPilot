@@ -299,6 +299,8 @@ abuse, and hidden automation are not supported.
       declared deep-search and trace contract.
 - [x] Add benchmark report-field coverage against the declared final-report
       contract.
+- [x] Add `benchmark-run --fail-on-monitoring-gap` for CI/local gates that
+      require configured benchmark monitoring coverage to pass.
 
 ### Acceptance Criteria
 

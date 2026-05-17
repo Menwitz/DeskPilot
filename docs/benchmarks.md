@@ -132,6 +132,8 @@ is not proof of improvement by itself; it only means the run stayed inside the
 configured reliability and safety thresholds. Ad hoc task files can still use
 the harness, but their report is marked `not_configured` until a task spec adds
 thresholds.
+Use `--fail-on-monitoring-gap` when a CI or local quality gate should fail if a
+configured benchmark misses required trace phases or final-report fields.
 
 ## Baseline Comparison
 

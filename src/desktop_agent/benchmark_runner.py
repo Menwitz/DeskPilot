@@ -218,6 +218,7 @@ class BenchmarkRunReport:
     acceptance: BenchmarkAcceptanceResult
     baseline_comparison: BenchmarkBaselineComparison
     pointer_timing_comparison: PointerTimingComparisonReport
+    monitoring_coverage: dict[str, object]
 
 
 DEFAULT_POINTER_TIMING_SCENARIOS: tuple[PointerTimingScenario, ...] = (
@@ -285,6 +286,7 @@ class BenchmarkRunHarness:
         task_spec = benchmark_task_by_path(task_path)
         thresholds = task_spec.acceptance_thresholds if task_spec else None
         acceptance = evaluate_benchmark_acceptance(runs, summary, thresholds)
+        monitoring_coverage = _monitoring_coverage_to_dict(task_spec, runs)
         metrics_path = output_dir / "runs.jsonl"
         baseline_metrics_path = output_dir / "baseline-runs.jsonl"
         report_path = output_dir / "benchmark-report.json"
@@ -323,6 +325,7 @@ class BenchmarkRunHarness:
             baseline_comparison_path,
             pointer_timing_comparison_path,
             task_spec,
+            monitoring_coverage,
             runs,
             baseline_runs,
             summary,
@@ -342,6 +345,7 @@ class BenchmarkRunHarness:
             baseline_comparison,
             task_spec,
             runs,
+            monitoring_coverage,
         )
         return BenchmarkRunReport(
             task_path=task_path,
@@ -361,6 +365,7 @@ class BenchmarkRunHarness:
             acceptance=acceptance,
             baseline_comparison=baseline_comparison,
             pointer_timing_comparison=pointer_timing_comparison,
+            monitoring_coverage=monitoring_coverage,
         )
 
     def _run_once(
@@ -655,6 +660,7 @@ def _write_report(
     baseline_comparison_path: Path,
     pointer_timing_comparison_path: Path,
     task_spec: BenchmarkTaskSpec | None,
+    monitoring_coverage: dict[str, object],
     runs: tuple[BenchmarkRunMetrics, ...],
     baseline_runs: tuple[BenchmarkRunMetrics, ...],
     summary: BenchmarkSummaryMetrics,
@@ -673,7 +679,7 @@ def _write_report(
         "baseline_comparison_path": str(baseline_comparison_path),
         "pointer_timing_comparison_path": str(pointer_timing_comparison_path),
         "observability_contract": _observability_contract_to_dict(task_spec),
-        "monitoring_coverage": _monitoring_coverage_to_dict(task_spec, runs),
+        "monitoring_coverage": monitoring_coverage,
         "iterations": len(runs),
         "summary": _summary_to_dict(summary),
         "baseline_summary": _summary_to_dict(baseline_summary),
@@ -762,9 +768,9 @@ def _write_benchmark_summary(
     baseline_comparison: BenchmarkBaselineComparison,
     task_spec: BenchmarkTaskSpec | None,
     runs: tuple[BenchmarkRunMetrics, ...],
+    monitoring_coverage: dict[str, object],
 ) -> None:
     contract = _observability_contract_to_dict(task_spec)
-    coverage = _monitoring_coverage_to_dict(task_spec, runs)
     lines = [
         "# Benchmark Summary",
         "",
@@ -786,7 +792,7 @@ def _write_benchmark_summary(
         "",
         "## Monitoring Coverage",
         "",
-        *_benchmark_monitoring_coverage_lines(coverage),
+        *_benchmark_monitoring_coverage_lines(monitoring_coverage),
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

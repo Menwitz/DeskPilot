@@ -6,6 +6,8 @@ from pytest import CaptureFixture, MonkeyPatch
 
 from desktop_agent.actuation import ActuationProfile, DryRunActuator
 from desktop_agent.cli import (
+    _benchmark_exit_code,
+    _benchmark_monitoring_status,
     _perception_engine_for_mode,
     _screen_observer_for_mode,
     main,
@@ -2384,6 +2386,7 @@ def test_cli_benchmark_run_writes_metrics_and_report(
     assert "metrics:" in output
     assert "baseline metrics:" in output
     assert "trace health:" in output
+    assert "monitoring coverage: not_configured" in output
     assert "variance:" in output
     assert "baseline comparison:" in output
     assert "baseline status:" in output
@@ -2391,3 +2394,38 @@ def test_cli_benchmark_run_writes_metrics_and_report(
     assert "acceptance: not_configured" in output
     assert "report:" in output
     assert "summary:" in output
+
+
+def test_cli_benchmark_exit_code_can_fail_on_monitoring_gap() -> None:
+    healthy = {"configured": True, "passed": True}
+    missing = {"configured": True, "passed": False}
+    ad_hoc = {"configured": False}
+
+    assert (
+        _benchmark_exit_code(
+            ("passed",),
+            acceptance_passed=True,
+            monitoring_coverage=healthy,
+            fail_on_monitoring_gap=True,
+        )
+        == 0
+    )
+    assert (
+        _benchmark_exit_code(
+            ("passed",),
+            acceptance_passed=True,
+            monitoring_coverage=missing,
+            fail_on_monitoring_gap=True,
+        )
+        == 1
+    )
+    assert (
+        _benchmark_exit_code(
+            ("passed",),
+            acceptance_passed=True,
+            monitoring_coverage=ad_hoc,
+            fail_on_monitoring_gap=True,
+        )
+        == 0
+    )
+    assert _benchmark_monitoring_status(missing) == "failed"
