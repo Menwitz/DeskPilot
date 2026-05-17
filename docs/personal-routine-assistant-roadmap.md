@@ -244,6 +244,8 @@ abuse, and hidden automation are not supported.
       and Markdown reports.
 - [x] Count benchmark reports with nonzero embedded warning counts as
       trace-health warning traces.
+- [x] Reject JSON booleans as benchmark warning-trace counts in local
+      trace-health warning detection.
 - [x] Add `trace-health --markdown-output` so monitoring runs can persist a
       human-readable local health report.
 - [x] Add proof-suite gate details to native trace-viewer state so local proof

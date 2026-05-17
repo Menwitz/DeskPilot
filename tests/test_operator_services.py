@@ -468,6 +468,32 @@ def test_local_trace_service_counts_benchmark_warning_traces(
     }
 
 
+def test_local_trace_service_rejects_boolean_benchmark_warning_count(
+    tmp_path: Path,
+) -> None:
+    trace_root = tmp_path / "traces"
+    benchmark_trace = trace_root / "20260516T030000Z-benchmark"
+    benchmark_trace.mkdir(parents=True)
+    (benchmark_trace / "benchmark-report.json").write_text(
+        json.dumps(
+            {
+                "acceptance": {"status": "passed"},
+                "trace_health_summary": {
+                    "health_status": "ok",
+                    "warning_trace_count": True,
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+    service = LocalTraceService(trace_root)
+
+    health = service.trace_health()
+
+    assert health["warning_trace_count"] == 0
+    assert health["warning_traces"] == []
+
+
 def test_local_trace_service_inspects_failed_trace_for_app_review(
     tmp_path: Path,
 ) -> None:
