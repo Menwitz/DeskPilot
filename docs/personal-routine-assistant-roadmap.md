@@ -334,6 +334,8 @@ abuse, and hidden automation are not supported.
       output.
 - [x] Embed warning-trace counts in benchmark JSON reports, Markdown summaries,
       and replay output.
+- [x] Run the warning-trace monitoring validation gate with ruff, mypy, package
+      build, and full pytest.
 - [x] Add benchmark monitoring coverage for observed trace phases against the
       declared deep-search and trace contract.
 - [x] Add benchmark report-field coverage against the declared final-report
