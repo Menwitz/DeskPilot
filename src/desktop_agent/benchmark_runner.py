@@ -332,6 +332,7 @@ class BenchmarkRunHarness:
             baseline_comparison_path,
             pointer_timing_comparison_path,
             generated_at,
+            trace_health,
             task_spec,
             monitoring_coverage,
             runs,
@@ -678,6 +679,7 @@ def _write_report(
     baseline_comparison_path: Path,
     pointer_timing_comparison_path: Path,
     generated_at: str,
+    trace_health: dict[str, object],
     task_spec: BenchmarkTaskSpec | None,
     monitoring_coverage: dict[str, object],
     runs: tuple[BenchmarkRunMetrics, ...],
@@ -696,6 +698,7 @@ def _write_report(
         "metrics_path": str(metrics_path),
         "baseline_metrics_path": str(baseline_metrics_path),
         "trace_health_path": str(trace_health_path),
+        "trace_health_summary": _benchmark_trace_health_summary_to_dict(trace_health),
         "variance_report_path": str(variance_report_path),
         "baseline_comparison_path": str(baseline_comparison_path),
         "pointer_timing_comparison_path": str(pointer_timing_comparison_path),
@@ -747,6 +750,19 @@ def _benchmark_report_artifacts_to_dict(
         "variance": str(variance_report_path),
         "baseline_comparison": str(baseline_comparison_path),
         "pointer_timing_comparison": str(pointer_timing_comparison_path),
+    }
+
+
+def _benchmark_trace_health_summary_to_dict(
+    trace_health: dict[str, object],
+) -> dict[str, object]:
+    return {
+        "schema_version": trace_health.get("schema_version"),
+        "generated_at": trace_health.get("generated_at"),
+        "health_status": trace_health.get("health_status"),
+        "trace_count": trace_health.get("trace_count"),
+        "attention_count": len(_trace_health_attention_traces(trace_health)),
+        "artifact_trace_count": trace_health.get("artifact_trace_count", 0),
     }
 
 

@@ -3015,6 +3015,16 @@ def _benchmark_replay_lines(payload: dict[str, object]) -> list[str]:
         f"baseline: {_benchmark_baseline_status(payload)}",
         f"monitoring coverage: {_benchmark_replay_monitoring_status(payload)}",
     ]
+    trace_health_summary = payload.get("trace_health_summary")
+    if isinstance(trace_health_summary, dict):
+        lines.extend(
+            [
+                "trace_health_status: "
+                f"{trace_health_summary.get('health_status', 'unknown')}",
+                "trace_health_artifact_traces: "
+                f"{trace_health_summary.get('artifact_trace_count', 0)}",
+            ],
+        )
     summary = payload.get("summary")
     if isinstance(summary, dict):
         for key in (
@@ -3128,6 +3138,9 @@ def _benchmark_replay_summary_markdown(
         f"- Baseline: `{_benchmark_baseline_status(payload)}`",
         f"- Monitoring coverage: `{_benchmark_replay_monitoring_status(payload)}`",
         f"- Trace health: `{payload.get('trace_health_path', 'unknown')}`",
+        *_benchmark_replay_trace_health_summary_lines(
+            payload.get("trace_health_summary"),
+        ),
         "",
         "## Observability Contract",
         "",
@@ -3161,6 +3174,15 @@ def _benchmark_contract_summary_lines(value: object) -> list[str]:
         "- Required report fields: "
         f"`{_string_list_value(value.get('required_report_fields'))}`",
         f"- Required metrics: `{_string_list_value(value.get('required_metrics'))}`",
+    ]
+
+
+def _benchmark_replay_trace_health_summary_lines(value: object) -> list[str]:
+    if not isinstance(value, dict):
+        return []
+    return [
+        f"- Trace health status: `{value.get('health_status', 'unknown')}`",
+        f"- Trace health artifacts: `{value.get('artifact_trace_count', 0)}`",
     ]
 
 

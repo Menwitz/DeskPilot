@@ -1700,6 +1700,10 @@ def test_cli_replay_summarizes_benchmark_report(
                 "schema_version": "benchmark_report_v1",
                 "generated_at": "2026-05-17T00:00:00+00:00",
                 "trace_health_path": str(trace_dir / "trace-health.json"),
+                "trace_health_summary": {
+                    "health_status": "ok",
+                    "artifact_trace_count": 2,
+                },
                 "report_artifacts": {
                     "metrics": str(trace_dir / "runs.jsonl"),
                     "summary": str(trace_dir / "benchmark-summary.md"),
@@ -1759,6 +1763,8 @@ def test_cli_replay_summarizes_benchmark_report(
     assert "status: passed" in output
     assert "baseline: neutral" in output
     assert "monitoring coverage: passed" in output
+    assert "trace_health_status: ok" in output
+    assert "trace_health_artifact_traces: 2" in output
     assert "pipeline_modes: dry-run, replay" in output
     assert "deep_search_sources: trace_events, final_report" in output
     assert "observed_trace_phases: observe_screen" in output
@@ -1773,6 +1779,8 @@ def test_cli_replay_summarizes_benchmark_report(
     assert "- Pipeline modes: `dry-run, replay`" in summary
     assert "- Deep-search sources: `trace_events, final_report`" in summary
     assert "- Monitoring coverage: `passed`" in summary
+    assert "- Trace health status: `ok`" in summary
+    assert "- Trace health artifacts: `2`" in summary
     assert "## Report Artifacts" in summary
     assert f"- `summary`: `{trace_dir / 'benchmark-summary.md'}`" in summary
     assert "- Observed trace phases: `observe_screen`" in summary
@@ -2495,6 +2503,7 @@ def test_cli_benchmark_run_writes_metrics_and_report(
     assert status == 0
     assert report["schema_version"] == "benchmark_report_v1"
     assert isinstance(report["generated_at"], str)
+    assert report["trace_health_summary"]["health_status"] == "ok"
     assert report["report_artifacts"]["report"] == str(
         output_dir / "benchmark-report.json"
     )

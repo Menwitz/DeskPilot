@@ -70,6 +70,11 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
         report.pointer_timing_comparison_path
     )
     assert report_payload["trace_health_path"] == str(report.trace_health_path)
+    assert report_payload["trace_health_summary"]["schema_version"] == (
+        "trace_health_v1"
+    )
+    assert report_payload["trace_health_summary"]["health_status"] == "ok"
+    assert report_payload["trace_health_summary"]["artifact_trace_count"] == 0
     assert report_payload["report_artifacts"] == {
         "report": str(report.report_path),
         "metrics": str(report.metrics_path),

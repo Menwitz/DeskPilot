@@ -309,6 +309,8 @@ abuse, and hidden automation are not supported.
       in benchmark Markdown summaries.
 - [x] Include trace-health schema, generation timestamp, and artifact-trace
       count in benchmark Markdown summaries.
+- [x] Embed compact trace-health summaries in benchmark JSON reports and replay
+      output.
 - [x] Add benchmark monitoring coverage for observed trace phases against the
       declared deep-search and trace contract.
 - [x] Add benchmark report-field coverage against the declared final-report
