@@ -234,6 +234,8 @@ abuse, and hidden automation are not supported.
       local report artifact.
 - [x] Keep `trace-health --json --output` stdout parseable for monitoring
       pipelines.
+- [x] Keep `trace-health --json --fail-on-warning` stdout parseable while
+      returning a nonzero warning-gate status.
 - [x] Add trace-health attention status so failed, invalid, blocked, error, or
       unknown reports stand out in CLI, JSON, and native dashboard monitoring.
 - [x] Add `trace-health --fail-on-attention` so monitoring and package smoke
