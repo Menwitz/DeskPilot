@@ -1655,6 +1655,85 @@ def test_cli_replay_summarizes_proof_suite_finalization(
     assert "- `promotion`: `" in summary
 
 
+def test_cli_replay_summarizes_benchmark_report(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_dir = tmp_path / "benchmark"
+    trace_dir.mkdir()
+    (trace_dir / "benchmark-report.json").write_text(
+        json.dumps(
+            {
+                "task_path": "tasks/demo.yaml",
+                "trace_health_path": str(trace_dir / "trace-health.json"),
+                "iterations": 1,
+                "summary": {
+                    "success_rate": 1.0,
+                    "grounding_accuracy": 1.0,
+                    "ambiguity_rate": 0.0,
+                    "recovery_rate": 0.0,
+                    "operator_intervention_rate": 0.0,
+                },
+                "acceptance": {"status": "passed"},
+                "baseline_comparison": {"status": "neutral"},
+                "observability_contract": {
+                    "configured": True,
+                    "benchmark_task_id": "demo",
+                    "pipeline_modes": ["dry-run", "replay"],
+                    "deep_search_sources": ["trace_events", "final_report"],
+                    "required_trace_phases": ["observe_screen"],
+                    "required_report_fields": ["status"],
+                    "required_metrics": ["success_rate"],
+                },
+                "monitoring_coverage": {
+                    "configured": True,
+                    "passed": True,
+                    "observed_trace_phases": ["observe_screen"],
+                    "missing_trace_phases": [],
+                    "observed_report_fields": ["status"],
+                    "missing_report_fields": [],
+                },
+                "runs": [
+                    {
+                        "iteration": 1,
+                        "status": "passed",
+                        "trace_dir": str(trace_dir / "traces" / "run-1"),
+                        "task_time_seconds": 0.25,
+                        "step_count": 2,
+                        "action_count": 1,
+                    },
+                ],
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    status = main(["replay", str(trace_dir), "--write-summary"])
+
+    output = capsys.readouterr().out
+    summary_path = trace_dir / "replay-summary.md"
+    summary = summary_path.read_text(encoding="utf-8")
+    assert status == 0
+    assert f"trace: {trace_dir}" in output
+    assert "benchmark: tasks/demo.yaml" in output
+    assert "status: passed" in output
+    assert "baseline: neutral" in output
+    assert "monitoring coverage: passed" in output
+    assert "pipeline_modes: dry-run, replay" in output
+    assert "deep_search_sources: trace_events, final_report" in output
+    assert "observed_trace_phases: observe_screen" in output
+    assert "missing_trace_phases: none" in output
+    assert "run 1: passed" in output
+    assert f"summary: {summary_path}" in output
+    assert "# DeskPilot Benchmark Replay Summary" in summary
+    assert "- Pipeline modes: `dry-run, replay`" in summary
+    assert "- Deep-search sources: `trace_events, final_report`" in summary
+    assert "- Monitoring coverage: `passed`" in summary
+    assert "- Observed trace phases: `observe_screen`" in summary
+    assert "- Missing trace phases: `none`" in summary
+    assert "run 1: passed" in summary
+
+
 def test_cli_analyze_failed_run_writes_review_artifacts(
     tmp_path: Path,
     capsys: CaptureFixture[str],

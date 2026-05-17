@@ -309,6 +309,9 @@ abuse, and hidden automation are not supported.
       monitoring alongside run, goal-plan, and proof-suite reports.
 - [x] Render benchmark reports in native trace-viewer state with acceptance,
       baseline, and monitoring coverage status.
+- [x] Add `desktop-agent replay` support for benchmark reports with acceptance,
+      baseline, monitoring coverage, pipeline, deep-search, and per-run trace
+      details.
 
 ### Acceptance Criteria
 

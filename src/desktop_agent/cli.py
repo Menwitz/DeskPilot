@@ -2476,6 +2476,9 @@ def _replay(args: argparse.Namespace) -> int:
         proof_suite_status_path = args.trace_dir / PROOF_FINALIZATION_STATUS_NAME
         if proof_suite_status_path.exists():
             return _replay_proof_suite(args)
+        benchmark_report_path = args.trace_dir / "benchmark-report.json"
+        if benchmark_report_path.exists():
+            return _replay_benchmark(args)
         print(f"error: final report not found: {report_path}")
         if (args.trace_dir / "proof-manifest.json").exists():
             print(f"hint: use desktop-agent proof replay {args.trace_dir}")
@@ -2599,6 +2602,26 @@ def _replay_proof_suite(args: argparse.Namespace) -> int:
             print(f"- {error}")
     if args.write_summary:
         summary_path = _write_proof_suite_replay_summary(args.trace_dir, payload)
+        print(f"summary: {summary_path}")
+    if args.verbose:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def _replay_benchmark(args: argparse.Namespace) -> int:
+    report_path = args.trace_dir / "benchmark-report.json"
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        print("error: benchmark report must contain a JSON object")
+        return 1
+
+    print(f"trace: {args.trace_dir}")
+    print(f"benchmark: {payload.get('task_path', 'unknown')}")
+    print(f"status: {_benchmark_acceptance_status(payload)}")
+    for line in _benchmark_replay_lines(payload):
+        print(line)
+    if args.write_summary:
+        summary_path = _write_benchmark_replay_summary(args.trace_dir, payload)
         print(f"summary: {summary_path}")
     if args.verbose:
         print(json.dumps(payload, indent=2, sort_keys=True))
@@ -2943,6 +2966,178 @@ def _proof_suite_replay_summary_markdown(
     return "\n".join(lines) + "\n"
 
 
+def _benchmark_replay_lines(payload: dict[str, object]) -> list[str]:
+    lines = [
+        f"iterations: {payload.get('iterations', 'unknown')}",
+        f"trace_health: {payload.get('trace_health_path', 'unknown')}",
+        f"acceptance: {_benchmark_acceptance_status(payload)}",
+        f"baseline: {_benchmark_baseline_status(payload)}",
+        f"monitoring coverage: {_benchmark_replay_monitoring_status(payload)}",
+    ]
+    summary = payload.get("summary")
+    if isinstance(summary, dict):
+        for key in (
+            "success_rate",
+            "grounding_accuracy",
+            "ambiguity_rate",
+            "recovery_rate",
+            "operator_intervention_rate",
+        ):
+            if key in summary:
+                lines.append(f"{key}: {summary[key]}")
+    contract = payload.get("observability_contract")
+    if isinstance(contract, dict):
+        lines.extend(
+            [
+                f"pipeline_modes: {_string_list_value(contract.get('pipeline_modes'))}",
+                "deep_search_sources: "
+                f"{_string_list_value(contract.get('deep_search_sources'))}",
+            ],
+        )
+    coverage = payload.get("monitoring_coverage")
+    if isinstance(coverage, dict):
+        lines.extend(
+            [
+                "observed_trace_phases: "
+                f"{_string_list_value(coverage.get('observed_trace_phases'))}",
+                "missing_trace_phases: "
+                f"{_string_list_value(coverage.get('missing_trace_phases'))}",
+                "observed_report_fields: "
+                f"{_string_list_value(coverage.get('observed_report_fields'))}",
+                "missing_report_fields: "
+                f"{_string_list_value(coverage.get('missing_report_fields'))}",
+            ],
+        )
+    runs = payload.get("runs")
+    if isinstance(runs, list) and runs:
+        lines.append("runs:")
+        for run in runs:
+            if isinstance(run, dict):
+                lines.append(f"- {_benchmark_run_line(run)}")
+    return lines
+
+
+def _benchmark_acceptance_status(payload: dict[str, object]) -> str:
+    acceptance = payload.get("acceptance")
+    if isinstance(acceptance, dict):
+        status = acceptance.get("status")
+        if isinstance(status, str):
+            return status
+    return "unknown"
+
+
+def _benchmark_baseline_status(payload: dict[str, object]) -> str:
+    baseline = payload.get("baseline_comparison")
+    if isinstance(baseline, dict):
+        status = baseline.get("status")
+        if isinstance(status, str):
+            return status
+    return "unknown"
+
+
+def _benchmark_replay_monitoring_status(payload: dict[str, object]) -> str:
+    coverage = payload.get("monitoring_coverage")
+    if isinstance(coverage, dict):
+        return _benchmark_monitoring_status(coverage)
+    return "not_configured"
+
+
+def _benchmark_run_line(run: dict[object, object]) -> str:
+    iteration = run.get("iteration", "?")
+    status = run.get("status", "unknown")
+    trace_dir = run.get("trace_dir", "none")
+    task_time = run.get("task_time_seconds", "unknown")
+    step_count = run.get("step_count", "unknown")
+    action_count = run.get("action_count", "unknown")
+    return (
+        f"run {iteration}: {status} trace={trace_dir} "
+        f"time={task_time}s steps={step_count} actions={action_count}"
+    )
+
+
+def _write_benchmark_replay_summary(
+    trace_dir: Path,
+    payload: dict[str, object],
+) -> Path:
+    summary_path = trace_dir / "replay-summary.md"
+    summary_path.write_text(
+        _benchmark_replay_summary_markdown(trace_dir, payload),
+        encoding="utf-8",
+    )
+    return summary_path
+
+
+def _benchmark_replay_summary_markdown(
+    trace_dir: Path,
+    payload: dict[str, object],
+) -> str:
+    lines = [
+        "# DeskPilot Benchmark Replay Summary",
+        "",
+        f"- Trace: `{trace_dir}`",
+        f"- Task: `{payload.get('task_path', 'unknown')}`",
+        f"- Status: `{_benchmark_acceptance_status(payload)}`",
+        f"- Baseline: `{_benchmark_baseline_status(payload)}`",
+        f"- Monitoring coverage: `{_benchmark_replay_monitoring_status(payload)}`",
+        f"- Trace health: `{payload.get('trace_health_path', 'unknown')}`",
+        "",
+        "## Observability Contract",
+        "",
+        *_benchmark_contract_summary_lines(payload.get("observability_contract")),
+        "",
+        "## Monitoring Coverage",
+        "",
+        *_benchmark_monitoring_summary_lines(payload.get("monitoring_coverage")),
+        "",
+        "## Runs",
+        "",
+        *_benchmark_run_summary_lines(payload.get("runs")),
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def _benchmark_contract_summary_lines(value: object) -> list[str]:
+    if not isinstance(value, dict) or value.get("configured") is not True:
+        return ["- Configured: `false`"]
+    return [
+        f"- Benchmark task: `{value.get('benchmark_task_id', 'unknown')}`",
+        f"- Pipeline modes: `{_string_list_value(value.get('pipeline_modes'))}`",
+        "- Deep-search sources: "
+        f"`{_string_list_value(value.get('deep_search_sources'))}`",
+        "- Required trace phases: "
+        f"`{_string_list_value(value.get('required_trace_phases'))}`",
+        "- Required report fields: "
+        f"`{_string_list_value(value.get('required_report_fields'))}`",
+        f"- Required metrics: `{_string_list_value(value.get('required_metrics'))}`",
+    ]
+
+
+def _benchmark_monitoring_summary_lines(value: object) -> list[str]:
+    if not isinstance(value, dict) or value.get("configured") is not True:
+        return ["- Configured: `false`"]
+    return [
+        f"- Passed: `{value.get('passed', False)}`",
+        "- Observed trace phases: "
+        f"`{_string_list_value(value.get('observed_trace_phases'))}`",
+        "- Missing trace phases: "
+        f"`{_string_list_value(value.get('missing_trace_phases'))}`",
+        "- Observed report fields: "
+        f"`{_string_list_value(value.get('observed_report_fields'))}`",
+        "- Missing report fields: "
+        f"`{_string_list_value(value.get('missing_report_fields'))}`",
+    ]
+
+
+def _benchmark_run_summary_lines(value: object) -> list[str]:
+    if not isinstance(value, list) or not value:
+        return ["- No benchmark runs recorded."]
+    lines = []
+    for run in value:
+        if isinstance(run, dict):
+            lines.append(f"- `{_benchmark_run_line(run)}`")
+    return lines or ["- No benchmark runs recorded."]
+
+
 def _string_mapping(value: object) -> dict[str, str]:
     if not isinstance(value, dict):
         return {}
@@ -2957,6 +3152,11 @@ def _string_list(value: object) -> list[str]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, str)]
+
+
+def _string_list_value(value: object) -> str:
+    items = _string_list(value)
+    return ", ".join(items) if items else "none"
 
 
 def _int_mapping(value: object) -> dict[str, int]:
