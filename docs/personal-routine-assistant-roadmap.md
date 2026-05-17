@@ -859,6 +859,7 @@ abuse, and hidden automation are not supported.
       summaries.
 - [x] Verify packaged trace-health console output renders benchmark artifact
       trace summaries.
+- [x] Verify packaged trace-health console output renders latest trace rows.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 

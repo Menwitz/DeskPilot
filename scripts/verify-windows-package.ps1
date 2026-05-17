@@ -152,6 +152,9 @@ $TraceHealthConsoleText = $TraceHealthConsole -join "`n"
 if ($TraceHealthConsoleText -notmatch "artifact_traces:") {
     throw "Packaged trace-health console output did not include artifact traces"
 }
+if ($TraceHealthConsoleText -notmatch "latest_traces:") {
+    throw "Packaged trace-health console output did not include latest traces"
+}
 if ($TraceHealthConsoleText -notmatch "benchmark-replay") {
     throw "Packaged trace-health console output did not include benchmark replay"
 }

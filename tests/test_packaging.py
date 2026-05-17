@@ -117,6 +117,10 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         in script
     )
     assert (
+        "Packaged trace-health console output did not include latest traces"
+        in script
+    )
+    assert (
         "Packaged trace-health console output did not include benchmark replay"
         in script
     )
