@@ -728,6 +728,7 @@ abuse, and hidden automation are not supported.
       native dashboard panel state.
 - [x] Render artifact-trace counts in native trace-health dashboard panel state.
 - [x] Render warning-trace counts in native trace-health dashboard panel state.
+- [x] Reject JSON booleans as native trace-health dashboard top-level counts.
 - [x] Render compact benchmark trace-health status in native dashboard panel
       state.
 - [x] Let the native dashboard read benchmark trace-health status from artifact

@@ -242,6 +242,21 @@ def test_trace_health_panel_uses_latest_benchmark_health_fallback() -> None:
     assert state.benchmark_artifact_count == 0
 
 
+def test_trace_health_panel_rejects_boolean_top_level_counts() -> None:
+    state = trace_health_panel_from_metadata(
+        {
+            "trace_count": True,
+            "artifact_trace_count": False,
+            "warning_trace_count": True,
+            "health_status": "ok",
+        },
+    )
+
+    assert state.trace_count == 0
+    assert state.artifact_count == 0
+    assert state.warning_trace_count == 0
+
+
 def test_approval_dialog_state_tracks_required_review_fields() -> None:
     state = ApprovalDialogState(
         routine_id="social.publish",

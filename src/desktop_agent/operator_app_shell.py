@@ -419,13 +419,9 @@ def trace_health_panel_from_metadata(
         proof_warnings,
     ) = _proof_trace_summary(payload)
     return TraceHealthPanelState(
-        trace_count=trace_count if isinstance(trace_count, int) else 0,
-        artifact_count=artifact_trace_count
-        if isinstance(artifact_trace_count, int)
-        else 0,
-        warning_trace_count=warning_trace_count
-        if isinstance(warning_trace_count, int)
-        else 0,
+        trace_count=_summary_int_or_none(trace_count) or 0,
+        artifact_count=_summary_int_or_none(artifact_trace_count) or 0,
+        warning_trace_count=_summary_int_or_none(warning_trace_count) or 0,
         attention_count=len(attention_traces)
         if isinstance(attention_traces, list)
         else 0,
