@@ -147,6 +147,7 @@ def test_trace_health_panel_tracks_counts() -> None:
             "schema_version": "trace_health_v1",
             "generated_at": "2026-05-17T00:00:00+00:00",
             "trace_count": 3,
+            "artifact_trace_count": 1,
             "by_kind": {"run": 1, "goal_plan": 1, "proof_suite": 1},
             "by_status": {"passed": 2, "failed": 1},
             "health_status": "attention",
@@ -160,6 +161,7 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert empty.status == "empty"
     assert metadata["trace_count"] == 3
     assert metadata["attention_count"] == 1
+    assert metadata["artifact_count"] == 1
     assert metadata["kind_counts"] == {
         "goal_plan": 1,
         "proof_suite": 1,
@@ -175,6 +177,7 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert "proof_suite=1" in text
     assert "Status: attention" in text
     assert "Attention traces: 1" in text
+    assert "Artifact traces: 1" in text
     assert "passed=2" in text
 
 

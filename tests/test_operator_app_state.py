@@ -312,6 +312,7 @@ def test_operator_app_controller_refreshes_trace_health(
     trace_health = metadata["trace_health"]
     assert isinstance(trace_health, dict)
     assert trace_health["attention_count"] == 1
+    assert trace_health["artifact_count"] == 0
     assert trace_health["kind_counts"] == {"run": 1}
     assert trace_health["status_counts"] == {"failed": 1}
     assert trace_health["status"] == "attention"

@@ -111,8 +111,8 @@ project modules:
   metadata and any local `replay-summary.md` artifact path. Benchmark trace
   summaries also expose the report artifact manifest from `benchmark-report.json`.
 - Trace health panel state: renders the trace-health schema version and
-  generation timestamp beside counts so dashboard screenshots identify the
-  monitoring contract in use.
+  generation timestamp beside trace, attention, and artifact counts so
+  dashboard screenshots identify the monitoring contract in use.
 - Trace viewer state: benchmark reports render with benchmark kind, acceptance
   status, baseline comparison status, monitoring coverage status, and
   schema/timestamp metadata, plus benchmark report artifact links.
