@@ -92,6 +92,7 @@ class TraceHealthPanelState:
     trace_count: int = 0
     attention_count: int = 0
     artifact_count: int = 0
+    warning_trace_count: int = 0
     kind_counts: tuple[tuple[str, int], ...] = ()
     status_counts: tuple[tuple[str, int], ...] = ()
     status: str = "empty"
@@ -109,6 +110,7 @@ class TraceHealthPanelState:
             "trace_count": self.trace_count,
             "attention_count": self.attention_count,
             "artifact_count": self.artifact_count,
+            "warning_trace_count": self.warning_trace_count,
             "kind_counts": dict(self.kind_counts),
             "status_counts": dict(self.status_counts),
             "status": self.status,
@@ -404,6 +406,7 @@ def trace_health_panel_from_metadata(
 
     trace_count = payload.get("trace_count")
     artifact_trace_count = payload.get("artifact_trace_count")
+    warning_trace_count = payload.get("warning_trace_count")
     health_status = payload.get("health_status")
     attention_traces = payload.get("attention_traces")
     schema_version = payload.get("schema_version")
@@ -419,6 +422,9 @@ def trace_health_panel_from_metadata(
         trace_count=trace_count if isinstance(trace_count, int) else 0,
         artifact_count=artifact_trace_count
         if isinstance(artifact_trace_count, int)
+        else 0,
+        warning_trace_count=warning_trace_count
+        if isinstance(warning_trace_count, int)
         else 0,
         attention_count=len(attention_traces)
         if isinstance(attention_traces, list)
@@ -472,6 +478,7 @@ def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
             f"- Trace count: {state.trace_count}",
             f"- Attention traces: {state.attention_count}",
             f"- Artifact traces: {state.artifact_count}",
+            f"- Warning traces: {state.warning_trace_count}",
             f"- Benchmark health: {state.benchmark_health_status or 'unknown'}",
             f"- Benchmark health artifacts: {benchmark_artifacts}",
             f"- Proof expected: {proof_expected}",

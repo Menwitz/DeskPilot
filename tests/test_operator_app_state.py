@@ -325,6 +325,7 @@ def test_operator_app_controller_refreshes_trace_health(
     assert isinstance(trace_health, dict)
     assert trace_health["attention_count"] == 1
     assert trace_health["artifact_count"] == 0
+    assert trace_health["warning_trace_count"] == 0
     assert trace_health["kind_counts"] == {"run": 1}
     assert trace_health["status_counts"] == {"failed": 1}
     assert trace_health["status"] == "attention"
@@ -396,6 +397,7 @@ def test_operator_app_controller_refreshes_proof_trace_summary(
     assert trace_health["proof_expected_count"] == 4
     assert trace_health["proof_artifact_count"] == 7
     assert trace_health["proof_error_count"] == 0
+    assert trace_health["warning_trace_count"] == 1
     assert trace_health["proof_warning_count"] == 1
 
 

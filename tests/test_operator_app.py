@@ -148,6 +148,7 @@ def test_trace_health_panel_tracks_counts() -> None:
             "generated_at": "2026-05-17T00:00:00+00:00",
             "trace_count": 3,
             "artifact_trace_count": 1,
+            "warning_trace_count": 1,
             "by_kind": {"run": 1, "goal_plan": 1, "proof_suite": 1},
             "by_status": {"passed": 2, "failed": 1},
             "health_status": "attention",
@@ -185,6 +186,7 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert metadata["trace_count"] == 3
     assert metadata["attention_count"] == 1
     assert metadata["artifact_count"] == 1
+    assert metadata["warning_trace_count"] == 1
     assert metadata["kind_counts"] == {
         "goal_plan": 1,
         "proof_suite": 1,
@@ -207,6 +209,7 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert "Status: attention" in text
     assert "Attention traces: 1" in text
     assert "Artifact traces: 1" in text
+    assert "Warning traces: 1" in text
     assert "Benchmark health: ok" in text
     assert "Benchmark health artifacts: 1" in text
     assert "Proof expected: 4" in text
