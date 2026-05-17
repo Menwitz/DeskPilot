@@ -92,6 +92,7 @@ class BenchmarkRunMetrics:
     trace_dir: Path | None
     abort_reason: str | None
     observed_trace_phases: tuple[str, ...] = ()
+    observed_report_fields: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -447,11 +448,23 @@ def _metrics_from_report(
         trace_dir=report.trace_dir,
         abort_reason=report.abort_reason,
         observed_trace_phases=_observed_trace_phases(report),
+        observed_report_fields=_observed_report_fields(),
     )
 
 
 def _observed_trace_phases(report: RunReport) -> tuple[str, ...]:
     return tuple(dict.fromkeys(event.phase for event in report.events))
+
+
+def _observed_report_fields() -> tuple[str, ...]:
+    return (
+        "task_name",
+        "status",
+        "abort_reason",
+        "steps",
+        "events",
+        "trace_dir",
+    )
 
 
 def evaluate_benchmark_acceptance(
@@ -717,13 +730,24 @@ def _monitoring_coverage_to_dict(
     )
     observed = list(dict.fromkeys(observed))
     required = list(task_spec.required_trace_phases)
-    missing = [phase for phase in required if phase not in observed]
+    observed_report_fields = sorted(
+        field for run in runs for field in run.observed_report_fields
+    )
+    observed_report_fields = list(dict.fromkeys(observed_report_fields))
+    required_report_fields = list(task_spec.required_report_fields)
+    missing_trace_phases = [phase for phase in required if phase not in observed]
+    missing_report_fields = [
+        field for field in required_report_fields if field not in observed_report_fields
+    ]
     return {
         "configured": True,
-        "passed": not missing,
+        "passed": not missing_trace_phases and not missing_report_fields,
         "required_trace_phases": required,
         "observed_trace_phases": observed,
-        "missing_trace_phases": missing,
+        "missing_trace_phases": missing_trace_phases,
+        "required_report_fields": required_report_fields,
+        "observed_report_fields": observed_report_fields,
+        "missing_report_fields": missing_report_fields,
     }
 
 
@@ -776,6 +800,8 @@ def _benchmark_monitoring_coverage_lines(
         f"- Passed: `{coverage.get('passed', False)}`",
         "- Missing trace phases: "
         f"`{_contract_list(coverage, 'missing_trace_phases')}`",
+        "- Missing report fields: "
+        f"`{_contract_list(coverage, 'missing_report_fields')}`",
     ]
 
 
@@ -1049,6 +1075,7 @@ def _metrics_to_dict(metrics: BenchmarkRunMetrics) -> dict[str, object]:
         "trace_dir": str(metrics.trace_dir) if metrics.trace_dir else None,
         "abort_reason": metrics.abort_reason,
         "observed_trace_phases": list(metrics.observed_trace_phases),
+        "observed_report_fields": list(metrics.observed_report_fields),
     }
 
 
