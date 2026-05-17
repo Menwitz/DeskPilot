@@ -240,6 +240,9 @@ if ($BenchmarkArtifactTrace.trace_health_summary.health_status -ne "ok") {
 if ($BenchmarkArtifactTrace.trace_health_summary.artifact_trace_count -lt 1) {
     throw "Packaged trace-health report did not include benchmark trace-health artifact count"
 }
+if ($BenchmarkArtifactTrace.trace_health_summary.warning_trace_count -ne 0) {
+    throw "Packaged trace-health report did not include benchmark trace-health warning count"
+}
 $BenchmarkLatestTrace = $TraceHealth.latest |
     Where-Object { $_.kind -eq "benchmark" } |
     Select-Object -First 1
@@ -248,6 +251,9 @@ if (-not $BenchmarkLatestTrace) {
 }
 if ($BenchmarkLatestTrace.report_path -notmatch "benchmark-report.json") {
     throw "Packaged trace-health report latest trace did not include benchmark report path"
+}
+if ($BenchmarkLatestTrace.trace_health_summary.warning_trace_count -ne 0) {
+    throw "Packaged trace-health report latest trace did not include benchmark warning count"
 }
 $ProofLatestTrace = $TraceHealth.latest |
     Where-Object { $_.kind -eq "proof_suite" } |
