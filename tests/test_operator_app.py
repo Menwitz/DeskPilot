@@ -347,6 +347,7 @@ def test_trace_viewer_timeline_loads_proof_suite_status(
                 "archive_verification": "passed",
             },
             "checked_artifacts": {"promotion": [], "archive": []},
+            "warnings": ["browser-fixture: video_path is not present"],
         },
         report_path=tmp_path / "proof-finalization-status.json",
     )
@@ -364,6 +365,7 @@ def test_trace_viewer_timeline_loads_proof_suite_status(
         "reported_count: 4",
         "artifact_count: 7",
         "error_count: 0",
+        "warning: browser-fixture: video_path is not present",
     ]
     assert metadata["final_report_path"] == str(
         tmp_path / "proof-finalization-status.json",
@@ -371,6 +373,7 @@ def test_trace_viewer_timeline_loads_proof_suite_status(
     assert "Trace kind: proof_suite" in text
     assert "suite_validation: passed" in text
     assert "artifact_count: 7" in text
+    assert "warning: browser-fixture: video_path is not present" in text
 
 
 def test_trace_viewer_timeline_loads_goal_candidate_reasoning(

@@ -228,7 +228,8 @@ def test_operator_app_controller_loads_trace_report_state(
         (
             '{"status":"passed","gates":{"suite_validation":"passed"},'
             '"summary":{"expected_count":4,"artifact_count":7,"error_count":0},'
-            '"checked_artifacts":{"promotion":[],"archive":[]}}'
+            '"checked_artifacts":{"promotion":[],"archive":[]},'
+            '"warnings":["browser-fixture: video_path is not present"]}'
         ),
         encoding="utf-8",
     )
@@ -247,6 +248,7 @@ def test_operator_app_controller_loads_trace_report_state(
         "expected_count: 4",
         "artifact_count: 7",
         "error_count: 0",
+        "warning: browser-fixture: video_path is not present",
     )
     assert state.trace_viewer.final_report_path == (
         trace_dir / "proof-finalization-status.json"

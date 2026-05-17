@@ -608,7 +608,7 @@ def trace_viewer_timeline_from_report(
         ),
         proof_gates=_proof_gate_lines(gates),
         verification_results=(
-            _proof_summary_lines(report)
+            _proof_verification_lines(report)
             if trace_kind == "proof_suite"
             else _benchmark_verification_lines(report)
         ),
@@ -670,6 +670,23 @@ def _proof_summary_lines(report: Mapping[str, object]) -> tuple[str, ...]:
         for name, value in summary.items()
         if isinstance(name, str) and _is_summary_int(value)
     )
+
+
+def _proof_warning_lines(report: Mapping[str, object]) -> tuple[str, ...]:
+    """Render proof finalization warnings for trace viewer diagnostics."""
+
+    warnings = report.get("warnings")
+    if not isinstance(warnings, list):
+        return ()
+    return tuple(
+        f"warning: {warning}" for warning in warnings if isinstance(warning, str)
+    )
+
+
+def _proof_verification_lines(report: Mapping[str, object]) -> tuple[str, ...]:
+    """Render proof summary and warnings for trace viewer diagnostics."""
+
+    return (*_proof_summary_lines(report), *_proof_warning_lines(report))
 
 
 def _is_summary_int(value: object) -> bool:
