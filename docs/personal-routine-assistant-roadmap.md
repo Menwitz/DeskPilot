@@ -695,6 +695,8 @@ abuse, and hidden automation are not supported.
 - [x] Render artifact-trace counts in native trace-health dashboard panel state.
 - [x] Render compact benchmark trace-health status in native dashboard panel
       state.
+- [x] Let the native dashboard read benchmark trace-health status from artifact
+      or latest trace metadata.
 - [x] Add settings for trace root, screenshots, video capture, Ollama enablement,
       emergency hotkey, default activity profile, and proof mode.
 - [x] Add UI integration tests around app state transitions with fake services.

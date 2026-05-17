@@ -449,11 +449,13 @@ def _benchmark_trace_health(
 ) -> tuple[str | None, int | None]:
     """Extract the compact benchmark health signal from trace-health metadata."""
 
-    traces = payload.get("artifact_traces")
-    if not isinstance(traces, list):
-        traces = payload.get("latest")
-    if not isinstance(traces, list):
-        return None, None
+    # Check artifact traces first because they contain the richest benchmark
+    # metadata, then fall back to latest traces for minimal benchmark reports.
+    traces: list[object] = []
+    for key in ("artifact_traces", "latest"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            traces.extend(value)
     for trace in traces:
         if not isinstance(trace, Mapping) or trace.get("kind") != "benchmark":
             continue

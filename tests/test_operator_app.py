@@ -194,6 +194,29 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert "passed=2" in text
 
 
+def test_trace_health_panel_uses_latest_benchmark_health_fallback() -> None:
+    state = trace_health_panel_from_metadata(
+        {
+            "trace_count": 1,
+            "artifact_trace_count": 0,
+            "health_status": "ok",
+            "artifact_traces": [],
+            "latest": [
+                {
+                    "kind": "benchmark",
+                    "trace_health_summary": {
+                        "health_status": "ok",
+                        "artifact_trace_count": 0,
+                    },
+                },
+            ],
+        },
+    )
+
+    assert state.benchmark_health_status == "ok"
+    assert state.benchmark_artifact_count == 0
+
+
 def test_approval_dialog_state_tracks_required_review_fields() -> None:
     state = ApprovalDialogState(
         routine_id="social.publish",
