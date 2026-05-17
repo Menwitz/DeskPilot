@@ -1337,6 +1337,7 @@ def _trace_summary(trace_dir: Path) -> TraceSummary:
 _TRACE_REPORT_NAMES: tuple[tuple[str, str], ...] = (
     ("final-report.json", "run"),
     ("goal-plan-report.json", "goal_plan"),
+    ("benchmark-report.json", "benchmark"),
     (PROOF_FINALIZATION_STATUS_NAME, "proof_suite"),
 )
 
@@ -1369,4 +1370,11 @@ def _report_status(report_path: Path) -> str | None:
     if not isinstance(loaded, dict):
         return None
     status = loaded.get("status")
-    return status if isinstance(status, str) else None
+    if isinstance(status, str):
+        return status
+    acceptance = loaded.get("acceptance")
+    if isinstance(acceptance, dict):
+        acceptance_status = acceptance.get("status")
+        if isinstance(acceptance_status, str):
+            return acceptance_status
+    return None

@@ -305,6 +305,8 @@ abuse, and hidden automation are not supported.
       summaries for review without opening JSON.
 - [x] Print benchmark monitoring-gap details for missing trace phases and
       report fields when coverage fails.
+- [x] Surface benchmark reports through local trace service and `trace-health`
+      monitoring alongside run, goal-plan, and proof-suite reports.
 
 ### Acceptance Criteria
 

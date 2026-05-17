@@ -313,7 +313,8 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
     run_trace = trace_root / "20260516T000000Z-run"
     goal_trace = trace_root / "20260516T010000Z-goal"
     proof_trace = trace_root / "20260516T020000Z-proof"
-    for trace_dir in (run_trace, goal_trace, proof_trace):
+    benchmark_trace = trace_root / "20260516T030000Z-benchmark"
+    for trace_dir in (run_trace, goal_trace, proof_trace, benchmark_trace):
         trace_dir.mkdir(parents=True)
     (run_trace / "final-report.json").write_text(
         json.dumps({"status": "failed"}),
@@ -327,13 +328,22 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
         json.dumps({"status": "passed"}),
         encoding="utf-8",
     )
+    (benchmark_trace / "benchmark-report.json").write_text(
+        json.dumps({"acceptance": {"status": "passed"}}),
+        encoding="utf-8",
+    )
     service = LocalTraceService(trace_root)
 
     health = service.trace_health()
 
-    assert health["trace_count"] == 3
-    assert health["by_kind"] == {"proof_suite": 1, "goal_plan": 1, "run": 1}
-    assert health["by_status"] == {"passed": 1, "ready": 1, "failed": 1}
+    assert health["trace_count"] == 4
+    assert health["by_kind"] == {
+        "benchmark": 1,
+        "proof_suite": 1,
+        "goal_plan": 1,
+        "run": 1,
+    }
+    assert health["by_status"] == {"passed": 2, "ready": 1, "failed": 1}
     assert health["health_status"] == "attention"
     assert health["attention_statuses"] == ["failed"]
     attention_traces = cast(list[dict[str, object]], health["attention_traces"])
@@ -346,7 +356,7 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
         },
     ]
     latest = cast(list[dict[str, object]], health["latest"])
-    assert latest[0]["kind"] == "proof_suite"
+    assert latest[0]["kind"] == "benchmark"
 
 
 def test_local_trace_service_inspects_failed_trace_for_app_review(

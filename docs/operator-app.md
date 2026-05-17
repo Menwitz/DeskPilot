@@ -103,10 +103,11 @@ project modules:
 - Approval service: list active routines requiring operator approval and record
   evidence-backed approve or deny decisions with checkpoint evidence, content
   fingerprint, approver, reason, and decision timestamp.
-- Trace service: list local trace directories, read run, goal-plan, and
-  proof-suite finalization JSON reports, and inspect failed traces with local
-  review-only analysis artifacts. It also exposes trace health counts by kind,
-  status, attention state, and attention trace count for dashboard monitoring.
+- Trace service: list local trace directories, read run, goal-plan, benchmark,
+  and proof-suite finalization JSON reports, and inspect failed traces with
+  local review-only analysis artifacts. It also exposes trace health counts by
+  kind, status, attention state, and attention trace count for dashboard
+  monitoring.
 - Routine-pack service: list installed packs, install validated local packs,
   and remove installed packs.
 
