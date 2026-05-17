@@ -110,7 +110,8 @@ project modules:
   monitoring, including trace-health schema/timestamp metadata and any local
   `replay-summary.md` artifact path.
 - Trace viewer state: benchmark reports render with benchmark kind, acceptance
-  status, baseline comparison status, and monitoring coverage status.
+  status, baseline comparison status, monitoring coverage status, and
+  schema/timestamp metadata.
 - Routine-pack service: list installed packs, install validated local packs,
   and remove installed packs.
 

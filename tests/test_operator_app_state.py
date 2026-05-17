@@ -256,6 +256,8 @@ def test_operator_app_controller_loads_benchmark_trace_report_state(
     (trace_dir / "benchmark-report.json").write_text(
         (
             '{"acceptance":{"status":"passed"},'
+            '"schema_version":"benchmark_report_v1",'
+            '"generated_at":"2026-05-17T00:00:00+00:00",'
             '"baseline_comparison":{"status":"neutral"},'
             '"observability_contract":{"configured":true},'
             '"monitoring_coverage":{"configured":true,"passed":true}}'
@@ -273,6 +275,8 @@ def test_operator_app_controller_loads_benchmark_trace_report_state(
     assert state.trace_viewer is not None
     assert state.trace_viewer.trace_kind == "benchmark"
     assert state.trace_viewer.verification_results == (
+        "schema: benchmark_report_v1",
+        "generated_at: 2026-05-17T00:00:00+00:00",
         "acceptance: passed",
         "baseline: neutral",
         "monitoring coverage: passed",

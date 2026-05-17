@@ -330,6 +330,8 @@ def test_trace_viewer_timeline_loads_benchmark_report(
 ) -> None:
     state = trace_viewer_timeline_from_report(
         {
+            "schema_version": "benchmark_report_v1",
+            "generated_at": "2026-05-17T00:00:00+00:00",
             "acceptance": {"status": "passed"},
             "baseline_comparison": {"status": "neutral"},
             "observability_contract": {"configured": True},
@@ -343,11 +345,14 @@ def test_trace_viewer_timeline_loads_benchmark_report(
     assert metadata["trace_kind"] == "benchmark"
     assert metadata["status"] == "passed"
     assert metadata["verification_results"] == [
+        "schema: benchmark_report_v1",
+        "generated_at: 2026-05-17T00:00:00+00:00",
         "acceptance: passed",
         "baseline: neutral",
         "monitoring coverage: passed",
     ]
     assert "Trace kind: benchmark" in text
+    assert "schema: benchmark_report_v1" in text
     assert "monitoring coverage: passed" in text
 
 

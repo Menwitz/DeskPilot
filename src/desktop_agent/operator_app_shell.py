@@ -564,6 +564,12 @@ def _benchmark_verification_lines(report: Mapping[str, object]) -> tuple[str, ..
     if _trace_kind_from_report(report, None) != "benchmark":
         return ()
     lines: list[str] = []
+    schema_version = report.get("schema_version")
+    if isinstance(schema_version, str):
+        lines.append(f"schema: {schema_version}")
+    generated_at = report.get("generated_at")
+    if isinstance(generated_at, str):
+        lines.append(f"generated_at: {generated_at}")
     acceptance = report.get("acceptance")
     if isinstance(acceptance, Mapping):
         status = acceptance.get("status")
