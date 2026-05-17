@@ -159,6 +159,7 @@ def test_trace_health_panel_tracks_counts() -> None:
                     "trace_health_summary": {
                         "health_status": "ok",
                         "artifact_trace_count": 1,
+                        "warning_trace_count": 1,
                     },
                 },
             ],
@@ -198,6 +199,7 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert metadata["generated_at"] == "2026-05-17T00:00:00+00:00"
     assert metadata["benchmark_health_status"] == "ok"
     assert metadata["benchmark_artifact_count"] == 1
+    assert metadata["benchmark_warning_trace_count"] == 1
     assert metadata["proof_expected_count"] == 4
     assert metadata["proof_artifact_count"] == 7
     assert metadata["proof_error_count"] == 0
@@ -212,6 +214,7 @@ def test_trace_health_panel_tracks_counts() -> None:
     assert "Warning traces: 1" in text
     assert "Benchmark health: ok" in text
     assert "Benchmark health artifacts: 1" in text
+    assert "Benchmark health warnings: 1" in text
     assert "Proof expected: 4" in text
     assert "Proof artifacts: 7" in text
     assert "Proof errors: 0" in text
@@ -240,6 +243,7 @@ def test_trace_health_panel_uses_latest_benchmark_health_fallback() -> None:
 
     assert state.benchmark_health_status == "ok"
     assert state.benchmark_artifact_count == 0
+    assert state.benchmark_warning_trace_count is None
 
 
 def test_trace_health_panel_rejects_boolean_top_level_counts() -> None:

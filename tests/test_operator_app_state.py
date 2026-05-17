@@ -334,6 +334,7 @@ def test_operator_app_controller_refreshes_trace_health(
     assert isinstance(trace_health["generated_at"], str)
     assert trace_health["benchmark_health_status"] is None
     assert trace_health["benchmark_artifact_count"] is None
+    assert trace_health["benchmark_warning_trace_count"] is None
     assert trace_health["proof_expected_count"] is None
     assert trace_health["proof_artifact_count"] is None
     assert trace_health["proof_error_count"] is None
@@ -350,7 +351,7 @@ def test_operator_app_controller_refreshes_benchmark_trace_health(
         (
             '{"acceptance":{"status":"passed"},'
             '"trace_health_summary":{"health_status":"ok",'
-            '"artifact_trace_count":0}}'
+            '"artifact_trace_count":0,"warning_trace_count":1}}'
         ),
         encoding="utf-8",
     )
@@ -367,6 +368,7 @@ def test_operator_app_controller_refreshes_benchmark_trace_health(
     assert trace_health["status"] == "ok"
     assert trace_health["benchmark_health_status"] == "ok"
     assert trace_health["benchmark_artifact_count"] == 0
+    assert trace_health["benchmark_warning_trace_count"] == 1
 
 
 def test_operator_app_controller_refreshes_proof_trace_summary(

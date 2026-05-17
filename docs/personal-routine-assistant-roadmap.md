@@ -738,6 +738,7 @@ abuse, and hidden automation are not supported.
 - [x] Reject JSON booleans as native trace-health dashboard top-level counts.
 - [x] Render compact benchmark trace-health status in native dashboard panel
       state.
+- [x] Render benchmark warning-trace counts in native dashboard panel state.
 - [x] Let the native dashboard read benchmark trace-health status from artifact
       or latest trace metadata.
 - [x] Add controller-level coverage for native dashboard benchmark trace-health

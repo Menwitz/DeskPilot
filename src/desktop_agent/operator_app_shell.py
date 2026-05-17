@@ -100,6 +100,7 @@ class TraceHealthPanelState:
     generated_at: str | None = None
     benchmark_health_status: str | None = None
     benchmark_artifact_count: int | None = None
+    benchmark_warning_trace_count: int | None = None
     proof_expected_count: int | None = None
     proof_artifact_count: int | None = None
     proof_error_count: int | None = None
@@ -118,6 +119,7 @@ class TraceHealthPanelState:
             "generated_at": self.generated_at,
             "benchmark_health_status": self.benchmark_health_status,
             "benchmark_artifact_count": self.benchmark_artifact_count,
+            "benchmark_warning_trace_count": self.benchmark_warning_trace_count,
             "proof_expected_count": self.proof_expected_count,
             "proof_artifact_count": self.proof_artifact_count,
             "proof_error_count": self.proof_error_count,
@@ -411,7 +413,11 @@ def trace_health_panel_from_metadata(
     attention_traces = payload.get("attention_traces")
     schema_version = payload.get("schema_version")
     generated_at = payload.get("generated_at")
-    benchmark_status, benchmark_artifacts = _benchmark_trace_health(payload)
+    (
+        benchmark_status,
+        benchmark_artifacts,
+        benchmark_warnings,
+    ) = _benchmark_trace_health(payload)
     (
         proof_expected,
         proof_artifacts,
@@ -432,6 +438,7 @@ def trace_health_panel_from_metadata(
         generated_at=generated_at if isinstance(generated_at, str) else None,
         benchmark_health_status=benchmark_status,
         benchmark_artifact_count=benchmark_artifacts,
+        benchmark_warning_trace_count=benchmark_warnings,
         proof_expected_count=proof_expected,
         proof_artifact_count=proof_artifacts,
         proof_error_count=proof_errors,
@@ -445,6 +452,11 @@ def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
     benchmark_artifacts = (
         state.benchmark_artifact_count
         if state.benchmark_artifact_count is not None
+        else "unknown"
+    )
+    benchmark_warnings = (
+        state.benchmark_warning_trace_count
+        if state.benchmark_warning_trace_count is not None
         else "unknown"
     )
     proof_expected = (
@@ -477,6 +489,7 @@ def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
             f"- Warning traces: {state.warning_trace_count}",
             f"- Benchmark health: {state.benchmark_health_status or 'unknown'}",
             f"- Benchmark health artifacts: {benchmark_artifacts}",
+            f"- Benchmark health warnings: {benchmark_warnings}",
             f"- Proof expected: {proof_expected}",
             f"- Proof artifacts: {proof_artifacts}",
             f"- Proof errors: {proof_errors}",
@@ -489,7 +502,7 @@ def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
 
 def _benchmark_trace_health(
     payload: Mapping[str, object],
-) -> tuple[str | None, int | None]:
+) -> tuple[str | None, int | None, int | None]:
     """Extract the compact benchmark health signal from trace-health metadata."""
 
     # Check artifact traces first because they contain the richest benchmark
@@ -507,11 +520,13 @@ def _benchmark_trace_health(
             continue
         status = summary.get("health_status")
         artifact_count = summary.get("artifact_trace_count")
+        warning_count = summary.get("warning_trace_count")
         return (
             status if isinstance(status, str) else None,
-            artifact_count if _is_summary_int(artifact_count) else None,
+            _summary_int_or_none(artifact_count),
+            _summary_int_or_none(warning_count),
         )
-    return None, None
+    return None, None, None
 
 
 def _proof_trace_summary(
