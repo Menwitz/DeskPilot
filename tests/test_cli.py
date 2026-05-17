@@ -1781,6 +1781,14 @@ def test_cli_replay_summarizes_proof_suite_finalization(
         json.dumps(
             {
                 "status": "passed",
+                "summary": {
+                    "expected_count": 4,
+                    "reported_count": 4,
+                    "artifact_count": 7,
+                    "promotion_checked_count": 12,
+                    "archive_checked_count": 12,
+                    "error_count": 0,
+                },
                 "gates": {
                     "suite_validation": "passed",
                     "promotion_verification": "passed",
@@ -1804,9 +1812,13 @@ def test_cli_replay_summarizes_proof_suite_finalization(
     assert f"trace: {trace_dir}" in output
     assert "proof suite: finalization" in output
     assert "status: passed" in output
+    assert "- expected_count: 4" in output
+    assert "- artifact_count: 7" in output
     assert "- suite_validation: passed" in output
     assert f"summary: {summary_path}" in output
     assert "# DeskPilot Proof Suite Replay Summary" in summary
+    assert "- `expected_count`: `4`" in summary
+    assert "- `promotion_checked_count`: `12`" in summary
     assert "- `promotion`: `" in summary
 
 

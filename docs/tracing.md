@@ -245,7 +245,8 @@ selected candidates, verification outcomes, recovery reasons, manual handoff,
 state-delta changes, and scroll movement.
 For goal-plan traces it reads `goal-plan-report.json` and prints ranked routine
 candidates; for finalized proof-suite roots it reads
-`proof-finalization-status.json` and prints suite, promotion, and archive gates.
+`proof-finalization-status.json` and prints summary counts plus suite,
+promotion, and archive gates.
 For benchmark output roots it reads `benchmark-report.json` and prints
 schema and generation metadata, acceptance status, baseline comparison status,
 monitoring coverage, compact trace-health status, pipeline modes, deep-search

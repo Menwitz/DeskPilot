@@ -2587,6 +2587,11 @@ def _replay_proof_suite(args: argparse.Namespace) -> int:
     print(f"trace: {args.trace_dir}")
     print("proof suite: finalization")
     print(f"status: {payload.get('status', 'unknown')}")
+    summary = _int_mapping(payload.get("summary"))
+    if summary:
+        print("summary:")
+        for name, count in summary.items():
+            print(f"- {name}: {count}")
     gates = _string_mapping(payload.get("gates"))
     if gates:
         print("gates:")
@@ -3036,6 +3041,10 @@ def _proof_suite_replay_summary_markdown(
         f"- Trace: `{trace_dir}`",
         f"- Status: `{payload.get('status', 'unknown')}`",
     ]
+    summary = _int_mapping(payload.get("summary"))
+    if summary:
+        lines.extend(["", "## Summary", ""])
+        lines.extend(f"- `{name}`: `{count}`" for name, count in summary.items())
     gates = _string_mapping(payload.get("gates"))
     if gates:
         lines.extend(["", "## Gates", ""])
