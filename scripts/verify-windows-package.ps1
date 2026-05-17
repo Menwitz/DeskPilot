@@ -134,12 +134,18 @@ if ($TraceHealth.schema_version -ne "trace_health_v1") {
 if ($TraceHealth.trace_count -lt 3) {
     throw "Packaged trace-health report did not include smoke traces from $SmokeTraceRoot"
 }
+if ($TraceHealth.artifact_trace_count -lt 1) {
+    throw "Packaged trace-health report did not include artifact traces"
+}
 if ($TraceHealth.health_status -ne "ok") {
     throw "Packaged trace-health reported $($TraceHealth.health_status)"
 }
 $TraceHealthMarkdown = Get-Content $TraceHealthSummary -Raw
 if ($TraceHealthMarkdown -notmatch "trace_health_v1") {
     throw "Packaged trace-health summary did not include schema version"
+}
+if ($TraceHealthMarkdown -notmatch "Artifact Traces") {
+    throw "Packaged trace-health summary did not include artifact trace section"
 }
 if ($TraceHealthMarkdown -notmatch "Latest Traces") {
     throw "Packaged trace-health summary did not include latest trace links"

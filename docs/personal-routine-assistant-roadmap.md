@@ -826,6 +826,8 @@ abuse, and hidden automation are not supported.
       report artifact requirement.
 - [x] Verify packaged trace-health Markdown renders benchmark artifact
       manifests.
+- [x] Verify packaged trace-health JSON and Markdown include artifact-trace
+      count and section output.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 

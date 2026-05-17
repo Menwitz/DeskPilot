@@ -110,8 +110,13 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "Packaged trace-health did not write" in script
     assert "$TraceHealth.schema_version -ne \"trace_health_v1\"" in script
     assert "$TraceHealth.trace_count -lt 3" in script
+    assert "$TraceHealth.artifact_trace_count -lt 1" in script
     assert "$TraceHealth.health_status -ne \"ok\"" in script
     assert "Packaged trace-health summary did not include schema version" in script
+    assert (
+        "Packaged trace-health summary did not include artifact trace section"
+        in script
+    )
     assert "Packaged trace-health summary did not include latest trace links" in script
     assert "Packaged trace-health summary did not include benchmark replay" in script
     assert "Packaged trace-health summary did not include benchmark artifacts" in script
