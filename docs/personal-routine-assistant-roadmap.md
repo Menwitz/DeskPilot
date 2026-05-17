@@ -892,6 +892,7 @@ abuse, and hidden automation are not supported.
 - [x] Verify packaged trace-health output renders seeded proof-finalization
       summaries.
 - [x] Verify packaged replay renders seeded proof-finalization summaries.
+- [x] Verify packaged replay renders seeded proof-finalization warnings.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 

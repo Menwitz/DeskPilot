@@ -117,6 +117,11 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         "Packaged proof finalization replay summary did not include proof gates"
         in script
     )
+    assert (
+        "Packaged proof finalization replay summary did not include warnings"
+        in script
+    )
+    assert "packaged-smoke: video_path is external" in script
     assert "$TraceHealthReport = Join-Path $SmokeRoot \"trace-health.json\"" in script
     assert "$TraceHealthSummary = Join-Path $SmokeRoot \"trace-health.md\"" in script
     assert (

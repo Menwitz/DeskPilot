@@ -121,7 +121,7 @@ New-Item -ItemType Directory -Force -Path $ProofTraceDir | Out-Null
     "promotion": "proof-suite-promotion.json"
   },
   "errors": [],
-  "warnings": []
+  "warnings": ["packaged-smoke: video_path is external"]
 }
 '@ | Set-Content -Encoding UTF8 (Join-Path $ProofTraceDir "proof-finalization-status.json")
 
@@ -164,6 +164,9 @@ if ($ProofReplaySummary -notmatch "expected_count") {
 }
 if ($ProofReplaySummary -notmatch "suite_validation") {
     throw "Packaged proof finalization replay summary did not include proof gates"
+}
+if ($ProofReplaySummary -notmatch "packaged-smoke: video_path is external") {
+    throw "Packaged proof finalization replay summary did not include warnings"
 }
 
 # Persist trace health so package smoke runs leave a reviewable monitoring artifact.

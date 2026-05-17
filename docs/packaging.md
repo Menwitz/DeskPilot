@@ -65,7 +65,7 @@ same trace root, writes a benchmark `replay-summary.md` from a
 schema-versioned benchmark report with trace-health summary metadata and an
 artifact manifest, verifies the benchmark replay summary renders that manifest,
 adds and replays a seeded proof-finalization fixture with compact proof summary
-counts, then
+counts and warnings, then
 runs `deskpilot.exe
 trace-health --output --markdown-output --fail-on-attention` against the smoke
 trace root, verifies the persisted `trace-health.json` and `trace-health.md`
