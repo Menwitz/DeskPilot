@@ -111,6 +111,8 @@ project modules:
   metadata and any local `replay-summary.md` artifact path. Benchmark trace
   summaries also expose the report artifact manifest and compact trace-health
   summary from `benchmark-report.json`.
+  Proof-suite finalization trace summaries expose compact finalization counts
+  from `proof-finalization-status.json`.
 - Trace health panel state: renders the trace-health schema version and
   generation timestamp beside trace, attention, artifact, and benchmark
   health counts from artifact or latest trace metadata so dashboard screenshots

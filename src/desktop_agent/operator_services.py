@@ -101,6 +101,7 @@ class TraceSummary:
     replay_summary_path: Path | None = None
     report_artifacts: tuple[tuple[str, str], ...] = ()
     trace_health_summary: tuple[tuple[str, object], ...] = ()
+    proof_summary: tuple[tuple[str, int], ...] = ()
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -113,6 +114,7 @@ class TraceSummary:
             ),
             "report_artifacts": dict(self.report_artifacts),
             "trace_health_summary": dict(self.trace_health_summary),
+            "proof_summary": dict(self.proof_summary),
         }
 
 
@@ -1345,6 +1347,11 @@ def _trace_summary(trace_dir: Path) -> TraceSummary:
                 replay_summary_path=replay_summary_path,
                 report_artifacts=_report_artifact_pairs(payload),
                 trace_health_summary=_report_trace_health_pairs(payload),
+                proof_summary=(
+                    _report_proof_summary_pairs(payload)
+                    if kind == "proof_suite"
+                    else ()
+                ),
             )
     return TraceSummary(
         trace_dir=trace_dir,
@@ -1448,4 +1455,19 @@ def _report_trace_health_pairs(
         (key, value)
         for key in allowed_keys
         if isinstance((value := summary.get(key)), str | int)
+    )
+
+
+def _report_proof_summary_pairs(
+    payload: Mapping[str, object],
+) -> tuple[tuple[str, int], ...]:
+    """Return final proof summary counts for trace-health metadata."""
+
+    summary = payload.get("summary")
+    if not isinstance(summary, dict):
+        return ()
+    return tuple(
+        (key, value)
+        for key, value in summary.items()
+        if isinstance(key, str) and isinstance(value, int)
     )

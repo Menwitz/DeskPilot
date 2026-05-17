@@ -274,6 +274,7 @@ def test_local_trace_service_lists_and_reads_reports(tmp_path: Path) -> None:
     assert traces[0].metadata()["replay_summary_path"] == str(replay_summary_path)
     assert traces[0].metadata()["report_artifacts"] == {}
     assert traces[0].metadata()["trace_health_summary"] == {}
+    assert traces[0].metadata()["proof_summary"] == {}
     assert report["selected_routine_id"] == "browser.search"
 
 
@@ -288,6 +289,12 @@ def test_local_trace_service_lists_proof_suite_finalization_rollups(
         json.dumps(
             {
                 "status": "passed",
+                "summary": {
+                    "expected_count": 4,
+                    "reported_count": 4,
+                    "artifact_count": 7,
+                    "error_count": 0,
+                },
                 "gates": {
                     "suite_validation": "passed",
                     "promotion_verification": "passed",
@@ -306,6 +313,12 @@ def test_local_trace_service_lists_proof_suite_finalization_rollups(
     assert traces[0].kind == "proof_suite"
     assert traces[0].status == "passed"
     assert traces[0].metadata()["report_path"] == str(report_path)
+    assert traces[0].metadata()["proof_summary"] == {
+        "artifact_count": 7,
+        "error_count": 0,
+        "expected_count": 4,
+        "reported_count": 4,
+    }
     assert report["gates"] == {
         "suite_validation": "passed",
         "promotion_verification": "passed",
@@ -378,6 +391,7 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
             "replay_summary_path": None,
             "report_artifacts": {},
             "trace_health_summary": {},
+            "proof_summary": {},
         },
     ]
     latest = cast(list[dict[str, object]], health["latest"])
