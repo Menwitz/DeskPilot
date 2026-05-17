@@ -2755,6 +2755,10 @@ def _trace_health_trace_line(trace: dict[object, object]) -> str:
     replay_summary_path = trace.get("replay_summary_path")
     if isinstance(replay_summary_path, str):
         line += f" summary `{replay_summary_path}`"
+    artifacts = _string_mapping(trace.get("report_artifacts"))
+    if artifacts:
+        rendered = "; ".join(f"{name}={path}" for name, path in artifacts.items())
+        line += f" artifacts `{rendered}`"
     return line
 
 

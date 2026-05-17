@@ -1464,13 +1464,27 @@ def test_cli_trace_health_writes_markdown_summary(
 ) -> None:
     trace_root = tmp_path / "traces"
     trace_dir = trace_root / "20260516T000000Z-run"
+    benchmark_trace = trace_root / "20260516T010000Z-benchmark"
     trace_dir.mkdir(parents=True)
+    benchmark_trace.mkdir()
     (trace_dir / "final-report.json").write_text(
         json.dumps({"status": "failed"}),
         encoding="utf-8",
     )
     replay_summary_path = trace_dir / "replay-summary.md"
     replay_summary_path.write_text("# Replay Summary\n", encoding="utf-8")
+    (benchmark_trace / "benchmark-report.json").write_text(
+        json.dumps(
+            {
+                "acceptance": {"status": "passed"},
+                "report_artifacts": {
+                    "metrics": str(benchmark_trace / "runs.jsonl"),
+                    "summary": str(benchmark_trace / "benchmark-summary.md"),
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
     output_path = tmp_path / "reports" / "trace-health.md"
 
     status = main(
@@ -1493,6 +1507,8 @@ def test_cli_trace_health_writes_markdown_summary(
     assert "- Health status: `attention`" in summary
     assert f"`{trace_dir}`" in summary
     assert f"summary `{replay_summary_path}`" in summary
+    assert "artifacts `metrics=" in summary
+    assert str(benchmark_trace / "benchmark-summary.md") in summary
     assert "## Latest Traces" in summary
 
 
