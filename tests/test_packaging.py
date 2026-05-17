@@ -76,6 +76,7 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "dist/deskpilot-app.exe" in script
     assert "& $ExePath --help" in script
     assert "$SmokeTraceRoot = Join-Path $SmokeRoot \"dry-run-traces\"" in script
+    assert "$TraceDir = Join-Path $SmokeTraceRoot \"trace-replay\"" in script
     assert (
         "& $ExePath dry-run examples/browser-task.yaml --config $SmokeConfigPath"
         in script
@@ -85,7 +86,8 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "& $ExePath replay $TraceDir" in script
     assert "$TraceHealthReport = Join-Path $SmokeRoot \"trace-health.json\"" in script
     assert (
-        "& $ExePath trace-health --trace-root $SmokeRoot --output $TraceHealthReport"
+        "& $ExePath trace-health --trace-root $SmokeTraceRoot "
+        "--output $TraceHealthReport"
         in script
     )
     assert "Packaged trace-health did not write" in script

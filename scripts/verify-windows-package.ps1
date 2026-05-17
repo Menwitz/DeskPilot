@@ -15,7 +15,8 @@ if (-not (Test-Path $ExePath)) {
 if (Test-Path $SmokeRoot) {
     Remove-Item $SmokeRoot -Recurse -Force
 }
-$TraceDir = Join-Path $SmokeRoot "trace-replay"
+$SmokeTraceRoot = Join-Path $SmokeRoot "dry-run-traces"
+$TraceDir = Join-Path $SmokeTraceRoot "trace-replay"
 New-Item -ItemType Directory -Force -Path $TraceDir | Out-Null
 @'
 {
@@ -29,7 +30,6 @@ New-Item -ItemType Directory -Force -Path $TraceDir | Out-Null
 }
 '@ | Set-Content -Encoding UTF8 (Join-Path $TraceDir "final-report.json")
 
-$SmokeTraceRoot = Join-Path $SmokeRoot "dry-run-traces"
 $SmokeConfigPath = Join-Path $SmokeRoot "default-config.yaml"
 $SmokeTraceRootYaml = $SmokeTraceRoot -replace "\\", "/"
 $SmokeConfig = Get-Content "packaging/default-config.yaml" -Raw
@@ -45,13 +45,13 @@ $SmokeConfig | Set-Content -Encoding UTF8 $SmokeConfigPath
 
 # Persist trace health so package smoke runs leave a reviewable monitoring artifact.
 $TraceHealthReport = Join-Path $SmokeRoot "trace-health.json"
-& $ExePath trace-health --trace-root $SmokeRoot --output $TraceHealthReport
+& $ExePath trace-health --trace-root $SmokeTraceRoot --output $TraceHealthReport
 if (-not (Test-Path $TraceHealthReport)) {
     throw "Packaged trace-health did not write $TraceHealthReport"
 }
 $TraceHealth = Get-Content $TraceHealthReport -Raw | ConvertFrom-Json
 if ($TraceHealth.trace_count -lt 2) {
-    throw "Packaged trace-health report did not include smoke traces from $SmokeRoot"
+    throw "Packaged trace-health report did not include smoke traces from $SmokeTraceRoot"
 }
 
 $DryRunReport = Get-ChildItem -Path $SmokeTraceRoot -Directory |
