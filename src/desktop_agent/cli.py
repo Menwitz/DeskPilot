@@ -3106,6 +3106,8 @@ def _benchmark_replay_summary_markdown(
         "# DeskPilot Benchmark Replay Summary",
         "",
         f"- Trace: `{trace_dir}`",
+        f"- Schema: `{payload.get('schema_version', 'unknown')}`",
+        f"- Generated at: `{payload.get('generated_at', 'unknown')}`",
         f"- Task: `{payload.get('task_path', 'unknown')}`",
         f"- Status: `{_benchmark_acceptance_status(payload)}`",
         f"- Baseline: `{_benchmark_baseline_status(payload)}`",

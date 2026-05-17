@@ -1743,6 +1743,8 @@ def test_cli_replay_summarizes_benchmark_report(
     assert "run 1: passed" in output
     assert f"summary: {summary_path}" in output
     assert "# DeskPilot Benchmark Replay Summary" in summary
+    assert "- Schema: `benchmark_report_v1`" in summary
+    assert "- Generated at: `2026-05-17T00:00:00+00:00`" in summary
     assert "- Pipeline modes: `dry-run, replay`" in summary
     assert "- Deep-search sources: `trace_events, final_report`" in summary
     assert "- Monitoring coverage: `passed`" in summary

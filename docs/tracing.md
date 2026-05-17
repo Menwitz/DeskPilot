@@ -254,7 +254,8 @@ Add `--write-summary` to write `replay-summary.md` in the trace directory with
 the timeline, screenshot paths from pre/post action evidence, and state-delta
 changes. The summary also includes step-level `success_evidence` and
 `failure_evidence`, so each executed step can be reviewed without live desktop
-access.
+access. Benchmark replay summaries include the benchmark schema and generation
+timestamp from `benchmark-report.json`.
 
 `desktop-agent trace-health --trace-root traces` prints local trace counts by
 report kind and status, including run, goal-plan, benchmark, and proof-suite
