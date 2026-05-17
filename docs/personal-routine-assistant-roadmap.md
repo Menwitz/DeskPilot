@@ -293,6 +293,8 @@ abuse, and hidden automation are not supported.
       summary metrics, and observability-contract details.
 - [x] Add benchmark `trace-health.json` rollups for generated per-iteration
       trace directories.
+- [x] Include benchmark trace-health path, health status, and attention count
+      in benchmark Markdown summaries.
 
 ### Acceptance Criteria
 

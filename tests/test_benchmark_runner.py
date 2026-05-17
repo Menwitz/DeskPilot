@@ -72,6 +72,9 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert trace_health_payload["by_kind"] == {"run": 2}
     assert report.summary_report_path.exists()
     assert "# Benchmark Summary" in summary_markdown
+    assert f"- Trace health: `{report.trace_health_path}`" in summary_markdown
+    assert "- Trace health status: `ok`" in summary_markdown
+    assert "- Attention traces: `0`" in summary_markdown
     assert "- Acceptance: `passed`" in summary_markdown
     assert "- Deep-search sources: `uia, ocr, image, unknown`" in summary_markdown
     assert report_payload["observability_contract"]["configured"] is True

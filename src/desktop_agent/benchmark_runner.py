@@ -307,7 +307,10 @@ class BenchmarkRunHarness:
             pointer_timing_comparison_path,
             pointer_timing_comparison,
         )
-        _write_benchmark_trace_health(trace_health_path, output_dir / "traces")
+        trace_health = _write_benchmark_trace_health(
+            trace_health_path,
+            output_dir / "traces",
+        )
         _write_report(
             report_path,
             task_path,
@@ -330,7 +333,9 @@ class BenchmarkRunHarness:
             summary_report_path,
             task_path,
             report_path,
+            trace_health_path,
             summary,
+            trace_health,
             acceptance,
             baseline_comparison,
             task_spec,
@@ -665,12 +670,16 @@ def _write_report(
     )
 
 
-def _write_benchmark_trace_health(path: Path, trace_root: Path) -> None:
+def _write_benchmark_trace_health(
+    path: Path,
+    trace_root: Path,
+) -> dict[str, object]:
     health = LocalTraceService(trace_root).trace_health()
     path.write_text(
         json.dumps(health, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    return health
 
 
 def _observability_contract_to_dict(
@@ -693,7 +702,9 @@ def _write_benchmark_summary(
     path: Path,
     task_path: Path,
     report_path: Path,
+    trace_health_path: Path,
     summary: BenchmarkSummaryMetrics,
+    trace_health: dict[str, object],
     acceptance: BenchmarkAcceptanceResult,
     baseline_comparison: BenchmarkBaselineComparison,
     task_spec: BenchmarkTaskSpec | None,
@@ -704,6 +715,9 @@ def _write_benchmark_summary(
         "",
         f"- Task: `{task_path}`",
         f"- Report: `{report_path}`",
+        f"- Trace health: `{trace_health_path}`",
+        f"- Trace health status: `{trace_health.get('health_status', 'unknown')}`",
+        f"- Attention traces: `{len(_trace_health_attention_traces(trace_health))}`",
         f"- Acceptance: `{acceptance.status}`",
         f"- Baseline status: `{baseline_comparison.status}`",
         f"- Success rate: `{summary.success_rate}`",
@@ -716,6 +730,11 @@ def _write_benchmark_summary(
         *_benchmark_observability_summary_lines(contract),
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _trace_health_attention_traces(health: dict[str, object]) -> list[object]:
+    value = health.get("attention_traces")
+    return value if isinstance(value, list) else []
 
 
 def _benchmark_observability_summary_lines(

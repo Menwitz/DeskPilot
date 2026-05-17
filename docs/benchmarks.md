@@ -91,7 +91,8 @@ deep-search sources, required trace phases, required final-report fields, and
 required metrics. Ad hoc benchmark runs keep the same field with
 `configured: false`.
 `benchmark-summary.md` repeats the same contract in Markdown for review without
-opening the JSON payload.
+opening the JSON payload. It also links `trace-health.json` and shows the
+trace-health status plus attention-trace count.
 
 Summary metrics currently include success rate, median task time, total step
 count, total action count, total retry count, grounding accuracy, ambiguity
