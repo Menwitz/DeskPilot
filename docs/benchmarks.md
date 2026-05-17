@@ -95,6 +95,9 @@ required metrics. Ad hoc benchmark runs keep the same field with
 The report also stores `monitoring_coverage`, which compares required trace
 phases and final-report fields with the phases and fields observed across the
 generated run traces.
+The `report_artifacts` manifest includes `benchmark-report.json` itself plus
+metrics, baseline metrics, summary, trace-health, variance, baseline
+comparison, and pointer-timing comparison artifacts.
 `benchmark-summary.md` repeats the same contract in Markdown for review without
 opening the JSON payload. It also links `trace-health.json`, shows the
 trace-health status plus attention-trace count, and lists observed and missing

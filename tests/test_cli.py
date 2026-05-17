@@ -2492,6 +2492,9 @@ def test_cli_benchmark_run_writes_metrics_and_report(
     assert status == 0
     assert report["schema_version"] == "benchmark_report_v1"
     assert isinstance(report["generated_at"], str)
+    assert report["report_artifacts"]["report"] == str(
+        output_dir / "benchmark-report.json"
+    )
     assert report["report_artifacts"]["metrics"] == str(output_dir / "runs.jsonl")
     assert report["report_artifacts"]["summary"] == str(
         output_dir / "benchmark-summary.md"

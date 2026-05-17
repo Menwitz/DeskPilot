@@ -295,6 +295,8 @@ abuse, and hidden automation are not supported.
       and Markdown reports.
 - [x] Add benchmark report artifact manifests to JSON, Markdown, and replay
       output.
+- [x] Include the primary benchmark report path in benchmark artifact
+      manifests.
 - [x] Surface benchmark report artifact manifests through local trace service
       metadata and trace-health latest entries.
 - [x] Render benchmark report artifact manifests in trace-health Markdown latest

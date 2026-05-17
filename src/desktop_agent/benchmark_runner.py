@@ -700,6 +700,7 @@ def _write_report(
         "baseline_comparison_path": str(baseline_comparison_path),
         "pointer_timing_comparison_path": str(pointer_timing_comparison_path),
         "report_artifacts": _benchmark_report_artifacts_to_dict(
+            path,
             metrics_path,
             baseline_metrics_path,
             summary_report_path,
@@ -728,6 +729,7 @@ def _write_report(
 
 
 def _benchmark_report_artifacts_to_dict(
+    report_path: Path,
     metrics_path: Path,
     baseline_metrics_path: Path,
     summary_report_path: Path,
@@ -737,6 +739,7 @@ def _benchmark_report_artifacts_to_dict(
     pointer_timing_comparison_path: Path,
 ) -> dict[str, str]:
     return {
+        "report": str(report_path),
         "metrics": str(metrics_path),
         "baseline_metrics": str(baseline_metrics_path),
         "summary": str(summary_report_path),
@@ -856,6 +859,7 @@ def _write_benchmark_summary(
         "",
         *_benchmark_report_artifact_lines(
             _benchmark_report_artifacts_to_dict(
+                report_path,
                 metrics_path,
                 baseline_metrics_path,
                 path,

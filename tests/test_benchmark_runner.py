@@ -71,6 +71,7 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     )
     assert report_payload["trace_health_path"] == str(report.trace_health_path)
     assert report_payload["report_artifacts"] == {
+        "report": str(report.report_path),
         "metrics": str(report.metrics_path),
         "baseline_metrics": str(report.baseline_metrics_path),
         "summary": str(report.summary_report_path),
@@ -90,6 +91,7 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert f"- Trace health: `{report.trace_health_path}`" in summary_markdown
     assert "- Trace health status: `ok`" in summary_markdown
     assert "## Report Artifacts" in summary_markdown
+    assert f"- `report`: `{report.report_path}`" in summary_markdown
     assert f"- `metrics`: `{report.metrics_path}`" in summary_markdown
     assert "- Attention traces: `0`" in summary_markdown
     assert "## Monitoring Coverage" in summary_markdown
