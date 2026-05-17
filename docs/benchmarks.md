@@ -67,6 +67,8 @@ The harness writes:
   benchmark observability contract when the task is a built-in benchmark.
 - `benchmark-summary.md` with a human-readable acceptance, baseline comparison,
   summary metric, and observability-contract summary.
+- `trace-health.json` with local trace-health counts for the generated
+  per-iteration trace directories.
 - `baseline-runs.jsonl` with one deterministic baseline metrics record per
   iteration. The baseline preserves safety settings and disables execution
   profile timing.

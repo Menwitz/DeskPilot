@@ -2160,6 +2160,7 @@ def _run_benchmark(args: argparse.Namespace) -> int:
     print(f"iterations: {len(report.runs)}")
     print(f"metrics: {report.metrics_path}")
     print(f"baseline metrics: {report.baseline_metrics_path}")
+    print(f"trace health: {report.trace_health_path}")
     print(f"variance: {report.variance_report_path}")
     print(f"baseline comparison: {report.baseline_comparison_path}")
     print(f"baseline status: {report.baseline_comparison.status}")

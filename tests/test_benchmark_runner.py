@@ -28,6 +28,9 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     metrics_lines = report.metrics_path.read_text(encoding="utf-8").splitlines()
     report_payload = json.loads(report.report_path.read_text(encoding="utf-8"))
     summary_markdown = report.summary_report_path.read_text(encoding="utf-8")
+    trace_health_payload = json.loads(
+        report.trace_health_path.read_text(encoding="utf-8")
+    )
     variance_payload = json.loads(
         report.variance_report_path.read_text(encoding="utf-8")
     )
@@ -62,6 +65,11 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert report_payload["pointer_timing_comparison_path"] == str(
         report.pointer_timing_comparison_path
     )
+    assert report_payload["trace_health_path"] == str(report.trace_health_path)
+    assert report.trace_health_path.exists()
+    assert trace_health_payload["trace_count"] == 2
+    assert trace_health_payload["health_status"] == "ok"
+    assert trace_health_payload["by_kind"] == {"run": 2}
     assert report.summary_report_path.exists()
     assert "# Benchmark Summary" in summary_markdown
     assert "- Acceptance: `passed`" in summary_markdown

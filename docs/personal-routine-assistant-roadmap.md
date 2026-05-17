@@ -291,6 +291,8 @@ abuse, and hidden automation are not supported.
       in the report artifact.
 - [x] Add benchmark Markdown summaries with acceptance, baseline comparison,
       summary metrics, and observability-contract details.
+- [x] Add benchmark `trace-health.json` rollups for generated per-iteration
+      trace directories.
 
 ### Acceptance Criteria
 

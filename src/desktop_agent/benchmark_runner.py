@@ -32,6 +32,7 @@ from desktop_agent.config import (
     YamlConfigLoader,
     resolve_runtime_config,
 )
+from desktop_agent.operator_services import LocalTraceService
 from desktop_agent.perception import (
     CompositePerceptionEngine,
     ConfidenceTargetSelector,
@@ -204,6 +205,7 @@ class BenchmarkRunReport:
     baseline_metrics_path: Path
     report_path: Path
     summary_report_path: Path
+    trace_health_path: Path
     variance_report_path: Path
     baseline_comparison_path: Path
     pointer_timing_comparison_path: Path
@@ -285,6 +287,7 @@ class BenchmarkRunHarness:
         baseline_metrics_path = output_dir / "baseline-runs.jsonl"
         report_path = output_dir / "benchmark-report.json"
         summary_report_path = output_dir / "benchmark-summary.md"
+        trace_health_path = output_dir / "trace-health.json"
         variance_report_path = output_dir / "variance-report.json"
         baseline_comparison_path = output_dir / "baseline-comparison.json"
         pointer_timing_comparison_path = output_dir / "pointer-timing-comparison.json"
@@ -304,6 +307,7 @@ class BenchmarkRunHarness:
             pointer_timing_comparison_path,
             pointer_timing_comparison,
         )
+        _write_benchmark_trace_health(trace_health_path, output_dir / "traces")
         _write_report(
             report_path,
             task_path,
@@ -338,6 +342,7 @@ class BenchmarkRunHarness:
             baseline_metrics_path=baseline_metrics_path,
             report_path=report_path,
             summary_report_path=summary_report_path,
+            trace_health_path=trace_health_path,
             variance_report_path=variance_report_path,
             baseline_comparison_path=baseline_comparison_path,
             pointer_timing_comparison_path=pointer_timing_comparison_path,
@@ -638,6 +643,7 @@ def _write_report(
         "output_dir": str(output_dir),
         "metrics_path": str(metrics_path),
         "baseline_metrics_path": str(baseline_metrics_path),
+        "trace_health_path": str(output_dir / "trace-health.json"),
         "variance_report_path": str(variance_report_path),
         "baseline_comparison_path": str(baseline_comparison_path),
         "pointer_timing_comparison_path": str(pointer_timing_comparison_path),
@@ -655,6 +661,14 @@ def _write_report(
     }
     path.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_benchmark_trace_health(path: Path, trace_root: Path) -> None:
+    health = LocalTraceService(trace_root).trace_health()
+    path.write_text(
+        json.dumps(health, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
 
