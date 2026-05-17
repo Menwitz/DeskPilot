@@ -23,7 +23,8 @@ The Dashboard includes the first live run panel. Its state contract tracks the
 run ID, current routine, current step, screenshot preview path, selected target,
 next action, elapsed seconds, run status, and stop controls: pause, resume,
 cancel, normal stop, and emergency stop. Emergency stop is represented as the
-terminal `emergency_stopped` run-queue state.
+terminal `emergency_stopped` run-queue state. The dashboard also includes trace
+health state with local trace counts by report kind and status for monitoring.
 
 The Approvals page includes the approval dialog contract. It shows routine ID,
 step ID, risk class, checkpoint evidence, content fingerprint, current status,

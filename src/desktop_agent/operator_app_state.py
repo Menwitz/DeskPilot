@@ -10,8 +10,10 @@ from desktop_agent.operator_app_shell import (
     LiveRunPanelState,
     OperatorAppShell,
     RecorderReviewPanelState,
+    TraceHealthPanelState,
     TraceViewerTimelineState,
     operator_app_shell_spec,
+    trace_health_panel_from_metadata,
     trace_viewer_timeline_from_report,
 )
 from desktop_agent.operator_services import ApprovalService, RunnerService, TraceService
@@ -28,6 +30,7 @@ class OperatorAppState:
     shell: OperatorAppShell
     current_page_id: str
     live_run: LiveRunPanelState
+    trace_health: TraceHealthPanelState | None = None
     approval_dialog: ApprovalDialogState | None = None
     recorder_review: RecorderReviewPanelState | None = None
     trace_viewer: TraceViewerTimelineState | None = None
@@ -36,6 +39,9 @@ class OperatorAppState:
         return {
             "current_page_id": self.current_page_id,
             "live_run": self.live_run.metadata(),
+            "trace_health": (
+                None if self.trace_health is None else self.trace_health.metadata()
+            ),
             "approval_dialog": (
                 None
                 if self.approval_dialog is None
@@ -261,6 +267,18 @@ class OperatorAppController:
                 report_path=summary.report_path,
             ),
         )
+
+    def refresh_trace_health(self) -> OperatorAppState:
+        if self._traces is None:
+            raise OperatorAppStateError("trace service is not configured")
+        self.state = replace(
+            self.state,
+            current_page_id="dashboard",
+            trace_health=trace_health_panel_from_metadata(
+                self._traces.trace_health(),
+            ),
+        )
+        return self.state
 
     def _require_started_run(self) -> None:
         if self.state.live_run.current_routine_id is None:

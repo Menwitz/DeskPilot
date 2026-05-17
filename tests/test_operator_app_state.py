@@ -247,6 +247,33 @@ def test_operator_app_controller_loads_trace_report_state(
     )
 
 
+def test_operator_app_controller_refreshes_trace_health(
+    tmp_path: Path,
+) -> None:
+    trace_root = tmp_path / "traces"
+    trace_dir = trace_root / "run"
+    trace_dir.mkdir(parents=True)
+    (trace_dir / "final-report.json").write_text(
+        '{"status":"failed"}',
+        encoding="utf-8",
+    )
+    controller = OperatorAppController(
+        _FakeRunnerService({}),
+        traces=LocalTraceService(trace_root),
+    )
+
+    state = controller.refresh_trace_health()
+    metadata = state.metadata()
+
+    assert state.current_page_id == "dashboard"
+    assert state.trace_health is not None
+    assert state.trace_health.trace_count == 1
+    trace_health = metadata["trace_health"]
+    assert isinstance(trace_health, dict)
+    assert trace_health["kind_counts"] == {"run": 1}
+    assert trace_health["status_counts"] == {"failed": 1}
+
+
 class _FakeRunnerService:
     def __init__(self, gates: dict[str, RoutineExecutionGate]) -> None:
         self._gates = gates

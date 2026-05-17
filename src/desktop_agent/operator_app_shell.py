@@ -86,6 +86,24 @@ class LiveRunPanelState:
 
 
 @dataclass(frozen=True)
+class TraceHealthPanelState:
+    """Dashboard trace health fields for local monitoring."""
+
+    trace_count: int = 0
+    kind_counts: tuple[tuple[str, int], ...] = ()
+    status_counts: tuple[tuple[str, int], ...] = ()
+    status: str = "empty"
+
+    def metadata(self) -> dict[str, object]:
+        return {
+            "trace_count": self.trace_count,
+            "kind_counts": dict(self.kind_counts),
+            "status_counts": dict(self.status_counts),
+            "status": self.status,
+        }
+
+
+@dataclass(frozen=True)
 class ApprovalDialogState:
     """Approval dialog fields shown before high-risk local actions continue."""
 
@@ -275,7 +293,7 @@ def operator_app_shell_spec() -> OperatorAppShell:
             page_id="dashboard",
             title="Dashboard",
             purpose="Daily status, recent runs, and next safe action.",
-            panel_ids=("live_run",),
+            panel_ids=("live_run", "trace_health"),
         ),
         OperatorAppPage(
             page_id="routine_library",
@@ -355,6 +373,34 @@ def render_live_run_panel_text(state: LiveRunPanelState | None = None) -> str:
             f"- Next action: {active_state.next_action or 'none'}",
             f"- Elapsed seconds: {active_state.elapsed_seconds:g}",
             f"- Stop controls: {', '.join(active_state.stop_controls)}",
+        ],
+    ) + "\n"
+
+
+def trace_health_panel_from_metadata(
+    payload: Mapping[str, object],
+) -> TraceHealthPanelState:
+    """Create dashboard trace-health state from trace service metadata."""
+
+    trace_count = payload.get("trace_count")
+    return TraceHealthPanelState(
+        trace_count=trace_count if isinstance(trace_count, int) else 0,
+        kind_counts=_count_pairs(payload.get("by_kind")),
+        status_counts=_count_pairs(payload.get("by_status")),
+        status="loaded",
+    )
+
+
+def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
+    """Render trace health counts for diagnostics and app tests."""
+
+    return "\n".join(
+        [
+            "Trace Health",
+            f"- Status: {state.status}",
+            f"- Trace count: {state.trace_count}",
+            f"- By kind: {_render_count_pairs(state.kind_counts)}",
+            f"- By status: {_render_count_pairs(state.status_counts)}",
         ],
     ) + "\n"
 
@@ -495,6 +541,21 @@ def _joined_string_values(value: object) -> str:
         return "none"
     items = [item for item in value if isinstance(item, str)]
     return ", ".join(items) or "none"
+
+
+def _count_pairs(value: object) -> tuple[tuple[str, int], ...]:
+    if not isinstance(value, Mapping):
+        return ()
+    pairs = [
+        (key, item)
+        for key, item in value.items()
+        if isinstance(key, str) and isinstance(item, int)
+    ]
+    return tuple(sorted(pairs))
+
+
+def _render_count_pairs(pairs: tuple[tuple[str, int], ...]) -> str:
+    return ", ".join(f"{name}={count}" for name, count in pairs) or "none"
 
 
 def render_routine_pack_manager_text(state: RoutinePackManagerState) -> str:

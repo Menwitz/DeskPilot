@@ -16,6 +16,7 @@ from desktop_agent.operator_app_shell import (
     RecorderReviewPanelState,
     RoutinePackManagerState,
     SettingsPanelState,
+    TraceHealthPanelState,
     TraceViewerTimelineState,
     default_live_run_panel_state,
     failure_analysis_review_from_analysis,
@@ -27,8 +28,10 @@ from desktop_agent.operator_app_shell import (
     render_recorder_review_text,
     render_routine_pack_manager_text,
     render_settings_panel_text,
+    render_trace_health_panel_text,
     render_trace_viewer_timeline_text,
     settings_panel_from_runtime_config,
+    trace_health_panel_from_metadata,
     trace_viewer_timeline_from_report,
 )
 
@@ -67,7 +70,7 @@ def test_operator_app_shell_exposes_required_pages() -> None:
         "settings",
         "help",
     ]
-    assert shell.pages[0].panel_ids == ("live_run",)
+    assert shell.pages[0].panel_ids == ("live_run", "trace_health")
     packs_page = next(page for page in shell.pages if page.page_id == "routine_packs")
     assert packs_page.panel_ids == ("routine_pack_manager",)
     record_page = next(page for page in shell.pages if page.page_id == "record")
@@ -91,6 +94,7 @@ def test_operator_app_describe_shell_prints_pages(
     assert "DeskPilot Operator" in output
     assert "Dashboard (default)" in output
     assert "panel: live_run" in output
+    assert "panel: trace_health" in output
     assert "Routine Library" in output
     assert "Trace Viewer" in output
     assert output == render_operator_app_shell_text()
@@ -135,6 +139,31 @@ def test_live_run_panel_defaults_to_idle() -> None:
 
     assert state.status == "idle"
     assert state.current_routine_id is None
+
+
+def test_trace_health_panel_tracks_counts() -> None:
+    state = trace_health_panel_from_metadata(
+        {
+            "trace_count": 3,
+            "by_kind": {"run": 1, "goal_plan": 1, "proof_suite": 1},
+            "by_status": {"passed": 2, "failed": 1},
+        },
+    )
+    empty = TraceHealthPanelState()
+    metadata = state.metadata()
+    text = render_trace_health_panel_text(state)
+
+    assert empty.status == "empty"
+    assert metadata["trace_count"] == 3
+    assert metadata["kind_counts"] == {
+        "goal_plan": 1,
+        "proof_suite": 1,
+        "run": 1,
+    }
+    assert metadata["status_counts"] == {"failed": 1, "passed": 2}
+    assert "Trace Health" in text
+    assert "proof_suite=1" in text
+    assert "passed=2" in text
 
 
 def test_approval_dialog_state_tracks_required_review_fields() -> None:
