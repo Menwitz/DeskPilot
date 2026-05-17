@@ -1401,6 +1401,7 @@ def test_cli_trace_health_summarizes_trace_counts(
                 "trace_health_summary": {
                     "health_status": "ok",
                     "artifact_trace_count": 1,
+                    "warning_trace_count": 0,
                 },
                 "report_artifacts": {
                     "metrics": str(benchmark_trace / "runs.jsonl"),
@@ -1435,7 +1436,7 @@ def test_cli_trace_health_summarizes_trace_counts(
     assert f"- {benchmark_trace} (benchmark/passed)" in output
     assert f"report {benchmark_trace / 'benchmark-report.json'}" in output
     assert f"artifacts metrics={benchmark_trace / 'runs.jsonl'}" in output
-    assert "trace_health status=ok; artifacts=1" in output
+    assert "trace_health status=ok; artifacts=1; warnings=0" in output
     assert "latest_traces:" in output
     assert "proof_summary expected=4; reported=4; artifacts=7; errors=0" in output
     assert "proof_warnings browser-fixture: video_path is external" in output
@@ -1455,6 +1456,7 @@ def test_cli_trace_health_console_shows_latest_benchmark_health_without_artifact
                 "trace_health_summary": {
                     "health_status": "ok",
                     "artifact_trace_count": 0,
+                    "warning_trace_count": 0,
                 },
             },
         ),
@@ -1469,7 +1471,7 @@ def test_cli_trace_health_console_shows_latest_benchmark_health_without_artifact
     assert "latest_traces:" in output
     assert f"- {benchmark_trace} (benchmark/passed)" in output
     assert f"report {benchmark_trace / 'benchmark-report.json'}" in output
-    assert "trace_health status=ok; artifacts=0" in output
+    assert "trace_health status=ok; artifacts=0; warnings=0" in output
 
 
 def test_cli_trace_health_console_skips_boolean_summary_counts(
@@ -1540,6 +1542,7 @@ def test_cli_trace_health_writes_json(
                 "trace_health_summary": {
                     "health_status": "ok",
                     "artifact_trace_count": 1,
+                    "warning_trace_count": 0,
                 },
                 "report_artifacts": {
                     "metrics": str(benchmark_trace / "runs.jsonl"),
@@ -1581,6 +1584,7 @@ def test_cli_trace_health_writes_json(
     assert artifact_traces[0]["trace_health_summary"] == {
         "artifact_trace_count": 1,
         "health_status": "ok",
+        "warning_trace_count": 0,
     }
     warning_traces = payload["warning_traces"]
     assert warning_traces[0]["proof_warnings"] == [
@@ -1656,6 +1660,7 @@ def test_cli_trace_health_writes_markdown_summary(
                 "trace_health_summary": {
                     "health_status": "ok",
                     "artifact_trace_count": 1,
+                    "warning_trace_count": 0,
                 },
                 "report_artifacts": {
                     "metrics": str(benchmark_trace / "runs.jsonl"),
@@ -1705,7 +1710,7 @@ def test_cli_trace_health_writes_markdown_summary(
     assert f"`{trace_dir}`" in summary
     assert f"summary `{replay_summary_path}`" in summary
     assert "artifacts `metrics=" in summary
-    assert "trace_health `status=ok; artifacts=1`" in summary
+    assert "trace_health `status=ok; artifacts=1; warnings=0`" in summary
     assert "proof_summary `expected=4; reported=4; artifacts=7; errors=0`" in summary
     assert "proof_warnings `browser-fixture: video_path is external`" in summary
     assert "## Warning Traces" in summary
@@ -1727,6 +1732,7 @@ def test_cli_trace_health_markdown_shows_latest_benchmark_health_without_artifac
                 "trace_health_summary": {
                     "health_status": "ok",
                     "artifact_trace_count": 0,
+                    "warning_trace_count": 0,
                 },
             },
         ),
@@ -1750,7 +1756,7 @@ def test_cli_trace_health_markdown_shows_latest_benchmark_health_without_artifac
     assert "- None" in summary
     assert "## Latest Traces" in summary
     assert f"`{benchmark_trace}`" in summary
-    assert "trace_health `status=ok; artifacts=0`" in summary
+    assert "trace_health `status=ok; artifacts=0; warnings=0`" in summary
 
 
 def test_cli_trace_health_json_output_stays_parseable_with_report_file(

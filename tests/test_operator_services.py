@@ -364,6 +364,7 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
                 "trace_health_summary": {
                     "health_status": "ok",
                     "artifact_trace_count": 1,
+                    "warning_trace_count": 0,
                 },
                 "report_artifacts": {
                     "metrics": str(benchmark_trace / "runs.jsonl"),
@@ -424,10 +425,12 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
     assert latest[0]["trace_health_summary"] == {
         "artifact_trace_count": 1,
         "health_status": "ok",
+        "warning_trace_count": 0,
     }
     assert artifact_traces[0]["trace_health_summary"] == {
         "artifact_trace_count": 1,
         "health_status": "ok",
+        "warning_trace_count": 0,
     }
 
 

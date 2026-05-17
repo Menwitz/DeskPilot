@@ -1459,6 +1459,7 @@ def _report_trace_health_pairs(
         "generated_at",
         "trace_count",
         "artifact_trace_count",
+        "warning_trace_count",
         "health_status",
     )
     return tuple(

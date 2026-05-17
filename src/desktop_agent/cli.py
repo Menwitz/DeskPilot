@@ -2840,11 +2840,14 @@ def _trace_health_summary_text(value: object) -> str:
         return ""
     status = value.get("health_status")
     artifact_count = value.get("artifact_trace_count")
+    warning_count = value.get("warning_trace_count")
     parts: list[str] = []
     if isinstance(status, str):
         parts.append(f"status={status}")
     if _is_summary_int(artifact_count):
         parts.append(f"artifacts={artifact_count}")
+    if _is_summary_int(warning_count):
+        parts.append(f"warnings={warning_count}")
     return "; ".join(parts)
 
 

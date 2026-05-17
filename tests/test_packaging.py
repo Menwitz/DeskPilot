@@ -246,7 +246,7 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     )
     assert "Packaged trace-health summary did not include proof summary" in script
     assert "Packaged trace-health summary did not include proof warnings" in script
-    assert "trace_health `status=ok; artifacts=1`" in script
+    assert "trace_health `status=ok; artifacts=1; warnings=0`" in script
     assert "proof_summary `expected=4; reported=4; artifacts=7; errors=0`" in script
     assert "proof_warnings `packaged-smoke: video_path is external`" in script
     assert "Warning traces: `1`" in script

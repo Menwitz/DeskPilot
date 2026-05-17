@@ -357,6 +357,8 @@ abuse, and hidden automation are not supported.
       state.
 - [x] Expose compact benchmark trace-health summaries in local trace-service
       metadata.
+- [x] Expose benchmark warning-trace summary counts in local trace-service
+      metadata and trace-health rows.
 - [x] Add `desktop-agent replay` support for benchmark reports with acceptance,
       baseline, monitoring coverage, pipeline, deep-search, and per-run trace
       details.

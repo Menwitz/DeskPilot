@@ -219,7 +219,7 @@ if ($TraceHealthConsoleText -notmatch "benchmark-replay") {
 if ($TraceHealthConsoleText -notmatch "benchmark-report.json") {
     throw "Packaged trace-health console output did not include benchmark report path"
 }
-if ($TraceHealthConsoleText -notmatch 'trace_health status=ok; artifacts=1') {
+if ($TraceHealthConsoleText -notmatch 'trace_health status=ok; artifacts=1; warnings=0') {
     throw "Packaged trace-health console output did not include benchmark trace-health summary"
 }
 if ($TraceHealthConsoleText -notmatch 'proof_summary expected=4; reported=4; artifacts=7; errors=0') {
@@ -295,7 +295,7 @@ if ($TraceHealthMarkdown -notmatch "artifacts") {
 if ($TraceHealthMarkdown -notmatch "runs.jsonl") {
     throw "Packaged trace-health summary did not include benchmark metrics artifact"
 }
-if ($TraceHealthMarkdown -notmatch 'trace_health `status=ok; artifacts=1`') {
+if ($TraceHealthMarkdown -notmatch 'trace_health `status=ok; artifacts=1; warnings=0`') {
     throw "Packaged trace-health summary did not include benchmark trace-health summary"
 }
 if ($TraceHealthMarkdown -notmatch 'proof_summary `expected=4; reported=4; artifacts=7; errors=0`') {
