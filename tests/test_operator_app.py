@@ -342,6 +342,10 @@ def test_trace_viewer_timeline_loads_benchmark_report(
             "baseline_comparison": {"status": "neutral"},
             "observability_contract": {"configured": True},
             "monitoring_coverage": {"configured": True, "passed": True},
+            "report_artifacts": {
+                "metrics": str(tmp_path / "runs.jsonl"),
+                "summary": str(tmp_path / "benchmark-summary.md"),
+            },
         },
         report_path=tmp_path / "benchmark-report.json",
     )
@@ -356,9 +360,12 @@ def test_trace_viewer_timeline_loads_benchmark_report(
         "acceptance: passed",
         "baseline: neutral",
         "monitoring coverage: passed",
+        f"artifact metrics: {tmp_path / 'runs.jsonl'}",
+        f"artifact summary: {tmp_path / 'benchmark-summary.md'}",
     ]
     assert "Trace kind: benchmark" in text
     assert "schema: benchmark_report_v1" in text
+    assert "artifact metrics:" in text
     assert "monitoring coverage: passed" in text
 
 

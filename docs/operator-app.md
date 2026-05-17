@@ -115,7 +115,7 @@ project modules:
   monitoring contract in use.
 - Trace viewer state: benchmark reports render with benchmark kind, acceptance
   status, baseline comparison status, monitoring coverage status, and
-  schema/timestamp metadata.
+  schema/timestamp metadata, plus benchmark report artifact links.
 - Routine-pack service: list installed packs, install validated local packs,
   and remove installed packs.
 

@@ -319,6 +319,7 @@ abuse, and hidden automation are not supported.
       baseline, and monitoring coverage status.
 - [x] Render benchmark report schema and generation timestamp metadata in
       native trace-viewer state.
+- [x] Render benchmark report artifact manifests in native trace-viewer state.
 - [x] Add `desktop-agent replay` support for benchmark reports with acceptance,
       baseline, monitoring coverage, pipeline, deep-search, and per-run trace
       details.
