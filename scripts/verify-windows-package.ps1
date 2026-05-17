@@ -190,6 +190,9 @@ if ($TraceHealth.trace_count -lt 4) {
 if ($TraceHealth.artifact_trace_count -lt 1) {
     throw "Packaged trace-health report did not include artifact traces"
 }
+if ($TraceHealth.warning_trace_count -lt 1) {
+    throw "Packaged trace-health report did not include warning traces"
+}
 if ($TraceHealth.health_status -ne "ok") {
     throw "Packaged trace-health reported $($TraceHealth.health_status)"
 }
@@ -199,6 +202,12 @@ if ($TraceHealthConsoleText -notmatch "artifact_traces:") {
 }
 if ($TraceHealthConsoleText -notmatch "latest_traces:") {
     throw "Packaged trace-health console output did not include latest traces"
+}
+if ($TraceHealthConsoleText -notmatch "warning_trace_count: 1") {
+    throw "Packaged trace-health console output did not include warning trace count"
+}
+if ($TraceHealthConsoleText -notmatch "warning_traces:") {
+    throw "Packaged trace-health console output did not include warning traces"
 }
 if ($TraceHealthConsoleText -notmatch "benchmark-replay") {
     throw "Packaged trace-health console output did not include benchmark replay"
@@ -245,8 +254,17 @@ if (-not $ProofLatestTrace) {
 if ($ProofLatestTrace.proof_summary.artifact_count -lt 1) {
     throw "Packaged trace-health report latest trace did not include proof summary"
 }
+$ProofWarningTrace = $TraceHealth.warning_traces |
+    Where-Object { $_.kind -eq "proof_suite" } |
+    Select-Object -First 1
+if (-not $ProofWarningTrace) {
+    throw "Packaged trace-health report did not include proof warning trace"
+}
 if (($ProofLatestTrace.proof_warnings -join "`n") -notmatch "packaged-smoke: video_path is external") {
     throw "Packaged trace-health report latest trace did not include proof warnings"
+}
+if (($ProofWarningTrace.proof_warnings -join "`n") -notmatch "packaged-smoke: video_path is external") {
+    throw "Packaged trace-health report warning trace did not include proof warnings"
 }
 $TraceHealthMarkdown = Get-Content $TraceHealthSummary -Raw
 if ($TraceHealthMarkdown -notmatch "trace_health_v1") {
@@ -257,6 +275,12 @@ if ($TraceHealthMarkdown -notmatch "Artifact Traces") {
 }
 if ($TraceHealthMarkdown -notmatch "Latest Traces") {
     throw "Packaged trace-health summary did not include latest trace links"
+}
+if ($TraceHealthMarkdown -notmatch "Warning Traces") {
+    throw "Packaged trace-health summary did not include warning trace section"
+}
+if ($TraceHealthMarkdown -notmatch 'Warning traces: `1`') {
+    throw "Packaged trace-health summary did not include warning trace count"
 }
 if ($TraceHealthMarkdown -notmatch "benchmark-replay") {
     throw "Packaged trace-health summary did not include benchmark replay"

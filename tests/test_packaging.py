@@ -140,6 +140,14 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         in script
     )
     assert (
+        "Packaged trace-health console output did not include warning trace count"
+        in script
+    )
+    assert (
+        "Packaged trace-health console output did not include warning traces"
+        in script
+    )
+    assert (
         "Packaged trace-health console output did not include benchmark replay"
         in script
     )
@@ -163,7 +171,11 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "$TraceHealth.schema_version -ne \"trace_health_v1\"" in script
     assert "$TraceHealth.trace_count -lt 4" in script
     assert "$TraceHealth.artifact_trace_count -lt 1" in script
+    assert "$TraceHealth.warning_trace_count -lt 1" in script
     assert "$TraceHealth.health_status -ne \"ok\"" in script
+    assert (
+        "Packaged trace-health report did not include warning traces" in script
+    )
     assert (
         "Packaged trace-health report did not include benchmark artifact trace metadata"
         in script
@@ -193,7 +205,15 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         in script
     )
     assert (
+        "Packaged trace-health report did not include proof warning trace"
+        in script
+    )
+    assert (
         "Packaged trace-health report latest trace did not include proof warnings"
+        in script
+    )
+    assert (
+        "Packaged trace-health report warning trace did not include proof warnings"
         in script
     )
     assert "Packaged trace-health summary did not include schema version" in script
@@ -202,6 +222,14 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         in script
     )
     assert "Packaged trace-health summary did not include latest trace links" in script
+    assert (
+        "Packaged trace-health summary did not include warning trace section"
+        in script
+    )
+    assert (
+        "Packaged trace-health summary did not include warning trace count"
+        in script
+    )
     assert "Packaged trace-health summary did not include benchmark replay" in script
     assert "Packaged trace-health summary did not include benchmark artifacts" in script
     assert (
@@ -217,6 +245,7 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
     assert "trace_health `status=ok; artifacts=1`" in script
     assert "proof_summary `expected=4; reported=4; artifacts=7; errors=0`" in script
     assert "proof_warnings `packaged-smoke: video_path is external`" in script
+    assert "Warning traces: `1`" in script
     assert "& $AppExePath --check" in script
     assert "PySide6: available" in script
     assert "& $AppExePath --describe-shell" in script
