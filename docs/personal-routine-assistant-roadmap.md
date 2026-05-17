@@ -832,6 +832,8 @@ abuse, and hidden automation are not supported.
       manifests.
 - [x] Verify packaged trace-health JSON and Markdown include artifact-trace
       count and section output.
+- [x] Keep the packaged benchmark replay fixture aligned with compact
+      trace-health summary metadata.
 - [x] Add troubleshooting docs for missing Windows permissions, locked screen,
       OCR absence, video capture failure, and model absence.
 
