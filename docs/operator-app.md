@@ -109,6 +109,9 @@ project modules:
   kind, status, attention state, and attention trace count for dashboard
   monitoring, including trace-health schema/timestamp metadata and any local
   `replay-summary.md` artifact path.
+- Trace health panel state: renders the trace-health schema version and
+  generation timestamp beside counts so dashboard screenshots identify the
+  monitoring contract in use.
 - Trace viewer state: benchmark reports render with benchmark kind, acceptance
   status, baseline comparison status, monitoring coverage status, and
   schema/timestamp metadata.

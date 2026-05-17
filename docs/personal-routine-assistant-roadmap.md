@@ -665,6 +665,8 @@ abuse, and hidden automation are not supported.
       reasoning, state delta, and final report.
 - [x] Expose local `replay-summary.md` artifacts through trace service metadata
       and trace-health latest entries.
+- [x] Render trace-health schema and generation timestamp metadata in the
+      native dashboard panel state.
 - [x] Add settings for trace root, screenshots, video capture, Ollama enablement,
       emergency hotkey, default activity profile, and proof mode.
 - [x] Add UI integration tests around app state transitions with fake services.

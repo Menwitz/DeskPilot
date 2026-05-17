@@ -94,6 +94,8 @@ class TraceHealthPanelState:
     kind_counts: tuple[tuple[str, int], ...] = ()
     status_counts: tuple[tuple[str, int], ...] = ()
     status: str = "empty"
+    schema_version: str | None = None
+    generated_at: str | None = None
 
     def metadata(self) -> dict[str, object]:
         return {
@@ -102,6 +104,8 @@ class TraceHealthPanelState:
             "kind_counts": dict(self.kind_counts),
             "status_counts": dict(self.status_counts),
             "status": self.status,
+            "schema_version": self.schema_version,
+            "generated_at": self.generated_at,
         }
 
 
@@ -387,6 +391,8 @@ def trace_health_panel_from_metadata(
     trace_count = payload.get("trace_count")
     health_status = payload.get("health_status")
     attention_traces = payload.get("attention_traces")
+    schema_version = payload.get("schema_version")
+    generated_at = payload.get("generated_at")
     return TraceHealthPanelState(
         trace_count=trace_count if isinstance(trace_count, int) else 0,
         attention_count=len(attention_traces)
@@ -395,6 +401,8 @@ def trace_health_panel_from_metadata(
         kind_counts=_count_pairs(payload.get("by_kind")),
         status_counts=_count_pairs(payload.get("by_status")),
         status=health_status if isinstance(health_status, str) else "loaded",
+        schema_version=schema_version if isinstance(schema_version, str) else None,
+        generated_at=generated_at if isinstance(generated_at, str) else None,
     )
 
 
@@ -405,6 +413,8 @@ def render_trace_health_panel_text(state: TraceHealthPanelState) -> str:
         [
             "Trace Health",
             f"- Status: {state.status}",
+            f"- Schema version: {state.schema_version or 'unknown'}",
+            f"- Generated at: {state.generated_at or 'unknown'}",
             f"- Trace count: {state.trace_count}",
             f"- Attention traces: {state.attention_count}",
             f"- By kind: {_render_count_pairs(state.kind_counts)}",

@@ -144,6 +144,8 @@ def test_live_run_panel_defaults_to_idle() -> None:
 def test_trace_health_panel_tracks_counts() -> None:
     state = trace_health_panel_from_metadata(
         {
+            "schema_version": "trace_health_v1",
+            "generated_at": "2026-05-17T00:00:00+00:00",
             "trace_count": 3,
             "by_kind": {"run": 1, "goal_plan": 1, "proof_suite": 1},
             "by_status": {"passed": 2, "failed": 1},
@@ -165,7 +167,11 @@ def test_trace_health_panel_tracks_counts() -> None:
     }
     assert metadata["status_counts"] == {"failed": 1, "passed": 2}
     assert metadata["status"] == "attention"
+    assert metadata["schema_version"] == "trace_health_v1"
+    assert metadata["generated_at"] == "2026-05-17T00:00:00+00:00"
     assert "Trace Health" in text
+    assert "Schema version: trace_health_v1" in text
+    assert "Generated at: 2026-05-17T00:00:00+00:00" in text
     assert "proof_suite=1" in text
     assert "Status: attention" in text
     assert "Attention traces: 1" in text
