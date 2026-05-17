@@ -1468,6 +1468,52 @@ def test_cli_trace_health_console_shows_latest_benchmark_health_without_artifact
     assert "trace_health status=ok; artifacts=0" in output
 
 
+def test_cli_trace_health_console_skips_boolean_summary_counts(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_root = tmp_path / "traces"
+    benchmark_trace = trace_root / "20260516T010000Z-benchmark"
+    proof_trace = trace_root / "20260516T020000Z-proof"
+    benchmark_trace.mkdir(parents=True)
+    proof_trace.mkdir()
+    (benchmark_trace / "benchmark-report.json").write_text(
+        json.dumps(
+            {
+                "acceptance": {"status": "passed"},
+                "trace_health_summary": {
+                    "health_status": "ok",
+                    "artifact_trace_count": False,
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+    (proof_trace / "proof-finalization-status.json").write_text(
+        json.dumps(
+            {
+                "status": "passed",
+                "summary": {
+                    "expected_count": True,
+                    "artifact_count": 7,
+                    "error_count": False,
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    status = main(["trace-health", "--trace-root", str(trace_root)])
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert "trace_health status=ok" in output
+    assert "artifacts=False" not in output
+    assert "proof_summary artifacts=7" in output
+    assert "expected=True" not in output
+    assert "errors=False" not in output
+
+
 def test_cli_trace_health_writes_json(
     tmp_path: Path,
     capsys: CaptureFixture[str],
