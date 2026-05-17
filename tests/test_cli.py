@@ -1369,8 +1369,10 @@ def test_cli_trace_health_summarizes_trace_counts(
     trace_root = tmp_path / "traces"
     run_trace = trace_root / "20260516T000000Z-run"
     proof_trace = trace_root / "20260516T010000Z-proof"
+    benchmark_trace = trace_root / "20260516T020000Z-benchmark"
     run_trace.mkdir(parents=True)
     proof_trace.mkdir()
+    benchmark_trace.mkdir()
     (run_trace / "final-report.json").write_text(
         json.dumps({"status": "failed"}),
         encoding="utf-8",
@@ -1379,6 +1381,21 @@ def test_cli_trace_health_summarizes_trace_counts(
     replay_summary_path.write_text("# Replay Summary\n", encoding="utf-8")
     (proof_trace / "proof-finalization-status.json").write_text(
         json.dumps({"status": "passed"}),
+        encoding="utf-8",
+    )
+    (benchmark_trace / "benchmark-report.json").write_text(
+        json.dumps(
+            {
+                "acceptance": {"status": "passed"},
+                "trace_health_summary": {
+                    "health_status": "ok",
+                    "artifact_trace_count": 1,
+                },
+                "report_artifacts": {
+                    "metrics": str(benchmark_trace / "runs.jsonl"),
+                },
+            },
+        ),
         encoding="utf-8",
     )
 
@@ -1390,15 +1407,20 @@ def test_cli_trace_health_summarizes_trace_counts(
     assert "schema_version: trace_health_v1" in output
     assert "generated_at: " in output
     assert "health_status: attention" in output
-    assert "trace_count: 2" in output
-    assert "artifact_trace_count: 0" in output
+    assert "trace_count: 3" in output
+    assert "artifact_trace_count: 1" in output
+    assert "- benchmark: 1" in output
     assert "- proof_suite: 1" in output
     assert "- run: 1" in output
-    assert "- passed: 1" in output
+    assert "- passed: 2" in output
     assert "- failed: 1" in output
     assert "attention_statuses: failed" in output
     assert f"- {run_trace} (run/failed)" in output
     assert f"summary {replay_summary_path}" in output
+    assert "artifact_traces:" in output
+    assert f"- {benchmark_trace} (benchmark/passed)" in output
+    assert f"artifacts metrics={benchmark_trace / 'runs.jsonl'}" in output
+    assert "trace_health status=ok; artifacts=1" in output
 
 
 def test_cli_trace_health_writes_json(

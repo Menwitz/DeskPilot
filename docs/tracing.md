@@ -273,10 +273,11 @@ The JSON payload includes `attention_traces`, a list of trace summaries that
 need review, so monitors can link directly to the relevant local reports. Trace
 summaries also include `replay_summary_path` when a local `replay-summary.md`
 artifact exists, and the CLI plus Markdown trace-health output print that path
-for attention traces. Benchmark trace summaries include the `report_artifacts`
-manifest from `benchmark-report.json`, and Markdown trace-health latest rows
-render those artifact links plus compact trace-health status and artifact-count
-metadata.
+for attention traces. Plain CLI output also prints artifact trace rows when
+benchmark reports expose artifacts. Benchmark trace summaries include the
+`report_artifacts` manifest from `benchmark-report.json`, and Markdown
+trace-health latest rows render those artifact links plus compact trace-health
+status and artifact-count metadata.
 Add `--markdown-output traces/trace-health.md` to write the same health status,
 counts, attention trace links, artifact-trace links, and latest trace links as
 a human-readable local report.

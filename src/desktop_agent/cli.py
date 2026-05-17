@@ -2673,14 +2673,13 @@ def _trace_health(args: argparse.Namespace) -> int:
         print("attention_traces:")
         for trace in attention_traces:
             if isinstance(trace, dict):
-                trace_dir = trace.get("trace_dir", "unknown")
-                kind = trace.get("kind", "unknown")
-                status = trace.get("status", "unknown")
-                line = f"- {trace_dir} ({kind}/{status})"
-                replay_summary_path = trace.get("replay_summary_path")
-                if isinstance(replay_summary_path, str):
-                    line += f" summary {replay_summary_path}"
-                print(line)
+                print(_trace_health_console_trace_line(trace))
+    artifact_traces = health.get("artifact_traces")
+    if isinstance(artifact_traces, list) and artifact_traces:
+        print("artifact_traces:")
+        for trace in artifact_traces:
+            if isinstance(trace, dict):
+                print(_trace_health_console_trace_line(trace))
     if args.output is not None:
         print(f"report: {args.output}")
     if args.markdown_output is not None:
@@ -2723,6 +2722,26 @@ def _render_trace_health_markdown(
         *_trace_health_latest_lines(health.get("latest")),
     ]
     return "\n".join(lines) + "\n"
+
+
+def _trace_health_console_trace_line(trace: dict[object, object]) -> str:
+    """Render one trace row for plain console monitoring output."""
+
+    trace_dir = trace.get("trace_dir", "unknown")
+    kind = trace.get("kind", "unknown")
+    status = trace.get("status", "unknown")
+    line = f"- {trace_dir} ({kind}/{status})"
+    replay_summary_path = trace.get("replay_summary_path")
+    if isinstance(replay_summary_path, str):
+        line += f" summary {replay_summary_path}"
+    artifacts = _string_mapping(trace.get("report_artifacts"))
+    if artifacts:
+        rendered = "; ".join(f"{name}={path}" for name, path in artifacts.items())
+        line += f" artifacts {rendered}"
+    trace_health = _trace_health_summary_text(trace.get("trace_health_summary"))
+    if trace_health:
+        line += f" trace_health {trace_health}"
+    return line
 
 
 def _trace_health_count_lines(value: object) -> list[str]:
