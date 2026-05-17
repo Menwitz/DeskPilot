@@ -252,6 +252,10 @@ changes. The summary also includes step-level `success_evidence` and
 `failure_evidence`, so each executed step can be reviewed without live desktop
 access.
 
+`desktop-agent trace-health --trace-root traces` prints local trace counts by
+report kind and status. Add `--json` when a dashboard, CI step, or monitoring
+script needs the same payload used by the operator app trace service.
+
 `desktop-agent analyze-failed-run <trace-dir>` reads `final-report.json` and
 writes `failed-run-analysis.json` plus `failed-run-analysis.md`. The analysis
 indexes the local final report, action log, task/config snapshots, schema,

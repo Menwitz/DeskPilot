@@ -76,6 +76,7 @@ from desktop_agent.ocr import (
     TesseractOcrProvider,
     ocr_blocks_to_candidates,
 )
+from desktop_agent.operator_services import LocalTraceService
 from desktop_agent.perception import (
     CandidateFusion,
     CompositePerceptionEngine,
@@ -253,6 +254,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _windows_smoke_checklist(args)
         if args.command == "replay":
             return _replay(args)
+        if args.command == "trace-health":
+            return _trace_health(args)
         if args.command == "analyze-failed-run":
             return _analyze_failed_run(args)
         if args.command == "proof":
@@ -516,6 +519,18 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="write replay-summary.md with timeline, screenshots, and state deltas",
     )
+
+    trace_health_parser = subparsers.add_parser(
+        "trace-health",
+        help="summarize local trace counts by report kind and status",
+    )
+    trace_health_parser.add_argument(
+        "--trace-root",
+        default=Path("traces"),
+        type=Path,
+    )
+    trace_health_parser.add_argument("--limit", default=50, type=int)
+    trace_health_parser.add_argument("--json", action="store_true")
 
     analyze_failed_run_parser = subparsers.add_parser(
         "analyze-failed-run",
@@ -2530,6 +2545,22 @@ def _replay_proof_suite(args: argparse.Namespace) -> int:
     return 0
 
 
+def _trace_health(args: argparse.Namespace) -> int:
+    health = LocalTraceService(args.trace_root).trace_health(limit=args.limit)
+    if args.json:
+        print(json.dumps(health, indent=2, sort_keys=True))
+        return 0
+    print(f"trace_root: {args.trace_root}")
+    print(f"trace_count: {health['trace_count']}")
+    print("by_kind:")
+    for name, count in _int_mapping(health.get("by_kind")).items():
+        print(f"- {name}: {count}")
+    print("by_status:")
+    for name, count in _int_mapping(health.get("by_status")).items():
+        print(f"- {name}: {count}")
+    return 0
+
+
 def _analyze_failed_run(args: argparse.Namespace) -> int:
     analysis = analyze_failed_run_trace(args.trace_dir)
     write_failed_run_analysis(args.trace_dir, analysis)
@@ -2772,6 +2803,16 @@ def _string_list(value: object) -> list[str]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, str)]
+
+
+def _int_mapping(value: object) -> dict[str, int]:
+    if not isinstance(value, dict):
+        return {}
+    return {
+        key: item
+        for key, item in value.items()
+        if isinstance(key, str) and isinstance(item, int)
+    }
 
 
 def _replay_event_suffix(event: dict[str, object]) -> str:

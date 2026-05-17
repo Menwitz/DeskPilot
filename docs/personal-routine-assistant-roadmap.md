@@ -213,6 +213,8 @@ abuse, and hidden automation are not supported.
 - [x] Add local trace health counts by report kind and status for operator
       dashboard monitoring.
 - [x] Add native dashboard trace-health state and controller refresh support.
+- [x] Add `desktop-agent trace-health` for CLI and JSON monitoring of local
+      trace counts.
 - [x] Add proof-suite gate details to native trace-viewer state so local proof
       reports can show suite, promotion, and archive status in the app.
 - [x] Add an operator controller path that hydrates trace-viewer state directly

@@ -1359,6 +1359,57 @@ def test_cli_replay_summarizes_final_report(
     assert "reason: fixture" in output
 
 
+def test_cli_trace_health_summarizes_trace_counts(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_root = tmp_path / "traces"
+    run_trace = trace_root / "20260516T000000Z-run"
+    proof_trace = trace_root / "20260516T010000Z-proof"
+    run_trace.mkdir(parents=True)
+    proof_trace.mkdir()
+    (run_trace / "final-report.json").write_text(
+        json.dumps({"status": "failed"}),
+        encoding="utf-8",
+    )
+    (proof_trace / "proof-finalization-status.json").write_text(
+        json.dumps({"status": "passed"}),
+        encoding="utf-8",
+    )
+
+    status = main(["trace-health", "--trace-root", str(trace_root)])
+
+    output = capsys.readouterr().out
+    assert status == 0
+    assert f"trace_root: {trace_root}" in output
+    assert "trace_count: 2" in output
+    assert "- proof_suite: 1" in output
+    assert "- run: 1" in output
+    assert "- passed: 1" in output
+    assert "- failed: 1" in output
+
+
+def test_cli_trace_health_writes_json(
+    tmp_path: Path,
+    capsys: CaptureFixture[str],
+) -> None:
+    trace_root = tmp_path / "traces"
+    trace_dir = trace_root / "20260516T000000Z-goal"
+    trace_dir.mkdir(parents=True)
+    (trace_dir / "goal-plan-report.json").write_text(
+        json.dumps({"status": "ready"}),
+        encoding="utf-8",
+    )
+
+    status = main(["trace-health", "--trace-root", str(trace_root), "--json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert status == 0
+    assert payload["trace_count"] == 1
+    assert payload["by_kind"] == {"goal_plan": 1}
+    assert payload["by_status"] == {"ready": 1}
+
+
 def test_cli_replay_summarizes_goal_plan_trace(
     tmp_path: Path,
     capsys: CaptureFixture[str],
