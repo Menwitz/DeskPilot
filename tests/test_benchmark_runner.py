@@ -56,6 +56,8 @@ def test_benchmark_run_harness_stores_per_run_metrics(tmp_path: Path) -> None:
     assert len(metrics_lines) == 2
     assert report.schema_version == "benchmark_report_v1"
     assert isinstance(report.generated_at, str)
+    assert report.trace_health_summary["health_status"] == "ok"
+    assert report.trace_health_summary["warning_trace_count"] == 0
     assert report_payload["schema_version"] == "benchmark_report_v1"
     assert report_payload["generated_at"] == report.generated_at
     assert report_payload["iterations"] == 2

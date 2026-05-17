@@ -2796,6 +2796,9 @@ def test_cli_benchmark_run_writes_metrics_and_report(
     assert "generated_at:" in output
     assert "baseline metrics:" in output
     assert "trace health:" in output
+    assert "trace health status: ok" in output
+    assert "trace health artifacts: 0" in output
+    assert "trace health warnings: 0" in output
     assert "monitoring coverage: not_configured" in output
     assert "variance:" in output
     assert "baseline comparison:" in output

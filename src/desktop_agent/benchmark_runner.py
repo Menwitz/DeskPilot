@@ -212,6 +212,7 @@ class BenchmarkRunReport:
     report_path: Path
     summary_report_path: Path
     trace_health_path: Path
+    trace_health_summary: dict[str, object]
     variance_report_path: Path
     baseline_comparison_path: Path
     pointer_timing_comparison_path: Path
@@ -320,6 +321,7 @@ class BenchmarkRunHarness:
             trace_health_path,
             output_dir / "traces",
         )
+        trace_health_summary = _benchmark_trace_health_summary_to_dict(trace_health)
         _write_report(
             report_path,
             task_path,
@@ -372,6 +374,7 @@ class BenchmarkRunHarness:
             report_path=report_path,
             summary_report_path=summary_report_path,
             trace_health_path=trace_health_path,
+            trace_health_summary=trace_health_summary,
             variance_report_path=variance_report_path,
             baseline_comparison_path=baseline_comparison_path,
             pointer_timing_comparison_path=pointer_timing_comparison_path,

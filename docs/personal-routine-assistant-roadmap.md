@@ -328,6 +328,8 @@ abuse, and hidden automation are not supported.
       trace directories.
 - [x] Include benchmark trace-health path, health status, and attention count
       in benchmark Markdown summaries.
+- [x] Print benchmark trace-health status, artifact count, and warning count in
+      `benchmark-run` CLI output.
 - [x] Include trace-health schema, generation timestamp, and artifact-trace
       count in benchmark Markdown summaries.
 - [x] Embed compact trace-health summaries in benchmark JSON reports and replay

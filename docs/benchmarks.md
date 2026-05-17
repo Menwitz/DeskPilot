@@ -97,15 +97,15 @@ phases and final-report fields with the phases and fields observed across the
 generated run traces.
 It also embeds `trace_health_summary`, a compact copy of the trace-health
 schema, generation timestamp, health status, trace count, attention count, and
-artifact-trace count.
+artifact and warning-trace counts.
 The `report_artifacts` manifest includes `benchmark-report.json` itself plus
 metrics, baseline metrics, summary, trace-health, variance, baseline
 comparison, and pointer-timing comparison artifacts.
 `benchmark-summary.md` repeats the same contract in Markdown for review without
 opening the JSON payload. It also links `trace-health.json`, shows the
 trace-health schema, generation time, status, attention-trace count, and
-artifact-trace count, and lists observed and missing monitoring phases and
-report fields.
+artifact and warning-trace counts, and lists observed and missing monitoring
+phases and report fields.
 
 Summary metrics currently include success rate, median task time, total step
 count, total action count, total retry count, grounding accuracy, ambiguity
