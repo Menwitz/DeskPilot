@@ -726,8 +726,16 @@ def _proof_suite_status_summary(
             len(bundle.artifact_paths) for bundle in validation.bundle_results
         ),
         "error_count": len(validation.errors),
-        "warning_count": len(validation.warnings),
+        "warning_count": _proof_suite_warning_count(validation),
     }
+
+
+def _proof_suite_warning_count(validation: ProofSuiteValidation) -> int:
+    """Count suite-level and per-bundle warnings for status summaries."""
+
+    return len(validation.warnings) + sum(
+        len(bundle.warnings) for bundle in validation.bundle_results
+    )
 
 
 def proof_suite_promotion_metadata(

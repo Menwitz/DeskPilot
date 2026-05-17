@@ -420,7 +420,7 @@ def test_write_proof_suite_status_records_monitoring_payload(
         "missing_count": 3,
         "passed_count": 1,
         "reported_count": 1,
-        "warning_count": 2,
+        "warning_count": 3,
     }
     assert payload["missing_proofs"] == [
         "native-fixture",
