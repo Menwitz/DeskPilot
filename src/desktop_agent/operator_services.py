@@ -967,15 +967,20 @@ class LocalTraceService:
             for summary in summaries
             if _trace_status_needs_attention(summary.status or "unknown")
         ]
+        artifact_traces = [
+            summary for summary in summaries if summary.report_artifacts
+        ]
         return {
             "schema_version": TRACE_HEALTH_SCHEMA_VERSION,
             "generated_at": datetime.now(UTC).isoformat(),
             "trace_count": len(summaries),
+            "artifact_trace_count": len(artifact_traces),
             "by_kind": _count_trace_values(summary.kind for summary in summaries),
             "by_status": status_counts,
             "health_status": _trace_health_status(len(summaries), status_counts),
             "attention_statuses": list(_trace_attention_statuses(status_counts)),
             "attention_traces": [summary.metadata() for summary in attention_traces],
+            "artifact_traces": [summary.metadata() for summary in artifact_traces],
             "latest": [summary.metadata() for summary in summaries],
         }
 

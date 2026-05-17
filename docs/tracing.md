@@ -276,8 +276,8 @@ for attention traces. Benchmark trace summaries include the `report_artifacts`
 manifest from `benchmark-report.json`, and Markdown trace-health latest rows
 render those artifact links.
 Add `--markdown-output traces/trace-health.md` to write the same health status,
-counts, attention trace links, and latest trace links as a human-readable local
-report.
+counts, attention trace links, artifact-trace links, and latest trace links as
+a human-readable local report.
 Add `--fail-on-attention` when a local monitor or CI smoke step should return
 nonzero if failed, error, invalid, blocked, or unknown trace statuses are found.
 

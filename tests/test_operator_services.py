@@ -353,6 +353,7 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
     assert health["schema_version"] == "trace_health_v1"
     assert isinstance(health["generated_at"], str)
     assert health["trace_count"] == 4
+    assert health["artifact_trace_count"] == 1
     assert health["by_kind"] == {
         "benchmark": 1,
         "proof_suite": 1,
@@ -374,7 +375,9 @@ def test_local_trace_service_reports_trace_health_counts(tmp_path: Path) -> None
         },
     ]
     latest = cast(list[dict[str, object]], health["latest"])
+    artifact_traces = cast(list[dict[str, object]], health["artifact_traces"])
     assert latest[0]["kind"] == "benchmark"
+    assert artifact_traces[0]["kind"] == "benchmark"
     assert latest[0]["replay_summary_path"] == str(replay_summary_path)
     assert latest[0]["report_artifacts"] == {
         "metrics": str(benchmark_trace / "runs.jsonl"),

@@ -301,6 +301,8 @@ abuse, and hidden automation are not supported.
       metadata and trace-health latest entries.
 - [x] Render benchmark report artifact manifests in trace-health Markdown latest
       rows.
+- [x] Add artifact-trace counts and artifact-trace sections to trace-health
+      monitoring reports.
 - [x] Add benchmark `trace-health.json` rollups for generated per-iteration
       trace directories.
 - [x] Include benchmark trace-health path, health status, and attention count

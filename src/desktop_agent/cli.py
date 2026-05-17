@@ -2657,6 +2657,7 @@ def _trace_health(args: argparse.Namespace) -> int:
     print(f"generated_at: {health.get('generated_at', 'unknown')}")
     print(f"health_status: {health.get('health_status', 'unknown')}")
     print(f"trace_count: {health['trace_count']}")
+    print(f"artifact_trace_count: {health.get('artifact_trace_count', 0)}")
     print("by_kind:")
     for name, count in _int_mapping(health.get("by_kind")).items():
         print(f"- {name}: {count}")
@@ -2699,6 +2700,7 @@ def _render_trace_health_markdown(
         f"- Generated at: `{health.get('generated_at', 'unknown')}`",
         f"- Health status: `{health.get('health_status', 'unknown')}`",
         f"- Trace count: `{health.get('trace_count', 0)}`",
+        f"- Artifact traces: `{health.get('artifact_trace_count', 0)}`",
         "",
         "## Counts By Kind",
         "",
@@ -2711,6 +2713,10 @@ def _render_trace_health_markdown(
         "## Attention Traces",
         "",
         *_trace_health_attention_lines(health.get("attention_traces")),
+        "",
+        "## Artifact Traces",
+        "",
+        *_trace_health_latest_lines(health.get("artifact_traces")),
         "",
         "## Latest Traces",
         "",

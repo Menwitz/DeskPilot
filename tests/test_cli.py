@@ -1391,6 +1391,7 @@ def test_cli_trace_health_summarizes_trace_counts(
     assert "generated_at: " in output
     assert "health_status: attention" in output
     assert "trace_count: 2" in output
+    assert "artifact_trace_count: 0" in output
     assert "- proof_suite: 1" in output
     assert "- run: 1" in output
     assert "- passed: 1" in output
@@ -1505,10 +1506,12 @@ def test_cli_trace_health_writes_markdown_summary(
     assert "- Schema version: `trace_health_v1`" in summary
     assert "- Generated at: `" in summary
     assert "- Health status: `attention`" in summary
+    assert "- Artifact traces: `1`" in summary
     assert f"`{trace_dir}`" in summary
     assert f"summary `{replay_summary_path}`" in summary
     assert "artifacts `metrics=" in summary
     assert str(benchmark_trace / "benchmark-summary.md") in summary
+    assert "## Artifact Traces" in summary
     assert "## Latest Traces" in summary
 
 
