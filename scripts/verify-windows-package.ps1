@@ -127,7 +127,8 @@ if ($BenchmarkReplaySummary -notmatch "runs.jsonl") {
 # Persist trace health so package smoke runs leave a reviewable monitoring artifact.
 $TraceHealthReport = Join-Path $SmokeRoot "trace-health.json"
 $TraceHealthSummary = Join-Path $SmokeRoot "trace-health.md"
-& $ExePath trace-health --trace-root $SmokeTraceRoot --output $TraceHealthReport --markdown-output $TraceHealthSummary --fail-on-attention
+$TraceHealthConsole = & $ExePath trace-health --trace-root $SmokeTraceRoot --output $TraceHealthReport --markdown-output $TraceHealthSummary --fail-on-attention
+$TraceHealthConsole | Write-Host
 if (-not (Test-Path $TraceHealthReport)) {
     throw "Packaged trace-health did not write $TraceHealthReport"
 }
@@ -146,6 +147,16 @@ if ($TraceHealth.artifact_trace_count -lt 1) {
 }
 if ($TraceHealth.health_status -ne "ok") {
     throw "Packaged trace-health reported $($TraceHealth.health_status)"
+}
+$TraceHealthConsoleText = $TraceHealthConsole -join "`n"
+if ($TraceHealthConsoleText -notmatch "artifact_traces:") {
+    throw "Packaged trace-health console output did not include artifact traces"
+}
+if ($TraceHealthConsoleText -notmatch "benchmark-replay") {
+    throw "Packaged trace-health console output did not include benchmark replay"
+}
+if ($TraceHealthConsoleText -notmatch 'trace_health status=ok; artifacts=1') {
+    throw "Packaged trace-health console output did not include benchmark trace-health summary"
 }
 $BenchmarkArtifactTrace = $TraceHealth.artifact_traces |
     Where-Object { $_.kind -eq "benchmark" } |

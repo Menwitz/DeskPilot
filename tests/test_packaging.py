@@ -111,6 +111,19 @@ def test_windows_package_verify_script_runs_packaged_smoke_matrix() -> None:
         "--fail-on-attention"
         in script
     )
+    assert "$TraceHealthConsoleText = $TraceHealthConsole -join \"`n\"" in script
+    assert (
+        "Packaged trace-health console output did not include artifact traces"
+        in script
+    )
+    assert (
+        "Packaged trace-health console output did not include benchmark replay"
+        in script
+    )
+    assert (
+        "Packaged trace-health console output did not include benchmark "
+        "trace-health summary" in script
+    )
     assert "Packaged trace-health did not write" in script
     assert "$TraceHealth.schema_version -ne \"trace_health_v1\"" in script
     assert "$TraceHealth.trace_count -lt 3" in script
